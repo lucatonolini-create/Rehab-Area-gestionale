@@ -10,6 +10,7 @@ export const PIEDI = ["Ambidestro", "Destro", "Sinistro"] as const;
 
 export const OBIETTIVI_PALESTRA = [
   "Accessori",
+  "Att. Muscolare",
   "Compound",
   "Controllo motorio",
   "Core",
