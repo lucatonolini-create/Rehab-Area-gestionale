@@ -726,7 +726,11 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       });
       // Section only appears if internal-load data (RPE or Carico Interno) exists.
       // GPS columns in the table are added dynamically if collected; otherwise only RPE/interno show.
-      const hasCarico = caricoSessions.some((s) => s.rpe !== null || s.interno !== null);
+      const hasCarico = caricoSessions.some((s) =>
+        s.rpe !== null || s.interno !== null || s.distanza !== null || s.hsr !== null ||
+        s.vel21 !== null || s.vel25 !== null || s.velMax !== null ||
+        s.acc !== null || s.dec !== null || s.sprint !== null || s.potenza !== null
+      );
       if (hasCarico) {
         checkPage(20, sub);
         y = secTitle("Analisi Carico e Performance", y);
@@ -898,6 +902,36 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           doc.setFontSize(5.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...dark);
           doc.text("RPE (scala 0-10)", leg2X + 11, legY + 1.5);
           y = legY + 10;
+        }
+
+        // ── Grafici Carico Esterno GPS ──────────────────────────────────
+        const extMetrics: { label: string; color: [number,number,number]; getData: (s: CaricoSession) => number | null }[] = [
+          { label: "Distanza Totale (m)",        color: [37, 99, 235],   getData: (s) => s.distanza },
+          { label: "D>16 km/h — HSR (m)",        color: [234, 88, 12],   getData: (s) => s.hsr      },
+          { label: "D>20 km/h (m)",              color: [217, 119, 6],   getData: (s) => s.vel21    },
+          { label: "D>25 km/h (m)",              color: [160, 83, 9],    getData: (s) => s.vel25    },
+          { label: "Velocità Massima (km/h)",    color: [124, 58, 237],  getData: (s) => s.velMax   },
+          { label: "N. Accelerazioni",           color: [5, 150, 105],   getData: (s) => s.acc      },
+          { label: "N. Decelerazioni",           color: [2, 132, 199],   getData: (s) => s.dec      },
+          { label: "N. Sprint",                  color: [219, 39, 119],  getData: (s) => s.sprint   },
+          { label: "Potenza Metabolica (W/kg)",  color: [75, 85, 99],    getData: (s) => s.potenza  },
+        ];
+        const extCharts = extMetrics
+          .map(({ label, color, getData }) => ({
+            label, color,
+            data: caricoSessions
+              .filter((s) => getData(s) !== null)
+              .map((s) => ({ dateLabel: s.dateLabel, value: getData(s)! })),
+          }))
+          .filter(({ data }) => data.length >= 2);
+
+        if (extCharts.length > 0) {
+          checkPage(20, sub);
+          y = secTitle("Andamento Carico Esterno GPS", y);
+          for (const { label, color, data } of extCharts) {
+            checkPage(62, sub);
+            drawPerfChart(label, color, data);
+          }
         }
       }
     } else {
