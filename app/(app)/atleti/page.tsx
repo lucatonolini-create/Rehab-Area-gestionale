@@ -311,7 +311,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           const parts = [c.tipo, c.serie ? `${c.serie}×` : "", c.durata || ""].filter(Boolean);
           return `${i + 1}. ${parts.join(" ")}`;
         }).join("\n") || "—";
-        const vasC = (prog.esercizicampo ?? []).map((c, i) => `${i + 1}. ${c.vas || "—"}`).join("\n") || "—";
+        const vasC = (prog.esercizicampo ?? []).map((c, i) => `${i + 1}. ${c.vas || "0"}`).join("\n") || "—";
 
         const testLines = (prog.tests ?? []).map((t) => {
           const isSL = t.nome === "SL Drop Jump";
@@ -343,7 +343,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         ].filter(Boolean).map((s) => `- ${s}`).join("\n") || "—";
 
         const esText = esercizi.map((e, i) => { const sx = [e.serie, e.reps].filter(Boolean).join("×"); const carico = e.carico ? ` (${e.carico})` : ""; return `${i + 1}. ${sx ? `${e.nome} ${sx}${carico}` : e.nome}`; }).join("\n") || "—";
-        const vasText = esercizi.map((e, i) => `${i + 1}. ${e.vas || "—"}`).join("\n") || "—";
+        const vasText = esercizi.map((e, i) => `${i + 1}. ${e.vas || "0"}`).join("\n") || "—";
         const fisio = prog.noteFisioterapia?.trim() || "—";
         if (isAlt) altRowIndices.add(body.length);
         body.push([dataStr, prog.nome ?? "—", prog.fase ?? "—", fisio, obP, esText, vasText, obCampo, esC, vasC, gps, tests, rpe]);
