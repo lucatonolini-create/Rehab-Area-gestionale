@@ -229,16 +229,6 @@ export default function Dashboard() {
                 </div>
               ))}
 
-              <div className="bg-gray-50 rounded-xl p-3">
-                <div className="flex justify-between mb-1.5">
-                  <p className="text-xs text-gray-400">Progresso</p>
-                  <p className="text-xs font-bold text-[#C8102E]">{atletaSelezionato.progresso}%</p>
-                </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#C8102E] rounded-full" style={{ width: `${atletaSelezionato.progresso}%` }} />
-                </div>
-              </div>
-
               {atletaSelezionato.note && (
                 <div className="bg-gray-50 rounded-xl p-3">
                   <p className="text-xs text-gray-400">Note</p>
