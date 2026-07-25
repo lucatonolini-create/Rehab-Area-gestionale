@@ -412,9 +412,13 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   doc.setFontSize(8.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
   doc.text(info, M, HDR + 21);
   const badgeColor: [number, number, number] = atleta.stato === "Disponibile" ? [34, 139, 34] : red;
-  doc.setFillColor(...badgeColor); doc.roundedRect(W - M - 36, HDR + 7, 36, 10, 2, 2, "F");
-  doc.setTextColor(255, 255, 255); doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
-  doc.text(atleta.stato, W - M - 18, HDR + 13.5, { align: "center" });
+  doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
+  const stateTextW = doc.getStringUnitWidth(atleta.stato) * 7.5 / doc.internal.scaleFactor;
+  const badgeW = Math.max(stateTextW + 10, 36);
+  const badgeX = W - M - badgeW;
+  doc.setFillColor(...badgeColor); doc.roundedRect(badgeX, HDR + 7, badgeW, 10, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.text(atleta.stato, badgeX + badgeW / 2, HDR + 13, { align: "center" });
   doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.3); doc.line(M, HDR + 27, W - M, HDR + 27);
 
   y = HDR + 34;
