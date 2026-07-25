@@ -601,7 +601,6 @@ export default function EserciziPage() {
     const precedente = [...lista].sort((a, b) => b.data.localeCompare(a.data))[0];
     setForm((prev) => ({
       ...prev,
-      nome: precedente.nome,
       fase: precedente.fase,
       esercizi: (precedente.esercizi ?? []).map((e) => ({ ...e })),
       esercizicampo: (precedente.esercizicampo ?? []).map((c) => ({ ...c })),
