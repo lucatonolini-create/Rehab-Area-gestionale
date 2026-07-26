@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { TrendingUp, Download, FileText, Calendar, Filter } from "lucide-react";
+import { TrendingUp, Download, FileText, Calendar, Filter, ChevronDown, FlaskConical } from "lucide-react";
 import {
   loadAtleti, loadProgrammi, upsertAtleta, uid, nd,
   CATEGORIE, type Atleta, type Stato, type Programma, type InfortunioStorico, type TestFisiometrico,
@@ -98,6 +98,22 @@ function _calcolaDelta(curr: TestFisiometrico, prev: TestFisiometrico | null): n
   if (curr.rsi && prev.rsi) { const c = parseFloat(curr.rsi), p = parseFloat(prev.rsi); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
   if (curr.risultatoSx || curr.risultatoDx) { const c = avg([curr.risultatoSx, curr.risultatoDx]), p = avg([prev.risultatoSx, prev.risultatoDx]); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
   if (curr.risultato && prev.risultato) { const c = parseFloat(curr.risultato), p = parseFloat(prev.risultato); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
+  if (curr.vo2max && prev.vo2max) { const c = parseFloat(curr.vo2max), p = parseFloat(prev.vo2max); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
+  if (curr.tempo && prev.tempo) { const c = parseFloat(curr.tempo), p = parseFloat(prev.tempo); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
+  return null;
+}
+
+function getTestMainValue(t: TestFisiometrico): number | null {
+  const avg = (...vals: (string | undefined)[]): number | null => {
+    const nums = vals.map(v => parseFloat(v ?? "")).filter(v => !isNaN(v) && v > 0);
+    return nums.length ? nums.reduce((s, v) => s + v, 0) / nums.length : null;
+  };
+  if (t.rsiSx || t.rsiDx) return avg(t.rsiSx, t.rsiDx);
+  if (t.rsi) { const v = parseFloat(t.rsi); return isNaN(v) ? null : v; }
+  if (t.vo2max) { const v = parseFloat(t.vo2max); return isNaN(v) ? null : v; }
+  if (t.tempo) { const v = parseFloat(t.tempo); return isNaN(v) ? null : v; }
+  if (t.risultatoSx || t.risultatoDx) return avg(t.risultatoSx, t.risultatoDx);
+  if (t.risultato) { const v = parseFloat(t.risultato); return isNaN(v) ? null : v; }
   return null;
 }
 
@@ -743,10 +759,39 @@ function infortunitNelPeriodo(a: Atleta, mesi: { anno: number; mese: number }[])
   return result;
 }
 
+function Sparkline({ values, invert = false }: { values: number[]; invert?: boolean }) {
+  if (values.length < 2) return null;
+  const plotVals = invert ? values.map(v => -v) : values;
+  const min = Math.min(...plotVals), max = Math.max(...plotVals);
+  const range = max - min || 1;
+  const W = 240, H = 52, pX = 6, pY = 6;
+  const iW = W - pX * 2, iH = H - pY * 2;
+  const pts: [number, number][] = plotVals.map((v, i) => [pX + (i / (plotVals.length - 1)) * iW, pY + iH - ((v - min) / range) * iH]);
+  const line = "M " + pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" L ");
+  const area = `${line} L ${(pX + iW).toFixed(1)},${(pY + iH).toFixed(1)} L ${pX},${(pY + iH).toFixed(1)} Z`;
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+      <defs>
+        <linearGradient id="sk-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#C8102E" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#C8102E" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#sk-grad)" />
+      <path d={line} fill="none" stroke="#C8102E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      {pts.map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={i === pts.length - 1 ? 3.5 : 2.5}
+          fill="#C8102E" stroke="white" strokeWidth={i === pts.length - 1 ? 1.5 : 0} />
+      ))}
+    </svg>
+  );
+}
+
 export default function ProgressiPage() {
   const [atleti, setAtleti] = useState<Atleta[]>([]);
   const [programmi, setProgrammi] = useState<Programma[]>([]);
   const [esportando, setEsportando] = useState<string | null>(null);
+  const [expandedTestsId, setExpandedTestsId] = useState<string | null>(null);
   const [esportandoReport, setEsportandoReport] = useState<"excel" | "pdf" | null>(null);
   const [pageTab, setPageTab] = useState<PageTab>("progressi");
 
@@ -931,6 +976,156 @@ export default function ProgressiPage() {
                   {atleta.infortunio && (
                     <p className="text-xs text-gray-400 mt-3">{atleta.infortunio}</p>
                   )}
+
+                  {/* ── Andamento test fisiometrici ── */}
+                  {(() => {
+                    const atletaProgs = programmi
+                      .filter((p) => p.atletaId === atleta.id && !p.assente && !p.riposo && (p.tests?.length ?? 0) > 0)
+                      .sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""));
+                    const testsByName: Record<string, Array<{ data: string; test: TestFisiometrico }>> = {};
+                    for (const prog of atletaProgs) {
+                      for (const t of prog.tests ?? []) {
+                        if (!t.nome) continue;
+                        if (!testsByName[t.nome]) testsByName[t.nome] = [];
+                        testsByName[t.nome].push({ data: prog.data ?? "", test: t });
+                      }
+                    }
+                    const testNames = Object.keys(testsByName);
+                    if (!testNames.length) return null;
+                    const isOpen = expandedTestsId === atleta.id;
+                    const fmtD = (d: string) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
+                    return (
+                      <div className="mt-4 border-t border-gray-100 pt-4">
+                        <button onClick={() => setExpandedTestsId(isOpen ? null : atleta.id)}
+                          className="flex items-center gap-2 w-full text-left">
+                          <FlaskConical className="w-4 h-4 text-[#C8102E] shrink-0" />
+                          <span className="text-sm font-semibold text-gray-700">Andamento test fisiometrici</span>
+                          <span className="text-xs text-gray-400 ml-1">({testNames.length} test)</span>
+                          <ChevronDown className={`w-4 h-4 text-gray-400 ml-auto transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                        </button>
+
+                        {isOpen && (
+                          <div className="mt-4 space-y-5">
+                            {testNames.map((testName) => {
+                              const entries = testsByName[testName];
+                              const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(testName);
+                              const isGaconIFT = testName === "Gacon" || testName === "IFT 30-15";
+                              const isDropJump = testName === "Drop Jump";
+                              const isSLDropJump = testName === "SL Drop Jump";
+                              const hasSxDx = entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
+                              const chartVals = entries.map((e) => getTestMainValue(e.test)).filter((v): v is number => v !== null);
+                              return (
+                                <div key={testName} className="bg-gray-50 rounded-xl p-4">
+                                  <h4 className="text-sm font-bold text-gray-800 mb-3">{testName}</h4>
+                                  {chartVals.length >= 2 && (
+                                    <div className="mb-3 flex items-center gap-4">
+                                      <Sparkline values={chartVals} invert={isSprintTempo} />
+                                      <div className="text-xs text-gray-400 space-y-1">
+                                        {(() => {
+                                          const first = chartVals[0], last = chartVals[chartVals.length - 1];
+                                          const pct = first > 0 ? ((last - first) / first) * 100 : null;
+                                          const isGood = pct !== null && (isSprintTempo ? pct < 0 : pct > 0);
+                                          return pct !== null ? (
+                                            <span className={`text-sm font-bold ${isGood ? "text-green-600" : Math.abs(pct) < 1 ? "text-gray-400" : "text-orange-500"}`}>
+                                              {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%
+                                            </span>
+                                          ) : null;
+                                        })()}
+                                        <p className="text-gray-400">{entries.length} rilevazioni</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full text-xs">
+                                      <thead>
+                                        <tr className="text-gray-400 border-b border-gray-200">
+                                          <th className="text-left pb-2 pr-4 font-semibold">Data</th>
+                                          {isSprintTempo && <th className="text-right pb-2 pr-4 font-semibold">Tempo (s)</th>}
+                                          {isGaconIFT && <>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Livello</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Vo2Max</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">VAM (km/h)</th>
+                                          </>}
+                                          {isDropJump && <>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Alt. (cm)</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Contatto (ms)</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">RSI</th>
+                                          </>}
+                                          {isSLDropJump && <>
+                                            <th className="text-right pb-2 pr-4 font-semibold">RSI Sx</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">RSI Dx</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Asim%</th>
+                                          </>}
+                                          {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && hasSxDx && <>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Sx</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Dx</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Asim%</th>
+                                          </>}
+                                          {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !hasSxDx && (
+                                            <th className="text-right pb-2 pr-4 font-semibold">Risultato</th>
+                                          )}
+                                          <th className="text-right pb-2 font-semibold">Δ</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {entries.map((e, i) => {
+                                          const prev = i > 0 ? entries[i - 1].test : null;
+                                          const delta = _calcolaDelta(e.test, prev);
+                                          const asim = isSLDropJump
+                                            ? _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "")
+                                            : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
+                                          const isLast = i === entries.length - 1;
+                                          const isGoodDelta = delta !== null && (isSprintTempo ? delta < 0 : delta > 0);
+                                          return (
+                                            <tr key={i} className={`border-b border-gray-100 ${isLast ? "font-semibold" : ""}`}>
+                                              <td className="py-2 pr-4 text-gray-600">{fmtD(e.data)}</td>
+                                              {isSprintTempo && (
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.tempo || "—"}</td>
+                                              )}
+                                              {isGaconIFT && <>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.livello || "—"}</td>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.vo2max || "—"}</td>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.vam || "—"}</td>
+                                              </>}
+                                              {isDropJump && <>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.altezzaSalto || "—"}</td>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.tempoContatto || "—"}</td>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.rsi || "—"}</td>
+                                              </>}
+                                              {isSLDropJump && <>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.rsiSx || "—"}</td>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.rsiDx || "—"}</td>
+                                                <td className={`py-2 pr-4 text-right font-mono ${asim !== null ? asim > 10 ? "text-red-600" : "text-green-600" : ""}`}>
+                                                  {asim !== null ? `${asim.toFixed(1)}%` : "—"}
+                                                </td>
+                                              </>}
+                                              {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && hasSxDx && <>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.risultatoSx || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.risultatoDx || "—"}{e.test.unita && e.test.risultatoDx ? ` ${e.test.unita}` : ""}</td>
+                                                <td className={`py-2 pr-4 text-right font-mono ${asim !== null ? asim > 10 ? "text-red-600" : "text-green-600" : ""}`}>
+                                                  {asim !== null ? `${asim.toFixed(1)}%` : "—"}
+                                                </td>
+                                              </>}
+                                              {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !hasSxDx && (
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.risultato || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
+                                              )}
+                                              <td className={`py-2 text-right font-mono font-semibold ${delta === null ? "text-gray-300" : isGoodDelta ? "text-green-600" : delta === 0 ? "text-gray-400" : "text-red-500"}`}>
+                                                {delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}
