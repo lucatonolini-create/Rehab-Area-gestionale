@@ -6,14 +6,12 @@ import {
   loadAtleti, loadProgrammi, upsertAtleta, deleteAtleta, uid, nd,
   subscribeToAtleti, subscribeToProgrammi, subscribeToIntakeInsert,
   CATEGORIE, TIPI_INFORTUNIO, calcolaProgressoAuto,
-  TIPI_REFERTO, ESITI_REFERTO,
   loadDettaglioSituazionale, upsertDettaglioSituazionale, formToDettaglio,
   type Atleta, type Stato, type InfortunioStorico, type Programma, type QuestionarioKinesiofobia,
-  type RefertoClinico, type TipoReferto, type EsitoReferto, type TestFisiometrico,
+  type TestFisiometrico,
   type DettaglioSituazionaleData, type DettaglioSituazionaleForm,
 } from "@/lib/store";
 import AtletaModal from "@/components/AtletaModal";
-import CartellaClinaca from "@/components/CartellaClinaca";
 
 const MAPPING_KEY = "perf_athlete_mapping";
 function getPerfId(rehabId: string): string | null {
@@ -315,7 +313,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
 
         const testLines = (prog.tests ?? []).map((t) => {
           const isSL = t.nome === "SL Drop Jump";
-          const val = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : ""].filter(Boolean).join(" / ");
+          const val = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : "", t.tempo ? `Tempo: ${t.tempo}s` : "", t.livello ? `Liv: ${t.livello}` : "", t.vo2max ? `Vo2Max: ${t.vo2max}` : "", t.vam ? `VAM: ${t.vam}` : ""].filter(Boolean).join(" / ");
           const extras: string[] = [];
           const sxV = isSL ? (t.rsiSx ?? "") : (t.risultatoSx ?? "");
           const dxV = isSL ? (t.rsiDx ?? "") : (t.risultatoDx ?? "");
@@ -509,49 +507,6 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(...gray);
       doc.text("Nessun dettaglio situazionale inserito.", M, y); y += 10;
     }
-  }
-
-  // ── Referti clinici ───────────────────────────────────────────────────────
-  const referti = [...(atleta.refertiClinici ?? [])].sort((a, b) => b.data.localeCompare(a.data));
-  checkPage(20);
-  y = secTitle("Referti clinici", y);
-  if (referti.length === 0) {
-    doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(...gray);
-    doc.text("Nessun referto registrato.", M, y); y += 10;
-  } else {
-    const esitoColor = (esito: string): [number, number, number] => {
-      if (esito === "Negativo") return [34, 139, 34];
-      if (esito === "In miglioramento") return [180, 120, 0];
-      return [180, 30, 30]; // Positivo
-    };
-    autoTable(doc, {
-      startY: y,
-      head: [["Data", "Tipo esame", "Esito", "Note"]],
-      body: referti.map((r) => [
-        new Date(r.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" }),
-        r.tipo,
-        r.esito,
-        r.note || "—",
-      ]),
-      headStyles: hS(dark),
-      bodyStyles: { ...bS, fontSize: 8 },
-      alternateRowStyles: aS,
-      margin: { left: M, right: M },
-      columnStyles: {
-        0: { cellWidth: 26 },
-        1: { cellWidth: 40 },
-        2: { cellWidth: 36 },
-        3: { cellWidth: "auto" as any },
-      },
-      didDrawCell: (data: any) => {
-        if (data.section === "body" && data.column.index === 2) {
-          const esito = referti[data.row.index]?.esito ?? "";
-          data.cell.styles.textColor = esitoColor(esito);
-          data.cell.styles.fontStyle = "bold";
-        }
-      },
-    });
-    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // ── Storico infortuni ──────────────────────────────────────────────────────
@@ -954,6 +909,161 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     renderWeeklyTable(unassigned, `${nd(atleta)}  ·  Sessioni non associate`);
   }
 
+  // ── Andamento Test Fisiometrici ──────────────────────────────────────────
+  const getTestMainValue = (t: TestFisiometrico): number | null => {
+    const avg = (...vals: (string | undefined)[]): number | null => {
+      const nums = vals.map(v => parseFloat(v ?? "")).filter(v => !isNaN(v) && v > 0);
+      return nums.length ? nums.reduce((s, v) => s + v, 0) / nums.length : null;
+    };
+    if (t.rsiSx || t.rsiDx) return avg(t.rsiSx, t.rsiDx);
+    if (t.rsi) { const v = parseFloat(t.rsi); return isNaN(v) ? null : v; }
+    if (t.vo2max) { const v = parseFloat(t.vo2max); return isNaN(v) ? null : v; }
+    if (t.tempo) { const v = parseFloat(t.tempo); return isNaN(v) ? null : v; }
+    if (t.risultatoSx || t.risultatoDx) return avg(t.risultatoSx, t.risultatoDx);
+    if (t.risultato) { const v = parseFloat(t.risultato); return isNaN(v) ? null : v; }
+    return null;
+  };
+
+  const allTestSessions = programmi
+    .filter(p => !p.assente && !p.riposo && p.tests?.length)
+    .sort((a, b) => a.data.localeCompare(b.data));
+
+  const testMap: Map<string, { data: string; t: TestFisiometrico }[]> = new Map();
+  for (const prog of allTestSessions) {
+    for (const t of prog.tests ?? []) {
+      if (!testMap.has(t.nome)) testMap.set(t.nome, []);
+      testMap.get(t.nome)!.push({ data: prog.data, t });
+    }
+  }
+
+  if (testMap.size > 0) {
+    doc.addPage();
+    addHeader(`${nd(atleta)}  ·  Andamento Test`);
+    y = HDR + 8;
+    y = secTitle("Andamento Test Fisiometrici", y);
+
+    const testColors: [number, number, number][] = [
+      [200, 16, 46], [37, 99, 235], [5, 150, 105], [217, 119, 6],
+      [124, 58, 237], [236, 72, 153], [14, 116, 144], [101, 163, 13],
+    ];
+    let colorIdx = 0;
+
+    const fmtShort = (d: string) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
+
+    const checkPg = (needed: number) => {
+      if (y + needed > 280) { doc.addPage(); addHeader(`${nd(atleta)}  ·  Andamento Test`); y = HDR + 8; }
+    };
+
+    for (const [nome, entries] of Array.from(testMap.entries())) {
+      const color = testColors[colorIdx % testColors.length];
+      colorIdx++;
+
+      checkPg(14);
+      const [cr, cg, cb] = color;
+      doc.setFillColor(cr, cg, cb);
+      doc.rect(M, y - 4, W - M * 2, 8, "F");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(255, 255, 255);
+      doc.text(nome.toUpperCase(), M + 4, y + 0.8);
+      y += 11;
+
+      const chartData = entries
+        .map(({ data, t }: { data: string; t: TestFisiometrico }) => ({ dateLabel: fmtShort(data), value: getTestMainValue(t) }))
+        .filter((d): d is { dateLabel: string; value: number } => d.value !== null);
+
+      if (chartData.length >= 2) {
+        checkPg(60);
+        drawPerfChart(nome, color, chartData);
+      }
+
+      // Build type-specific table
+      const isDropJump = nome === "Drop Jump";
+      const isSLDropJump = nome === "SL Drop Jump";
+      const isGaconIFT = nome === "Gacon" || nome === "IFT 30-15";
+      const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(nome);
+      const hasDxSx = !isDropJump && !isSLDropJump && !isGaconIFT && !isSprintTempo && entries.some((e: { data: string; t: TestFisiometrico }) => e.t.risultatoSx || e.t.risultatoDx);
+
+      let head: string[];
+      let rows: any[][];
+
+      if (isDropJump) {
+        head = ["Data", "Altezza (cm)", "Contatto (ms)", "RSI", "Δ%"];
+        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }, i: number) => {
+          const prev = i > 0 ? entries[i - 1].t : null;
+          const delta = _calcolaDelta(t, prev);
+          const dStr = delta !== null ? (delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`) : "—";
+          return [fmtShort(data), t.altezzaSalto ?? "—", t.tempoContatto ?? "—", t.rsi ?? "—", dStr];
+        });
+      } else if (isSLDropJump) {
+        head = ["Data", "RSI Sx", "RSI Dx", "Asim%", "Δ%"];
+        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }, i: number) => {
+          const prev = i > 0 ? entries[i - 1].t : null;
+          const delta = _calcolaDelta(t, prev);
+          const dStr = delta !== null ? (delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`) : "—";
+          const sx = parseFloat(t.rsiSx ?? ""), dx = parseFloat(t.rsiDx ?? "");
+          const asim = (!isNaN(sx) && !isNaN(dx) && Math.max(sx, dx) > 0) ? `${Math.abs(((sx - dx) / Math.max(sx, dx)) * 100).toFixed(1)}%` : "—";
+          return [fmtShort(data), t.rsiSx ?? "—", t.rsiDx ?? "—", asim, dStr];
+        });
+      } else if (isGaconIFT) {
+        head = ["Data", "Livello", "Vo2Max (ml/kg/min)", "VAM (km/h)", "Δ%"];
+        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }, i: number) => {
+          const prev = i > 0 ? entries[i - 1].t : null;
+          const c = parseFloat(t.vo2max ?? ""), p = parseFloat(prev?.vo2max ?? "");
+          const delta = (!isNaN(c) && !isNaN(p) && p > 0) ? ((c - p) / p) * 100 : null;
+          const dStr = delta !== null ? (delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`) : "—";
+          return [fmtShort(data), t.livello ?? "—", t.vo2max ?? "—", t.vam ?? "—", dStr];
+        });
+      } else if (isSprintTempo) {
+        head = ["Data", "Tempo (s)", "Δ%"];
+        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }, i: number) => {
+          const prev = i > 0 ? entries[i - 1].t : null;
+          const c = parseFloat(t.tempo ?? ""), p = parseFloat(prev?.tempo ?? "");
+          const delta = (!isNaN(c) && !isNaN(p) && p > 0) ? ((c - p) / p) * 100 : null;
+          const dStr = delta !== null ? (delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`) : "—";
+          return [fmtShort(data), t.tempo ?? "—", dStr];
+        });
+      } else if (hasDxSx) {
+        head = ["Data", "Sx", "Dx", "Asim%", "Δ%"];
+        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }, i: number) => {
+          const prev = i > 0 ? entries[i - 1].t : null;
+          const delta = _calcolaDelta(t, prev);
+          const dStr = delta !== null ? (delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`) : "—";
+          const sx = parseFloat(t.risultatoSx ?? ""), dx = parseFloat(t.risultatoDx ?? "");
+          const asim = (!isNaN(sx) && !isNaN(dx) && Math.max(sx, dx) > 0) ? `${Math.abs(((sx - dx) / Math.max(sx, dx)) * 100).toFixed(1)}%` : "—";
+          return [fmtShort(data), t.risultatoSx ?? "—", t.risultatoDx ?? "—", asim, dStr];
+        });
+      } else {
+        head = ["Data", "Risultato", "Δ%"];
+        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }, i: number) => {
+          const prev = i > 0 ? entries[i - 1].t : null;
+          const delta = _calcolaDelta(t, prev);
+          const dStr = delta !== null ? (delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`) : "—";
+          const val = [t.risultato, t.tempo ? `${t.tempo}s` : "", t.livello ? `Liv ${t.livello}` : ""].filter(Boolean).join(" / ") || "—";
+          return [fmtShort(data), val, dStr];
+        });
+      }
+
+      checkPg(rows.length * 8 + 16);
+      autoTable(doc, {
+        startY: y,
+        head: [head],
+        body: rows,
+        theme: "grid",
+        styles: { fontSize: 7.5, cellPadding: 2.5 },
+        headStyles: { fillColor: color, textColor: [255, 255, 255], fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [250, 250, 250] },
+        margin: { left: M, right: M },
+        didParseCell: (data) => {
+          if (data.section === "body" && data.column.index === head.length - 1) {
+            const v = String(data.cell.raw ?? "");
+            if (v.startsWith("+")) data.cell.styles.textColor = [5, 150, 105];
+            else if (v.startsWith("-")) data.cell.styles.textColor = [220, 38, 38];
+          }
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+    }
+  }
+
   addFooter();
   doc.save(`${nd(atleta).replace(/ /g, "_")}_storico_completo.pdf`);
 }
@@ -988,9 +1098,7 @@ export default function AtletiPage() {
   const [editStorico, setEditStorico] = useState<{ inf: InfortunioStorico; idx: number } | null>(null);
   const [editStoricoForm, setEditStoricoForm] = useState<InfortunioStorico | null>(null);
   const [programmiAtleta, setProgrammiAtleta] = useState<Programma[]>([]);
-  const [nuovoReferto, setNuovoReferto] = useState<{ data: string; tipo: TipoReferto | ""; esito: EsitoReferto | ""; note: string } | null>(null);
-  const [editingRefertoId, setEditingRefertoId] = useState<string | null>(null);
-  const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
+const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [nuovaDataRTS, setNuovaDataRTS] = useState(new Date().toISOString().split("T")[0]);
   const [nuovoPunteggioTSK, setNuovoPunteggioTSK] = useState("");
   const [nuovoPunteggioAFAQ, setNuovoPunteggioAFAQ] = useState("");
@@ -1121,49 +1229,6 @@ export default function AtletiPage() {
       progresso: 0,
       storicoInfortuni: nuovoStorico,
     };
-    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
-    setSelected(aggiornato);
-    await upsertAtleta(aggiornato);
-  };
-
-  const aggiungiReferto = async () => {
-    if (!selected || !nuovoReferto) return;
-    if (!nuovoReferto.tipo || !nuovoReferto.esito) return;
-    const tipo = nuovoReferto.tipo as TipoReferto;
-    const esito = nuovoReferto.esito as EsitoReferto;
-    const refertiEsistenti = selected.refertiClinici ?? [];
-    let nuoviReferti: RefertoClinico[];
-    if (editingRefertoId) {
-      nuoviReferti = refertiEsistenti.map((r) =>
-        r.id === editingRefertoId
-          ? { ...r, data: nuovoReferto.data, tipo, esito, note: nuovoReferto.note || undefined }
-          : r
-      );
-    } else {
-      nuoviReferti = [...refertiEsistenti, {
-        id: crypto.randomUUID(),
-        data: nuovoReferto.data,
-        tipo,
-        esito,
-        note: nuovoReferto.note || undefined,
-      }];
-    }
-    const aggiornato: Atleta = { ...selected, refertiClinici: nuoviReferti };
-    aggiornato.progresso = calcolaProgressoAuto(aggiornato);
-    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
-    setSelected(aggiornato);
-    setNuovoReferto(null);
-    setEditingRefertoId(null);
-    await upsertAtleta(aggiornato);
-  };
-
-  const rimuoviReferto = async (refertoId: string) => {
-    if (!selected) return;
-    const aggiornato: Atleta = {
-      ...selected,
-      refertiClinici: (selected.refertiClinici ?? []).filter((r) => r.id !== refertoId),
-    };
-    aggiornato.progresso = calcolaProgressoAuto(aggiornato);
     setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
     setSelected(aggiornato);
     await upsertAtleta(aggiornato);
@@ -1459,131 +1524,6 @@ export default function AtletiPage() {
                   </div>
                 )}
 
-                {/* Referti clinici */}
-                {selected.stato === "Infortunato" && (
-                  <div className="pt-2 border-t border-gray-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Referti clinici</p>
-                      {!nuovoReferto && (
-                        <button
-                          onClick={() => setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" })}
-                          className="text-xs text-[#C8102E] font-medium hover:underline flex items-center gap-1">
-                          <Plus className="w-3 h-3" /> Aggiungi
-                        </button>
-                      )}
-                    </div>
-
-                    {(selected.refertiClinici ?? []).length === 0 && !nuovoReferto && (
-                      <p className="text-xs text-gray-400 italic text-center py-2">Nessun referto registrato</p>
-                    )}
-
-                    <div className="space-y-2">
-                      {[...(selected.refertiClinici ?? [])].sort((a, b) => b.data.localeCompare(a.data)).map((r) => (
-                        <div key={r.id} className="bg-gray-50 rounded-xl p-2.5 flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                              <span className="text-xs font-semibold text-gray-700">{r.tipo}</span>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                                r.esito === "Positivo" ? "bg-red-100 text-red-700"
-                                : r.esito === "In miglioramento" ? "bg-yellow-100 text-yellow-700"
-                                : "bg-green-100 text-green-700"
-                              }`}>{r.esito}</span>
-                            </div>
-                            <p className="text-[10px] text-gray-400">{new Date(r.data + "T12:00").toLocaleDateString("it-IT")}</p>
-                            {r.note && <p className="text-xs text-gray-500 mt-0.5">{r.note}</p>}
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              onClick={() => {
-                                setEditingRefertoId(r.id);
-                                setNuovoReferto({ data: r.data, tipo: r.tipo, esito: r.esito, note: r.note ?? "" });
-                              }}
-                              className="text-gray-300 hover:text-[#C8102E] transition-colors">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => rimuoviReferto(r.id)} className="text-gray-300 hover:text-red-400 transition-colors">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {nuovoReferto && (
-                      <div className="bg-gray-50 border border-gray-200 rounded-xl p-3.5 space-y-3 mt-2 overflow-hidden">
-                        <div>
-                          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Data</p>
-                          {(() => {
-                            const [yy, mm, dd] = (nuovoReferto.data || "").split("-");
-                            const upd = (y: string, m: string, d: string) =>
-                              setNuovoReferto((r) => r && ({ ...r, data: `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}` }));
-                            const MESI_IT = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
-                            const anniOpts = Array.from({ length: 4 }, (_, i) => String(new Date().getFullYear() - 2 + i));
-                            const sel = "w-full text-sm border border-gray-200 rounded-lg px-2 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]/30 focus:border-[#C8102E]";
-                            return (
-                              <div className="grid grid-cols-3 gap-1.5">
-                                <div>
-                                  <p className="text-[9px] text-gray-400 mb-0.5">Giorno</p>
-                                  <select value={dd} onChange={(e) => upd(yy, mm, e.target.value)} className={sel}>
-                                    {Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2,"0")).map((g) => <option key={g}>{g}</option>)}
-                                  </select>
-                                </div>
-                                <div>
-                                  <p className="text-[9px] text-gray-400 mb-0.5">Mese</p>
-                                  <select value={mm} onChange={(e) => upd(yy, e.target.value, dd)} className={sel}>
-                                    {MESI_IT.map((nm, i) => <option key={nm} value={String(i + 1).padStart(2,"0")}>{nm}</option>)}
-                                  </select>
-                                </div>
-                                <div>
-                                  <p className="text-[9px] text-gray-400 mb-0.5">Anno</p>
-                                  <select value={yy} onChange={(e) => upd(e.target.value, mm, dd)} className={sel}>
-                                    {anniOpts.map((a) => <option key={a}>{a}</option>)}
-                                  </select>
-                                </div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Tipo esame</p>
-                          <select value={nuovoReferto.tipo}
-                            onChange={(e) => setNuovoReferto((r) => r && ({ ...r, tipo: e.target.value as TipoReferto }))}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]/30 focus:border-[#C8102E]">
-                            <option value="" disabled>Seleziona tipo…</option>
-                            {TIPI_REFERTO.map((t) => <option key={t}>{t}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Esito</p>
-                          <select value={nuovoReferto.esito}
-                            onChange={(e) => setNuovoReferto((r) => r && ({ ...r, esito: e.target.value as EsitoReferto }))}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]/30 focus:border-[#C8102E]">
-                            <option value="" disabled>Seleziona esito…</option>
-                            {ESITI_REFERTO.map((e) => <option key={e}>{e}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Note <span className="font-normal normal-case text-gray-400">(opzionale)</span></p>
-                          <textarea value={nuovoReferto.note}
-                            onChange={(e) => setNuovoReferto((r) => r && ({ ...r, note: e.target.value }))}
-                            placeholder="Dettagli referto, osservazioni cliniche..."
-                            rows={3}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white resize-none focus:outline-none focus:ring-2 focus:ring-[#C8102E]/30 focus:border-[#C8102E]" />
-                        </div>
-                        <div className="flex gap-2 pt-0.5">
-                          <button onClick={() => { setNuovoReferto(null); setEditingRefertoId(null); }}
-                            className="flex-1 text-sm border border-gray-200 rounded-lg py-2 text-gray-500 bg-white font-medium hover:bg-gray-100 transition-colors">
-                            Annulla
-                          </button>
-                          <button onClick={aggiungiReferto}
-                            className="flex-1 text-sm bg-[#C8102E] text-white rounded-lg py-2 font-semibold hover:bg-red-700 transition-colors">
-                            {editingRefertoId ? "Salva" : "Aggiungi"}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {(selected.telefono || selected.email) && (
                   <div className="bg-gray-50 rounded-xl p-3 space-y-1.5">
@@ -1778,13 +1718,6 @@ export default function AtletiPage() {
                     </div>
                   );
                 })()}
-                <div className="border-t border-gray-100 pt-4">
-                  <CartellaClinaca
-                    atletaId={selected.id}
-                    refertiClinici={selected.refertiClinici ?? []}
-                    onVaiADati={() => setTab("dati")}
-                  />
-                </div>
               </div>
             ) : (
               /* ── Storico infortuni ── */

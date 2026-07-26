@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { TrendingUp, Download, FileText, Calendar, Filter } from "lucide-react";
+import { TrendingUp, Download, FileText, Calendar, Filter, ChevronDown, FlaskConical } from "lucide-react";
 import {
   loadAtleti, loadProgrammi, upsertAtleta, uid, nd,
   CATEGORIE, type Atleta, type Stato, type Programma, type InfortunioStorico, type TestFisiometrico,
@@ -98,6 +98,22 @@ function _calcolaDelta(curr: TestFisiometrico, prev: TestFisiometrico | null): n
   if (curr.rsi && prev.rsi) { const c = parseFloat(curr.rsi), p = parseFloat(prev.rsi); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
   if (curr.risultatoSx || curr.risultatoDx) { const c = avg([curr.risultatoSx, curr.risultatoDx]), p = avg([prev.risultatoSx, prev.risultatoDx]); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
   if (curr.risultato && prev.risultato) { const c = parseFloat(curr.risultato), p = parseFloat(prev.risultato); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
+  if (curr.vo2max && prev.vo2max) { const c = parseFloat(curr.vo2max), p = parseFloat(prev.vo2max); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
+  if (curr.tempo && prev.tempo) { const c = parseFloat(curr.tempo), p = parseFloat(prev.tempo); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
+  return null;
+}
+
+function getTestMainValue(t: TestFisiometrico): number | null {
+  const avg = (...vals: (string | undefined)[]): number | null => {
+    const nums = vals.map(v => parseFloat(v ?? "")).filter(v => !isNaN(v) && v > 0);
+    return nums.length ? nums.reduce((s, v) => s + v, 0) / nums.length : null;
+  };
+  if (t.rsiSx || t.rsiDx) return avg(t.rsiSx, t.rsiDx);
+  if (t.rsi) { const v = parseFloat(t.rsi); return isNaN(v) ? null : v; }
+  if (t.vo2max) { const v = parseFloat(t.vo2max); return isNaN(v) ? null : v; }
+  if (t.tempo) { const v = parseFloat(t.tempo); return isNaN(v) ? null : v; }
+  if (t.risultatoSx || t.risultatoDx) return avg(t.risultatoSx, t.risultatoDx);
+  if (t.risultato) { const v = parseFloat(t.risultato); return isNaN(v) ? null : v; }
   return null;
 }
 
@@ -279,7 +295,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
 
         const testLines = (prog.tests ?? []).map((t) => {
           const isSL = t.nome === "SL Drop Jump";
-          const val = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : ""].filter(Boolean).join(" / ");
+          const val = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : "", t.tempo ? `Tempo: ${t.tempo}s` : "", t.livello ? `Liv: ${t.livello}` : "", t.vo2max ? `Vo2Max: ${t.vo2max}` : "", t.vam ? `VAM: ${t.vam}` : ""].filter(Boolean).join(" / ");
           const extras: string[] = [];
           const sxV = isSL ? (t.rsiSx ?? "") : (t.risultatoSx ?? "");
           const dxV = isSL ? (t.rsiDx ?? "") : (t.risultatoDx ?? "");
@@ -380,6 +396,203 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         }
       },
     });
+  }
+
+  // ── Andamento Test Fisiometrici ──────────────────────────────────────────
+  const testProgs = programmi
+    .filter((p) => !p.assente && !p.riposo && (p.tests?.length ?? 0) > 0)
+    .sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""));
+
+  if (testProgs.length > 0) {
+    const testsByName: Record<string, Array<{ dateLabel: string; dateFull: string; test: TestFisiometrico }>> = {};
+    for (const prog of testProgs) {
+      for (const t of prog.tests ?? []) {
+        if (!t.nome) continue;
+        if (!testsByName[t.nome]) testsByName[t.nome] = [];
+        testsByName[t.nome].push({
+          dateLabel: prog.data ? new Date(prog.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) : "—",
+          dateFull: prog.data ? new Date(prog.data + "T12:00").toLocaleDateString("it-IT") : "—",
+          test: t,
+        });
+      }
+    }
+
+    const testNames = Object.keys(testsByName);
+    if (testNames.length > 0) {
+      doc.addPage();
+      addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`);
+      let y = HDR + 8;
+      y = secTitle("Andamento Test Fisiometrici", y);
+
+      const checkPg = (needed: number) => {
+        if (y + needed > H - 18) {
+          doc.addPage();
+          addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`);
+          y = HDR + 8;
+        }
+      };
+
+      const testColors: [number, number, number][] = [
+        [200, 16, 46], [37, 99, 235], [5, 150, 105], [124, 58, 237],
+        [234, 88, 12], [2, 132, 199], [219, 39, 119], [75, 85, 99],
+      ];
+
+      testNames.forEach((testName, testIdx) => {
+        const entries = testsByName[testName];
+        const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(testName);
+        const isGaconIFT = testName === "Gacon" || testName === "IFT 30-15";
+        const isDropJump = testName === "Drop Jump";
+        const isSLDropJump = testName === "SL Drop Jump";
+        const hasSxDx = entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
+
+        const color = testColors[testIdx % testColors.length];
+        const [cr, cg, cb] = color;
+
+        const mainData = entries
+          .map((e) => { const v = getTestMainValue(e.test); return v !== null ? { dateLabel: e.dateLabel, value: v } : null; })
+          .filter((d): d is { dateLabel: string; value: number } => d !== null);
+
+        const tableRows = entries.length;
+        const needed = (mainData.length >= 2 ? 58 : 0) + tableRows * 5.5 + 22;
+        checkPg(needed);
+
+        // Test name banner
+        doc.setFillColor(250, 250, 250); doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.3);
+        doc.rect(M, y, W - 2 * M, 7, "FD");
+        doc.setFillColor(...color); doc.rect(M, y, 2.5, 7, "F");
+        doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...color);
+        doc.text(testName, M + 6, y + 4.8);
+        y += 11;
+
+        // Line chart
+        if (mainData.length >= 2) {
+          const cX = M; const cW = W - 2 * M; const cH = 40; const cY = y;
+          doc.setFillColor(249, 250, 251); doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.3);
+          doc.rect(cX, cY, cW, cH, "FD");
+          const n = mainData.length;
+          const vals = mainData.map((d) => d.value);
+          const minV = Math.min(...vals); const maxV = Math.max(...vals);
+          const range = maxV - minV || 1;
+          const PAD = { top: 6, right: 6, bottom: 9, left: 18 };
+          const plotX = cX + PAD.left; const plotW = cW - PAD.left - PAD.right;
+          const plotY = cY + PAD.top; const plotH = cH - PAD.top - PAD.bottom;
+
+          for (let t = 0; t <= 4; t++) {
+            const tv = minV + (range / 4) * t;
+            const ty = plotY + plotH - (t / 4) * plotH;
+            doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.2);
+            doc.line(plotX, ty, plotX + plotW, ty);
+            doc.setFontSize(5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
+            doc.text(tv.toFixed(1), plotX - 1.5, ty + 1.5, { align: "right" });
+          }
+          const gX = (i: number) => plotX + (n > 1 ? (i / (n - 1)) * plotW : plotW / 2);
+          const gY = (v: number) => plotY + plotH - ((v - minV) / range) * plotH;
+
+          // Area fill
+          const lr = Math.round(cr * 0.12 + 255 * 0.88);
+          const lg = Math.round(cg * 0.12 + 255 * 0.88);
+          const lb = Math.round(cb * 0.12 + 255 * 0.88);
+          doc.setFillColor(lr, lg, lb);
+          const botY2 = plotY + plotH;
+          const segs: [number, number][] = [[0, gY(mainData[0].value) - botY2]];
+          for (let i = 1; i < n; i++) segs.push([gX(i) - gX(i - 1), gY(mainData[i].value) - gY(mainData[i - 1].value)]);
+          segs.push([0, botY2 - gY(mainData[n - 1].value)]);
+          segs.push([gX(0) - gX(n - 1), 0]);
+          (doc as any).lines(segs, gX(0), botY2, [1, 1], "F", true);
+
+          // Average dashed line
+          const avg = vals.reduce((a, b) => a + b, 0) / n;
+          doc.setDrawColor(...gray); doc.setLineWidth(0.4); doc.setLineDashPattern([1.5, 1.5], 0);
+          doc.line(plotX, gY(avg), plotX + plotW, gY(avg));
+          doc.setLineDashPattern([], 0);
+
+          // Main line + dots
+          doc.setDrawColor(...color); doc.setLineWidth(0.9);
+          for (let i = 0; i < n - 1; i++) doc.line(gX(i), gY(mainData[i].value), gX(i + 1), gY(mainData[i + 1].value));
+          doc.setFillColor(...color); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.4);
+          mainData.forEach((d, i) => doc.circle(gX(i), gY(d.value), i === n - 1 ? 1.3 : 1, "FD"));
+
+          // X labels
+          doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
+          const step = n <= 15 ? 1 : Math.ceil(n / 15);
+          mainData.forEach((d, i) => { if (i % step === 0) doc.text(d.dateLabel, gX(i), cY + cH + 4, { align: "center" }); });
+
+          // Y axis label
+          const yLbl = isSprintTempo ? "Tempo (s)" : isGaconIFT ? "Vo2Max (ml/kg/min)" : isDropJump ? "RSI" : isSLDropJump ? "RSI medio" : hasSxDx ? "Media Sx/Dx" : "Valore";
+          doc.setFontSize(4.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...color);
+          doc.text(yLbl, plotX, plotY - 1.5);
+
+          y = cY + cH + 9;
+        }
+
+        // Data table
+        let head: string[];
+        let tableBody: string[][];
+
+        if (isDropJump) {
+          head = ["Data", "Altezza (cm)", "Contatto (ms)", "RSI", "Δ%"];
+          tableBody = entries.map((e, i) => {
+            const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
+            return [e.dateFull, e.test.altezzaSalto || "—", e.test.tempoContatto || "—", e.test.rsi || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
+          });
+        } else if (isSLDropJump) {
+          head = ["Data", "RSI Sx", "RSI Dx", "Asimmetria %", "Δ%"];
+          tableBody = entries.map((e, i) => {
+            const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
+            const asim = _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "");
+            return [e.dateFull, e.test.rsiSx || "—", e.test.rsiDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
+          });
+        } else if (isSprintTempo) {
+          head = ["Data", "Tempo (s)", "Δ%"];
+          tableBody = entries.map((e, i) => {
+            const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
+            return [e.dateFull, e.test.tempo || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
+          });
+        } else if (isGaconIFT) {
+          head = ["Data", "Livello", "Vo2Max (ml/kg/min)", "VAM (km/h)", "Δ%"];
+          tableBody = entries.map((e, i) => {
+            const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
+            return [e.dateFull, e.test.livello || "—", e.test.vo2max || "—", e.test.vam || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
+          });
+        } else if (hasSxDx) {
+          head = ["Data", `Arto Sx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, `Arto Dx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "Asimmetria %", "Δ%"];
+          tableBody = entries.map((e, i) => {
+            const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
+            const asim = _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
+            return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
+          });
+        } else {
+          head = ["Data", `Risultato${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "Δ%"];
+          tableBody = entries.map((e, i) => {
+            const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
+            return [e.dateFull, e.test.risultato || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
+          });
+        }
+
+        const deltaCol = head.length - 1;
+        autoTable(doc, {
+          startY: y,
+          head: [head],
+          body: tableBody,
+          headStyles: { fillColor: color, textColor: [255, 255, 255] as [number, number, number], fontSize: 6.5, halign: "center" as const, valign: "middle" as const },
+          bodyStyles: { fontSize: 7, cellPadding: 2, halign: "center" as const, valign: "middle" as const },
+          alternateRowStyles: { fillColor: [250, 250, 250] as [number, number, number] },
+          margin: { left: M, right: M },
+          columnStyles: { 0: { halign: "left" as const, cellWidth: 26 } },
+          didParseCell: (data: any) => {
+            if (data.section === "body" && data.column.index === deltaCol) {
+              const v = parseFloat(String(data.cell.raw));
+              if (!isNaN(v)) {
+                const good = isSprintTempo ? v < 0 : v > 0;
+                data.cell.styles.textColor = good ? [5, 150, 105] : [220, 38, 38];
+                data.cell.styles.fontStyle = "bold";
+              }
+            }
+          },
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      });
+    }
   }
 
   addFooter();
@@ -743,10 +956,39 @@ function infortunitNelPeriodo(a: Atleta, mesi: { anno: number; mese: number }[])
   return result;
 }
 
+function Sparkline({ values, invert = false }: { values: number[]; invert?: boolean }) {
+  if (values.length < 2) return null;
+  const plotVals = invert ? values.map(v => -v) : values;
+  const min = Math.min(...plotVals), max = Math.max(...plotVals);
+  const range = max - min || 1;
+  const W = 240, H = 52, pX = 6, pY = 6;
+  const iW = W - pX * 2, iH = H - pY * 2;
+  const pts: [number, number][] = plotVals.map((v, i) => [pX + (i / (plotVals.length - 1)) * iW, pY + iH - ((v - min) / range) * iH]);
+  const line = "M " + pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" L ");
+  const area = `${line} L ${(pX + iW).toFixed(1)},${(pY + iH).toFixed(1)} L ${pX},${(pY + iH).toFixed(1)} Z`;
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+      <defs>
+        <linearGradient id="sk-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#C8102E" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#C8102E" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#sk-grad)" />
+      <path d={line} fill="none" stroke="#C8102E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      {pts.map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={i === pts.length - 1 ? 3.5 : 2.5}
+          fill="#C8102E" stroke="white" strokeWidth={i === pts.length - 1 ? 1.5 : 0} />
+      ))}
+    </svg>
+  );
+}
+
 export default function ProgressiPage() {
   const [atleti, setAtleti] = useState<Atleta[]>([]);
   const [programmi, setProgrammi] = useState<Programma[]>([]);
   const [esportando, setEsportando] = useState<string | null>(null);
+  const [expandedTestsId, setExpandedTestsId] = useState<string | null>(null);
   const [esportandoReport, setEsportandoReport] = useState<"excel" | "pdf" | null>(null);
   const [pageTab, setPageTab] = useState<PageTab>("progressi");
 
@@ -931,6 +1173,156 @@ export default function ProgressiPage() {
                   {atleta.infortunio && (
                     <p className="text-xs text-gray-400 mt-3">{atleta.infortunio}</p>
                   )}
+
+                  {/* ── Andamento test fisiometrici ── */}
+                  {(() => {
+                    const atletaProgs = programmi
+                      .filter((p) => p.atletaId === atleta.id && !p.assente && !p.riposo && (p.tests?.length ?? 0) > 0)
+                      .sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""));
+                    const testsByName: Record<string, Array<{ data: string; test: TestFisiometrico }>> = {};
+                    for (const prog of atletaProgs) {
+                      for (const t of prog.tests ?? []) {
+                        if (!t.nome) continue;
+                        if (!testsByName[t.nome]) testsByName[t.nome] = [];
+                        testsByName[t.nome].push({ data: prog.data ?? "", test: t });
+                      }
+                    }
+                    const testNames = Object.keys(testsByName);
+                    if (!testNames.length) return null;
+                    const isOpen = expandedTestsId === atleta.id;
+                    const fmtD = (d: string) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
+                    return (
+                      <div className="mt-4 border-t border-gray-100 pt-4">
+                        <button onClick={() => setExpandedTestsId(isOpen ? null : atleta.id)}
+                          className="flex items-center gap-2 w-full text-left">
+                          <FlaskConical className="w-4 h-4 text-[#C8102E] shrink-0" />
+                          <span className="text-sm font-semibold text-gray-700">Andamento test</span>
+                          <span className="text-xs text-gray-400 ml-1">({testNames.length} test)</span>
+                          <ChevronDown className={`w-4 h-4 text-gray-400 ml-auto transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                        </button>
+
+                        {isOpen && (
+                          <div className="mt-4 space-y-5">
+                            {testNames.map((testName) => {
+                              const entries = testsByName[testName];
+                              const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(testName);
+                              const isGaconIFT = testName === "Gacon" || testName === "IFT 30-15";
+                              const isDropJump = testName === "Drop Jump";
+                              const isSLDropJump = testName === "SL Drop Jump";
+                              const hasSxDx = entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
+                              const chartVals = entries.map((e) => getTestMainValue(e.test)).filter((v): v is number => v !== null);
+                              return (
+                                <div key={testName} className="bg-gray-50 rounded-xl p-4">
+                                  <h4 className="text-sm font-bold text-gray-800 mb-3">{testName}</h4>
+                                  {chartVals.length >= 2 && (
+                                    <div className="mb-3 flex items-center gap-4">
+                                      <Sparkline values={chartVals} invert={isSprintTempo} />
+                                      <div className="text-xs text-gray-400 space-y-1">
+                                        {(() => {
+                                          const first = chartVals[0], last = chartVals[chartVals.length - 1];
+                                          const pct = first > 0 ? ((last - first) / first) * 100 : null;
+                                          const isGood = pct !== null && (isSprintTempo ? pct < 0 : pct > 0);
+                                          return pct !== null ? (
+                                            <span className={`text-sm font-bold ${isGood ? "text-green-600" : Math.abs(pct) < 1 ? "text-gray-400" : "text-orange-500"}`}>
+                                              {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%
+                                            </span>
+                                          ) : null;
+                                        })()}
+                                        <p className="text-gray-400">{entries.length} rilevazioni</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full text-xs">
+                                      <thead>
+                                        <tr className="text-gray-400 border-b border-gray-200">
+                                          <th className="text-left pb-2 pr-4 font-semibold">Data</th>
+                                          {isSprintTempo && <th className="text-right pb-2 pr-4 font-semibold">Tempo (s)</th>}
+                                          {isGaconIFT && <>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Livello</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Vo2Max</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">VAM (km/h)</th>
+                                          </>}
+                                          {isDropJump && <>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Alt. (cm)</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Contatto (ms)</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">RSI</th>
+                                          </>}
+                                          {isSLDropJump && <>
+                                            <th className="text-right pb-2 pr-4 font-semibold">RSI Sx</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">RSI Dx</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Asim%</th>
+                                          </>}
+                                          {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && hasSxDx && <>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Sx</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Dx</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Asim%</th>
+                                          </>}
+                                          {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !hasSxDx && (
+                                            <th className="text-right pb-2 pr-4 font-semibold">Risultato</th>
+                                          )}
+                                          <th className="text-right pb-2 font-semibold">Δ</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {entries.map((e, i) => {
+                                          const prev = i > 0 ? entries[i - 1].test : null;
+                                          const delta = _calcolaDelta(e.test, prev);
+                                          const asim = isSLDropJump
+                                            ? _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "")
+                                            : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
+                                          const isLast = i === entries.length - 1;
+                                          const isGoodDelta = delta !== null && (isSprintTempo ? delta < 0 : delta > 0);
+                                          return (
+                                            <tr key={i} className={`border-b border-gray-100 ${isLast ? "font-semibold" : ""}`}>
+                                              <td className="py-2 pr-4 text-gray-600">{fmtD(e.data)}</td>
+                                              {isSprintTempo && (
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.tempo || "—"}</td>
+                                              )}
+                                              {isGaconIFT && <>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.livello || "—"}</td>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.vo2max || "—"}</td>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.vam || "—"}</td>
+                                              </>}
+                                              {isDropJump && <>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.altezzaSalto || "—"}</td>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.tempoContatto || "—"}</td>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.rsi || "—"}</td>
+                                              </>}
+                                              {isSLDropJump && <>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.rsiSx || "—"}</td>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.rsiDx || "—"}</td>
+                                                <td className={`py-2 pr-4 text-right font-mono ${asim !== null ? asim > 10 ? "text-red-600" : "text-green-600" : ""}`}>
+                                                  {asim !== null ? `${asim.toFixed(1)}%` : "—"}
+                                                </td>
+                                              </>}
+                                              {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && hasSxDx && <>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.risultatoSx || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.risultatoDx || "—"}{e.test.unita && e.test.risultatoDx ? ` ${e.test.unita}` : ""}</td>
+                                                <td className={`py-2 pr-4 text-right font-mono ${asim !== null ? asim > 10 ? "text-red-600" : "text-green-600" : ""}`}>
+                                                  {asim !== null ? `${asim.toFixed(1)}%` : "—"}
+                                                </td>
+                                              </>}
+                                              {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !hasSxDx && (
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.risultato || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
+                                              )}
+                                              <td className={`py-2 text-right font-mono font-semibold ${delta === null ? "text-gray-300" : isGoodDelta ? "text-green-600" : delta === 0 ? "text-gray-400" : "text-red-500"}`}>
+                                                {delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}
