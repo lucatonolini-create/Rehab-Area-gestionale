@@ -999,7 +999,7 @@ export default function ProgressiPage() {
                         <button onClick={() => setExpandedTestsId(isOpen ? null : atleta.id)}
                           className="flex items-center gap-2 w-full text-left">
                           <FlaskConical className="w-4 h-4 text-[#C8102E] shrink-0" />
-                          <span className="text-sm font-semibold text-gray-700">Andamento test fisiometrici</span>
+                          <span className="text-sm font-semibold text-gray-700">Andamento test</span>
                           <span className="text-xs text-gray-400 ml-1">({testNames.length} test)</span>
                           <ChevronDown className={`w-4 h-4 text-gray-400 ml-auto transition-transform ${isOpen ? "rotate-180" : ""}`} />
                         </button>
