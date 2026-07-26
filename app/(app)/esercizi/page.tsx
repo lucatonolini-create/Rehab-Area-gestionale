@@ -1533,6 +1533,11 @@ export default function EserciziPage() {
                         const isDropJump   = t.nome === "Drop Jump";
                         const isSLDropJump = t.nome === "SL Drop Jump";
                         const isPersonalizzato = t.nome === "Personalizzato";
+                        const isGaconIFT   = t.nome === "Gacon" || t.nome === "IFT 30-15";
+                        const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(t.nome);
+                        const isSqueeze    = t.nome === "Squeeze";
+                        const isJurdan     = t.nome === "Jurdan";
+                        const isDefaultDxSx = !isDropJump && !isSLDropJump && !isPersonalizzato && !isGaconIFT && !isSprintTempo && !isSqueeze;
                         const asim = isSLDropJump
                           ? calcolaAsimmetria(t.rsiSx ?? "", t.rsiDx ?? "")
                           : calcolaAsimmetria(t.risultatoSx, t.risultatoDx);
@@ -1623,7 +1628,44 @@ export default function EserciziPage() {
                               </div>
                             )}
 
-                            {!isDropJump && !isSLDropJump && !isPersonalizzato && (
+                            {isGaconIFT && (
+                              <div className="grid grid-cols-3 gap-2">
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">Livello</p>
+                                  <input value={t.livello ?? ""} onChange={(e) => aggiornaTest(i, "livello", e.target.value)} placeholder="es. 18.5" className={inp} />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">Vo2Max (ml/kg/min)</p>
+                                  <input value={t.vo2max ?? ""} onChange={(e) => aggiornaTest(i, "vo2max", e.target.value)} placeholder="es. 52.3" className={inp} />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">VAM (km/h)</p>
+                                  <input value={t.vam ?? ""} onChange={(e) => aggiornaTest(i, "vam", e.target.value)} placeholder="es. 17.0" className={inp} />
+                                </div>
+                              </div>
+                            )}
+
+                            {isSprintTempo && (
+                              <div className="max-w-[200px]">
+                                <p className="text-xs text-gray-500 mb-1">Tempo (s)</p>
+                                <input value={t.tempo ?? ""} onChange={(e) => aggiornaTest(i, "tempo", e.target.value)} placeholder="es. 1.73" className={inp} />
+                              </div>
+                            )}
+
+                            {isSqueeze && (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">Risultato</p>
+                                  <input value={t.risultato} onChange={(e) => aggiornaTest(i, "risultato", e.target.value)} placeholder="es. 280" className={inp} />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">Unità</p>
+                                  <input value={t.unita} onChange={(e) => aggiornaTest(i, "unita", e.target.value)} placeholder="N / kg" className={inp} />
+                                </div>
+                              </div>
+                            )}
+
+                            {isDefaultDxSx && (
                               <div className="space-y-2">
                                 <div className="grid grid-cols-3 gap-2">
                                   <div>
@@ -1642,7 +1684,10 @@ export default function EserciziPage() {
                                 {asim !== null && formSup !== null && (
                                   <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold ${asim > 10 ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
                                     {asim > 10 && <AlertTriangle className="w-3.5 h-3.5 shrink-0" />}
-                                    {formSup} superiore del {asim.toFixed(1)}%{asim > 10 ? " — attenzione!" : " — nella norma"}
+                                    {formSup} superiore del {asim.toFixed(1)}%
+                                    {asim > 10
+                                      ? (isJurdan ? " — rischio infortuni muscolari!" : " — attenzione!")
+                                      : " — nella norma"}
                                   </div>
                                 )}
                               </div>

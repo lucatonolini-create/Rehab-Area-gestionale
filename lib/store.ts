@@ -275,6 +275,8 @@ export interface EsercizioCampo {
 }
 
 export const TESTS_PREDEFINITI = [
+  "10x100m",
+  "505 Agility Test",
   "6m Timed Hop Test",
   "Broad Jump",
   "CMJ braccia libere",
@@ -285,11 +287,17 @@ export const TESTS_PREDEFINITI = [
   "FMS",
   "Forza hamstring (dinamometro)",
   "Forza quadricipite (dinamometro)",
+  "Gacon",
   "Heel Rise Test",
+  "IFT 30-15",
+  "Illinois Agility Test",
   "Isokinetic 60°/s",
   "Isokinetic 180°/s",
   "Isokinetic 240°/s",
+  "Jurdan",
   "Limb Symmetry Index",
+  "Lunge test",
+  "McCall",
   "Rapporto H/Q",
   "ROM anca – flessione",
   "ROM caviglia – dorsiflessione",
@@ -302,7 +310,12 @@ export const TESTS_PREDEFINITI = [
   "Single Leg Squat",
   "SL CMJ",
   "SL Drop Jump",
+  "SL Squat",
+  "Sprint 10m",
+  "Sprint 20m",
+  "Sprint 30m",
   "Squat Jump",
+  "Squeeze",
   "Triple Hop Test",
   "Y-Balance Test – Anteriore",
   "Y-Balance Test – Posterolaterale",
@@ -329,6 +342,12 @@ export interface TestFisiometrico {
   tempoContattoDx?: string;
   rsiSx?: string;
   rsiDx?: string;
+  // Gacon / IFT 30-15
+  livello?: string;
+  vo2max?: string;
+  vam?: string;
+  // Sprint / 10x100m
+  tempo?: string;
 }
 
 export interface Carico {
