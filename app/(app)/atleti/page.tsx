@@ -6,14 +6,12 @@ import {
   loadAtleti, loadProgrammi, upsertAtleta, deleteAtleta, uid, nd,
   subscribeToAtleti, subscribeToProgrammi, subscribeToIntakeInsert,
   CATEGORIE, TIPI_INFORTUNIO, calcolaProgressoAuto,
-  TIPI_REFERTO, ESITI_REFERTO,
   loadDettaglioSituazionale, upsertDettaglioSituazionale, formToDettaglio,
   type Atleta, type Stato, type InfortunioStorico, type Programma, type QuestionarioKinesiofobia,
-  type RefertoClinico, type TipoReferto, type EsitoReferto, type TestFisiometrico,
+  type TestFisiometrico,
   type DettaglioSituazionaleData, type DettaglioSituazionaleForm,
 } from "@/lib/store";
 import AtletaModal from "@/components/AtletaModal";
-import CartellaClinaca from "@/components/CartellaClinaca";
 
 const MAPPING_KEY = "perf_athlete_mapping";
 function getPerfId(rehabId: string): string | null {
@@ -509,49 +507,6 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(...gray);
       doc.text("Nessun dettaglio situazionale inserito.", M, y); y += 10;
     }
-  }
-
-  // ── Referti clinici ───────────────────────────────────────────────────────
-  const referti = [...(atleta.refertiClinici ?? [])].sort((a, b) => b.data.localeCompare(a.data));
-  checkPage(20);
-  y = secTitle("Referti clinici", y);
-  if (referti.length === 0) {
-    doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(...gray);
-    doc.text("Nessun referto registrato.", M, y); y += 10;
-  } else {
-    const esitoColor = (esito: string): [number, number, number] => {
-      if (esito === "Negativo") return [34, 139, 34];
-      if (esito === "In miglioramento") return [180, 120, 0];
-      return [180, 30, 30]; // Positivo
-    };
-    autoTable(doc, {
-      startY: y,
-      head: [["Data", "Tipo esame", "Esito", "Note"]],
-      body: referti.map((r) => [
-        new Date(r.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" }),
-        r.tipo,
-        r.esito,
-        r.note || "—",
-      ]),
-      headStyles: hS(dark),
-      bodyStyles: { ...bS, fontSize: 8 },
-      alternateRowStyles: aS,
-      margin: { left: M, right: M },
-      columnStyles: {
-        0: { cellWidth: 26 },
-        1: { cellWidth: 40 },
-        2: { cellWidth: 36 },
-        3: { cellWidth: "auto" as any },
-      },
-      didDrawCell: (data: any) => {
-        if (data.section === "body" && data.column.index === 2) {
-          const esito = referti[data.row.index]?.esito ?? "";
-          data.cell.styles.textColor = esitoColor(esito);
-          data.cell.styles.fontStyle = "bold";
-        }
-      },
-    });
-    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // ── Storico infortuni ──────────────────────────────────────────────────────
@@ -1143,9 +1098,7 @@ export default function AtletiPage() {
   const [editStorico, setEditStorico] = useState<{ inf: InfortunioStorico; idx: number } | null>(null);
   const [editStoricoForm, setEditStoricoForm] = useState<InfortunioStorico | null>(null);
   const [programmiAtleta, setProgrammiAtleta] = useState<Programma[]>([]);
-  const [nuovoReferto, setNuovoReferto] = useState<{ data: string; tipo: TipoReferto | ""; esito: EsitoReferto | ""; note: string } | null>(null);
-  const [editingRefertoId, setEditingRefertoId] = useState<string | null>(null);
-  const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
+const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [nuovaDataRTS, setNuovaDataRTS] = useState(new Date().toISOString().split("T")[0]);
   const [nuovoPunteggioTSK, setNuovoPunteggioTSK] = useState("");
   const [nuovoPunteggioAFAQ, setNuovoPunteggioAFAQ] = useState("");
@@ -1276,49 +1229,6 @@ export default function AtletiPage() {
       progresso: 0,
       storicoInfortuni: nuovoStorico,
     };
-    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
-    setSelected(aggiornato);
-    await upsertAtleta(aggiornato);
-  };
-
-  const aggiungiReferto = async () => {
-    if (!selected || !nuovoReferto) return;
-    if (!nuovoReferto.tipo || !nuovoReferto.esito) return;
-    const tipo = nuovoReferto.tipo as TipoReferto;
-    const esito = nuovoReferto.esito as EsitoReferto;
-    const refertiEsistenti = selected.refertiClinici ?? [];
-    let nuoviReferti: RefertoClinico[];
-    if (editingRefertoId) {
-      nuoviReferti = refertiEsistenti.map((r) =>
-        r.id === editingRefertoId
-          ? { ...r, data: nuovoReferto.data, tipo, esito, note: nuovoReferto.note || undefined }
-          : r
-      );
-    } else {
-      nuoviReferti = [...refertiEsistenti, {
-        id: crypto.randomUUID(),
-        data: nuovoReferto.data,
-        tipo,
-        esito,
-        note: nuovoReferto.note || undefined,
-      }];
-    }
-    const aggiornato: Atleta = { ...selected, refertiClinici: nuoviReferti };
-    aggiornato.progresso = calcolaProgressoAuto(aggiornato);
-    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
-    setSelected(aggiornato);
-    setNuovoReferto(null);
-    setEditingRefertoId(null);
-    await upsertAtleta(aggiornato);
-  };
-
-  const rimuoviReferto = async (refertoId: string) => {
-    if (!selected) return;
-    const aggiornato: Atleta = {
-      ...selected,
-      refertiClinici: (selected.refertiClinici ?? []).filter((r) => r.id !== refertoId),
-    };
-    aggiornato.progresso = calcolaProgressoAuto(aggiornato);
     setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
     setSelected(aggiornato);
     await upsertAtleta(aggiornato);
@@ -1614,131 +1524,6 @@ export default function AtletiPage() {
                   </div>
                 )}
 
-                {/* Referti clinici */}
-                {selected.stato === "Infortunato" && (
-                  <div className="pt-2 border-t border-gray-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Referti clinici</p>
-                      {!nuovoReferto && (
-                        <button
-                          onClick={() => setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" })}
-                          className="text-xs text-[#C8102E] font-medium hover:underline flex items-center gap-1">
-                          <Plus className="w-3 h-3" /> Aggiungi
-                        </button>
-                      )}
-                    </div>
-
-                    {(selected.refertiClinici ?? []).length === 0 && !nuovoReferto && (
-                      <p className="text-xs text-gray-400 italic text-center py-2">Nessun referto registrato</p>
-                    )}
-
-                    <div className="space-y-2">
-                      {[...(selected.refertiClinici ?? [])].sort((a, b) => b.data.localeCompare(a.data)).map((r) => (
-                        <div key={r.id} className="bg-gray-50 rounded-xl p-2.5 flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                              <span className="text-xs font-semibold text-gray-700">{r.tipo}</span>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                                r.esito === "Positivo" ? "bg-red-100 text-red-700"
-                                : r.esito === "In miglioramento" ? "bg-yellow-100 text-yellow-700"
-                                : "bg-green-100 text-green-700"
-                              }`}>{r.esito}</span>
-                            </div>
-                            <p className="text-[10px] text-gray-400">{new Date(r.data + "T12:00").toLocaleDateString("it-IT")}</p>
-                            {r.note && <p className="text-xs text-gray-500 mt-0.5">{r.note}</p>}
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              onClick={() => {
-                                setEditingRefertoId(r.id);
-                                setNuovoReferto({ data: r.data, tipo: r.tipo, esito: r.esito, note: r.note ?? "" });
-                              }}
-                              className="text-gray-300 hover:text-[#C8102E] transition-colors">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => rimuoviReferto(r.id)} className="text-gray-300 hover:text-red-400 transition-colors">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {nuovoReferto && (
-                      <div className="bg-gray-50 border border-gray-200 rounded-xl p-3.5 space-y-3 mt-2 overflow-hidden">
-                        <div>
-                          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Data</p>
-                          {(() => {
-                            const [yy, mm, dd] = (nuovoReferto.data || "").split("-");
-                            const upd = (y: string, m: string, d: string) =>
-                              setNuovoReferto((r) => r && ({ ...r, data: `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}` }));
-                            const MESI_IT = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
-                            const anniOpts = Array.from({ length: 4 }, (_, i) => String(new Date().getFullYear() - 2 + i));
-                            const sel = "w-full text-sm border border-gray-200 rounded-lg px-2 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]/30 focus:border-[#C8102E]";
-                            return (
-                              <div className="grid grid-cols-3 gap-1.5">
-                                <div>
-                                  <p className="text-[9px] text-gray-400 mb-0.5">Giorno</p>
-                                  <select value={dd} onChange={(e) => upd(yy, mm, e.target.value)} className={sel}>
-                                    {Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2,"0")).map((g) => <option key={g}>{g}</option>)}
-                                  </select>
-                                </div>
-                                <div>
-                                  <p className="text-[9px] text-gray-400 mb-0.5">Mese</p>
-                                  <select value={mm} onChange={(e) => upd(yy, e.target.value, dd)} className={sel}>
-                                    {MESI_IT.map((nm, i) => <option key={nm} value={String(i + 1).padStart(2,"0")}>{nm}</option>)}
-                                  </select>
-                                </div>
-                                <div>
-                                  <p className="text-[9px] text-gray-400 mb-0.5">Anno</p>
-                                  <select value={yy} onChange={(e) => upd(e.target.value, mm, dd)} className={sel}>
-                                    {anniOpts.map((a) => <option key={a}>{a}</option>)}
-                                  </select>
-                                </div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Tipo esame</p>
-                          <select value={nuovoReferto.tipo}
-                            onChange={(e) => setNuovoReferto((r) => r && ({ ...r, tipo: e.target.value as TipoReferto }))}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]/30 focus:border-[#C8102E]">
-                            <option value="" disabled>Seleziona tipo…</option>
-                            {TIPI_REFERTO.map((t) => <option key={t}>{t}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Esito</p>
-                          <select value={nuovoReferto.esito}
-                            onChange={(e) => setNuovoReferto((r) => r && ({ ...r, esito: e.target.value as EsitoReferto }))}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]/30 focus:border-[#C8102E]">
-                            <option value="" disabled>Seleziona esito…</option>
-                            {ESITI_REFERTO.map((e) => <option key={e}>{e}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Note <span className="font-normal normal-case text-gray-400">(opzionale)</span></p>
-                          <textarea value={nuovoReferto.note}
-                            onChange={(e) => setNuovoReferto((r) => r && ({ ...r, note: e.target.value }))}
-                            placeholder="Dettagli referto, osservazioni cliniche..."
-                            rows={3}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white resize-none focus:outline-none focus:ring-2 focus:ring-[#C8102E]/30 focus:border-[#C8102E]" />
-                        </div>
-                        <div className="flex gap-2 pt-0.5">
-                          <button onClick={() => { setNuovoReferto(null); setEditingRefertoId(null); }}
-                            className="flex-1 text-sm border border-gray-200 rounded-lg py-2 text-gray-500 bg-white font-medium hover:bg-gray-100 transition-colors">
-                            Annulla
-                          </button>
-                          <button onClick={aggiungiReferto}
-                            className="flex-1 text-sm bg-[#C8102E] text-white rounded-lg py-2 font-semibold hover:bg-red-700 transition-colors">
-                            {editingRefertoId ? "Salva" : "Aggiungi"}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {(selected.telefono || selected.email) && (
                   <div className="bg-gray-50 rounded-xl p-3 space-y-1.5">
@@ -1933,13 +1718,6 @@ export default function AtletiPage() {
                     </div>
                   );
                 })()}
-                <div className="border-t border-gray-100 pt-4">
-                  <CartellaClinaca
-                    atletaId={selected.id}
-                    refertiClinici={selected.refertiClinici ?? []}
-                    onVaiADati={() => setTab("dati")}
-                  />
-                </div>
               </div>
             ) : (
               /* ── Storico infortuni ── */
