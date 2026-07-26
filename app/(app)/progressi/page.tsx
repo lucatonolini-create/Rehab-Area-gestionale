@@ -279,7 +279,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
 
         const testLines = (prog.tests ?? []).map((t) => {
           const isSL = t.nome === "SL Drop Jump";
-          const val = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : ""].filter(Boolean).join(" / ");
+          const val = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : "", t.tempo ? `Tempo: ${t.tempo}s` : "", t.livello ? `Liv: ${t.livello}` : "", t.vo2max ? `Vo2Max: ${t.vo2max}` : "", t.vam ? `VAM: ${t.vam}` : ""].filter(Boolean).join(" / ");
           const extras: string[] = [];
           const sxV = isSL ? (t.rsiSx ?? "") : (t.risultatoSx ?? "");
           const dxV = isSL ? (t.rsiDx ?? "") : (t.risultatoDx ?? "");

@@ -218,7 +218,7 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
       const esercizi = prog.esercizi ?? [];
 
       const testLines = (prog.tests ?? []).map((t) => {
-        const vals = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : ""].filter(Boolean);
+        const vals = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : "", t.tempo ? `Tempo: ${t.tempo}s` : "", t.livello ? `Liv: ${t.livello}` : "", t.vo2max ? `Vo2Max: ${t.vo2max}` : "", t.vam ? `VAM: ${t.vam}` : ""].filter(Boolean);
         return `${t.nome}${vals.length ? `: ${vals.join(" / ")}` : ""}`;
       });
       const tests = testLines.join("\n") || "—";
@@ -420,7 +420,7 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
         const rpe = prog.carico?.rpe ? `${prog.carico.rpe}/10` : "—";
         const esercizi = prog.esercizi ?? [];
         const testLines = (prog.tests ?? []).map((t) => {
-          const vals = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : ""].filter(Boolean);
+          const vals = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : "", t.tempo ? `Tempo: ${t.tempo}s` : "", t.livello ? `Liv: ${t.livello}` : "", t.vo2max ? `Vo2Max: ${t.vo2max}` : "", t.vam ? `VAM: ${t.vam}` : ""].filter(Boolean);
           return `${t.nome}${vals.length ? `: ${vals.join(" / ")}` : ""}`;
         });
         const tests = testLines.join("\n") || "—";
@@ -1052,6 +1052,14 @@ export default function EserciziPage() {
                                     ) : t.risultato ? (
                                       <p className="text-xs text-gray-600 mt-0.5">{t.risultato} {t.unita}</p>
                                     ) : null}
+                                    {t.tempo && <p className="text-xs text-gray-600 mt-0.5">Tempo: <strong>{t.tempo}s</strong></p>}
+                                    {(t.livello || t.vo2max || t.vam) && (
+                                      <div className="flex gap-4 mt-1.5 text-xs text-gray-600">
+                                        {t.livello && <span>Livello: <strong>{t.livello}</strong></span>}
+                                        {t.vo2max && <span>Vo2Max: <strong>{t.vo2max} ml/kg/min</strong></span>}
+                                        {t.vam && <span>VAM: <strong>{t.vam} km/h</strong></span>}
+                                      </div>
+                                    )}
                                     {t.note && <p className="text-xs text-gray-400 mt-1 italic">{t.note}</p>}
                                   </div>
                                 );
