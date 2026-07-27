@@ -631,6 +631,20 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
 
   const today = new Date().toISOString().slice(0, 10);
 
+  const getTestMainValue = (t: TestFisiometrico): number | null => {
+    const avg = (...vals: (string | undefined)[]): number | null => {
+      const nums = vals.map(v => parseFloat(v ?? "")).filter(v => !isNaN(v) && v > 0);
+      return nums.length ? nums.reduce((s, v) => s + v, 0) / nums.length : null;
+    };
+    if (t.rsiSx || t.rsiDx) return avg(t.rsiSx, t.rsiDx);
+    if (t.rsi) { const v = parseFloat(t.rsi); return isNaN(v) ? null : v; }
+    if (t.vo2max) { const v = parseFloat(t.vo2max); return isNaN(v) ? null : v; }
+    if (t.tempo) { const v = parseFloat(t.tempo); return isNaN(v) ? null : v; }
+    if (t.risultatoSx || t.risultatoDx) return avg(t.risultatoSx, t.risultatoDx);
+    if (t.risultato) { const v = parseFloat(t.risultato); return isNaN(v) ? null : v; }
+    return null;
+  };
+
   const allInjuries: { id: string; diagnosi: string; tipo?: string; inizio: string; fine: string | null; attivo: boolean }[] = [
     ...(atleta.storicoInfortuni ?? []).map((inf) => ({
       id: inf.id,
@@ -711,6 +725,37 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       checkPage(20, sub);
       y = secTitle(`Sessioni di lavoro — ${injProgs.filter(isSessionePDF).length} sessioni`, y);
       renderWeeklyTable(injProgs, sub);
+
+      // ── Grafici Test Fisiometrici ─────────────────────────────────────────
+      {
+        const injTestMap = new Map<string, { dateLabel: string; value: number }[]>();
+        for (const p of injProgs) {
+          if (p.assente || p.riposo) continue;
+          for (const t of (p.tests ?? [])) {
+            if (t.nome === "Gacon" || t.nome === "IFT 30-15") continue;
+            const v = getTestMainValue(t);
+            if (v === null) continue;
+            const dateLabel = p.data ? new Date(p.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) : "—";
+            if (!injTestMap.has(t.nome)) injTestMap.set(t.nome, []);
+            injTestMap.get(t.nome)!.push({ dateLabel, value: v });
+          }
+        }
+        const testCharts = Array.from(injTestMap.entries()).filter(([, d]) => d.length >= 2);
+        if (testCharts.length > 0) {
+          checkPage(20, sub);
+          y = secTitle("Andamento Test Fisiometrici", y);
+          const testColors2: [number, number, number][] = [
+            [200, 16, 46], [37, 99, 235], [5, 150, 105], [217, 119, 6],
+            [124, 58, 237], [236, 72, 153], [14, 116, 144], [101, 163, 13],
+          ];
+          let ci = 0;
+          for (const [nome, data] of testCharts) {
+            checkPage(62, sub);
+            drawPerfChart(nome, testColors2[ci % testColors2.length], data);
+            ci++;
+          }
+        }
+      }
 
       // ── Analisi Carico e Performance ──────────────────────────────────────
       const caricoSessions: CaricoSession[] = injProgs.filter(isSessionePDF).map((p) => {
@@ -954,171 +999,6 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     y = HDR + 8;
     y = secTitle(`Sessioni non associate a nessun infortunio — ${unassigned.filter(isSessionePDF).length} sessioni`, y);
     renderWeeklyTable(unassigned, `${nd(atleta)}  ·  Sessioni non associate`);
-  }
-
-  // ── Andamento Test Fisiometrici ──────────────────────────────────────────
-  const getTestMainValue = (t: TestFisiometrico): number | null => {
-    const avg = (...vals: (string | undefined)[]): number | null => {
-      const nums = vals.map(v => parseFloat(v ?? "")).filter(v => !isNaN(v) && v > 0);
-      return nums.length ? nums.reduce((s, v) => s + v, 0) / nums.length : null;
-    };
-    if (t.rsiSx || t.rsiDx) return avg(t.rsiSx, t.rsiDx);
-    if (t.rsi) { const v = parseFloat(t.rsi); return isNaN(v) ? null : v; }
-    if (t.vo2max) { const v = parseFloat(t.vo2max); return isNaN(v) ? null : v; }
-    if (t.tempo) { const v = parseFloat(t.tempo); return isNaN(v) ? null : v; }
-    if (t.risultatoSx || t.risultatoDx) return avg(t.risultatoSx, t.risultatoDx);
-    if (t.risultato) { const v = parseFloat(t.risultato); return isNaN(v) ? null : v; }
-    return null;
-  };
-
-  const allTestSessions = programmi
-    .filter(p => !p.assente && !p.riposo && p.tests?.length)
-    .sort((a, b) => a.data.localeCompare(b.data));
-
-  const testMap: Map<string, { data: string; t: TestFisiometrico }[]> = new Map();
-  for (const prog of allTestSessions) {
-    for (const t of prog.tests ?? []) {
-      if (!testMap.has(t.nome)) testMap.set(t.nome, []);
-      testMap.get(t.nome)!.push({ data: prog.data, t });
-    }
-  }
-
-  if (testMap.size > 0) {
-    doc.addPage();
-    addHeader(`${nd(atleta)}  ·  Andamento Test`);
-    y = HDR + 8;
-    y = secTitle("Andamento Test Fisiometrici", y);
-
-    const testColors: [number, number, number][] = [
-      [200, 16, 46], [37, 99, 235], [5, 150, 105], [217, 119, 6],
-      [124, 58, 237], [236, 72, 153], [14, 116, 144], [101, 163, 13],
-    ];
-    let colorIdx = 0;
-
-    const fmtShort = (d: string) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
-
-    const checkPg = (needed: number) => {
-      if (y + needed > 280) { doc.addPage(); addHeader(`${nd(atleta)}  ·  Andamento Test`); y = HDR + 8; }
-    };
-
-    for (const [nome, entries] of Array.from(testMap.entries())) {
-      const color = testColors[colorIdx % testColors.length];
-      colorIdx++;
-
-      checkPg(14);
-      const [cr, cg, cb] = color;
-      doc.setFillColor(cr, cg, cb);
-      doc.rect(M, y - 4, W - M * 2, 8, "F");
-      doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(255, 255, 255);
-      doc.text(nome.toUpperCase(), M + 4, y + 0.8);
-      y += 11;
-
-      const chartData = entries
-        .map(({ data, t }: { data: string; t: TestFisiometrico }) => ({ dateLabel: fmtShort(data), value: getTestMainValue(t) }))
-        .filter((d): d is { dateLabel: string; value: number } => d.value !== null);
-
-      if (chartData.length >= 2) {
-        checkPg(60);
-        drawPerfChart(nome, color, chartData);
-      }
-
-      // Build type-specific table
-      const isDropJump = nome === "Drop Jump";
-      const isSLDropJump = nome === "SL Drop Jump";
-      const isGaconIFT = nome === "Gacon" || nome === "IFT 30-15";
-      const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(nome);
-      const isJurdan = nome === "Jurdan";
-      const hasDxSx = !isDropJump && !isSLDropJump && !isGaconIFT && !isSprintTempo && !isJurdan && entries.some((e: { data: string; t: TestFisiometrico }) => e.t.risultatoSx || e.t.risultatoDx);
-
-      let head: string[];
-      let rows: any[][];
-
-      if (isDropJump) {
-        head = ["Data", "Altezza (cm)", "Contatto (ms)", "RSI", "Δ%"];
-        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }, i: number) => {
-          const prev = i > 0 ? entries[i - 1].t : null;
-          const delta = _calcolaDelta(t, prev);
-          const dStr = delta !== null ? (delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`) : "—";
-          return [fmtShort(data), t.altezzaSalto ?? "—", t.tempoContatto ?? "—", t.rsi ?? "—", dStr];
-        });
-      } else if (isSLDropJump) {
-        head = ["Data", "RSI Sx", "RSI Dx", "Asim%", "Δ%"];
-        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }, i: number) => {
-          const prev = i > 0 ? entries[i - 1].t : null;
-          const delta = _calcolaDelta(t, prev);
-          const dStr = delta !== null ? (delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`) : "—";
-          const sx = parseFloat(t.rsiSx ?? ""), dx = parseFloat(t.rsiDx ?? "");
-          const asim = (!isNaN(sx) && !isNaN(dx) && Math.max(sx, dx) > 0) ? `${Math.abs(((sx - dx) / Math.max(sx, dx)) * 100).toFixed(1)}%` : "—";
-          return [fmtShort(data), t.rsiSx ?? "—", t.rsiDx ?? "—", asim, dStr];
-        });
-      } else if (isGaconIFT) {
-        head = ["Data", "Livello", "Vo2Max (ml/kg/min)", "VAM (km/h)", "Δ%"];
-        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }, i: number) => {
-          const prev = i > 0 ? entries[i - 1].t : null;
-          const c = parseFloat(t.vo2max ?? ""), p = parseFloat(prev?.vo2max ?? "");
-          const delta = (!isNaN(c) && !isNaN(p) && p > 0) ? ((c - p) / p) * 100 : null;
-          const dStr = delta !== null ? (delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`) : "—";
-          return [fmtShort(data), t.livello ?? "—", t.vo2max ?? "—", t.vam ?? "—", dStr];
-        });
-      } else if (isSprintTempo) {
-        head = ["Data", "Tempo (s)", "Δ%"];
-        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }, i: number) => {
-          const prev = i > 0 ? entries[i - 1].t : null;
-          const c = parseFloat(t.tempo ?? ""), p = parseFloat(prev?.tempo ?? "");
-          const delta = (!isNaN(c) && !isNaN(p) && p > 0) ? ((c - p) / p) * 100 : null;
-          const dStr = delta !== null ? (delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`) : "—";
-          return [fmtShort(data), t.tempo ?? "—", dStr];
-        });
-      } else if (isJurdan) {
-        head = ["Data", "Gin.Dx (°)", "Anca Sx (°)", "Δ Dx/Sx (°)", "Gin.Sx (°)", "Anca Dx (°)", "Δ Sx/Dx (°)"];
-        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }) => {
-          const gDx = parseFloat(t.ginocchioDx ?? ""), aSx = parseFloat(t.ancaSx ?? "");
-          const gSx = parseFloat(t.ginocchioSx ?? ""), aDx = parseFloat(t.ancaDx ?? "");
-          const d1 = t.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? Math.abs(gDx - aSx).toFixed(1) : "—");
-          const d2 = t.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? Math.abs(gSx - aDx).toFixed(1) : "—");
-          return [fmtShort(data), t.ginocchioDx ?? "—", t.ancaSx ?? "—", d1, t.ginocchioSx ?? "—", t.ancaDx ?? "—", d2];
-        });
-      } else if (hasDxSx) {
-        head = ["Data", "Sx", "Dx", "Asim%", "Δ%"];
-        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }, i: number) => {
-          const prev = i > 0 ? entries[i - 1].t : null;
-          const delta = _calcolaDelta(t, prev);
-          const dStr = delta !== null ? (delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`) : "—";
-          const sx = parseFloat(t.risultatoSx ?? ""), dx = parseFloat(t.risultatoDx ?? "");
-          const asim = (!isNaN(sx) && !isNaN(dx) && Math.max(sx, dx) > 0) ? `${Math.abs(((sx - dx) / Math.max(sx, dx)) * 100).toFixed(1)}%` : "—";
-          return [fmtShort(data), t.risultatoSx ?? "—", t.risultatoDx ?? "—", asim, dStr];
-        });
-      } else {
-        head = ["Data", "Risultato", "Δ%"];
-        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }, i: number) => {
-          const prev = i > 0 ? entries[i - 1].t : null;
-          const delta = _calcolaDelta(t, prev);
-          const dStr = delta !== null ? (delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`) : "—";
-          const val = [t.risultato, t.tempo ? `${t.tempo}s` : "", t.livello ? `Liv ${t.livello}` : ""].filter(Boolean).join(" / ") || "—";
-          return [fmtShort(data), val, dStr];
-        });
-      }
-
-      checkPg(rows.length * 8 + 16);
-      autoTable(doc, {
-        startY: y,
-        head: [head],
-        body: rows,
-        theme: "grid",
-        styles: { fontSize: 7.5, cellPadding: 2.5 },
-        headStyles: { fillColor: color, textColor: [255, 255, 255], fontStyle: "bold" },
-        alternateRowStyles: { fillColor: [250, 250, 250] },
-        margin: { left: M, right: M },
-        didParseCell: (data) => {
-          if (data.section === "body" && data.column.index === head.length - 1) {
-            const v = String(data.cell.raw ?? "");
-            if (v.startsWith("+")) data.cell.styles.textColor = [5, 150, 105];
-            else if (v.startsWith("-")) data.cell.styles.textColor = [220, 38, 38];
-          }
-        },
-      });
-      y = (doc as any).lastAutoTable.finalY + 10;
-    }
   }
 
   addFooter();
