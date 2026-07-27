@@ -24,6 +24,7 @@ export const OBIETTIVI_PALESTRA = [
   "Pliometria estensiva",
   "Pliometria intensiva",
   "Potenza",
+  "Test",
   "Upper body",
 ] as const;
 
@@ -47,6 +48,7 @@ export const OBIETTIVI_CAMPO = [
   "Situazione di gioco",
   "Sprint",
   "SSG",
+  "Test",
   "Tiri in porta",
   "Torneo 3 squadre",
   "Warm up",
