@@ -1837,56 +1837,6 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                         <p className="text-gray-400 text-sm">Nessun dato disponibile</p>
                       </div>
                     )}
-
-                    {/* ── Test ── */}
-                    {(() => {
-                      const testsPerNome = new Map<string, { data: string; risultato: string }[]>();
-                      [...programmiAtleta]
-                        .filter((p) => !p.assente && !p.riposo && p.tests?.length)
-                        .sort((a, b) => a.data.localeCompare(b.data))
-                        .forEach((p) => {
-                          (p.tests ?? []).forEach((t) => {
-                            const val = [
-                              t.risultato,
-                              t.risultatoSx ? `Sx ${t.risultatoSx}` : "",
-                              t.risultatoDx ? `Dx ${t.risultatoDx}` : "",
-                              t.tempo ? `${t.tempo}s` : "",
-                              t.livello ? `Liv ${t.livello}` : "",
-                              t.vo2max ? `Vo2 ${t.vo2max}` : "",
-                              t.ginocchioDx ? `GDx ${t.ginocchioDx}°` : "",
-                              t.ancaSx ? `ASx ${t.ancaSx}°` : "",
-                              t.ginocchioSx ? `GSx ${t.ginocchioSx}°` : "",
-                              t.ancaDx ? `ADx ${t.ancaDx}°` : "",
-                            ].filter(Boolean).join(" · ");
-                            if (!testsPerNome.has(t.nome)) testsPerNome.set(t.nome, []);
-                            testsPerNome.get(t.nome)!.push({
-                              data: p.data ? new Date(p.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—",
-                              risultato: val || "—",
-                            });
-                          });
-                        });
-                      if (testsPerNome.size === 0) return null;
-                      return (
-                        <div className="pt-2 border-t border-gray-100">
-                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Test</p>
-                          <div className="space-y-3">
-                            {Array.from(testsPerNome.entries()).map(([nome, entries]) => (
-                              <div key={nome}>
-                                <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">{nome}</p>
-                                <div className="space-y-1">
-                                  {[...entries].reverse().map((e, i) => (
-                                    <div key={i} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
-                                      <span className="text-[11px] text-gray-400">{e.data}</span>
-                                      <span className="text-xs font-semibold text-gray-800 text-right">{e.risultato}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
                   </div>
                 );
               })()
