@@ -270,17 +270,6 @@ async function esportaPDFPanoramica(params: {
     return y + 11;
   };
 
-  const addFooter = () => {
-    const tot = doc.getNumberOfPages();
-    for (let i = 1; i <= tot; i++) {
-      doc.setPage(i);
-      doc.setDrawColor(210, 210, 210); doc.setLineWidth(0.3); doc.line(M, H - 12, W - M, H - 12);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(...gray);
-      doc.text("U.S. Cremonese · Rehab Area", M, H - 7);
-      doc.text(`Pagina ${i} di ${tot}`, W - M, H - 7, { align: "right" });
-    }
-  };
-
   addHeader();
 
   doc.setTextColor(...dark); doc.setFontSize(15); doc.setFont("helvetica", "bold");
@@ -501,16 +490,23 @@ async function esportaPDFPanoramica(params: {
     y = drawLegend(tipiStacked, tipoColPdf, y + 6);
   }
 
-  // ── Infortuni per squadra e tipo (panoramica) ─────────────────────────────
-  const attiviPan = params.atleti.filter((a) => a.stato !== "Disponibile");
-  const tipiPan = Array.from(new Set(attiviPan.map((a) => a.tipoInfortunio).filter((t): t is NonNullable<typeof t> => !!t))).sort();
+  // ── Infortuni per squadra e tipo (panoramica) – tutti, inclusi guariti ────
+  {
+    type InjEntry = { cat: string; tipo: string };
+    const allInjPan: InjEntry[] = [];
+    for (const a of params.atleti) {
+      const cat = a.categoria ?? "—";
+      if (a.infortunio || a.inizioRehab) allInjPan.push({ cat, tipo: a.tipoInfortunio ?? "" });
+      for (const s of (a.storicoInfortuni ?? [])) allInjPan.push({ cat, tipo: s.tipo ?? "" });
+    }
+    const tipiPan = Array.from(new Set(allInjPan.map((e) => e.tipo).filter(Boolean))).sort();
   if (tipiPan.length > 0) {
-    const catPanList = CATEGORIE.filter((cat) => attiviPan.some((a) => a.categoria === cat));
+    const catPanList = CATEGORIE.filter((cat) => allInjPan.some((e) => e.cat === cat));
     const crossPan: any[][] = catPanList.map((cat) => {
-      const ca = attiviPan.filter((a) => a.categoria === cat);
+      const catInj = allInjPan.filter((e) => e.cat === cat);
       const tm: Record<string, number> = {};
-      ca.forEach((a) => { if (a.tipoInfortunio) tm[a.tipoInfortunio] = (tm[a.tipoInfortunio] ?? 0) + 1; });
-      return [cat, ca.length, ...tipiPan.map((t) => tm[t] ?? 0)];
+      catInj.forEach((e) => { if (e.tipo) tm[e.tipo] = (tm[e.tipo] ?? 0) + 1; });
+      return [cat, catInj.length, ...tipiPan.map((t) => tm[t] ?? 0)];
     });
     const gtPan = crossPan.reduce((s, r) => s + (r[1] as number), 0);
     const ttPan = tipiPan.map((_, ti) => crossPan.reduce((s, r) => s + (r[ti + 2] as number), 0));
@@ -536,8 +532,9 @@ async function esportaPDFPanoramica(params: {
     });
     y = (doc as any).lastAutoTable.finalY + 8;
   }
+  } // end allInjPan block
 
-  // Lista completa atleti (tutti, inclusi guariti) – una riga per infortunio
+  // Lista completa atleti (tutti, inclusi guariti) – una riga per infortunio – pagina landscape
   const fmtD = (d?: string) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
 
   const atletiOrdinati = [...params.atleti].sort(
@@ -581,26 +578,48 @@ async function esportaPDFPanoramica(params: {
     }
   });
 
+  // Landscape pages tracking for footer
+  const landscapePageNums = new Set<number>();
+
   if (tuttiRows.length > 0) {
-    doc.addPage(); addHeader(); y = HDR + 12;
-    y = secTitle("Lista completa atleti", y);
+    const WL = 297; const HL = 210; const ML = 14; const HDRL = 30;
+    doc.addPage([WL, HL]);
+    landscapePageNums.add(doc.getNumberOfPages());
+    // landscape header
+    doc.setFillColor(247, 247, 247); doc.rect(0, 0, WL, HDRL, "F");
+    doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(0, HDRL, WL, HDRL);
+    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 22, 22);
+    const txL = logoDataUrl ? 30 : ML;
+    doc.setTextColor(...red); doc.setFontSize(14); doc.setFont("helvetica", "bold");
+    doc.text("U.S. Cremonese", txL, 15);
+    doc.setFontSize(9); doc.setFont("helvetica", "bolditalic"); doc.setTextColor(...gray);
+    doc.text("Analisi Rehab Area", txL, 19);
+    doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(175, 175, 175);
+    doc.text("Stagione 2026-2027", WL - ML, 15, { align: "right" });
+    let yL = HDRL + 12;
+    // landscape secTitle
+    doc.setFillColor(245, 245, 245); doc.rect(ML, yL - 4, WL - ML * 2, 8, "F");
+    doc.setFillColor(...red); doc.rect(ML, yL - 4, 2.5, 8, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...dark);
+    doc.text("LISTA COMPLETA ATLETI", ML + 5, yL + 0.8);
+    yL += 11;
     autoTable(doc, {
-      startY: y,
+      startY: yL,
       head: [["Atleta", "Categoria", "Diagnosi", "Tipo", "Meccanismo", "Note", "Stato", "Inizio", "Fine"]],
       body: tuttiRows,
       headStyles: { fillColor: dark, textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
       bodyStyles: { fontSize: 6.5, cellPadding: 2, overflow: "linebreak", halign: "left", valign: "middle" },
-      margin: { left: M, right: M },
+      margin: { left: ML, right: ML },
       columnStyles: {
-        0: { cellWidth: 22 },
-        1: { cellWidth: 13 },
-        2: { cellWidth: 34 },
-        3: { cellWidth: 26 },
-        4: { cellWidth: 22 },
-        5: { cellWidth: 20 },
-        6: { cellWidth: 17 },
-        7: { cellWidth: 14 },
-        8: { cellWidth: 14 },
+        0: { cellWidth: 28 },
+        1: { cellWidth: 22 },
+        2: { cellWidth: 52 },
+        3: { cellWidth: 38 },
+        4: { cellWidth: 32 },
+        5: { cellWidth: 38 },
+        6: { cellWidth: 20 },
+        7: { cellWidth: 18 },
+        8: { cellWidth: 18 },
       },
       didParseCell: (data: any) => {
         if (data.section === "body") {
@@ -613,10 +632,34 @@ async function esportaPDFPanoramica(params: {
           }
         }
       },
+      didDrawPage: () => {
+        const pn = doc.getNumberOfPages();
+        landscapePageNums.add(pn);
+        // header on continuation pages
+        doc.setFillColor(247, 247, 247); doc.rect(0, 0, WL, HDRL, "F");
+        doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(0, HDRL, WL, HDRL);
+        if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 22, 22);
+        doc.setTextColor(...red); doc.setFontSize(14); doc.setFont("helvetica", "bold");
+        doc.text("U.S. Cremonese", txL, 15);
+        doc.setFontSize(9); doc.setFont("helvetica", "bolditalic"); doc.setTextColor(...gray);
+        doc.text("Analisi Rehab Area", txL, 19);
+        doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(175, 175, 175);
+        doc.text("Stagione 2026-2027", WL - ML, 15, { align: "right" });
+      },
     });
   }
 
-  addFooter();
+  // Footer — handles both portrait and landscape pages
+  const totPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totPages; i++) {
+    doc.setPage(i);
+    const isL = landscapePageNums.has(i);
+    const pw = isL ? 297 : W; const ph = isL ? 210 : H;
+    doc.setDrawColor(210, 210, 210); doc.setLineWidth(0.3); doc.line(M, ph - 12, pw - M, ph - 12);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(...gray);
+    doc.text("U.S. Cremonese · Rehab Area", M, ph - 7);
+    doc.text(`Pagina ${i} di ${totPages}`, pw - M, ph - 7, { align: "right" });
+  }
   doc.save(`USC_Analisi_${oggi.replace(/\//g, "-")}.pdf`);
 }
 
