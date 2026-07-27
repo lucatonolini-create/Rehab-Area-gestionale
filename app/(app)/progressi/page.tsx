@@ -531,7 +531,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         let tableBody: string[][];
 
         if (isDropJump) {
-          head = ["Data", "Altezza (cm)", "Contatto (ms)", "RSI", "Δ%"];
+          head = ["Data", "Altezza (cm)", "Contatto (s)", "RSI", "Δ%"];
           tableBody = entries.map((e, i) => {
             const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
             return [e.dateFull, e.test.altezzaSalto || "—", e.test.tempoContatto || "—", e.test.rsi || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
@@ -1256,7 +1256,7 @@ export default function ProgressiPage() {
                                           </>}
                                           {isDropJump && <>
                                             <th className="text-right pb-2 pr-4 font-semibold">Alt. (cm)</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Contatto (ms)</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Contatto (s)</th>
                                             <th className="text-right pb-2 pr-4 font-semibold">RSI</th>
                                           </>}
                                           {isSLDropJump && <>
