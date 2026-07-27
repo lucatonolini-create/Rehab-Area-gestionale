@@ -522,7 +522,9 @@ async function esportaPDFPanoramica(params: {
       bodyStyles: { fontSize: 7.5, cellPadding: 2.5, halign: "center", valign: "middle" },
       columnStyles: { 0: { halign: "left", cellWidth: 35 }, 1: { cellWidth: 18, fontStyle: "bold" } },
       didParseCell: (data: any) => {
-        if (data.section === "body" && data.row.index === crossPan.length) {
+        if (data.section === "head") {
+          data.cell.styles.halign = "center";
+        } else if (data.section === "body" && data.row.index === crossPan.length) {
           data.cell.styles.fillColor = [220, 220, 220]; data.cell.styles.textColor = dark; data.cell.styles.fontStyle = "bolditalic";
         } else if (data.section === "body" && data.row.index % 2 === 1) {
           data.cell.styles.fillColor = [248, 248, 248];
@@ -583,7 +585,7 @@ async function esportaPDFPanoramica(params: {
 
   if (tuttiRows.length > 0) {
     const WL = 297; const HL = 210; const ML = 14; const HDRL = 30;
-    doc.addPage([WL, HL]);
+    doc.addPage("a4", "landscape");
     landscapePageNums.add(doc.getNumberOfPages());
     // landscape header
     doc.setFillColor(247, 247, 247); doc.rect(0, 0, WL, HDRL, "F");
@@ -611,15 +613,15 @@ async function esportaPDFPanoramica(params: {
       bodyStyles: { fontSize: 6.5, cellPadding: 2, overflow: "linebreak", halign: "left", valign: "middle" },
       margin: { left: ML, right: ML },
       columnStyles: {
-        0: { cellWidth: 28 },
-        1: { cellWidth: 22 },
-        2: { cellWidth: 52 },
-        3: { cellWidth: 38 },
-        4: { cellWidth: 32 },
-        5: { cellWidth: 38 },
-        6: { cellWidth: 20 },
-        7: { cellWidth: 18 },
-        8: { cellWidth: 18 },
+        0: { cellWidth: 26 },
+        1: { cellWidth: 20 },
+        2: { cellWidth: 50 },
+        3: { cellWidth: 36 },
+        4: { cellWidth: 28 },
+        5: { cellWidth: 34 },
+        6: { cellWidth: 22 },
+        7: { cellWidth: 16 },
+        8: { cellWidth: 16 },
       },
       didParseCell: (data: any) => {
         if (data.section === "body") {
