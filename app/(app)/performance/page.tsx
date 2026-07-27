@@ -1133,17 +1133,34 @@ export default function PerformancePage() {
             {/* ── Test KPI strip ─────────────────────────────────────────────── */}
             {testTimelines.size > 0 && (
               <>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-1">Test Fisiometrici</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-1">Test</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-5">
                   {Array.from(testTimelines.entries()).map(([nome, tl]) => {
                     const t = testTrend(tl);
+                    const last = tl.points[tl.points.length - 1];
+                    const showBilateral = tl.isBilateral && nome !== "Drop Jump";
+                    const asymPct = showBilateral && last?.sx != null && last?.dx != null && Math.max(last.sx, last.dx) > 0
+                      ? ((Math.abs(last.sx - last.dx) / Math.max(last.sx, last.dx)) * 100).toFixed(1)
+                      : null;
                     return (
                       <div key={nome} className="bg-white rounded-xl border border-gray-200 p-4">
                         <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1 truncate" title={nome}>{nome}</p>
-                        <div className="flex items-end gap-1.5 flex-wrap">
-                          <span className="text-lg font-bold text-gray-900 leading-tight">{lastTestVal(tl, nome)}</span>
-                          <TrendIcon t={t} />
-                        </div>
+                        {showBilateral ? (
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                              {last?.sx != null && <span className="text-base font-bold text-blue-600">Sx {last.sx}</span>}
+                              {last?.dx != null && <span className="text-base font-bold text-red-500">Dx {last.dx}</span>}
+                              {tl.unit && (last?.sx != null || last?.dx != null) && <span className="text-xs text-gray-400">{tl.unit}</span>}
+                              <TrendIcon t={t} />
+                            </div>
+                            {asymPct && <p className="text-xs font-semibold text-orange-500">Δ {asymPct}%</p>}
+                          </div>
+                        ) : (
+                          <div className="flex items-end gap-1.5 flex-wrap">
+                            <span className="text-lg font-bold text-gray-900 leading-tight">{lastTestVal(tl, nome)}</span>
+                            <TrendIcon t={t} />
+                          </div>
+                        )}
                         <p className="text-xs text-gray-400 mt-0.5">media {avgTestVal(tl, nome)}</p>
                       </div>
                     );
