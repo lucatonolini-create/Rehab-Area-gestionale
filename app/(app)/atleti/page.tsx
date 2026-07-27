@@ -314,7 +314,30 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
 
         (prog.tests ?? []).forEach((t) => {
           const isSL = t.nome === "SL Drop Jump";
-          const val = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : "", t.tempo ? `Tempo: ${t.tempo}s` : "", t.livello ? `Liv: ${t.livello}` : "", t.vo2max ? `Vo2Max: ${t.vo2max}` : "", t.vam ? `VAM: ${t.vam}` : "", t.ginocchioDx ? `Gin.Dx: ${t.ginocchioDx}°` : "", t.ancaSx ? `Anca Sx: ${t.ancaSx}°` : "", t.diffGinocchioDxAncaSx ? `Δ: ${t.diffGinocchioDxAncaSx}°` : "", t.ginocchioSx ? `Gin.Sx: ${t.ginocchioSx}°` : "", t.ancaDx ? `Anca Dx: ${t.ancaDx}°` : "", t.diffGinocchioSxAncaDx ? `Δ: ${t.diffGinocchioSxAncaDx}°` : ""].filter(Boolean).join(" / ");
+          const val = [
+            t.risultato,
+            t.altezzaSalto ? `${t.altezzaSalto} cm` : "",
+            t.risultatoSx ? `Sx ${t.risultatoSx}` : "",
+            t.risultatoDx ? `Dx ${t.risultatoDx}` : "",
+            t.altezzaSaltoSx ? `Sx ↕${t.altezzaSaltoSx}cm` : "",
+            t.altezzaSaltoDx ? `Dx ↕${t.altezzaSaltoDx}cm` : "",
+            t.tempoContatto ? `Contatto: ${t.tempoContatto}ms` : "",
+            t.rsi ? `RSI: ${t.rsi}` : "",
+            t.tempoContattoSx ? `Sx Cont.: ${t.tempoContattoSx}ms` : "",
+            t.tempoContattoDx ? `Dx Cont.: ${t.tempoContattoDx}ms` : "",
+            t.rsiSx ? `RSI Sx: ${t.rsiSx}` : "",
+            t.rsiDx ? `RSI Dx: ${t.rsiDx}` : "",
+            t.tempo ? `Tempo: ${t.tempo}s` : "",
+            t.livello ? `Liv: ${t.livello}` : "",
+            t.vo2max ? `Vo2Max: ${t.vo2max}` : "",
+            t.vam ? `VAM: ${t.vam}` : "",
+            t.ginocchioDx ? `Gin.Dx: ${t.ginocchioDx}°` : "",
+            t.ancaSx ? `Anca Sx: ${t.ancaSx}°` : "",
+            t.diffGinocchioDxAncaSx ? `Δ: ${t.diffGinocchioDxAncaSx}°` : "",
+            t.ginocchioSx ? `Gin.Sx: ${t.ginocchioSx}°` : "",
+            t.ancaDx ? `Anca Dx: ${t.ancaDx}°` : "",
+            t.diffGinocchioSxAncaDx ? `Δ: ${t.diffGinocchioSxAncaDx}°` : "",
+          ].filter(Boolean).join(" / ");
           const extras: string[] = [];
           const sxV = isSL ? (t.rsiSx ?? "") : (t.risultatoSx ?? "");
           const dxV = isSL ? (t.rsiDx ?? "") : (t.risultatoDx ?? "");
