@@ -218,7 +218,7 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
       const esercizi = prog.esercizi ?? [];
 
       const testLines = (prog.tests ?? []).map((t) => {
-        const vals = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : "", t.tempo ? `Tempo: ${t.tempo}s` : "", t.livello ? `Liv: ${t.livello}` : "", t.vo2max ? `Vo2Max: ${t.vo2max}` : "", t.vam ? `VAM: ${t.vam}` : "", t.ginocchioDxSx ? `Dx→Sx: ${t.ginocchioDxSx}` : "", t.ginocchioSxDx ? `Sx→Dx: ${t.ginocchioSxDx}` : "", t.diffDxSx ? `ΔDx→Sx: ${t.diffDxSx}` : "", t.diffSxDx ? `ΔSx→Dx: ${t.diffSxDx}` : ""].filter(Boolean);
+        const vals = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : "", t.tempo ? `Tempo: ${t.tempo}s` : "", t.livello ? `Liv: ${t.livello}` : "", t.vo2max ? `Vo2Max: ${t.vo2max}` : "", t.vam ? `VAM: ${t.vam}` : "", t.ginocchioDx ? `Gin.Dx: ${t.ginocchioDx}°` : "", t.ancaSx ? `Anca Sx: ${t.ancaSx}°` : "", t.diffGinocchioDxAncaSx ? `Δ: ${t.diffGinocchioDxAncaSx}°` : "", t.ginocchioSx ? `Gin.Sx: ${t.ginocchioSx}°` : "", t.ancaDx ? `Anca Dx: ${t.ancaDx}°` : "", t.diffGinocchioSxAncaDx ? `Δ: ${t.diffGinocchioSxAncaDx}°` : ""].filter(Boolean);
         return `${t.nome}${vals.length ? `: ${vals.join(" / ")}` : ""}`;
       });
       const tests = testLines.join("\n") || "—";
@@ -420,7 +420,7 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
         const rpe = prog.carico?.rpe ? `${prog.carico.rpe}/10` : "—";
         const esercizi = prog.esercizi ?? [];
         const testLines = (prog.tests ?? []).map((t) => {
-          const vals = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : "", t.tempo ? `Tempo: ${t.tempo}s` : "", t.livello ? `Liv: ${t.livello}` : "", t.vo2max ? `Vo2Max: ${t.vo2max}` : "", t.vam ? `VAM: ${t.vam}` : "", t.ginocchioDxSx ? `Dx→Sx: ${t.ginocchioDxSx}` : "", t.ginocchioSxDx ? `Sx→Dx: ${t.ginocchioSxDx}` : "", t.diffDxSx ? `ΔDx→Sx: ${t.diffDxSx}` : "", t.diffSxDx ? `ΔSx→Dx: ${t.diffSxDx}` : ""].filter(Boolean);
+          const vals = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : "", t.tempo ? `Tempo: ${t.tempo}s` : "", t.livello ? `Liv: ${t.livello}` : "", t.vo2max ? `Vo2Max: ${t.vo2max}` : "", t.vam ? `VAM: ${t.vam}` : "", t.ginocchioDx ? `Gin.Dx: ${t.ginocchioDx}°` : "", t.ancaSx ? `Anca Sx: ${t.ancaSx}°` : "", t.diffGinocchioDxAncaSx ? `Δ: ${t.diffGinocchioDxAncaSx}°` : "", t.ginocchioSx ? `Gin.Sx: ${t.ginocchioSx}°` : "", t.ancaDx ? `Anca Dx: ${t.ancaDx}°` : "", t.diffGinocchioSxAncaDx ? `Δ: ${t.diffGinocchioSxAncaDx}°` : ""].filter(Boolean);
           return `${t.nome}${vals.length ? `: ${vals.join(" / ")}` : ""}`;
         });
         const tests = testLines.join("\n") || "—";
@@ -1060,12 +1060,22 @@ export default function EserciziPage() {
                                         {t.vam && <span>VAM: <strong>{t.vam} km/h</strong></span>}
                                       </div>
                                     )}
-                                    {(t.ginocchioDxSx || t.ginocchioSxDx) && (
-                                      <div className="flex gap-4 mt-1.5 text-xs text-gray-600">
-                                        {t.ginocchioDxSx && <span>Dx→Sx: <strong>{t.ginocchioDxSx}</strong></span>}
-                                        {t.ginocchioSxDx && <span>Sx→Dx: <strong>{t.ginocchioSxDx}</strong></span>}
-                                        {t.diffDxSx && <span>ΔDx→Sx: <strong>{t.diffDxSx}</strong></span>}
-                                        {t.diffSxDx && <span>ΔSx→Dx: <strong>{t.diffSxDx}</strong></span>}
+                                    {(t.ginocchioDx || t.ancaSx || t.ginocchioSx || t.ancaDx) && (
+                                      <div className="space-y-0.5 mt-1.5 text-xs text-gray-600">
+                                        {(t.ginocchioDx || t.ancaSx) && (
+                                          <div className="flex gap-3">
+                                            {t.ginocchioDx && <span>Gin.Dx: <strong>{t.ginocchioDx}°</strong></span>}
+                                            {t.ancaSx && <span>Anca Sx: <strong>{t.ancaSx}°</strong></span>}
+                                            {t.diffGinocchioDxAncaSx && <span>Δ: <strong>{t.diffGinocchioDxAncaSx}°</strong></span>}
+                                          </div>
+                                        )}
+                                        {(t.ginocchioSx || t.ancaDx) && (
+                                          <div className="flex gap-3">
+                                            {t.ginocchioSx && <span>Gin.Sx: <strong>{t.ginocchioSx}°</strong></span>}
+                                            {t.ancaDx && <span>Anca Dx: <strong>{t.ancaDx}°</strong></span>}
+                                            {t.diffGinocchioSxAncaDx && <span>Δ: <strong>{t.diffGinocchioSxAncaDx}°</strong></span>}
+                                          </div>
+                                        )}
                                       </div>
                                     )}
                                     {t.note && <p className="text-xs text-gray-400 mt-1 italic">{t.note}</p>}
@@ -1682,52 +1692,58 @@ export default function EserciziPage() {
                             )}
 
                             {isJurdan && (() => {
-                              const dxSx = parseFloat(t.ginocchioDxSx ?? "");
-                              const sxDx = parseFloat(t.ginocchioSxDx ?? "");
-                              const autoDiffDx = (!isNaN(dxSx) && !isNaN(sxDx)) ? (dxSx - sxDx).toFixed(1) : "";
-                              const autoDiffSx = (!isNaN(dxSx) && !isNaN(sxDx)) ? (sxDx - dxSx).toFixed(1) : "";
+                              const gDx = parseFloat(t.ginocchioDx ?? "");
+                              const aSx = parseFloat(t.ancaSx ?? "");
+                              const gSx = parseFloat(t.ginocchioSx ?? "");
+                              const aDx = parseFloat(t.ancaDx ?? "");
+                              const autoDiff1 = (!isNaN(gDx) && !isNaN(aSx)) ? Math.abs(gDx - aSx).toFixed(1) : "";
+                              const autoDiff2 = (!isNaN(gSx) && !isNaN(aDx)) ? Math.abs(gSx - aDx).toFixed(1) : "";
                               return (
-                                <div className="space-y-2">
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                      <p className="text-xs text-gray-500 mb-1">Ginocchio Dx anche a Sx</p>
-                                      <input value={t.ginocchioDxSx ?? ""} onChange={(e) => aggiornaTest(i, "ginocchioDxSx", e.target.value)} placeholder="es. 12" className={inp} />
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-gray-500 mb-1">Ginocchio Sx anche a Dx</p>
-                                      <input value={t.ginocchioSxDx ?? ""} onChange={(e) => aggiornaTest(i, "ginocchioSxDx", e.target.value)} placeholder="es. 10" className={inp} />
-                                    </div>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                      <p className="text-xs text-gray-500 mb-1">Differenza Ginocchio Dx→Sx</p>
-                                      <input
-                                        value={t.diffDxSx !== undefined ? t.diffDxSx : autoDiffDx}
-                                        onChange={(e) => aggiornaTest(i, "diffDxSx", e.target.value)}
-                                        placeholder="auto"
-                                        className={inp} />
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-gray-500 mb-1">Differenza Ginocchio Sx→Dx</p>
-                                      <input
-                                        value={t.diffSxDx !== undefined ? t.diffSxDx : autoDiffSx}
-                                        onChange={(e) => aggiornaTest(i, "diffSxDx", e.target.value)}
-                                        placeholder="auto"
-                                        className={inp} />
-                                    </div>
-                                  </div>
-                                  {(!isNaN(dxSx) && !isNaN(sxDx)) && (() => {
-                                    const diff = Math.abs(dxSx - sxDx);
-                                    const pct = Math.max(dxSx, sxDx) > 0 ? (diff / Math.max(dxSx, sxDx)) * 100 : 0;
-                                    const alto = pct > 10;
-                                    return (
-                                      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold ${alto ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-                                        {alto && <AlertTriangle className="w-3.5 h-3.5 shrink-0" />}
-                                        Asimmetria {pct.toFixed(1)}%
-                                        {alto ? " — rischio infortuni muscolari!" : " — nella norma"}
+                                <div className="space-y-3">
+                                  {/* Riga 1: Ginocchio Dx + Anca Sx + diff */}
+                                  <div>
+                                    <p className="text-[10px] font-semibold text-orange-600 uppercase tracking-wide mb-1.5">Ginocchio Dx / Anca Sx</p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                      <div>
+                                        <p className="text-xs text-gray-500 mb-1">Ginocchio Dx (°)</p>
+                                        <input value={t.ginocchioDx ?? ""} onChange={(e) => aggiornaTest(i, "ginocchioDx", e.target.value)} placeholder="es. 15" className={inp} />
                                       </div>
-                                    );
-                                  })()}
+                                      <div>
+                                        <p className="text-xs text-gray-500 mb-1">Anca Sx (°)</p>
+                                        <input value={t.ancaSx ?? ""} onChange={(e) => aggiornaTest(i, "ancaSx", e.target.value)} placeholder="es. 10" className={inp} />
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-gray-500 mb-1">Differenza (°)</p>
+                                        <input
+                                          value={t.diffGinocchioDxAncaSx !== undefined ? t.diffGinocchioDxAncaSx : autoDiff1}
+                                          onChange={(e) => aggiornaTest(i, "diffGinocchioDxAncaSx", e.target.value)}
+                                          placeholder="auto"
+                                          className={inp} />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {/* Riga 2: Ginocchio Sx + Anca Dx + diff */}
+                                  <div>
+                                    <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wide mb-1.5">Ginocchio Sx / Anca Dx</p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                      <div>
+                                        <p className="text-xs text-gray-500 mb-1">Ginocchio Sx (°)</p>
+                                        <input value={t.ginocchioSx ?? ""} onChange={(e) => aggiornaTest(i, "ginocchioSx", e.target.value)} placeholder="es. 12" className={inp} />
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-gray-500 mb-1">Anca Dx (°)</p>
+                                        <input value={t.ancaDx ?? ""} onChange={(e) => aggiornaTest(i, "ancaDx", e.target.value)} placeholder="es. 8" className={inp} />
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-gray-500 mb-1">Differenza (°)</p>
+                                        <input
+                                          value={t.diffGinocchioSxAncaDx !== undefined ? t.diffGinocchioSxAncaDx : autoDiff2}
+                                          onChange={(e) => aggiornaTest(i, "diffGinocchioSxAncaDx", e.target.value)}
+                                          placeholder="auto"
+                                          className={inp} />
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               );
                             })()}

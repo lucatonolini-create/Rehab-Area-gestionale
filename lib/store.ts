@@ -349,10 +349,12 @@ export interface TestFisiometrico {
   // Sprint / 10x100m
   tempo?: string;
   // Jurdan
-  ginocchioDxSx?: string;
-  ginocchioSxDx?: string;
-  diffDxSx?: string;
-  diffSxDx?: string;
+  ginocchioDx?: string;
+  ancaSx?: string;
+  diffGinocchioDxAncaSx?: string;
+  ginocchioSx?: string;
+  ancaDx?: string;
+  diffGinocchioSxAncaDx?: string;
 }
 
 export interface Carico {
