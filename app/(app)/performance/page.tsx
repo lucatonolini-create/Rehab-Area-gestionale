@@ -910,7 +910,7 @@ export default function PerformancePage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">Performance</h1>
-              <p className="text-sm text-gray-500">Andamento GPS e carico in riabilitazione</p>
+              <p className="text-sm text-gray-500">Test, andamento GPS e carico in riabilitazione</p>
             </div>
           </div>
 
