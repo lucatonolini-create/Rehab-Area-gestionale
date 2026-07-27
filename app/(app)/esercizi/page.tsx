@@ -1030,9 +1030,10 @@ export default function EserciziPage() {
                                         {t.altezzaSalto ? <>Altezza: <strong>{t.altezzaSalto} cm</strong></> : "—"}
                                       </p>
                                     ) : isQSLSInline ? (
-                                      <p className="text-xs text-gray-600 mt-0.5">
-                                        {t.risultato !== "" ? <>Punteggio: <strong>{t.risultato}/5</strong></> : "—"}
-                                      </p>
+                                      <div className="flex gap-4 mt-1.5 text-xs text-gray-600">
+                                        {t.risultatoSx && <span>Sx: <strong>{t.risultatoSx}/5</strong></span>}
+                                        {t.risultatoDx && <span>Dx: <strong>{t.risultatoDx}/5</strong></span>}
+                                      </div>
                                     ) : isDropJump ? (
                                       <div className="flex gap-4 mt-1.5 text-xs text-gray-600">
                                         {t.altezzaSalto && <span>Altezza: <strong>{t.altezzaSalto} cm</strong></span>}
@@ -1768,9 +1769,18 @@ export default function EserciziPage() {
                             )}
 
                             {isQSLS && (
-                              <div className="max-w-[200px]">
-                                <p className="text-xs text-gray-500 mb-1">Punteggio (0 = migliore · 5 = peggiore)</p>
-                                <input type="number" min={0} max={5} value={t.risultato} onChange={(e) => aggiornaTest(i, "risultato", e.target.value)} placeholder="0–5" className={inp} />
+                              <div className="space-y-1">
+                                <p className="text-[10px] text-gray-400 mb-1.5">Punteggio: 0 = migliore · 5 = peggiore</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <p className="text-xs text-gray-500 mb-1">Arto Sx</p>
+                                    <input type="number" min={0} max={5} value={t.risultatoSx} onChange={(e) => aggiornaTest(i, "risultatoSx", e.target.value)} placeholder="0–5" className={inp} />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500 mb-1">Arto Dx</p>
+                                    <input type="number" min={0} max={5} value={t.risultatoDx} onChange={(e) => aggiornaTest(i, "risultatoDx", e.target.value)} placeholder="0–5" className={inp} />
+                                  </div>
+                                </div>
                               </div>
                             )}
 
