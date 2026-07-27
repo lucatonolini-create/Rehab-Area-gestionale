@@ -1219,7 +1219,8 @@ export default function ProgressiPage() {
                               const isGaconIFT = testName === "Gacon" || testName === "IFT 30-15";
                               const isDropJump = testName === "Drop Jump";
                               const isSLDropJump = testName === "SL Drop Jump";
-                              const hasSxDx = entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
+                              const isJurdan = testName === "Jurdan";
+                              const hasSxDx = !isJurdan && entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
                               const chartVals = entries.map((e) => getTestMainValue(e.test)).filter((v): v is number => v !== null);
                               return (
                                 <div key={testName} className="bg-gray-50 rounded-xl p-4">
@@ -1263,12 +1264,20 @@ export default function ProgressiPage() {
                                             <th className="text-right pb-2 pr-4 font-semibold">RSI Dx</th>
                                             <th className="text-right pb-2 pr-4 font-semibold">Asim%</th>
                                           </>}
-                                          {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && hasSxDx && <>
+                                          {isJurdan && <>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Gin.Dx (°)</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Anca Sx (°)</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Δ Dx/Sx</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Gin.Sx (°)</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Anca Dx (°)</th>
+                                            <th className="text-right pb-2 pr-4 font-semibold">Δ Sx/Dx</th>
+                                          </>}
+                                          {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && hasSxDx && <>
                                             <th className="text-right pb-2 pr-4 font-semibold">Sx</th>
                                             <th className="text-right pb-2 pr-4 font-semibold">Dx</th>
                                             <th className="text-right pb-2 pr-4 font-semibold">Asim%</th>
                                           </>}
-                                          {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !hasSxDx && (
+                                          {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && !hasSxDx && (
                                             <th className="text-right pb-2 pr-4 font-semibold">Risultato</th>
                                           )}
                                           <th className="text-right pb-2 font-semibold">Δ</th>
@@ -1306,14 +1315,28 @@ export default function ProgressiPage() {
                                                   {asim !== null ? `${asim.toFixed(1)}%` : "—"}
                                                 </td>
                                               </>}
-                                              {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && hasSxDx && <>
+                                              {isJurdan && (() => {
+                                                const gDx = parseFloat(e.test.ginocchioDx ?? ""), aSx = parseFloat(e.test.ancaSx ?? "");
+                                                const gSx = parseFloat(e.test.ginocchioSx ?? ""), aDx = parseFloat(e.test.ancaDx ?? "");
+                                                const d1 = e.test.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? Math.abs(gDx - aSx).toFixed(1) : "—");
+                                                const d2 = e.test.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? Math.abs(gSx - aDx).toFixed(1) : "—");
+                                                return (<>
+                                                  <td className="py-2 pr-4 text-right font-mono">{e.test.ginocchioDx || "—"}</td>
+                                                  <td className="py-2 pr-4 text-right font-mono">{e.test.ancaSx || "—"}</td>
+                                                  <td className="py-2 pr-4 text-right font-mono text-gray-500">{d1}</td>
+                                                  <td className="py-2 pr-4 text-right font-mono">{e.test.ginocchioSx || "—"}</td>
+                                                  <td className="py-2 pr-4 text-right font-mono">{e.test.ancaDx || "—"}</td>
+                                                  <td className="py-2 pr-4 text-right font-mono text-gray-500">{d2}</td>
+                                                </>);
+                                              })()}
+                                              {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && hasSxDx && <>
                                                 <td className="py-2 pr-4 text-right font-mono">{e.test.risultatoSx || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
                                                 <td className="py-2 pr-4 text-right font-mono">{e.test.risultatoDx || "—"}{e.test.unita && e.test.risultatoDx ? ` ${e.test.unita}` : ""}</td>
                                                 <td className={`py-2 pr-4 text-right font-mono ${asim !== null ? asim > 10 ? "text-red-600" : "text-green-600" : ""}`}>
                                                   {asim !== null ? `${asim.toFixed(1)}%` : "—"}
                                                 </td>
                                               </>}
-                                              {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !hasSxDx && (
+                                              {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && !hasSxDx && (
                                                 <td className="py-2 pr-4 text-right font-mono">{e.test.risultato || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
                                               )}
                                               <td className={`py-2 text-right font-mono font-semibold ${delta === null ? "text-gray-300" : isGoodDelta ? "text-green-600" : delta === 0 ? "text-gray-400" : "text-red-500"}`}>
