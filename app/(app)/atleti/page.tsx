@@ -426,6 +426,36 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     y = (doc as any).lastAutoTable.finalY + 6;
 
     if (testRows.length > 0) {
+      // Group consecutive rows by (dataStr + infortunio) for rowSpan
+      const tGroups: { dataStr: string; infortunio: string; rows: typeof testRows }[] = [];
+      for (const r of testRows) {
+        const last = tGroups[tGroups.length - 1];
+        if (last && last.dataStr === r.dataStr && last.infortunio === r.infortunio) {
+          last.rows.push(r);
+        } else {
+          tGroups.push({ dataStr: r.dataStr, infortunio: r.infortunio, rows: [r] });
+        }
+      }
+      const tBody: any[] = [];
+      const tRowGroup: number[] = [];
+      for (let gi = 0; gi < tGroups.length; gi++) {
+        const g = tGroups[gi];
+        const n = g.rows.length;
+        g.rows.forEach((r, i) => {
+          tRowGroup.push(gi);
+          if (i === 0) {
+            tBody.push([
+              { content: r.dataStr, rowSpan: n, styles: { halign: "center" as const, valign: "middle" as const } },
+              { content: r.infortunio, rowSpan: n, styles: { valign: "middle" as const } },
+              r.nomeTest,
+              r.risultato,
+            ]);
+          } else {
+            tBody.push([r.nomeTest, r.risultato]);
+          }
+        });
+      }
+
       checkPage(20, sub);
       doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(...dark);
       doc.text("Test effettuati", M, y + 2);
@@ -433,16 +463,20 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       autoTable(doc, {
         startY: y,
         head: [["Data", "Infortunio", "Test", "Risultato"]],
-        body: testRows.map((r) => [r.dataStr, r.infortunio, r.nomeTest, r.risultato]),
+        body: tBody,
         headStyles: { fillColor: [60, 60, 60] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 6, fontStyle: "bold", halign: "center", cellPadding: { top: 2, bottom: 2, left: 2, right: 2 } },
         bodyStyles: { fontSize: 6, cellPadding: 2, overflow: "linebreak" as const, valign: "middle" as const },
-        alternateRowStyles: { fillColor: [248, 248, 248] as [number, number, number] },
         margin: { left: M, right: M },
         columnStyles: {
           0: { cellWidth: 18 },
           1: { cellWidth: 40 },
           2: { cellWidth: 60 },
           3: { cellWidth: "auto" as any },
+        },
+        didParseCell: (data: any) => {
+          if (data.section === "body") {
+            data.cell.styles.fillColor = tRowGroup[data.row.index] % 2 === 0 ? [255, 255, 255] : [248, 248, 248];
+          }
         },
       });
       y = (doc as any).lastAutoTable.finalY + 6;
