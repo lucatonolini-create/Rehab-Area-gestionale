@@ -348,6 +348,11 @@ export interface TestFisiometrico {
   vam?: string;
   // Sprint / 10x100m
   tempo?: string;
+  // Jurdan
+  ginocchioDxSx?: string;
+  ginocchioSxDx?: string;
+  diffDxSx?: string;
+  diffSxDx?: string;
 }
 
 export interface Carico {
