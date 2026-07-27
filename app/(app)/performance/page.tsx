@@ -1135,7 +1135,7 @@ export default function PerformancePage() {
               <>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-1">Test Fisiometrici</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-5">
-                  {Array.from(testTimelines.entries()).filter(([n]) => n !== "Gacon" && n !== "IFT 30-15").map(([nome, tl]) => {
+                  {Array.from(testTimelines.entries()).map(([nome, tl]) => {
                     const t = testTrend(tl);
                     return (
                       <div key={nome} className="bg-white rounded-xl border border-gray-200 p-4">
