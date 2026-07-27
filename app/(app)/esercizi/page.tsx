@@ -321,8 +321,34 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
     },
   });
 
-  // ── Test table ──────────────────────────────────────────────────────────────
+  // ── Test table (raggruppata per giocatore con rowSpan) ──────────────────────
   if (testRows.length > 0) {
+    // Group consecutive rows by athlete
+    const testGroups: { athlete: string; rows: typeof testRows }[] = [];
+    for (const r of testRows) {
+      if (testGroups.length === 0 || testGroups[testGroups.length - 1].athlete !== r.nomeAtleta)
+        testGroups.push({ athlete: r.nomeAtleta, rows: [] });
+      testGroups[testGroups.length - 1].rows.push(r);
+    }
+    const testBody: any[] = [];
+    const testRowGroup: number[] = [];
+    for (const [gi, g] of testGroups.entries()) {
+      const n = g.rows.length;
+      g.rows.forEach((r, i) => {
+        testRowGroup.push(gi);
+        if (i === 0) {
+          testBody.push([
+            { content: r.dataLabel, rowSpan: n, styles: { halign: "center" as const, valign: "middle" as const } },
+            { content: r.nomeAtleta, rowSpan: n, styles: { fontStyle: "bold" as const, valign: "middle" as const } },
+            r.nomeTest,
+            r.risultato,
+          ]);
+        } else {
+          testBody.push([r.nomeTest, r.risultato]);
+        }
+      });
+    }
+
     let tY = (doc as any).lastAutoTable.finalY + 8;
     if (tY > H - 40) {
       doc.addPage();
@@ -335,10 +361,9 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
     autoTable(doc, {
       startY: tY,
       head: [["Data", "Giocatore", "Test", "Risultato"]],
-      body: testRows.map((r) => [r.dataLabel, r.nomeAtleta, r.nomeTest, r.risultato]),
+      body: testBody,
       headStyles: { fillColor: dark, textColor: [255, 255, 255] as [number, number, number], fontSize: 7, halign: "center", valign: "middle" },
       bodyStyles: { fontSize: 7, cellPadding: 2, overflow: "linebreak" as const, valign: "middle" as const },
-      alternateRowStyles: { fillColor: [249, 249, 249] as [number, number, number] },
       margin: { left: M, right: M, top: HDR + 8 },
       columnStyles: {
         0: { cellWidth: 22, halign: "center" as const },
@@ -347,6 +372,12 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
         3: { cellWidth: "auto" as any },
       },
       didDrawPage: () => { addHeader(); },
+      didParseCell: (data: any) => {
+        if (data.section === "body") {
+          const gi = testRowGroup[data.row.index];
+          data.cell.styles.fillColor = gi % 2 === 0 ? [255, 255, 255] : [249, 249, 249];
+        }
+      },
     });
   }
 
