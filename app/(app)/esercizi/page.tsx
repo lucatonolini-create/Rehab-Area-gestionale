@@ -998,6 +998,7 @@ export default function EserciziPage() {
                                 const isDropJump   = t.nome === "Drop Jump";
                                 const isSLDropJump = t.nome === "SL Drop Jump";
                                 const isCMJInline  = t.nome === "CMJ – Counter Movement Jump" || t.nome === "CMJ braccia libere" || t.nome === "Squat Jump";
+                                const isBroadJumpInline = t.nome === "Broad Jump";
                                 const isQSLSInline = t.nome === "QSLS";
                                 const asim = isSLDropJump
                                   ? calcolaAsimmetria(t.rsiSx ?? "", t.rsiDx ?? "")
@@ -1028,6 +1029,10 @@ export default function EserciziPage() {
                                     {isCMJInline ? (
                                       <p className="text-xs text-gray-600 mt-0.5">
                                         {t.altezzaSalto ? <>Altezza: <strong>{t.altezzaSalto} cm</strong></> : "—"}
+                                      </p>
+                                    ) : isBroadJumpInline ? (
+                                      <p className="text-xs text-gray-600 mt-0.5">
+                                        {t.altezzaSalto ? <>Distanza: <strong>{t.altezzaSalto} cm</strong></> : "—"}
                                       </p>
                                     ) : isQSLSInline ? (
                                       <div className="flex gap-4 mt-1.5 text-xs text-gray-600">
@@ -1576,7 +1581,8 @@ export default function EserciziPage() {
                         const isJurdan     = t.nome === "Jurdan";
                         const isCMJ        = t.nome === "CMJ – Counter Movement Jump" || t.nome === "CMJ braccia libere" || t.nome === "Squat Jump";
                         const isQSLS       = t.nome === "QSLS";
-                        const isDefaultDxSx = !isDropJump && !isSLDropJump && !isPersonalizzato && !isGaconIFT && !isSprintTempo && !isSqueeze && !isJurdan && !isCMJ && !isQSLS;
+                        const isBroadJump  = t.nome === "Broad Jump";
+                        const isDefaultDxSx = !isDropJump && !isSLDropJump && !isPersonalizzato && !isGaconIFT && !isSprintTempo && !isSqueeze && !isJurdan && !isCMJ && !isQSLS && !isBroadJump;
                         const asim = isSLDropJump
                           ? calcolaAsimmetria(t.rsiSx ?? "", t.rsiDx ?? "")
                           : calcolaAsimmetria(t.risultatoSx, t.risultatoDx);
@@ -1765,6 +1771,13 @@ export default function EserciziPage() {
                               <div className="max-w-[200px]">
                                 <p className="text-xs text-gray-500 mb-1">Altezza salto (cm)</p>
                                 <input value={t.altezzaSalto ?? ""} onChange={(e) => aggiornaTest(i, "altezzaSalto", e.target.value)} placeholder="es. 38" className={inp} />
+                              </div>
+                            )}
+
+                            {isBroadJump && (
+                              <div className="max-w-[200px]">
+                                <p className="text-xs text-gray-500 mb-1">Distanza (cm)</p>
+                                <input value={t.altezzaSalto ?? ""} onChange={(e) => aggiornaTest(i, "altezzaSalto", e.target.value)} placeholder="es. 210" className={inp} />
                               </div>
                             )}
 
