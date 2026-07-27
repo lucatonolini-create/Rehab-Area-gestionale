@@ -202,7 +202,7 @@ interface MetricDef {
 const METRICS: MetricDef[] = [
   { key: "rpe",      label: "RPE",                 shortLabel: "RPE",       unit: "",        color: "#C8102E", dec: 1 },
   { key: "durata",   label: "Durata",              shortLabel: "Durata",    unit: "min",     color: "#6b7280", dec: 0 },
-  { key: "interno",  label: "Carico Interno",       shortLabel: "Car. Int.", unit: "UA",      color: "#7c3aed", dec: 0 },
+  { key: "interno",  label: "Carico Interno",       shortLabel: "TL",        unit: "UA",      color: "#7c3aed", dec: 0 },
   { key: "distanza", label: "Distanza Totale",      shortLabel: "Dist. Tot.", unit: "m",       color: "#2563eb", dec: 0 },
   { key: "hsr",      label: "D>16 km/h",           shortLabel: "D>16 km/h", unit: "m",       color: "#0891b2", dec: 0 },
   { key: "vel21",    label: "D>20 km/h",           shortLabel: "D>20 km/h", unit: "m",       color: "#16a34a", dec: 0 },

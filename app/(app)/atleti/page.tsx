@@ -827,7 +827,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         const allMetricCols: MetricCol[] = [
           { label: "Durata\n(min)",    unit: "min",  dec: 0, w: 14, get: (s) => s.durata },
           { label: "RPE\n(/10)",       unit: "/10",  dec: 1, w: 14, get: (s) => s.rpe },
-          { label: "Car.Int.\n(UA)",   unit: "UA",   dec: 0, w: 16, get: (s) => s.interno },
+          { label: "TL\n(UA)",          unit: "UA",   dec: 0, w: 16, get: (s) => s.interno },
           { label: "Dist.\n(m)",       unit: "m",    dec: 0, w: 16, get: (s) => s.distanza },
           { label: "D>16km/h\n(m)",     unit: "m",    dec: 0, w: 16, get: (s) => s.hsr },
           { label: "D>20km/h\n(m)",     unit: "m",    dec: 0, w: 16, get: (s) => s.vel21 },
