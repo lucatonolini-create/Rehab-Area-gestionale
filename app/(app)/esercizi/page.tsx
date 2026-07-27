@@ -997,6 +997,8 @@ export default function EserciziPage() {
                               {prog.tests.map((t, i) => {
                                 const isDropJump   = t.nome === "Drop Jump";
                                 const isSLDropJump = t.nome === "SL Drop Jump";
+                                const isCMJInline  = t.nome === "CMJ – Counter Movement Jump" || t.nome === "CMJ braccia libere";
+                                const isQSLSInline = t.nome === "QSLS";
                                 const asim = isSLDropJump
                                   ? calcolaAsimmetria(t.rsiSx ?? "", t.rsiDx ?? "")
                                   : calcolaAsimmetria(t.risultatoSx, t.risultatoDx);
@@ -1023,7 +1025,15 @@ export default function EserciziPage() {
                                         )}
                                       </div>
                                     </div>
-                                    {isDropJump ? (
+                                    {isCMJInline ? (
+                                      <p className="text-xs text-gray-600 mt-0.5">
+                                        {t.altezzaSalto ? <>Altezza: <strong>{t.altezzaSalto} cm</strong></> : "—"}
+                                      </p>
+                                    ) : isQSLSInline ? (
+                                      <p className="text-xs text-gray-600 mt-0.5">
+                                        {t.risultato !== "" ? <>Punteggio: <strong>{t.risultato}/5</strong></> : "—"}
+                                      </p>
+                                    ) : isDropJump ? (
                                       <div className="flex gap-4 mt-1.5 text-xs text-gray-600">
                                         {t.altezzaSalto && <span>Altezza: <strong>{t.altezzaSalto} cm</strong></span>}
                                         {t.tempoContatto && <span>Contatto: <strong>{t.tempoContatto} ms</strong></span>}
@@ -1563,7 +1573,9 @@ export default function EserciziPage() {
                         const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(t.nome);
                         const isSqueeze    = t.nome === "Squeeze";
                         const isJurdan     = t.nome === "Jurdan";
-                        const isDefaultDxSx = !isDropJump && !isSLDropJump && !isPersonalizzato && !isGaconIFT && !isSprintTempo && !isSqueeze && !isJurdan;
+                        const isCMJ        = t.nome === "CMJ – Counter Movement Jump" || t.nome === "CMJ braccia libere";
+                        const isQSLS       = t.nome === "QSLS";
+                        const isDefaultDxSx = !isDropJump && !isSLDropJump && !isPersonalizzato && !isGaconIFT && !isSprintTempo && !isSqueeze && !isJurdan && !isCMJ && !isQSLS;
                         const asim = isSLDropJump
                           ? calcolaAsimmetria(t.rsiSx ?? "", t.rsiDx ?? "")
                           : calcolaAsimmetria(t.risultatoSx, t.risultatoDx);
@@ -1747,6 +1759,20 @@ export default function EserciziPage() {
                                 </div>
                               );
                             })()}
+
+                            {isCMJ && (
+                              <div className="max-w-[200px]">
+                                <p className="text-xs text-gray-500 mb-1">Altezza salto (cm)</p>
+                                <input value={t.altezzaSalto ?? ""} onChange={(e) => aggiornaTest(i, "altezzaSalto", e.target.value)} placeholder="es. 38" className={inp} />
+                              </div>
+                            )}
+
+                            {isQSLS && (
+                              <div className="max-w-[200px]">
+                                <p className="text-xs text-gray-500 mb-1">Punteggio (0 = migliore · 5 = peggiore)</p>
+                                <input type="number" min={0} max={5} value={t.risultato} onChange={(e) => aggiornaTest(i, "risultato", e.target.value)} placeholder="0–5" className={inp} />
+                              </div>
+                            )}
 
                             {isDefaultDxSx && (
                               <div className="space-y-2">

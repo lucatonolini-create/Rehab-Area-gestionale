@@ -312,7 +312,7 @@ export const TESTS_PREDEFINITI = [
   "Single Leg Squat",
   "SL CMJ",
   "SL Drop Jump",
-  "SL Squat",
+  "QSLS",
   "Sprint 10m",
   "Sprint 20m",
   "Sprint 30m",
