@@ -332,7 +332,8 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
     }
     const testBody: any[] = [];
     const testRowGroup: number[] = [];
-    for (const [gi, g] of testGroups.entries()) {
+    for (let gi = 0; gi < testGroups.length; gi++) {
+      const g = testGroups[gi];
       const n = g.rows.length;
       g.rows.forEach((r, i) => {
         testRowGroup.push(gi);
