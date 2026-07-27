@@ -980,7 +980,8 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       const isSLDropJump = nome === "SL Drop Jump";
       const isGaconIFT = nome === "Gacon" || nome === "IFT 30-15";
       const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(nome);
-      const hasDxSx = !isDropJump && !isSLDropJump && !isGaconIFT && !isSprintTempo && entries.some((e: { data: string; t: TestFisiometrico }) => e.t.risultatoSx || e.t.risultatoDx);
+      const isJurdan = nome === "Jurdan";
+      const hasDxSx = !isDropJump && !isSLDropJump && !isGaconIFT && !isSprintTempo && !isJurdan && entries.some((e: { data: string; t: TestFisiometrico }) => e.t.risultatoSx || e.t.risultatoDx);
 
       let head: string[];
       let rows: any[][];
@@ -1020,6 +1021,15 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           const delta = (!isNaN(c) && !isNaN(p) && p > 0) ? ((c - p) / p) * 100 : null;
           const dStr = delta !== null ? (delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`) : "—";
           return [fmtShort(data), t.tempo ?? "—", dStr];
+        });
+      } else if (isJurdan) {
+        head = ["Data", "Gin.Dx (°)", "Anca Sx (°)", "Δ Dx/Sx (°)", "Gin.Sx (°)", "Anca Dx (°)", "Δ Sx/Dx (°)"];
+        rows = entries.map(({ data, t }: { data: string; t: TestFisiometrico }) => {
+          const gDx = parseFloat(t.ginocchioDx ?? ""), aSx = parseFloat(t.ancaSx ?? "");
+          const gSx = parseFloat(t.ginocchioSx ?? ""), aDx = parseFloat(t.ancaDx ?? "");
+          const d1 = t.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? Math.abs(gDx - aSx).toFixed(1) : "—");
+          const d2 = t.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? Math.abs(gSx - aDx).toFixed(1) : "—");
+          return [fmtShort(data), t.ginocchioDx ?? "—", t.ancaSx ?? "—", d1, t.ginocchioSx ?? "—", t.ancaDx ?? "—", d2];
         });
       } else if (hasDxSx) {
         head = ["Data", "Sx", "Dx", "Asim%", "Δ%"];

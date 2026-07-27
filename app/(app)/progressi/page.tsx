@@ -443,7 +443,8 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         const isGaconIFT = testName === "Gacon" || testName === "IFT 30-15";
         const isDropJump = testName === "Drop Jump";
         const isSLDropJump = testName === "SL Drop Jump";
-        const hasSxDx = entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
+        const isJurdan = testName === "Jurdan";
+        const hasSxDx = !isJurdan && entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
 
         const color = testColors[testIdx % testColors.length];
         const [cr, cg, cb] = color;
@@ -518,7 +519,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           mainData.forEach((d, i) => { if (i % step === 0) doc.text(d.dateLabel, gX(i), cY + cH + 4, { align: "center" }); });
 
           // Y axis label
-          const yLbl = isSprintTempo ? "Tempo (s)" : isGaconIFT ? "Vo2Max (ml/kg/min)" : isDropJump ? "RSI" : isSLDropJump ? "RSI medio" : hasSxDx ? "Media Sx/Dx" : "Valore";
+          const yLbl = isSprintTempo ? "Tempo (s)" : isGaconIFT ? "Vo2Max (ml/kg/min)" : isDropJump ? "RSI" : isSLDropJump ? "RSI medio" : isJurdan ? "Gin.Dx (°)" : hasSxDx ? "Media Sx/Dx" : "Valore";
           doc.setFontSize(4.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...color);
           doc.text(yLbl, plotX, plotY - 1.5);
 
@@ -553,6 +554,15 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           tableBody = entries.map((e, i) => {
             const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
             return [e.dateFull, e.test.livello || "—", e.test.vo2max || "—", e.test.vam || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
+          });
+        } else if (isJurdan) {
+          head = ["Data", "Gin.Dx (°)", "Anca Sx (°)", "Δ Dx/Sx (°)", "Gin.Sx (°)", "Anca Dx (°)", "Δ Sx/Dx (°)"];
+          tableBody = entries.map((e) => {
+            const gDx = parseFloat(e.test.ginocchioDx ?? ""), aSx = parseFloat(e.test.ancaSx ?? "");
+            const gSx = parseFloat(e.test.ginocchioSx ?? ""), aDx = parseFloat(e.test.ancaDx ?? "");
+            const d1 = e.test.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? Math.abs(gDx - aSx).toFixed(1) : "—");
+            const d2 = e.test.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? Math.abs(gSx - aDx).toFixed(1) : "—");
+            return [e.dateFull, e.test.ginocchioDx || "—", e.test.ancaSx || "—", d1, e.test.ginocchioSx || "—", e.test.ancaDx || "—", d2];
           });
         } else if (hasSxDx) {
           head = ["Data", `Arto Sx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, `Arto Dx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "Asimmetria %", "Δ%"];
