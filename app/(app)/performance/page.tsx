@@ -39,7 +39,7 @@ function extractTestValues(t: TestFisiometrico) {
     return { single: n(t.altezzaSalto), unit: "cm", isBilateral: false };
   if (nome === "Drop Jump") {
     const r = n(t.rsi), a = n(t.altezzaSalto);
-    return { single: r ?? a, unit: r != null ? "" : "cm", isBilateral: false };
+    return { single: r ?? a, altezza: r != null ? a : undefined, sx: undefined, dx: undefined, unit: r != null ? "" : "cm", isBilateral: false };
   }
   if (nome === "SL Drop Jump")
     return { sx: n(t.rsiSx), dx: n(t.rsiDx), unit: "", isBilateral: true };
@@ -128,6 +128,7 @@ interface TestPoint {
   single?: number;
   sx?: number;
   dx?: number;
+  altezza?: number; // Drop Jump: altezza salto (single = RSI)
 }
 
 interface TestTimeline {
@@ -514,7 +515,7 @@ export default function PerformancePage() {
           const dateLabel = p.data
             ? new Date(p.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" })
             : "";
-          const pt: TestPoint = { data: p.data ?? "", dateLabel, single: ev.single, sx: ev.sx, dx: ev.dx };
+          const pt: TestPoint = { data: p.data ?? "", dateLabel, single: ev.single, sx: ev.sx, dx: ev.dx, altezza: (ev as any).altezza };
           if (!map.has(t.nome)) {
             map.set(t.nome, { points: [], unit: ev.unit, isBilateral: ev.isBilateral, color: TEST_COLORS[t.nome] ?? "#6b7280" });
           }
@@ -541,9 +542,15 @@ export default function PerformancePage() {
     return rows;
   }, [programmi, selectedId]);
 
-  function lastTestVal(tl: TestTimeline): string {
+  function lastTestVal(tl: TestTimeline, nome?: string): string {
     const last = tl.points[tl.points.length - 1];
     if (!last) return "—";
+    if (nome === "Drop Jump") {
+      const parts: string[] = [];
+      if (last.single != null) parts.push(`RSI: ${last.single}`);
+      if (last.altezza != null) parts.push(`Alt: ${last.altezza} cm`);
+      return parts.join(" / ") || "—";
+    }
     if (!tl.isBilateral) return last.single != null ? `${last.single} ${tl.unit}`.trim() : "—";
     const p: string[] = [];
     if (last.sx != null) p.push(`Sx ${last.sx}`);
@@ -551,7 +558,15 @@ export default function PerformancePage() {
     return (p.join(" / ") + (tl.unit ? ` ${tl.unit}` : "")) || "—";
   }
 
-  function avgTestVal(tl: TestTimeline): string {
+  function avgTestVal(tl: TestTimeline, nome?: string): string {
+    if (nome === "Drop Jump") {
+      const rsi = tl.points.map((p) => p.single).filter((v): v is number => v != null);
+      const alt = tl.points.map((p) => p.altezza).filter((v): v is number => v != null);
+      const parts: string[] = [];
+      if (rsi.length) parts.push(`RSI: ${(rsi.reduce((a, b) => a + b, 0) / rsi.length).toFixed(2)}`);
+      if (alt.length) parts.push(`Alt: ${(alt.reduce((a, b) => a + b, 0) / alt.length).toFixed(1)} cm`);
+      return parts.join(" / ") || "—";
+    }
     if (!tl.isBilateral) {
       const vs = tl.points.map((p) => p.single).filter((v): v is number => v != null);
       if (!vs.length) return "—";
@@ -1120,16 +1135,16 @@ export default function PerformancePage() {
               <>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-1">Test Fisiometrici</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-5">
-                  {Array.from(testTimelines.entries()).map(([nome, tl]) => {
+                  {Array.from(testTimelines.entries()).filter(([n]) => n !== "Gacon" && n !== "IFT 30-15").map(([nome, tl]) => {
                     const t = testTrend(tl);
                     return (
                       <div key={nome} className="bg-white rounded-xl border border-gray-200 p-4">
                         <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1 truncate" title={nome}>{nome}</p>
                         <div className="flex items-end gap-1.5 flex-wrap">
-                          <span className="text-lg font-bold text-gray-900 leading-tight">{lastTestVal(tl)}</span>
+                          <span className="text-lg font-bold text-gray-900 leading-tight">{lastTestVal(tl, nome)}</span>
                           <TrendIcon t={t} />
                         </div>
-                        <p className="text-xs text-gray-400 mt-0.5">media {avgTestVal(tl)}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">media {avgTestVal(tl, nome)}</p>
                       </div>
                     );
                   })}
@@ -1195,7 +1210,7 @@ export default function PerformancePage() {
                   <>
                     {sessions.length > 0 && <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Grafici Test Fisiometrici</p>}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {Array.from(testTimelines.entries()).map(([nome, tl]) => {
+                      {Array.from(testTimelines.entries()).filter(([n]) => n !== "Gacon" && n !== "IFT 30-15").map(([nome, tl]) => {
                         const t = testTrend(tl);
                         const ek = `test-${nome}`;
                         const isExpanded = expandedKey === ek;
@@ -1206,7 +1221,7 @@ export default function PerformancePage() {
                                 <div className="flex items-center gap-2">
                                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: tl.color }} />
                                   <span className="font-semibold text-gray-800 text-sm">{nome}</span>
-                                  {tl.unit && <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{tl.unit}</span>}
+                                  {tl.unit && nome !== "Drop Jump" && <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{tl.unit}</span>}
                                   {tl.isBilateral && <span className="text-xs text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">Sx / Dx</span>}
                                 </div>
                                 <button
@@ -1219,13 +1234,13 @@ export default function PerformancePage() {
                               <div className="flex items-center gap-4 flex-wrap">
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Ultimo</span>
-                                  <span className="text-base font-bold" style={{ color: tl.color }}>{lastTestVal(tl)}</span>
+                                  <span className="text-base font-bold" style={{ color: tl.color }}>{lastTestVal(tl, nome)}</span>
                                   <TrendIcon t={t} />
                                 </div>
                                 <div className="w-px h-4 bg-gray-200" />
                                 <div className="flex items-center gap-1">
                                   <span className="text-xs text-gray-400">Media</span>
-                                  <span className="text-sm font-semibold text-gray-700">{avgTestVal(tl)}</span>
+                                  <span className="text-sm font-semibold text-gray-700">{avgTestVal(tl, nome)}</span>
                                 </div>
                                 <div className="w-px h-4 bg-gray-200" />
                                 <div className="flex items-center gap-1">
