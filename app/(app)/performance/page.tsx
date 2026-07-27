@@ -85,7 +85,42 @@ const TEST_COLORS: Record<string, string> = {
   "Jurdan": "#db2777",
 };
 
+function formatTestResult(t: TestFisiometrico): string {
+  return [
+    t.risultato,
+    t.altezzaSalto ? `${t.altezzaSalto} cm` : "",
+    t.risultatoSx ? `Sx ${t.risultatoSx}` : "",
+    t.risultatoDx ? `Dx ${t.risultatoDx}` : "",
+    t.altezzaSaltoSx ? `Sx ↕${t.altezzaSaltoSx}cm` : "",
+    t.altezzaSaltoDx ? `Dx ↕${t.altezzaSaltoDx}cm` : "",
+    t.tempoContatto ? `Contatto: ${t.tempoContatto}ms` : "",
+    t.rsi ? `RSI: ${t.rsi}` : "",
+    t.tempoContattoSx ? `Sx Cont.: ${t.tempoContattoSx}ms` : "",
+    t.tempoContattoDx ? `Dx Cont.: ${t.tempoContattoDx}ms` : "",
+    t.rsiSx ? `RSI Sx: ${t.rsiSx}` : "",
+    t.rsiDx ? `RSI Dx: ${t.rsiDx}` : "",
+    t.tempo ? `Tempo: ${t.tempo}s` : "",
+    t.livello ? `Liv: ${t.livello}` : "",
+    t.vo2max ? `Vo2Max: ${t.vo2max}` : "",
+    t.vam ? `VAM: ${t.vam}` : "",
+    t.ginocchioDx ? `Gin.Dx: ${t.ginocchioDx}°` : "",
+    t.ancaSx ? `Anca Sx: ${t.ancaSx}°` : "",
+    t.diffGinocchioDxAncaSx ? `Δ: ${t.diffGinocchioDxAncaSx}°` : "",
+    t.ginocchioSx ? `Gin.Sx: ${t.ginocchioSx}°` : "",
+    t.ancaDx ? `Anca Dx: ${t.ancaDx}°` : "",
+    t.diffGinocchioSxAncaDx ? `Δ: ${t.diffGinocchioSxAncaDx}°` : "",
+  ].filter(Boolean).join(" / ") || "—";
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+interface TestTableRow {
+  data: string;
+  dateLabel: string;
+  infortunio: string;
+  nomeTest: string;
+  risultato: string;
+}
 
 interface TestPoint {
   data: string;
@@ -489,6 +524,23 @@ export default function PerformancePage() {
     return map;
   }, [programmi, selectedId]);
 
+  const testTableRows = useMemo((): TestTableRow[] => {
+    if (!selectedId) return [];
+    const rows: TestTableRow[] = [];
+    programmi
+      .filter((p) => p.atletaId === selectedId && (p.tests?.length ?? 0) > 0)
+      .sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""))
+      .forEach((p) => {
+        const dateLabel = p.data
+          ? new Date(p.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" })
+          : "";
+        (p.tests ?? []).forEach((t) => {
+          rows.push({ data: p.data ?? "", dateLabel, infortunio: p.nome ?? "—", nomeTest: t.nome, risultato: formatTestResult(t) });
+        });
+      });
+    return rows;
+  }, [programmi, selectedId]);
+
   function lastTestVal(tl: TestTimeline): string {
     const last = tl.points[tl.points.length - 1];
     if (!last) return "—";
@@ -870,6 +922,31 @@ export default function PerformancePage() {
       y += CHART_H + GAP_Y;
     }
 
+    // ── Test table ─────────────────────────────────────────────────────────────
+    if (testTableRows.length > 0) {
+      doc.addPage();
+      let ty = addHeader(true);
+      doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...DARK_RGB);
+      doc.text("Test Fisiometrici", M, ty + 2);
+      ty += 7;
+      autoTable(doc, {
+        startY: ty,
+        head: [["Data", "Infortunio", "Test", "Risultato"]],
+        body: testTableRows.map((r) => [r.dateLabel, r.infortunio, r.nomeTest, r.risultato]),
+        headStyles: { fillColor: DARK_RGB, textColor: 255, fontSize: 6.5, halign: "center", valign: "middle" },
+        bodyStyles: { fontSize: 6.5, cellPadding: 1.8, overflow: "linebreak" as const, valign: "middle" as const },
+        alternateRowStyles: { fillColor: [249, 249, 249] },
+        margin: { left: M, right: M, top: 18 },
+        columnStyles: {
+          0: { cellWidth: 18, halign: "center" as const },
+          1: { cellWidth: 45 },
+          2: { cellWidth: 65 },
+          3: { cellWidth: "auto" as any },
+        },
+        didDrawPage: (() => { let first = true; return () => { if (first) first = false; else addHeader(true); }; })(),
+      });
+    }
+
     // Page numbers
     const pages = (doc as any).internal.getNumberOfPages();
     for (let p = 1; p <= pages; p++) {
@@ -1169,7 +1246,11 @@ export default function PerformancePage() {
 
             {/* ── TABELLA ────────────────────────────────────────────────────── */}
             {view === "tabella" && (
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="space-y-4">
+              {sessions.length > 0 && <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">GPS e Carico</p>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -1237,6 +1318,38 @@ export default function PerformancePage() {
                     </tfoot>
                   </table>
                 </div>
+              </div>}
+
+              {testTableRows.length > 0 && (
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Test Fisiometrici</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                          {["Data", "Infortunio", "Test", "Risultato"].map((h) => (
+                            <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...testTableRows].reverse().map((r, i) => (
+                          <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
+                            <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap text-xs font-mono">{r.dateLabel}</td>
+                            <td className="px-4 py-2.5 text-gray-500 text-xs max-w-[140px] truncate">{r.infortunio}</td>
+                            <td className="px-4 py-2.5 text-gray-800 font-medium text-xs whitespace-nowrap">{r.nomeTest}</td>
+                            <td className="px-4 py-2.5 text-gray-600 text-xs">{r.risultato}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
               </div>
             )}
           </>
