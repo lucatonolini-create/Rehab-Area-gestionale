@@ -267,7 +267,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     const altRowIndices = new Set<number>();
     const absenteRowIndices = new Set<number>();
     const riposoRowIndices = new Set<number>();
-    const testRows: { dataStr: string; nomeProg: string; linea: string }[] = [];
+    const testRows: { dataStr: string; infortunio: string; nomeTest: string; risultato: string }[] = [];
 
     Array.from(weekMap.entries()).forEach(([wk, wkProgs]) => {
       let weekLabel: string;
@@ -324,7 +324,8 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           const prev = _trovaPrecedenteTest(programmi, prog.id, t.nome);
           const delta = _calcolaDelta(t, prev);
           if (delta !== null) extras.push(`${delta >= 0 ? "↑" : "↓"} ${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%`);
-          testRows.push({ dataStr, nomeProg: prog.nome ?? "—", linea: `${t.nome}${val ? `: ${val}` : ""}${extras.length ? ` [${extras.join(", ")}]` : ""}` });
+          const risultatoStr = [val, extras.length ? `[${extras.join(", ")}]` : ""].filter(Boolean).join(" ");
+          testRows.push({ dataStr, infortunio: prog.nome ?? "—", nomeTest: t.nome, risultato: risultatoStr || "—" });
         });
 
         const ca = prog.carico;
@@ -357,17 +358,17 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       bodyStyles: { fontSize: 5.5, cellPadding: 1.5, overflow: "linebreak" as const, halign: "left" as const, valign: "middle" as const },
       margin: { left: M, right: M },
       columnStyles: {
-        0:  { cellWidth: 14 },
-        1:  { cellWidth: 18 },
+        0:  { cellWidth: 15 },
+        1:  { cellWidth: 20 },
         2:  { cellWidth: 11 },
-        3:  { cellWidth: 10 },
+        3:  { cellWidth: 11 },
         4:  { cellWidth: 18 },
-        5:  { cellWidth: 17 },
+        5:  { cellWidth: 18 },
         6:  { cellWidth: 9, halign: "center" as const },
         7:  { cellWidth: 18 },
-        8:  { cellWidth: 17 },
+        8:  { cellWidth: 18 },
         9:  { cellWidth: 12, halign: "center" as const },
-        10: { cellWidth: 20 },
+        10: { cellWidth: 24 },
         11: { cellWidth: 8, halign: "center" as const },
       },
       didParseCell: (data: any) => {
@@ -408,16 +409,17 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       y += 6;
       autoTable(doc, {
         startY: y,
-        head: [["Data", "Programma", "Test / Risultato"]],
-        body: testRows.map((r) => [r.dataStr, r.nomeProg, r.linea]),
+        head: [["Data", "Infortunio", "Test", "Risultato"]],
+        body: testRows.map((r) => [r.dataStr, r.infortunio, r.nomeTest, r.risultato]),
         headStyles: { fillColor: [60, 60, 60] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 6, fontStyle: "bold", halign: "center", cellPadding: { top: 2, bottom: 2, left: 2, right: 2 } },
         bodyStyles: { fontSize: 6, cellPadding: 2, overflow: "linebreak" as const, valign: "middle" as const },
         alternateRowStyles: { fillColor: [248, 248, 248] as [number, number, number] },
         margin: { left: M, right: M },
         columnStyles: {
           0: { cellWidth: 18 },
-          1: { cellWidth: 28 },
-          2: { cellWidth: "auto" as any },
+          1: { cellWidth: 40 },
+          2: { cellWidth: 60 },
+          3: { cellWidth: "auto" as any },
         },
       });
       y = (doc as any).lastAutoTable.finalY + 6;
