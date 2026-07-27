@@ -522,7 +522,9 @@ async function esportaPDFPanoramica(params: {
       bodyStyles: { fontSize: 7.5, cellPadding: 2.5, halign: "center", valign: "middle" },
       columnStyles: { 0: { halign: "left", cellWidth: 35 }, 1: { cellWidth: 18, fontStyle: "bold" } },
       didParseCell: (data: any) => {
-        if (data.section === "body" && data.row.index === crossPan.length) {
+        if (data.section === "head") {
+          data.cell.styles.halign = "center";
+        } else if (data.section === "body" && data.row.index === crossPan.length) {
           data.cell.styles.fillColor = [220, 220, 220]; data.cell.styles.textColor = dark; data.cell.styles.fontStyle = "bolditalic";
         } else if (data.section === "body" && data.row.index % 2 === 1) {
           data.cell.styles.fillColor = [248, 248, 248];
