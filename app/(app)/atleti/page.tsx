@@ -195,10 +195,11 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     chartLabel: string,
     color: [number, number, number],
     data: { dateLabel: string; value: number }[],
+    opts?: { startX?: number; width?: number; updateY?: boolean },
   ) => {
     if (data.length < 2) return;
     const [cr, cg, cb] = color;
-    const cX = M; const cW = W - 2 * M; const cH = 40; const cY = y + 9;
+    const cX = opts?.startX ?? M; const cW = opts?.width ?? (W - 2 * M); const cH = 40; const cY = y + 9;
     doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(...color);
     doc.text(`Andamento ${chartLabel}`, M, y + 2);
     doc.setFillColor(249, 250, 251); doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.3);
@@ -242,7 +243,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
     const step = n <= 12 ? 1 : n <= 24 ? 2 : Math.ceil(n / 12);
     data.forEach((d, i) => { if (i % step === 0) doc.text(d.dateLabel, gX(i), cY + cH + 4, { align: "center" }); });
-    y = cY + cH + 9;
+    if (opts?.updateY !== false) y = cY + cH + 9;
   };
 
   const getMonday = (dateStr: string): string => {
@@ -782,11 +783,17 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             [200, 16, 46], [37, 99, 235], [5, 150, 105], [217, 119, 6],
             [124, 58, 237], [236, 72, 153], [14, 116, 144], [101, 163, 13],
           ];
-          let ci = 0;
-          for (const [nome, data] of testCharts) {
+          const HALF_W = (W - 2 * M - 4) / 2;
+          for (let ci = 0; ci < testCharts.length; ci += 2) {
             checkPage(62, sub);
-            drawPerfChart(nome, testColors2[ci % testColors2.length], data);
-            ci++;
+            const [nome0, data0] = testCharts[ci];
+            if (ci + 1 < testCharts.length) {
+              const [nome1, data1] = testCharts[ci + 1];
+              drawPerfChart(nome0, testColors2[ci % testColors2.length], data0, { startX: M, width: HALF_W, updateY: false });
+              drawPerfChart(nome1, testColors2[(ci + 1) % testColors2.length], data1, { startX: M + HALF_W + 4, width: HALF_W });
+            } else {
+              drawPerfChart(nome0, testColors2[ci % testColors2.length], data0);
+            }
           }
         }
       }
@@ -1009,9 +1016,17 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         if (extCharts.length > 0) {
           checkPage(20, sub);
           y = secTitle("Andamento Carico Esterno GPS", y);
-          for (const { label, color, data } of extCharts) {
+          const HALF_W2 = (W - 2 * M - 4) / 2;
+          for (let ci = 0; ci < extCharts.length; ci += 2) {
             checkPage(62, sub);
-            drawPerfChart(label, color, data);
+            const c0 = extCharts[ci];
+            if (ci + 1 < extCharts.length) {
+              const c1 = extCharts[ci + 1];
+              drawPerfChart(c0.label, c0.color as [number, number, number], c0.data, { startX: M, width: HALF_W2, updateY: false });
+              drawPerfChart(c1.label, c1.color as [number, number, number], c1.data, { startX: M + HALF_W2 + 4, width: HALF_W2 });
+            } else {
+              drawPerfChart(c0.label, c0.color as [number, number, number], c0.data);
+            }
           }
         }
       }
