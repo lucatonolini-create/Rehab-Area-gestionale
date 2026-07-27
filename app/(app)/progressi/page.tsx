@@ -398,7 +398,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
     });
   }
 
-  // ── Andamento Test Fisiometrici ──────────────────────────────────────────
+  // ── Andamento Test ────────────────────────────────────────────────────────
   const testProgs = programmi
     .filter((p) => !p.assente && !p.riposo && (p.tests?.length ?? 0) > 0)
     .sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""));
@@ -422,7 +422,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
       doc.addPage();
       addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`);
       let y = HDR + 8;
-      y = secTitle("Andamento Test Fisiometrici", y);
+      y = secTitle("Andamento Test", y);
 
       const checkPg = (needed: number) => {
         if (y + needed > H - 18) {
@@ -1184,7 +1184,7 @@ export default function ProgressiPage() {
                     <p className="text-xs text-gray-400 mt-3">{atleta.infortunio}</p>
                   )}
 
-                  {/* ── Andamento test fisiometrici ── */}
+                  {/* ── Andamento test ── */}
                   {(() => {
                     const atletaProgs = programmi
                       .filter((p) => p.atletaId === atleta.id && !p.assente && !p.riposo && (p.tests?.length ?? 0) > 0)

@@ -726,7 +726,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       y = secTitle(`Sessioni di lavoro — ${injProgs.filter(isSessionePDF).length} sessioni`, y);
       renderWeeklyTable(injProgs, sub);
 
-      // ── Grafici Test Fisiometrici ─────────────────────────────────────────
+      // ── Grafici Test ─────────────────────────────────────────────────────
       {
         const injTestMap = new Map<string, { dateLabel: string; value: number }[]>();
         for (const p of injProgs) {
@@ -743,7 +743,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         const testCharts = Array.from(injTestMap.entries()).filter(([, d]) => d.length >= 2);
         if (testCharts.length > 0) {
           checkPage(20, sub);
-          y = secTitle("Andamento Test Fisiometrici", y);
+          y = secTitle("Andamento Test", y);
           const testColors2: [number, number, number][] = [
             [200, 16, 46], [37, 99, 235], [5, 150, 105], [217, 119, 6],
             [124, 58, 237], [236, 72, 153], [14, 116, 144], [101, 163, 13],
@@ -1838,7 +1838,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       </div>
                     )}
 
-                    {/* ── Test fisiometrici ── */}
+                    {/* ── Test ── */}
                     {(() => {
                       const testsPerNome = new Map<string, { data: string; risultato: string }[]>();
                       [...programmiAtleta]
@@ -1868,7 +1868,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       if (testsPerNome.size === 0) return null;
                       return (
                         <div className="pt-2 border-t border-gray-100">
-                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Test fisiometrici</p>
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Test</p>
                           <div className="space-y-3">
                             {Array.from(testsPerNome.entries()).map(([nome, entries]) => (
                               <div key={nome}>

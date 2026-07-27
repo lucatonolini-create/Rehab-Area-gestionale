@@ -942,7 +942,7 @@ export default function PerformancePage() {
       doc.addPage();
       let ty = addHeader(true);
       doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...DARK_RGB);
-      doc.text("Test Fisiometrici", M, ty + 2);
+      doc.text("Test", M, ty + 2);
       ty += 7;
       autoTable(doc, {
         startY: ty,
@@ -1225,7 +1225,7 @@ export default function PerformancePage() {
 
                 {testTimelines.size > 0 && (
                   <>
-                    {sessions.length > 0 && <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Grafici Test Fisiometrici</p>}
+                    {sessions.length > 0 && <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Grafici Test</p>}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {Array.from(testTimelines.entries()).filter(([n]) => n !== "Gacon" && n !== "IFT 30-15").map(([nome, tl]) => {
                         const t = testTrend(tl);
@@ -1355,7 +1355,7 @@ export default function PerformancePage() {
               {testTableRows.length > 0 && (
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Test Fisiometrici</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Test</p>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
