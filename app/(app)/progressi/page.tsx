@@ -96,6 +96,7 @@ function _calcolaDelta(curr: TestFisiometrico, prev: TestFisiometrico | null): n
   const avg = (vals: (string | undefined)[]) => { const ns = vals.map(v => parseFloat(v ?? "")).filter(v => !isNaN(v) && v > 0); return ns.length ? ns.reduce((a, b) => a + b, 0) / ns.length : NaN; };
   if (curr.rsiSx || curr.rsiDx) { const c = avg([curr.rsiSx, curr.rsiDx]), p = avg([prev.rsiSx, prev.rsiDx]); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
   if (curr.rsi && prev.rsi) { const c = parseFloat(curr.rsi), p = parseFloat(prev.rsi); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
+  if (curr.altezzaSalto && prev.altezzaSalto) { const c = parseFloat(curr.altezzaSalto), p = parseFloat(prev.altezzaSalto); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
   if (curr.risultatoSx || curr.risultatoDx) { const c = avg([curr.risultatoSx, curr.risultatoDx]), p = avg([prev.risultatoSx, prev.risultatoDx]); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
   if (curr.risultato && prev.risultato) { const c = parseFloat(curr.risultato), p = parseFloat(prev.risultato); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
   if (curr.vo2max && prev.vo2max) { const c = parseFloat(curr.vo2max), p = parseFloat(prev.vo2max); if (isNaN(c) || isNaN(p) || p <= 0) return null; return ((c - p) / p) * 100; }
@@ -110,6 +111,7 @@ function getTestMainValue(t: TestFisiometrico): number | null {
   };
   if (t.rsiSx || t.rsiDx) return avg(t.rsiSx, t.rsiDx);
   if (t.rsi) { const v = parseFloat(t.rsi); return isNaN(v) ? null : v; }
+  if (t.altezzaSalto) { const v = parseFloat(t.altezzaSalto); return isNaN(v) ? null : v; }
   if (t.vo2max) { const v = parseFloat(t.vo2max); return isNaN(v) ? null : v; }
   if (t.tempo) { const v = parseFloat(t.tempo); return isNaN(v) ? null : v; }
   if (t.risultatoSx || t.risultatoDx) return avg(t.risultatoSx, t.risultatoDx);
@@ -1220,7 +1222,9 @@ export default function ProgressiPage() {
                               const isDropJump = testName === "Drop Jump";
                               const isSLDropJump = testName === "SL Drop Jump";
                               const isJurdan = testName === "Jurdan";
-                              const hasSxDx = !isJurdan && entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
+                              const isCMJ = testName === "CMJ – Counter Movement Jump" || testName === "CMJ braccia libere" || testName === "Squat Jump";
+                              const isBroadJump = testName === "Broad Jump";
+                              const hasSxDx = !isJurdan && !isCMJ && !isBroadJump && entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
                               const chartVals = entries.map((e) => getTestMainValue(e.test)).filter((v): v is number => v !== null);
                               return (
                                 <div key={testName} className="bg-gray-50 rounded-xl p-4">
@@ -1259,6 +1263,8 @@ export default function ProgressiPage() {
                                             <th className="text-right pb-2 pr-4 font-semibold">Contatto (s)</th>
                                             <th className="text-right pb-2 pr-4 font-semibold">RSI</th>
                                           </>}
+                                          {isCMJ && <th className="text-right pb-2 pr-4 font-semibold">Altezza (cm)</th>}
+                                          {isBroadJump && <th className="text-right pb-2 pr-4 font-semibold">Distanza (cm)</th>}
                                           {isSLDropJump && <>
                                             <th className="text-right pb-2 pr-4 font-semibold">RSI Sx</th>
                                             <th className="text-right pb-2 pr-4 font-semibold">RSI Dx</th>
@@ -1277,7 +1283,7 @@ export default function ProgressiPage() {
                                             <th className="text-right pb-2 pr-4 font-semibold">Dx</th>
                                             <th className="text-right pb-2 pr-4 font-semibold">Asim%</th>
                                           </>}
-                                          {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && !hasSxDx && (
+                                          {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && !isCMJ && !isBroadJump && !hasSxDx && (
                                             <th className="text-right pb-2 pr-4 font-semibold">Risultato</th>
                                           )}
                                           <th className="text-right pb-2 font-semibold">Δ</th>
@@ -1308,6 +1314,9 @@ export default function ProgressiPage() {
                                                 <td className="py-2 pr-4 text-right font-mono">{e.test.tempoContatto || "—"}</td>
                                                 <td className="py-2 pr-4 text-right font-mono">{e.test.rsi || "—"}</td>
                                               </>}
+                                              {(isCMJ || isBroadJump) && (
+                                                <td className="py-2 pr-4 text-right font-mono">{e.test.altezzaSalto || "—"}</td>
+                                              )}
                                               {isSLDropJump && <>
                                                 <td className="py-2 pr-4 text-right font-mono">{e.test.rsiSx || "—"}</td>
                                                 <td className="py-2 pr-4 text-right font-mono">{e.test.rsiDx || "—"}</td>
@@ -1336,7 +1345,7 @@ export default function ProgressiPage() {
                                                   {asim !== null ? `${asim.toFixed(1)}%` : "—"}
                                                 </td>
                                               </>}
-                                              {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && !hasSxDx && (
+                                              {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && !isCMJ && !isBroadJump && !hasSxDx && (
                                                 <td className="py-2 pr-4 text-right font-mono">{e.test.risultato || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
                                               )}
                                               <td className={`py-2 text-right font-mono font-semibold ${delta === null ? "text-gray-300" : isGoodDelta ? "text-green-600" : delta === 0 ? "text-gray-400" : "text-red-500"}`}>
