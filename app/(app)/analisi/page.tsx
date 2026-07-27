@@ -239,7 +239,7 @@ async function esportaPDFPanoramica(params: {
 }) {
   const { default: jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
-  const doc = new jsPDF();
+  const doc = new jsPDF({ orientation: "landscape" });
   const red: [number, number, number] = [200, 16, 46];
   const dark: [number, number, number] = [43, 43, 43];
   const gray: [number, number, number] = [130, 130, 130];
@@ -247,7 +247,7 @@ async function esportaPDFPanoramica(params: {
   const attivi = params.atleti.filter((a) => a.stato !== "Disponibile").length;
   const guariti = params.atleti.filter((a) => a.stato === "Disponibile").length;
   const logoDataUrl = await getLogoDataUrl();
-  const M = 14; const W = 210; const H = 297; const HDR = 30;
+  const M = 14; const W = 297; const H = 210; const HDR = 30;
 
   const addHeader = () => {
     doc.setFillColor(247, 247, 247); doc.rect(0, 0, W, HDR, "F");
@@ -325,7 +325,7 @@ async function esportaPDFPanoramica(params: {
   });
   y = (doc as any).lastAutoTable.finalY + 8;
 
-  if (y > 230) { doc.addPage(); addHeader(); y = HDR + 12; }
+  if (y > H - 80) { doc.addPage(); addHeader(); y = HDR + 12; }
   y = secTitle("Categorie di infortunio", y);
   if (params.perTipoInfortunio.length > 0) {
     autoTable(doc, {
@@ -520,10 +520,10 @@ async function esportaPDFPanoramica(params: {
       body: [...crossPan, totRowPan],
       headStyles: { fillColor: dark, textColor: 255, fontSize: 7, halign: "center" },
       bodyStyles: { fontSize: 7.5, cellPadding: 2.5, halign: "center", valign: "middle" },
-      columnStyles: { 0: { halign: "left", cellWidth: 35 }, 1: { cellWidth: 18, fontStyle: "bold" } },
+      columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 18, fontStyle: "bold" } },
       didParseCell: (data: any) => {
-        if (data.section === "head") {
-          data.cell.styles.halign = "center";
+        if (data.section === "body" && data.column.index === 0) {
+          data.cell.styles.halign = "left";
         } else if (data.section === "body" && data.row.index === crossPan.length) {
           data.cell.styles.fillColor = [220, 220, 220]; data.cell.styles.textColor = dark; data.cell.styles.fontStyle = "bolditalic";
         } else if (data.section === "body" && data.row.index % 2 === 1) {
@@ -580,45 +580,25 @@ async function esportaPDFPanoramica(params: {
     }
   });
 
-  // Landscape pages tracking for footer
-  const landscapePageNums = new Set<number>();
-
   if (tuttiRows.length > 0) {
-    const WL = 297; const HL = 210; const ML = 14; const HDRL = 30;
-    doc.addPage("a4", "landscape");
-    landscapePageNums.add(doc.getNumberOfPages());
-    // landscape header
-    doc.setFillColor(247, 247, 247); doc.rect(0, 0, WL, HDRL, "F");
-    doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(0, HDRL, WL, HDRL);
-    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 22, 22);
-    const txL = logoDataUrl ? 30 : ML;
-    doc.setTextColor(...red); doc.setFontSize(14); doc.setFont("helvetica", "bold");
-    doc.text("U.S. Cremonese", txL, 15);
-    doc.setFontSize(9); doc.setFont("helvetica", "bolditalic"); doc.setTextColor(...gray);
-    doc.text("Analisi Rehab Area", txL, 19);
-    doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(175, 175, 175);
-    doc.text("Stagione 2026-2027", WL - ML, 15, { align: "right" });
-    let yL = HDRL + 12;
-    // landscape secTitle
-    doc.setFillColor(245, 245, 245); doc.rect(ML, yL - 4, WL - ML * 2, 8, "F");
-    doc.setFillColor(...red); doc.rect(ML, yL - 4, 2.5, 8, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...dark);
-    doc.text("LISTA COMPLETA ATLETI", ML + 5, yL + 0.8);
-    yL += 11;
+    doc.addPage();
+    addHeader();
+    let yL = HDR + 12;
+    yL = secTitle("Lista completa atleti", yL);
     autoTable(doc, {
       startY: yL,
       head: [["Atleta", "Categoria", "Diagnosi", "Tipo", "Meccanismo", "Note", "Stato", "Inizio", "Fine"]],
       body: tuttiRows,
       headStyles: { fillColor: dark, textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
       bodyStyles: { fontSize: 6.5, cellPadding: 2, overflow: "linebreak", halign: "left", valign: "middle" },
-      margin: { left: ML, right: ML },
+      margin: { left: M, right: M },
       columnStyles: {
         0: { cellWidth: 26 },
         1: { cellWidth: 20 },
-        2: { cellWidth: 50 },
+        2: { cellWidth: 60 },
         3: { cellWidth: 36 },
-        4: { cellWidth: 28 },
-        5: { cellWidth: 34 },
+        4: { cellWidth: 33 },
+        5: { cellWidth: 40 },
         6: { cellWidth: 22 },
         7: { cellWidth: 16 },
         8: { cellWidth: 16 },
@@ -634,33 +614,18 @@ async function esportaPDFPanoramica(params: {
           }
         }
       },
-      didDrawPage: () => {
-        const pn = doc.getNumberOfPages();
-        landscapePageNums.add(pn);
-        // header on continuation pages
-        doc.setFillColor(247, 247, 247); doc.rect(0, 0, WL, HDRL, "F");
-        doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(0, HDRL, WL, HDRL);
-        if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 22, 22);
-        doc.setTextColor(...red); doc.setFontSize(14); doc.setFont("helvetica", "bold");
-        doc.text("U.S. Cremonese", txL, 15);
-        doc.setFontSize(9); doc.setFont("helvetica", "bolditalic"); doc.setTextColor(...gray);
-        doc.text("Analisi Rehab Area", txL, 19);
-        doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(175, 175, 175);
-        doc.text("Stagione 2026-2027", WL - ML, 15, { align: "right" });
-      },
+      didDrawPage: () => { addHeader(); },
     });
   }
 
-  // Footer — handles both portrait and landscape pages
+  // Footer — all pages are landscape
   const totPages = doc.getNumberOfPages();
   for (let i = 1; i <= totPages; i++) {
     doc.setPage(i);
-    const isL = landscapePageNums.has(i);
-    const pw = isL ? 297 : W; const ph = isL ? 210 : H;
-    doc.setDrawColor(210, 210, 210); doc.setLineWidth(0.3); doc.line(M, ph - 12, pw - M, ph - 12);
+    doc.setDrawColor(210, 210, 210); doc.setLineWidth(0.3); doc.line(M, H - 12, W - M, H - 12);
     doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(...gray);
-    doc.text("U.S. Cremonese · Rehab Area", M, ph - 7);
-    doc.text(`Pagina ${i} di ${totPages}`, pw - M, ph - 7, { align: "right" });
+    doc.text("U.S. Cremonese · Rehab Area", M, H - 7);
+    doc.text(`Pagina ${i} di ${totPages}`, W - M, H - 7, { align: "right" });
   }
   doc.save(`USC_Analisi_${oggi.replace(/\//g, "-")}.pdf`);
 }
