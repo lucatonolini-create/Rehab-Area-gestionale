@@ -995,7 +995,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         // ── Grafici Carico Esterno GPS ──────────────────────────────────
         const extMetrics: { label: string; color: [number,number,number]; getData: (s: CaricoSession) => number | null }[] = [
           { label: "Distanza Totale (m)",        color: [37, 99, 235],   getData: (s) => s.distanza },
-          { label: "D>16 km/h — HSR (m)",        color: [234, 88, 12],   getData: (s) => s.hsr      },
+          { label: "D>16 km/h (m)",               color: [234, 88, 12],   getData: (s) => s.hsr      },
           { label: "D>20 km/h (m)",              color: [217, 119, 6],   getData: (s) => s.vel21    },
           { label: "D>25 km/h (m)",              color: [160, 83, 9],    getData: (s) => s.vel25    },
           { label: "Velocità Massima (km/h)",    color: [124, 58, 237],  getData: (s) => s.velMax   },
