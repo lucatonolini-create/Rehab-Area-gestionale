@@ -10,7 +10,7 @@ import autoTable from "jspdf-autotable";
 import {
   loadAtleti, loadProgrammi, nd,
   subscribeToAtleti, subscribeToProgrammi,
-  type Atleta, type Programma,
+  type Atleta, type Programma, type TestFisiometrico,
 } from "@/lib/store";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -26,7 +26,81 @@ function fv(v: number | null, dec = 0): string {
   return dec > 0 ? v.toFixed(dec) : String(Math.round(v));
 }
 
+// ── Test value extractor ──────────────────────────────────────────────────────
+
+function extractTestValues(t: TestFisiometrico) {
+  const n = (s?: unknown): number | undefined => {
+    if (!s || typeof s !== "string" || !s.trim()) return undefined;
+    const v = parseFloat(s.replace(",", "."));
+    return isNaN(v) ? undefined : v;
+  };
+  const nome = t.nome ?? "";
+  if (["CMJ – Counter Movement Jump", "CMJ braccia libere", "Squat Jump", "Broad Jump"].includes(nome))
+    return { single: n(t.altezzaSalto), unit: "cm", isBilateral: false };
+  if (nome === "Drop Jump") {
+    const r = n(t.rsi), a = n(t.altezzaSalto);
+    return { single: r ?? a, unit: r != null ? "" : "cm", isBilateral: false };
+  }
+  if (nome === "SL Drop Jump")
+    return { sx: n(t.rsiSx), dx: n(t.rsiDx), unit: "", isBilateral: true };
+  if (nome === "SL CMJ")
+    return { sx: n(t.risultatoSx), dx: n(t.risultatoDx), unit: "cm", isBilateral: true };
+  if (nome === "Squeeze")
+    return { single: n(t.risultato), unit: "N", isBilateral: false };
+  if (nome === "Lunge test" || nome === "Dorsiflexion Lunge Test")
+    return { sx: n(t.risultatoSx), dx: n(t.risultatoDx), unit: "cm", isBilateral: true };
+  if (nome === "QSLS")
+    return { sx: n(t.risultatoSx), dx: n(t.risultatoDx), unit: "", isBilateral: true };
+  if (nome === "Gacon" || nome === "IFT 30-15")
+    return { single: n(t.livello), unit: "", isBilateral: false };
+  if (nome.startsWith("Sprint") || nome === "10x100m")
+    return { single: n(t.tempo), unit: "s", isBilateral: false };
+  if (nome === "Jurdan")
+    return { sx: n(t.ginocchioSx), dx: n(t.ginocchioDx), unit: "°", isBilateral: true };
+  const sv = n(t.risultato);
+  if (sv != null) return { single: sv, unit: t.unita || "", isBilateral: false };
+  const sx = n(t.risultatoSx), dx = n(t.risultatoDx);
+  if (sx != null || dx != null) return { sx, dx, unit: t.unita || "", isBilateral: true };
+  return { unit: "", isBilateral: false } as { single?: number; sx?: number; dx?: number; unit: string; isBilateral: boolean };
+}
+
+const TEST_COLORS: Record<string, string> = {
+  "CMJ – Counter Movement Jump": "#7c3aed",
+  "CMJ braccia libere": "#8b5cf6",
+  "Squat Jump": "#6d28d9",
+  "Broad Jump": "#4f46e5",
+  "Drop Jump": "#2563eb",
+  "SL Drop Jump": "#0891b2",
+  "SL CMJ": "#0e7490",
+  "Squeeze": "#d97706",
+  "Lunge test": "#16a34a",
+  "Dorsiflexion Lunge Test": "#15803d",
+  "QSLS": "#dc2626",
+  "Gacon": "#ea580c",
+  "IFT 30-15": "#f59e0b",
+  "Sprint 10m": "#10b981",
+  "Sprint 20m": "#059669",
+  "Sprint 30m": "#047857",
+  "10x100m": "#65a30d",
+  "Jurdan": "#db2777",
+};
+
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+interface TestPoint {
+  data: string;
+  dateLabel: string;
+  single?: number;
+  sx?: number;
+  dx?: number;
+}
+
+interface TestTimeline {
+  points: TestPoint[];
+  unit: string;
+  isBilateral: boolean;
+  color: string;
+}
 
 interface Session {
   data: string;
@@ -202,6 +276,114 @@ function MetricChart({ sessions, metric }: { sessions: Session[]; metric: Metric
   );
 }
 
+// ── Test chart ───────────────────────────────────────────────────────────────
+
+function TestLineChart({ points, color, isBilateral, unit: _unit }: { points: TestPoint[]; color: string; isBilateral: boolean; unit: string }) {
+  const W = 600, H = 180;
+  const PAD = { top: 16, right: 16, bottom: 34, left: 46 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top - PAD.bottom;
+
+  const noData = (
+    <div className="flex items-center justify-center text-gray-300 text-xs" style={{ height: 160 }}>
+      Dati insufficienti
+    </div>
+  );
+
+  if (!isBilateral) {
+    const pts = points.filter((p) => p.single != null) as (TestPoint & { single: number })[];
+    if (pts.length < 2) return noData;
+    const vals = pts.map((p) => p.single);
+    const rawMin = Math.min(...vals), rawMax = Math.max(...vals);
+    const span = (rawMax - rawMin) * 0.12 || rawMax * 0.1 || 1;
+    const minV = rawMin - span, maxV = rawMax + span, rangeV = maxV - minV;
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const n = pts.length;
+    const toX = (i: number) => PAD.left + (i / Math.max(n - 1, 1)) * cW;
+    const toY = (v: number) => PAD.top + (1 - (v - minV) / rangeV) * cH;
+    const linePts = pts.map((p, i) => `${toX(i).toFixed(1)},${toY(p.single).toFixed(1)}`).join(" ");
+    const areaPts = `${toX(0).toFixed(1)},${(PAD.top + cH).toFixed(1)} ${linePts} ${toX(n - 1).toFixed(1)},${(PAD.top + cH).toFixed(1)}`;
+    const yTicks = [0, 0.25, 0.5, 0.75, 1].map((t) => ({ y: PAD.top + t * cH, label: (maxV - t * rangeV).toFixed(1) }));
+    const step = n <= 10 ? 1 : n <= 20 ? 2 : Math.ceil(n / 10);
+    const gid = `tg-${color.replace("#", "")}`;
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 160 }} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.01" />
+          </linearGradient>
+        </defs>
+        {yTicks.map((t, i) => (
+          <g key={i}>
+            <line x1={PAD.left} y1={t.y} x2={W - PAD.right} y2={t.y} stroke="#e5e7eb" strokeWidth="0.8" />
+            <text x={PAD.left - 4} y={t.y + 3.5} textAnchor="end" fontSize="9" fill="#9ca3af">{t.label}</text>
+          </g>
+        ))}
+        <line x1={PAD.left} y1={toY(avg)} x2={W - PAD.right} y2={toY(avg)} stroke={color} strokeWidth="0.9" strokeDasharray="5,4" opacity="0.4" />
+        <polygon points={areaPts} fill={`url(#${gid})`} />
+        <polyline points={linePts} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {pts.map((p, i) => (
+          <g key={i}>
+            <circle cx={toX(i)} cy={toY(p.single)} r="4" fill={color} stroke="white" strokeWidth="1.5" />
+            {i % step === 0 && <text x={toX(i)} y={H - PAD.bottom + 14} textAnchor="middle" fontSize="8.5" fill="#6b7280">{p.dateLabel}</text>}
+          </g>
+        ))}
+      </svg>
+    );
+  }
+
+  // Bilateral
+  const SX_COL = "#2563eb", DX_COL = "#dc2626";
+  const allVals: number[] = [];
+  points.forEach((p) => { if (p.sx != null) allVals.push(p.sx); if (p.dx != null) allVals.push(p.dx); });
+  if (allVals.length < 2) return noData;
+  const rawMin = Math.min(...allVals), rawMax = Math.max(...allVals);
+  const span = (rawMax - rawMin) * 0.12 || rawMax * 0.1 || 1;
+  const minV = rawMin - span, maxV = rawMax + span, rangeV = maxV - minV;
+  const n = points.length;
+  const toX = (i: number) => PAD.left + (i / Math.max(n - 1, 1)) * cW;
+  const toY = (v: number) => PAD.top + (1 - (v - minV) / rangeV) * cH;
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((t) => ({ y: PAD.top + t * cH, label: (maxV - t * rangeV).toFixed(1) }));
+  const step = n <= 10 ? 1 : n <= 20 ? 2 : Math.ceil(n / 10);
+
+  const buildSegs = (getter: (p: TestPoint) => number | undefined) => {
+    const segs: string[][] = [];
+    let cur: string[] = [];
+    points.forEach((p, i) => {
+      const v = getter(p);
+      if (v != null) { cur.push(`${toX(i).toFixed(1)},${toY(v).toFixed(1)}`); }
+      else if (cur.length) { segs.push(cur); cur = []; }
+    });
+    if (cur.length) segs.push(cur);
+    return segs;
+  };
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 160 }} preserveAspectRatio="none">
+      {yTicks.map((t, i) => (
+        <g key={i}>
+          <line x1={PAD.left} y1={t.y} x2={W - PAD.right} y2={t.y} stroke="#e5e7eb" strokeWidth="0.8" />
+          <text x={PAD.left - 4} y={t.y + 3.5} textAnchor="end" fontSize="9" fill="#9ca3af">{t.label}</text>
+        </g>
+      ))}
+      {buildSegs((p) => p.sx).map((seg, i) => <polyline key={`sx${i}`} points={seg.join(" ")} fill="none" stroke={SX_COL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />)}
+      {buildSegs((p) => p.dx).map((seg, i) => <polyline key={`dx${i}`} points={seg.join(" ")} fill="none" stroke={DX_COL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="6,3" />)}
+      {points.map((p, i) => (
+        <g key={i}>
+          {p.sx != null && <circle cx={toX(i)} cy={toY(p.sx)} r="4" fill={SX_COL} stroke="white" strokeWidth="1.5" />}
+          {p.dx != null && <circle cx={toX(i)} cy={toY(p.dx)} r="4" fill={DX_COL} stroke="white" strokeWidth="1.5" />}
+          {i % step === 0 && <text x={toX(i)} y={H - PAD.bottom + 14} textAnchor="middle" fontSize="8.5" fill="#6b7280">{p.dateLabel}</text>}
+        </g>
+      ))}
+      <circle cx={PAD.left + 4} cy={H - 5} r="3" fill={SX_COL} />
+      <text x={PAD.left + 10} y={H - 2} fontSize="8" fill="#6b7280">Sx</text>
+      <circle cx={PAD.left + 28} cy={H - 5} r="3" fill={DX_COL} />
+      <text x={PAD.left + 34} y={H - 2} fontSize="8" fill="#6b7280">Dx</text>
+    </svg>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 const RED = "#C8102E";
@@ -228,10 +410,10 @@ export default function PerformancePage() {
     return () => { ua(); up(); };
   }, []);
 
-  // Athletes who have ≥1 session with GPS/RPE data
+  // Athletes who have ≥1 session with GPS/RPE data OR test data
   const atletiConDati = useMemo(() => {
     const ids = new Set(
-      programmi.filter((p) => toSession(p) !== null).map((p) => p.atletaId)
+      programmi.filter((p) => toSession(p) !== null || (p.tests?.length ?? 0) > 0).map((p) => p.atletaId)
     );
     return atleti
       .filter((a) => ids.has(a.id))
@@ -281,6 +463,67 @@ export default function PerformancePage() {
     const vals = sessions.map((s) => s[key] as number | null).filter((v) => v != null) as number[];
     if (!vals.length) return "—";
     return fv(Math.max(...vals), dec);
+  }
+
+  // ── Test timelines ──────────────────────────────────────────────────────────
+  const testTimelines = useMemo((): Map<string, TestTimeline> => {
+    if (!selectedId) return new Map();
+    const map = new Map<string, TestTimeline>();
+    programmi
+      .filter((p) => p.atletaId === selectedId && (p.tests?.length ?? 0) > 0)
+      .sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""))
+      .forEach((p) => {
+        (p.tests ?? []).forEach((t) => {
+          const ev = extractTestValues(t);
+          if (ev.single == null && ev.sx == null && ev.dx == null) return;
+          const dateLabel = p.data
+            ? new Date(p.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" })
+            : "";
+          const pt: TestPoint = { data: p.data ?? "", dateLabel, single: ev.single, sx: ev.sx, dx: ev.dx };
+          if (!map.has(t.nome)) {
+            map.set(t.nome, { points: [], unit: ev.unit, isBilateral: ev.isBilateral, color: TEST_COLORS[t.nome] ?? "#6b7280" });
+          }
+          map.get(t.nome)!.points.push(pt);
+        });
+      });
+    return map;
+  }, [programmi, selectedId]);
+
+  function lastTestVal(tl: TestTimeline): string {
+    const last = tl.points[tl.points.length - 1];
+    if (!last) return "—";
+    if (!tl.isBilateral) return last.single != null ? `${last.single} ${tl.unit}`.trim() : "—";
+    const p: string[] = [];
+    if (last.sx != null) p.push(`Sx ${last.sx}`);
+    if (last.dx != null) p.push(`Dx ${last.dx}`);
+    return (p.join(" / ") + (tl.unit ? ` ${tl.unit}` : "")) || "—";
+  }
+
+  function avgTestVal(tl: TestTimeline): string {
+    if (!tl.isBilateral) {
+      const vs = tl.points.map((p) => p.single).filter((v): v is number => v != null);
+      if (!vs.length) return "—";
+      return (vs.reduce((a, b) => a + b, 0) / vs.length).toFixed(1);
+    }
+    const sx = tl.points.map((p) => p.sx).filter((v): v is number => v != null);
+    const dx = tl.points.map((p) => p.dx).filter((v): v is number => v != null);
+    const p: string[] = [];
+    if (sx.length) p.push(`Sx ${(sx.reduce((a, b) => a + b, 0) / sx.length).toFixed(1)}`);
+    if (dx.length) p.push(`Dx ${(dx.reduce((a, b) => a + b, 0) / dx.length).toFixed(1)}`);
+    return p.join(" / ") || "—";
+  }
+
+  function testTrend(tl: TestTimeline): "up" | "down" | "flat" | "none" {
+    const vals = tl.isBilateral
+      ? tl.points.map((p) => {
+          const vs = [p.sx, p.dx].filter((v): v is number => v != null);
+          return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null;
+        }).filter((v): v is number => v != null)
+      : tl.points.map((p) => p.single).filter((v): v is number => v != null);
+    if (vals.length < 2) return "none";
+    const diff = ((vals[vals.length - 1] - vals[vals.length - 2]) / (Math.abs(vals[vals.length - 2]) || 1)) * 100;
+    if (Math.abs(diff) < 3) return "flat";
+    return diff > 0 ? "up" : "down";
   }
 
   // ── PDF ─────────────────────────────────────────────────────────────────────
@@ -667,7 +910,7 @@ export default function PerformancePage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">Performance</h1>
-              <p className="text-sm text-gray-500">Andamento GPS e carico in riabilitazione</p>
+              <p className="text-sm text-gray-500">Test, andamento GPS e carico in riabilitazione</p>
             </div>
           </div>
 
@@ -758,91 +1001,170 @@ export default function PerformancePage() {
           </div>
         )}
 
-        {atletiConDati.length > 0 && sessions.length === 0 && (
+        {atletiConDati.length > 0 && sessions.length === 0 && testTimelines.size === 0 && (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <Activity className="w-12 h-12 text-gray-200 mb-3" />
-            <p className="text-gray-500 font-medium">Nessun dato GPS per questo atleta</p>
+            <p className="text-gray-500 font-medium">Nessun dato per questo atleta</p>
           </div>
         )}
 
-        {sessions.length > 0 && (
+        {(sessions.length > 0 || testTimelines.size > 0) && (
           <>
-            {/* ── KPI strip ──────────────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-5">
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Sessioni</p>
-                <p className="text-2xl font-bold text-gray-900">{sessions.length}</p>
-              </div>
-              {activeMetrics.map((m) => {
-                const t = trend(m.key);
-                return (
-                  <div key={m.key} className="bg-white rounded-xl border border-gray-200 p-4">
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
-                      {m.shortLabel}{m.unit && ` (${m.unit})`}
-                    </p>
-                    <div className="flex items-end gap-1.5">
-                      <span className="text-2xl font-bold text-gray-900">{lastVal(m.key, m.dec)}</span>
-                      <TrendIcon t={t} />
-                    </div>
-                    <p className="text-xs text-gray-400 mt-0.5">media {avgVal(m.key, m.dec)}</p>
+            {/* ── GPS KPI strip ──────────────────────────────────────────────── */}
+            {sessions.length > 0 && (
+              <>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">GPS e Carico</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-5">
+                  <div className="bg-white rounded-xl border border-gray-200 p-4">
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Sessioni</p>
+                    <p className="text-2xl font-bold text-gray-900">{sessions.length}</p>
                   </div>
-                );
-              })}
-            </div>
+                  {activeMetrics.map((m) => {
+                    const t = trend(m.key);
+                    return (
+                      <div key={m.key} className="bg-white rounded-xl border border-gray-200 p-4">
+                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
+                          {m.shortLabel}{m.unit && ` (${m.unit})`}
+                        </p>
+                        <div className="flex items-end gap-1.5">
+                          <span className="text-2xl font-bold text-gray-900">{lastVal(m.key, m.dec)}</span>
+                          <TrendIcon t={t} />
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5">media {avgVal(m.key, m.dec)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* ── Test KPI strip ─────────────────────────────────────────────── */}
+            {testTimelines.size > 0 && (
+              <>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-1">Test Fisiometrici</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-5">
+                  {Array.from(testTimelines.entries()).map(([nome, tl]) => {
+                    const t = testTrend(tl);
+                    return (
+                      <div key={nome} className="bg-white rounded-xl border border-gray-200 p-4">
+                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1 truncate" title={nome}>{nome}</p>
+                        <div className="flex items-end gap-1.5 flex-wrap">
+                          <span className="text-lg font-bold text-gray-900 leading-tight">{lastTestVal(tl)}</span>
+                          <TrendIcon t={t} />
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5">media {avgTestVal(tl)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             {/* ── GRAFICI ────────────────────────────────────────────────────── */}
             {view === "grafici" && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {activeMetrics.map((m) => {
-                  const t = trend(m.key);
-                  const isExpanded = expandedKey === m.key;
-                  return (
-                    <div
-                      key={m.key}
-                      className={`bg-white rounded-xl border border-gray-200 p-4 ${isExpanded ? "lg:col-span-2" : ""}`}
-                    >
-                      {/* Card header */}
-                      <div className="mb-3">
-                        {/* Row 1: title + expand */}
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: m.color }} />
-                            <span className="font-semibold text-gray-800 text-sm">{m.label}</span>
-                            {m.unit && (
-                              <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{m.unit}</span>
-                            )}
+              <>
+                {sessions.length > 0 && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                    {activeMetrics.map((m) => {
+                      const t = trend(m.key);
+                      const isExpanded = expandedKey === m.key;
+                      return (
+                        <div
+                          key={m.key}
+                          className={`bg-white rounded-xl border border-gray-200 p-4 ${isExpanded ? "lg:col-span-2" : ""}`}
+                        >
+                          <div className="mb-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: m.color }} />
+                                <span className="font-semibold text-gray-800 text-sm">{m.label}</span>
+                                {m.unit && (
+                                  <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{m.unit}</span>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => setExpandedKey(isExpanded ? null : m.key)}
+                                className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 px-2 py-1 rounded transition-colors"
+                              >
+                                {isExpanded ? "Riduci ↙" : "Espandi ↗"}
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Ultimo</span>
+                                <span className="text-base font-bold" style={{ color: m.color }}>{lastVal(m.key, m.dec)}</span>
+                                <TrendIcon t={t} />
+                              </div>
+                              <div className="w-px h-4 bg-gray-200" />
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-gray-400">Media</span>
+                                <span className="text-sm font-semibold text-gray-700">{avgVal(m.key, m.dec)}</span>
+                              </div>
+                              <div className="w-px h-4 bg-gray-200" />
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-gray-400">Max</span>
+                                <span className="text-sm font-semibold text-gray-700">{maxVal(m.key, m.dec)}</span>
+                              </div>
+                            </div>
                           </div>
-                          <button
-                            onClick={() => setExpandedKey(isExpanded ? null : m.key)}
-                            className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 px-2 py-1 rounded transition-colors"
-                          >
-                            {isExpanded ? "Riduci ↙" : "Espandi ↗"}
-                          </button>
+                          <MetricChart sessions={sessions} metric={m} />
                         </div>
-                        {/* Row 2: stats */}
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Ultimo</span>
-                            <span className="text-base font-bold" style={{ color: m.color }}>{lastVal(m.key, m.dec)}</span>
-                            <TrendIcon t={t} />
+                      );
+                    })}
+                  </div>
+                )}
+
+                {testTimelines.size > 0 && (
+                  <>
+                    {sessions.length > 0 && <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Grafici Test Fisiometrici</p>}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {Array.from(testTimelines.entries()).map(([nome, tl]) => {
+                        const t = testTrend(tl);
+                        const ek = `test-${nome}`;
+                        const isExpanded = expandedKey === ek;
+                        return (
+                          <div key={nome} className={`bg-white rounded-xl border border-gray-200 p-4 ${isExpanded ? "lg:col-span-2" : ""}`}>
+                            <div className="mb-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: tl.color }} />
+                                  <span className="font-semibold text-gray-800 text-sm">{nome}</span>
+                                  {tl.unit && <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{tl.unit}</span>}
+                                  {tl.isBilateral && <span className="text-xs text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">Sx / Dx</span>}
+                                </div>
+                                <button
+                                  onClick={() => setExpandedKey(isExpanded ? null : ek)}
+                                  className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 px-2 py-1 rounded transition-colors"
+                                >
+                                  {isExpanded ? "Riduci ↙" : "Espandi ↗"}
+                                </button>
+                              </div>
+                              <div className="flex items-center gap-4 flex-wrap">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Ultimo</span>
+                                  <span className="text-base font-bold" style={{ color: tl.color }}>{lastTestVal(tl)}</span>
+                                  <TrendIcon t={t} />
+                                </div>
+                                <div className="w-px h-4 bg-gray-200" />
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-gray-400">Media</span>
+                                  <span className="text-sm font-semibold text-gray-700">{avgTestVal(tl)}</span>
+                                </div>
+                                <div className="w-px h-4 bg-gray-200" />
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-gray-400">N.</span>
+                                  <span className="text-sm font-semibold text-gray-700">{tl.points.length}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <TestLineChart points={tl.points} color={tl.color} isBilateral={tl.isBilateral} unit={tl.unit} />
                           </div>
-                          <div className="w-px h-4 bg-gray-200" />
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs text-gray-400">Media</span>
-                            <span className="text-sm font-semibold text-gray-700">{avgVal(m.key, m.dec)}</span>
-                          </div>
-                          <div className="w-px h-4 bg-gray-200" />
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs text-gray-400">Max</span>
-                            <span className="text-sm font-semibold text-gray-700">{maxVal(m.key, m.dec)}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <MetricChart sessions={sessions} metric={m} />
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
+                  </>
+                )}
+              </>
             )}
 
             {/* ── TABELLA ────────────────────────────────────────────────────── */}
