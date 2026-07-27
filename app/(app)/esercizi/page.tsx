@@ -997,7 +997,7 @@ export default function EserciziPage() {
                               {prog.tests.map((t, i) => {
                                 const isDropJump   = t.nome === "Drop Jump";
                                 const isSLDropJump = t.nome === "SL Drop Jump";
-                                const isCMJInline  = t.nome === "CMJ – Counter Movement Jump" || t.nome === "CMJ braccia libere";
+                                const isCMJInline  = t.nome === "CMJ – Counter Movement Jump" || t.nome === "CMJ braccia libere" || t.nome === "Squat Jump";
                                 const isQSLSInline = t.nome === "QSLS";
                                 const asim = isSLDropJump
                                   ? calcolaAsimmetria(t.rsiSx ?? "", t.rsiDx ?? "")
@@ -1574,7 +1574,7 @@ export default function EserciziPage() {
                         const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(t.nome);
                         const isSqueeze    = t.nome === "Squeeze";
                         const isJurdan     = t.nome === "Jurdan";
-                        const isCMJ        = t.nome === "CMJ – Counter Movement Jump" || t.nome === "CMJ braccia libere";
+                        const isCMJ        = t.nome === "CMJ – Counter Movement Jump" || t.nome === "CMJ braccia libere" || t.nome === "Squat Jump";
                         const isQSLS       = t.nome === "QSLS";
                         const isDefaultDxSx = !isDropJump && !isSLDropJump && !isPersonalizzato && !isGaconIFT && !isSprintTempo && !isSqueeze && !isJurdan && !isCMJ && !isQSLS;
                         const asim = isSLDropJump
