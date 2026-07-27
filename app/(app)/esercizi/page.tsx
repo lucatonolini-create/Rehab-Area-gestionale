@@ -1140,7 +1140,7 @@ export default function EserciziPage() {
                                     ) : isDropJump ? (
                                       <div className="flex gap-4 mt-1.5 text-xs text-gray-600">
                                         {t.altezzaSalto && <span>Altezza: <strong>{t.altezzaSalto} cm</strong></span>}
-                                        {t.tempoContatto && <span>Contatto: <strong>{t.tempoContatto} ms</strong></span>}
+                                        {t.tempoContatto && <span>Contatto: <strong>{t.tempoContatto} s</strong></span>}
                                         {t.rsi && <span>RSI: <strong>{t.rsi}</strong></span>}
                                       </div>
                                     ) : isSLDropJump ? (
@@ -1148,13 +1148,13 @@ export default function EserciziPage() {
                                         <div>
                                           <span className="font-semibold text-blue-600">Sx</span>
                                           {t.altezzaSaltoSx && <span className="ml-2">↕ <strong>{t.altezzaSaltoSx} cm</strong></span>}
-                                          {t.tempoContattoSx && <span className="ml-2">⏱ <strong>{t.tempoContattoSx} ms</strong></span>}
+                                          {t.tempoContattoSx && <span className="ml-2">⏱ <strong>{t.tempoContattoSx} s</strong></span>}
                                           {t.rsiSx && <span className="ml-2">RSI <strong>{t.rsiSx}</strong></span>}
                                         </div>
                                         <div>
                                           <span className="font-semibold text-orange-600">Dx</span>
                                           {t.altezzaSaltoDx && <span className="ml-2">↕ <strong>{t.altezzaSaltoDx} cm</strong></span>}
-                                          {t.tempoContattoDx && <span className="ml-2">⏱ <strong>{t.tempoContattoDx} ms</strong></span>}
+                                          {t.tempoContattoDx && <span className="ml-2">⏱ <strong>{t.tempoContattoDx} s</strong></span>}
                                           {t.rsiDx && <span className="ml-2">RSI <strong>{t.rsiDx}</strong></span>}
                                         </div>
                                       </div>
@@ -1716,8 +1716,8 @@ export default function EserciziPage() {
                                   <input value={t.altezzaSalto ?? ""} onChange={(e) => aggiornaTest(i, "altezzaSalto", e.target.value)} placeholder="es. 32" className={inp} />
                                 </div>
                                 <div>
-                                  <p className="text-xs text-gray-500 mb-1">Tempo contatto (ms)</p>
-                                  <input value={t.tempoContatto ?? ""} onChange={(e) => aggiornaTest(i, "tempoContatto", e.target.value)} placeholder="es. 210" className={inp} />
+                                  <p className="text-xs text-gray-500 mb-1">Tempo contatto (s)</p>
+                                  <input value={t.tempoContatto ?? ""} onChange={(e) => aggiornaTest(i, "tempoContatto", e.target.value)} placeholder="es. 0.21" className={inp} />
                                 </div>
                                 <div>
                                   <p className="text-xs text-gray-500 mb-1">RSI</p>
@@ -1737,8 +1737,8 @@ export default function EserciziPage() {
                                       <input value={t.altezzaSaltoSx ?? ""} onChange={(e) => aggiornaTest(i, "altezzaSaltoSx", e.target.value)} placeholder="es. 30" className={inp} />
                                     </div>
                                     <div>
-                                      <p className="text-xs text-gray-500 mb-1">Tempo contatto (ms)</p>
-                                      <input value={t.tempoContattoSx ?? ""} onChange={(e) => aggiornaTest(i, "tempoContattoSx", e.target.value)} placeholder="es. 220" className={inp} />
+                                      <p className="text-xs text-gray-500 mb-1">Tempo contatto (s)</p>
+                                      <input value={t.tempoContattoSx ?? ""} onChange={(e) => aggiornaTest(i, "tempoContattoSx", e.target.value)} placeholder="es. 0.22" className={inp} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-gray-500 mb-1">RSI</p>
@@ -1753,8 +1753,8 @@ export default function EserciziPage() {
                                       <input value={t.altezzaSaltoDx ?? ""} onChange={(e) => aggiornaTest(i, "altezzaSaltoDx", e.target.value)} placeholder="es. 32" className={inp} />
                                     </div>
                                     <div>
-                                      <p className="text-xs text-gray-500 mb-1">Tempo contatto (ms)</p>
-                                      <input value={t.tempoContattoDx ?? ""} onChange={(e) => aggiornaTest(i, "tempoContattoDx", e.target.value)} placeholder="es. 210" className={inp} />
+                                      <p className="text-xs text-gray-500 mb-1">Tempo contatto (s)</p>
+                                      <input value={t.tempoContattoDx ?? ""} onChange={(e) => aggiornaTest(i, "tempoContattoDx", e.target.value)} placeholder="es. 0.21" className={inp} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-gray-500 mb-1">RSI</p>
