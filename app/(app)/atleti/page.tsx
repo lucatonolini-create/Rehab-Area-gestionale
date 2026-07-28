@@ -1876,7 +1876,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                 const precedenti = storico.filter((inf) => !inf.attivo);
                 const isSessione = (p: Programma) => !p.riposo;
                 const matchInf = (p: Programma, inf: InfortunioStorico) => {
-                  const eid = p.infortunioId === "__corrente__" ? undefined : p.infortunioId;
+                  if (p.infortunioId === "__corrente__") return false; // appartiene solo all'infortunio principale
+                  const eid = p.infortunioId;
                   if (eid) return eid === inf.id;
                   if (!p.data || !inf.inizioRehab) return false;
                   if (p.data < inf.inizioRehab) return false;
@@ -1885,10 +1886,16 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                 };
                 const giorniPerInf = (inf: InfortunioStorico) =>
                   programmiAtleta.filter((p) => matchInf(p, inf) && isSessione(p)).length;
+                // sessioni già attribuite agli infortuni concorrenti (evita doppio conteggio)
+                const concurrentSessIds = new Set(
+                  programmiAtleta
+                    .filter((p) => concorrenti.some((inf) => matchInf(p, inf)) && isSessione(p))
+                    .map((p) => p.id)
+                );
                 const giorniCorrente = selected.stato === "Infortunato" && selected.inizioRehab
                   ? programmiAtleta.filter((p) => (
                       p.infortunioId === "__corrente__" ||
-                      (!p.infortunioId && p.data >= selected.inizioRehab)
+                      (!p.infortunioId && p.data >= selected.inizioRehab && !concurrentSessIds.has(p.id))
                     ) && isSessione(p)).length
                   : 0;
                 const totaleStagione = storico.reduce((s, inf) => s + giorniPerInf(inf), 0) + giorniCorrente;
