@@ -1221,7 +1221,7 @@ export default function ProgressiPage() {
 
                         {isOpen && (
                           <div className="mt-4 space-y-5">
-                            {testNames.map((testName) => {
+                            {testNames.map((testName, testIdx) => {
                               const entries = testsByName[testName];
                               const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(testName);
                               const isGaconIFT = testName === "Gacon" || testName === "IFT 30-15";
@@ -1233,9 +1233,10 @@ export default function ProgressiPage() {
                               const isQSLS = testName === "QSLS";
                               const hasSxDx = !isJurdan && !isCMJ && !isBroadJump && entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
                               const chartVals = entries.map((e) => getTestMainValue(e.test)).filter((v): v is number => v !== null);
+                              const thBg = testIdx % 2 === 0 ? "bg-[#C8102E]" : "bg-[#4B5563]";
                               return (
-                                <div key={testName} className="bg-gray-50 rounded-xl p-4">
-                                  <h4 className="text-sm font-bold text-gray-800 mb-3">{testName}</h4>
+                                <div key={testName} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                                  <h4 className="text-sm font-bold italic text-gray-900 mb-3">{testName}</h4>
                                   {chartVals.length >= 2 && (
                                     <div className="mb-3 flex items-center gap-4">
                                       <Sparkline values={chartVals} invert={isSprintTempo} />
@@ -1243,9 +1244,10 @@ export default function ProgressiPage() {
                                         {(() => {
                                           const first = chartVals[0], last = chartVals[chartVals.length - 1];
                                           const pct = first > 0 ? ((last - first) / first) * 100 : null;
-                                          const isGood = pct !== null && (isSprintTempo ? pct < 0 : pct > 0);
+                                          const isGood = pct !== null && Math.abs(pct) >= 10 && (isSprintTempo ? pct < 0 : pct > 0);
+                                          const isBad = pct !== null && Math.abs(pct) >= 10 && (isSprintTempo ? pct > 0 : pct < 0);
                                           return pct !== null ? (
-                                            <span className={`text-sm font-bold ${isGood ? "text-green-600" : Math.abs(pct) < 1 ? "text-gray-400" : "text-orange-500"}`}>
+                                            <span className={`text-sm font-bold ${isGood ? "text-green-600" : isBad ? "text-red-500" : "text-gray-400"}`}>
                                               {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%
                                             </span>
                                           ) : null;
@@ -1257,43 +1259,43 @@ export default function ProgressiPage() {
                                   <div className="overflow-x-auto">
                                     <table className="w-full text-xs">
                                       <thead>
-                                        <tr className="text-gray-400 border-b border-gray-200">
-                                          <th className="text-left pb-2 pr-4 font-semibold">Data</th>
-                                          {isSprintTempo && <th className="text-right pb-2 pr-4 font-semibold">Tempo (s)</th>}
+                                        <tr className={`${thBg} text-white`}>
+                                          <th className="text-left py-2 px-2 font-semibold">Data</th>
+                                          {isSprintTempo && <th className="text-right py-2 px-2 font-semibold">Tempo (s)</th>}
                                           {isGaconIFT && <>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Livello</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Vo2Max</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">VAM (km/h)</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Livello</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Vo2Max</th>
+                                            <th className="text-right py-2 px-2 font-semibold">VAM (km/h)</th>
                                           </>}
                                           {isDropJump && <>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Alt. (cm)</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Contatto (s)</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">RSI</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Alt. (cm)</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Contatto (s)</th>
+                                            <th className="text-right py-2 px-2 font-semibold">RSI</th>
                                           </>}
-                                          {isCMJ && <th className="text-right pb-2 pr-4 font-semibold">Altezza (cm)</th>}
-                                          {isBroadJump && <th className="text-right pb-2 pr-4 font-semibold">Distanza (cm)</th>}
+                                          {isCMJ && <th className="text-right py-2 px-2 font-semibold">Altezza (cm)</th>}
+                                          {isBroadJump && <th className="text-right py-2 px-2 font-semibold">Distanza (cm)</th>}
                                           {isSLDropJump && <>
-                                            <th className="text-right pb-2 pr-4 font-semibold">RSI Sx</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">RSI Dx</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Asim%</th>
+                                            <th className="text-right py-2 px-2 font-semibold">RSI Sx</th>
+                                            <th className="text-right py-2 px-2 font-semibold">RSI Dx</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Asim%</th>
                                           </>}
                                           {isJurdan && <>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Gin.Dx (°)</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Anca Sx (°)</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Δ Dx/Sx</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Gin.Sx (°)</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Anca Dx (°)</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Δ Sx/Dx</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Gin.Dx (°)</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Anca Sx (°)</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Δ Dx/Sx</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Gin.Sx (°)</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Anca Dx (°)</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Δ Sx/Dx</th>
                                           </>}
                                           {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && hasSxDx && <>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Sx</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Dx</th>
-                                            {!isQSLS && <th className="text-right pb-2 pr-4 font-semibold">Asim%</th>}
+                                            <th className="text-right py-2 px-2 font-semibold">Sx</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Dx</th>
+                                            {!isQSLS && <th className="text-right py-2 px-2 font-semibold">Asim%</th>}
                                           </>}
                                           {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && !isCMJ && !isBroadJump && !hasSxDx && (
-                                            <th className="text-right pb-2 pr-4 font-semibold">Risultato</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Risultato</th>
                                           )}
-                                          <th className="text-right pb-2 font-semibold">Δ</th>
+                                          <th className="text-right py-2 px-2 font-semibold">%</th>
                                         </tr>
                                       </thead>
                                       <tbody>
@@ -1304,30 +1306,32 @@ export default function ProgressiPage() {
                                             ? _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "")
                                             : isQSLS ? null : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
                                           const isLast = i === entries.length - 1;
-                                          const isGoodDelta = delta !== null && (isSprintTempo ? delta < 0 : delta > 0);
+                                          const isSignificant = delta !== null && Math.abs(delta) >= 10;
+                                          const isGoodDelta = isSignificant && (isSprintTempo ? delta <= -10 : delta >= 10);
+                                          const isBadDelta = isSignificant && (isSprintTempo ? delta >= 10 : delta <= -10);
                                           return (
                                             <tr key={i} className={`border-b border-gray-100 ${isLast ? "font-semibold" : ""}`}>
-                                              <td className="py-2 pr-4 text-gray-600">{fmtD(e.data)}</td>
+                                              <td className="py-2 px-2 text-gray-600">{fmtD(e.data)}</td>
                                               {isSprintTempo && (
-                                                <td className="py-2 pr-4 text-right font-mono">{e.test.tempo || "—"}</td>
+                                                <td className="py-2 px-2 text-right font-mono">{e.test.tempo || "—"}</td>
                                               )}
                                               {isGaconIFT && <>
-                                                <td className="py-2 pr-4 text-right font-mono">{e.test.livello || "—"}</td>
-                                                <td className="py-2 pr-4 text-right font-mono">{e.test.vo2max || "—"}</td>
-                                                <td className="py-2 pr-4 text-right font-mono">{e.test.vam || "—"}</td>
+                                                <td className="py-2 px-2 text-right font-mono">{e.test.livello || "—"}</td>
+                                                <td className="py-2 px-2 text-right font-mono">{e.test.vo2max || "—"}</td>
+                                                <td className="py-2 px-2 text-right font-mono">{e.test.vam || "—"}</td>
                                               </>}
                                               {isDropJump && <>
-                                                <td className="py-2 pr-4 text-right font-mono">{e.test.altezzaSalto || "—"}</td>
-                                                <td className="py-2 pr-4 text-right font-mono">{e.test.tempoContatto || "—"}</td>
-                                                <td className="py-2 pr-4 text-right font-mono">{e.test.rsi || "—"}</td>
+                                                <td className="py-2 px-2 text-right font-mono">{e.test.altezzaSalto || "—"}</td>
+                                                <td className="py-2 px-2 text-right font-mono">{e.test.tempoContatto || "—"}</td>
+                                                <td className="py-2 px-2 text-right font-mono">{e.test.rsi || "—"}</td>
                                               </>}
                                               {(isCMJ || isBroadJump) && (
-                                                <td className="py-2 pr-4 text-right font-mono">{e.test.altezzaSalto || "—"}</td>
+                                                <td className="py-2 px-2 text-right font-mono">{e.test.altezzaSalto || "—"}</td>
                                               )}
                                               {isSLDropJump && <>
-                                                <td className="py-2 pr-4 text-right font-mono">{e.test.rsiSx || "—"}</td>
-                                                <td className="py-2 pr-4 text-right font-mono">{e.test.rsiDx || "—"}</td>
-                                                <td className={`py-2 pr-4 text-right font-mono ${asim !== null ? asim > 10 ? "text-red-600" : "text-green-600" : ""}`}>
+                                                <td className="py-2 px-2 text-right font-mono">{e.test.rsiSx || "—"}</td>
+                                                <td className="py-2 px-2 text-right font-mono">{e.test.rsiDx || "—"}</td>
+                                                <td className={`py-2 px-2 text-right font-mono font-semibold ${asim !== null && asim > 10 ? "text-red-600" : "text-gray-600"}`}>
                                                   {asim !== null ? `${asim.toFixed(1)}%` : "—"}
                                                 </td>
                                               </>}
@@ -1337,25 +1341,25 @@ export default function ProgressiPage() {
                                                 const d1 = e.test.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? Math.abs(gDx - aSx).toFixed(1) : "—");
                                                 const d2 = e.test.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? Math.abs(gSx - aDx).toFixed(1) : "—");
                                                 return (<>
-                                                  <td className="py-2 pr-4 text-right font-mono">{e.test.ginocchioDx || "—"}</td>
-                                                  <td className="py-2 pr-4 text-right font-mono">{e.test.ancaSx || "—"}</td>
-                                                  <td className="py-2 pr-4 text-right font-mono text-gray-500">{d1}</td>
-                                                  <td className="py-2 pr-4 text-right font-mono">{e.test.ginocchioSx || "—"}</td>
-                                                  <td className="py-2 pr-4 text-right font-mono">{e.test.ancaDx || "—"}</td>
-                                                  <td className="py-2 pr-4 text-right font-mono text-gray-500">{d2}</td>
+                                                  <td className="py-2 px-2 text-right font-mono">{e.test.ginocchioDx || "—"}</td>
+                                                  <td className="py-2 px-2 text-right font-mono">{e.test.ancaSx || "—"}</td>
+                                                  <td className="py-2 px-2 text-right font-mono text-gray-500">{d1}</td>
+                                                  <td className="py-2 px-2 text-right font-mono">{e.test.ginocchioSx || "—"}</td>
+                                                  <td className="py-2 px-2 text-right font-mono">{e.test.ancaDx || "—"}</td>
+                                                  <td className="py-2 px-2 text-right font-mono text-gray-500">{d2}</td>
                                                 </>);
                                               })()}
                                               {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && hasSxDx && <>
-                                                <td className="py-2 pr-4 text-right font-mono">{e.test.risultatoSx || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
-                                                <td className="py-2 pr-4 text-right font-mono">{e.test.risultatoDx || "—"}{e.test.unita && e.test.risultatoDx ? ` ${e.test.unita}` : ""}</td>
-                                                {!isQSLS && <td className={`py-2 pr-4 text-right font-mono ${asim !== null ? asim > 10 ? "text-red-600" : "text-green-600" : ""}`}>
+                                                <td className="py-2 px-2 text-right font-mono">{e.test.risultatoSx || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
+                                                <td className="py-2 px-2 text-right font-mono">{e.test.risultatoDx || "—"}{e.test.unita && e.test.risultatoDx ? ` ${e.test.unita}` : ""}</td>
+                                                {!isQSLS && <td className={`py-2 px-2 text-right font-mono font-semibold ${asim !== null && asim > 10 ? "text-red-600" : "text-gray-600"}`}>
                                                   {asim !== null ? `${asim.toFixed(1)}%` : "—"}
                                                 </td>}
                                               </>}
                                               {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && !isCMJ && !isBroadJump && !hasSxDx && (
-                                                <td className="py-2 pr-4 text-right font-mono">{e.test.risultato || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
+                                                <td className="py-2 px-2 text-right font-mono">{e.test.risultato || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
                                               )}
-                                              <td className={`py-2 text-right font-mono font-semibold ${delta === null ? "text-gray-300" : isGoodDelta ? "text-green-600" : delta === 0 ? "text-gray-400" : "text-red-500"}`}>
+                                              <td className={`py-2 px-2 text-right font-mono font-semibold ${isGoodDelta ? "text-green-600" : isBadDelta ? "text-red-500" : "text-gray-400"}`}>
                                                 {delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"}
                                               </td>
                                             </tr>
