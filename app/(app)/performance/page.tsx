@@ -1231,6 +1231,11 @@ export default function PerformancePage() {
                         const t = testTrend(tl);
                         const ek = `test-${nome}`;
                         const isExpanded = expandedKey === ek;
+                        const lastPt = tl.points[tl.points.length - 1];
+                        const showBilG = tl.isBilateral && nome !== "Drop Jump";
+                        const asymPctG = showBilG && nome !== "QSLS" && lastPt?.sx != null && lastPt?.dx != null && Math.max(lastPt.sx, lastPt.dx) > 0
+                          ? ((Math.abs(lastPt.sx - lastPt.dx) / Math.max(lastPt.sx, lastPt.dx)) * 100).toFixed(1)
+                          : null;
                         return (
                           <div key={nome} className={`bg-white rounded-xl border border-gray-200 p-4 ${isExpanded ? "lg:col-span-2" : ""}`}>
                             <div className="mb-3">
@@ -1240,6 +1245,7 @@ export default function PerformancePage() {
                                   <span className="font-semibold text-gray-800 text-sm">{nome}</span>
                                   {tl.unit && nome !== "Drop Jump" && <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{tl.unit}</span>}
                                   {tl.isBilateral && <span className="text-xs text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">Sx / Dx</span>}
+                                  {asymPctG && <span className="text-xs font-semibold text-orange-500">Δ {asymPctG}%</span>}
                                 </div>
                                 <button
                                   onClick={() => setExpandedKey(isExpanded ? null : ek)}
