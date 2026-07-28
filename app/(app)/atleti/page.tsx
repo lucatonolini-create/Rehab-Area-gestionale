@@ -723,34 +723,69 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             doc.setFont("helvetica", "bolditalic"); doc.setFontSize(8); doc.setTextColor(20, 20, 20);
             doc.text(nome, M, y + 5);
             y += 9;
-            const isSLTest = nome === "SL Drop Jump";
-            const hasAsim = nome !== "QSLS" && (entries as TEntry[]).some((e: TEntry) =>
-              isSLTest ? (e.test.rsiSx || e.test.rsiDx) : (e.test.risultatoSx || e.test.risultatoDx)
-            );
-            const tableHead = hasAsim ? ["Data", "Infortunio", "Risultato", "Asim%"] : ["Data", "Infortunio", "Risultato"];
+            const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(nome);
+            const isGaconIFT = nome === "Gacon" || nome === "IFT 30-15";
+            const isDropJump = nome === "Drop Jump";
+            const isSLDropJump = nome === "SL Drop Jump";
+            const isJurdan = nome === "Jurdan";
+            const hasSxDx = !isJurdan && (entries as TEntry[]).some((e: TEntry) => e.test.risultatoSx || e.test.risultatoDx);
+
+            let tableHead: string[];
+            let tableBody: string[][];
+
+            if (isDropJump) {
+              tableHead = ["Data", "Altezza (cm)", "Contatto (s)", "RSI"];
+              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.altezzaSalto || "—", e.test.tempoContatto || "—", e.test.rsi || "—"]);
+            } else if (isSLDropJump) {
+              tableHead = ["Data", "RSI Sx", "RSI Dx", "Asimmetria %"];
+              tableBody = (entries as TEntry[]).map((e: TEntry) => {
+                const asim = _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "");
+                return [e.dateFull, e.test.rsiSx || "—", e.test.rsiDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—"];
+              });
+            } else if (isSprintTempo) {
+              tableHead = ["Data", "Tempo (s)"];
+              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.tempo || "—"]);
+            } else if (isGaconIFT) {
+              tableHead = ["Data", "Livello", "Vo2Max (ml/kg/min)", "VAM (km/h)"];
+              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.livello || "—", e.test.vo2max || "—", e.test.vam || "—"]);
+            } else if (isJurdan) {
+              tableHead = ["Data", "Gin.Dx (°)", "Anca Sx (°)", "Diff Dx/Sx", "Gin.Sx (°)", "Anca Dx (°)", "Diff Sx/Dx"];
+              tableBody = (entries as TEntry[]).map((e: TEntry) => {
+                const gDx = parseFloat(e.test.ginocchioDx ?? ""), aSx = parseFloat(e.test.ancaSx ?? "");
+                const gSx = parseFloat(e.test.ginocchioSx ?? ""), aDx = parseFloat(e.test.ancaDx ?? "");
+                const d1 = e.test.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? Math.abs(gDx - aSx).toFixed(1) : "—");
+                const d2 = e.test.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? Math.abs(gSx - aDx).toFixed(1) : "—");
+                return [e.dateFull, e.test.ginocchioDx || "—", e.test.ancaSx || "—", d1, e.test.ginocchioSx || "—", e.test.ancaDx || "—", d2];
+              });
+            } else if (hasSxDx) {
+              const firstEntry = (entries as TEntry[])[0];
+              tableHead = ["Data", `Arto Sx${firstEntry?.test.unita ? ` (${firstEntry.test.unita})` : ""}`, `Arto Dx${firstEntry?.test.unita ? ` (${firstEntry.test.unita})` : ""}`, "Asimmetria %"];
+              tableBody = (entries as TEntry[]).map((e: TEntry) => {
+                const asim = nome === "QSLS" ? null : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
+                return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—"];
+              });
+            } else {
+              const firstEntry = (entries as TEntry[])[0];
+              tableHead = ["Data", `Risultato${firstEntry?.test.unita ? ` (${firstEntry.test.unita})` : ""}`];
+              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.risultato || "—"]);
+            }
+
+            const asimCol = (isSLDropJump || hasSxDx) ? 3 : -1;
             const tableStartY = y;
             autoTable(doc, {
               startY: tableStartY,
               head: [tableHead],
-              body: (entries as TEntry[]).map((e: TEntry) => {
-                const asim = hasAsim
-                  ? (isSLTest ? _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "") : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx))
-                  : null;
-                const asimStr = asim !== null ? `${asim.toFixed(1)}%` : "—";
-                return hasAsim ? [e.dateFull, e.sessione, e.val, asimStr] : [e.dateFull, e.sessione, e.val];
-              }),
+              body: tableBody,
               headStyles: { fillColor: color as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 6.5, fontStyle: "bold" as const, halign: "center" as const, valign: "middle" as const, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 } },
-              bodyStyles: { fontSize: 6.5, cellPadding: 2.5, overflow: "linebreak" as const, valign: "middle" as const },
+              bodyStyles: { fontSize: 6.5, cellPadding: 2.5, overflow: "linebreak" as const, valign: "middle" as const, halign: "center" as const },
               alternateRowStyles: { fillColor: [247, 248, 252] as [number, number, number] },
               margin: { left: M, right: hasChart ? W - M - TEST_TABLE_W : M },
               columnStyles: {
-                0: { cellWidth: 16, halign: "center" as const },
-                1: { cellWidth: hasChart ? 28 : 45 },
-                2: { cellWidth: "auto" as any },
-                ...(hasAsim ? { 3: { cellWidth: 22, halign: "center" as const } } : {}),
+                0: { cellWidth: 16, halign: "left" as const },
+                ...(asimCol !== -1 ? { [asimCol]: { cellWidth: 22, halign: "center" as const } } : {}),
               },
               didParseCell: (data: any) => {
-                if (hasAsim && data.section === "body" && data.column.index === 3) {
+                if (data.section === "body" && asimCol !== -1 && data.column.index === asimCol) {
                   const v = parseFloat(String(data.cell.raw ?? ""));
                   if (!isNaN(v) && v > 10) {
                     data.cell.styles.textColor = [220, 38, 38];
