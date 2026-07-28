@@ -5,10 +5,10 @@ import { Plus, Search, User, ChevronRight, Phone, Mail, Trash2, AlertTriangle, C
 import {
   loadAtleti, loadProgrammi, upsertAtleta, deleteAtleta, uid, nd,
   subscribeToAtleti, subscribeToProgrammi, subscribeToIntakeInsert,
-  CATEGORIE, TIPI_INFORTUNIO, TIPI_REFERTO, ESITI_REFERTO, calcolaProgressoAuto,
+  CATEGORIE, TIPI_INFORTUNIO, calcolaProgressoAuto,
   loadDettaglioSituazionale, upsertDettaglioSituazionale, formToDettaglio,
   type Atleta, type Stato, type InfortunioStorico, type Programma, type QuestionarioKinesiofobia,
-  type TestFisiometrico, type RefertoClinico, type TipoReferto, type EsitoReferto,
+  type TestFisiometrico,
   type DettaglioSituazionaleData, type DettaglioSituazionaleForm,
 } from "@/lib/store";
 import AtletaModal from "@/components/AtletaModal";
@@ -1111,13 +1111,6 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [nuovoInfRTS, setNuovoInfRTS] = useState("__corrente__");
   const [copiatoLink, setCopiatoLink] = useState<1 | 2 | null>(null);
   const [dettaglioSituazionale, setDettaglioSituazionale] = useState<DettaglioSituazionaleData | null>(null);
-  const [mostraFormReferto, setMostraFormReferto] = useState(false);
-  const [nuovoReferto, setNuovoReferto] = useState<Omit<RefertoClinico, "id">>({
-    data: new Date().toISOString().slice(0, 10),
-    tipo: "Visita clinica",
-    esito: "In miglioramento",
-    note: "",
-  });
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
@@ -1257,25 +1250,6 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const salvaQuestionnaire = async (questionari: QuestionarioKinesiofobia[]) => {
     if (!selected) return;
     const aggiornato = { ...selected, questionariKinesiofobia: questionari };
-    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
-    setSelected(aggiornato);
-    await upsertAtleta(aggiornato);
-  };
-
-  const salvaReferto = async () => {
-    if (!selected) return;
-    const referto: RefertoClinico = { ...nuovoReferto, id: uid() };
-    const aggiornato = { ...selected, refertiClinici: [...(selected.refertiClinici ?? []), referto] };
-    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
-    setSelected(aggiornato);
-    await upsertAtleta(aggiornato);
-    setMostraFormReferto(false);
-    setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "Visita clinica", esito: "In miglioramento", note: "" });
-  };
-
-  const eliminaReferto = async (id: string) => {
-    if (!selected) return;
-    const aggiornato = { ...selected, refertiClinici: (selected.refertiClinici ?? []).filter((r) => r.id !== id) };
     setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
     setSelected(aggiornato);
     await upsertAtleta(aggiornato);
@@ -1739,74 +1713,6 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                     {inf && <p className="text-[11px] text-gray-400 mt-0.5">{inf.label}</p>}
                                   </div>
                                   <button onClick={() => eliminaPunteggio(q.id)} className="text-gray-300 hover:text-red-400 transition-colors">
-                                    <X className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* ── Referti clinici ── */}
-                      <div className="pt-3 border-t border-gray-100 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Referti clinici</p>
-                          <button onClick={() => setMostraFormReferto((v) => !v)}
-                            className="text-xs font-semibold text-[#C8102E] flex items-center gap-1">
-                            <Plus className="w-3.5 h-3.5" /> Aggiungi
-                          </button>
-                        </div>
-
-                        {mostraFormReferto && (
-                          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2">
-                            <input type="date" value={nuovoReferto.data}
-                              onChange={(e) => setNuovoReferto((r) => ({ ...r, data: e.target.value }))}
-                              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white" />
-                            <select value={nuovoReferto.tipo}
-                              onChange={(e) => setNuovoReferto((r) => ({ ...r, tipo: e.target.value as TipoReferto }))}
-                              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
-                              {TIPI_REFERTO.map((t) => <option key={t}>{t}</option>)}
-                            </select>
-                            <select value={nuovoReferto.esito}
-                              onChange={(e) => setNuovoReferto((r) => ({ ...r, esito: e.target.value as EsitoReferto }))}
-                              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
-                              {ESITI_REFERTO.map((e) => <option key={e}>{e}</option>)}
-                            </select>
-                            <textarea value={nuovoReferto.note ?? ""}
-                              onChange={(e) => setNuovoReferto((r) => ({ ...r, note: e.target.value }))}
-                              placeholder="Note (opzionale)" rows={2}
-                              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white resize-none" />
-                            <div className="flex gap-2 justify-end">
-                              <button onClick={() => setMostraFormReferto(false)}
-                                className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">Annulla</button>
-                              <button onClick={salvaReferto}
-                                className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg bg-[#C8102E] hover:bg-[#a50d26]">Salva</button>
-                            </div>
-                          </div>
-                        )}
-
-                        {(selected.refertiClinici ?? []).length === 0 ? (
-                          <p className="text-xs text-gray-400 italic">Nessun referto registrato</p>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {[...(selected.refertiClinici ?? [])].sort((a, b) => b.data.localeCompare(a.data)).map((r) => {
-                              const esitoStyle: Record<string, string> = {
-                                "Positivo": "bg-red-100 text-red-700",
-                                "In miglioramento": "bg-yellow-100 text-yellow-700",
-                                "Negativo": "bg-green-100 text-green-700",
-                              };
-                              return (
-                                <div key={r.id} className="flex items-start justify-between gap-2 bg-white border border-gray-100 rounded-xl px-3 py-2.5">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="text-xs font-semibold text-gray-800">{r.tipo}</span>
-                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${esitoStyle[r.esito] ?? "bg-gray-100 text-gray-600"}`}>{r.esito}</span>
-                                      <span className="text-[10px] text-gray-400">{new Date(r.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })}</span>
-                                    </div>
-                                    {r.note && <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">{r.note}</p>}
-                                  </div>
-                                  <button onClick={() => eliminaReferto(r.id)} className="text-gray-300 hover:text-red-400 transition-colors shrink-0 mt-0.5">
                                     <X className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
