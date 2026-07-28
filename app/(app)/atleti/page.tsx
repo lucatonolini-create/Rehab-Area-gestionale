@@ -1027,8 +1027,6 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           .filter(({ data }) => data.length >= 2);
 
         if (extCharts.length > 0) {
-          checkPage(20, sub);
-          y = secTitle("Andamento Carico Esterno GPS", y);
           const HALF_W2 = (W - 2 * M - 4) / 2;
           for (let ci = 0; ci < extCharts.length; ci += 2) {
             checkPage(62, sub);
