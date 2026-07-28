@@ -471,26 +471,26 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         let tableBody: string[][];
 
         if (isDropJump) {
-          head = ["Data", "Altezza (cm)", "Contatto (s)", "RSI", "Δ%"];
+          head = ["Data", "Altezza (cm)", "Contatto (s)", "RSI", "%"];
           tableBody = entries.map((e, i) => {
             const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
             return [e.dateFull, e.test.altezzaSalto || "—", e.test.tempoContatto || "—", e.test.rsi || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
           });
         } else if (isSLDropJump) {
-          head = ["Data", "RSI Sx", "RSI Dx", "Asimmetria %", "Δ%"];
+          head = ["Data", "RSI Sx", "RSI Dx", "Asimmetria %", "%"];
           tableBody = entries.map((e, i) => {
             const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
             const asim = _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "");
             return [e.dateFull, e.test.rsiSx || "—", e.test.rsiDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
           });
         } else if (isSprintTempo) {
-          head = ["Data", "Tempo (s)", "Δ%"];
+          head = ["Data", "Tempo (s)", "%"];
           tableBody = entries.map((e, i) => {
             const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
             return [e.dateFull, e.test.tempo || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
           });
         } else if (isGaconIFT) {
-          head = ["Data", "Livello", "Vo2Max (ml/kg/min)", "VAM (km/h)", "Δ%"];
+          head = ["Data", "Livello", "Vo2Max (ml/kg/min)", "VAM (km/h)", "%"];
           tableBody = entries.map((e, i) => {
             const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
             return [e.dateFull, e.test.livello || "—", e.test.vo2max || "—", e.test.vam || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
@@ -505,14 +505,14 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
             return [e.dateFull, e.test.ginocchioDx || "—", e.test.ancaSx || "—", d1, e.test.ginocchioSx || "—", e.test.ancaDx || "—", d2];
           });
         } else if (hasSxDx) {
-          head = ["Data", `Arto Sx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, `Arto Dx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "Asimmetria %", "Δ%"];
+          head = ["Data", `Arto Sx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, `Arto Dx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "Asimmetria %", "%"];
           tableBody = entries.map((e, i) => {
             const delta = testName === "QSLS" ? null : _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
             const asim = testName === "QSLS" ? null : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
             return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
           });
         } else {
-          head = ["Data", `Risultato${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "Δ%"];
+          head = ["Data", `Risultato${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "%"];
           tableBody = entries.map((e, i) => {
             const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
             return [e.dateFull, e.test.risultato || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
@@ -532,8 +532,8 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           didParseCell: (data: any) => {
             if (data.section === "body" && data.column.index === deltaCol) {
               const v = parseFloat(String(data.cell.raw));
-              if (!isNaN(v)) {
-                const good = isSprintTempo ? v < 0 : v > 0;
+              if (!isNaN(v) && Math.abs(v) >= 10) {
+                const good = isSprintTempo ? v <= -10 : v >= 10;
                 data.cell.styles.textColor = good ? [5, 150, 105] : [220, 38, 38];
                 data.cell.styles.fontStyle = "bold";
               }
