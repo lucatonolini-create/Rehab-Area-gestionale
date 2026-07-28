@@ -521,8 +521,9 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
 
   // Riquadro riepilogativo sessioni
   {
+    const concorrentiPDF = (atleta.storicoInfortuni ?? []).filter((i) => i.attivo === true);
     const boxes: [string, string][] = [];
-    if (atleta.stato === "Infortunato") boxes.push(["Infortunio attuale", `${giorniCorrente} sess.`]);
+    if (atleta.stato === "Infortunato") boxes.push(["Infortuni attivi", `${1 + concorrentiPDF.length}`]);
     boxes.push(["Totale stagione", `${totaleStagionePDF} sess.`]);
     const bw = (W - 2 * M - (boxes.length - 1) * 4) / boxes.length;
     boxes.forEach(([label, val], i) => {
@@ -543,7 +544,9 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   }
   // Infortuni archiviati (più recente prima)
   [...storico].reverse().forEach((inf, i) => {
-    storicoBody.push([`${inf.diagnosi}${inf.tipo ? ` (${inf.tipo})` : ""}`, fmtD(inf.inizioRehab), fmtD(inf.fineRehab), `${giorniArchivio[storico.length - 1 - i]} sess.`]);
+    const realIdx = storico.length - 1 - i;
+    const fineLabel = inf.attivo ? "In corso" : fmtD(inf.fineRehab);
+    storicoBody.push([`${inf.diagnosi}${inf.tipo ? ` (${inf.tipo})` : ""}`, fmtD(inf.inizioRehab), fineLabel, `${giorniArchivio[realIdx]} sess.`]);
   });
 
   if (storicoBody.length) {
@@ -591,8 +594,8 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       diagnosi: inf.diagnosi,
       tipo: inf.tipo,
       inizio: inf.inizioRehab,
-      fine: inf.fineRehab,
-      attivo: false,
+      fine: inf.fineRehab || null,
+      attivo: inf.attivo === true,
     })),
     ...(atleta.stato === "Infortunato" && (atleta.infortunio || atleta.inizioRehab)
       ? [{ id: "__corrente__", diagnosi: atleta.infortunio || "—", tipo: atleta.tipoInfortunio as string | undefined, inizio: atleta.inizioRehab, fine: null as string | null, attivo: true }]
