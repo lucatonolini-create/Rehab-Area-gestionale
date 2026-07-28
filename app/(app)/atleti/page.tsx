@@ -728,7 +728,9 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             const isDropJump = nome === "Drop Jump";
             const isSLDropJump = nome === "SL Drop Jump";
             const isJurdan = nome === "Jurdan";
-            const hasSxDx = !isJurdan && (entries as TEntry[]).some((e: TEntry) => e.test.risultatoSx || e.test.risultatoDx);
+            const isCMJLike = nome.includes("CMJ") || nome === "Squat Jump";
+            const isBroadJump = nome.includes("Broad Jump");
+            const hasSxDx = !isJurdan && !isCMJLike && !isBroadJump && (entries as TEntry[]).some((e: TEntry) => e.test.risultatoSx || e.test.risultatoDx);
 
             let tableHead: string[];
             let tableBody: string[][];
@@ -757,6 +759,12 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
                 const d2 = e.test.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? Math.abs(gSx - aDx).toFixed(1) : "—");
                 return [e.dateFull, e.test.ginocchioDx || "—", e.test.ancaSx || "—", d1, e.test.ginocchioSx || "—", e.test.ancaDx || "—", d2];
               });
+            } else if (isCMJLike) {
+              tableHead = ["Data", "Altezza (cm)"];
+              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.altezzaSalto || "—"]);
+            } else if (isBroadJump) {
+              tableHead = ["Data", "Distanza (cm)"];
+              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.altezzaSalto || "—"]);
             } else if (hasSxDx) {
               const firstEntry = (entries as TEntry[])[0];
               tableHead = ["Data", `Arto Sx${firstEntry?.test.unita ? ` (${firstEntry.test.unita})` : ""}`, `Arto Dx${firstEntry?.test.unita ? ` (${firstEntry.test.unita})` : ""}`, "Asimmetria %"];
@@ -767,7 +775,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             } else {
               const firstEntry = (entries as TEntry[])[0];
               tableHead = ["Data", `Risultato${firstEntry?.test.unita ? ` (${firstEntry.test.unita})` : ""}`];
-              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.risultato || "—"]);
+              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.risultato || e.val]);
             }
 
             const asimCol = (isSLDropJump || hasSxDx) ? 3 : -1;
