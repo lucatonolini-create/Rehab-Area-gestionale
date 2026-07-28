@@ -1540,25 +1540,34 @@ export default function AnalisiPage() {
                 <div className="divide-y divide-gray-50">
                   {[...atleti]
                     .sort((a, b) => a.stato === b.stato ? nd(a).localeCompare(nd(b)) : a.stato === "Infortunato" ? -1 : 1)
-                    .map((a) => (
-                      <div key={a.id} className="grid grid-cols-1 md:grid-cols-4 items-center px-5 py-4 hover:bg-gray-50 gap-2">
-                        <div className="col-span-2 flex items-center gap-3">
-                          <div className="w-8 h-8 bg-[#2B2B2B] rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
-                            {nd(a).trim().split(/\s+/).filter(Boolean).slice(0,2).map((w:string)=>(w[0]??"").toUpperCase()).join("")}
+                    .flatMap((a) => {
+                      const concorrenti = a.stato === "Infortunato"
+                        ? (a.storicoInfortuni ?? []).filter((i) => i.attivo === true)
+                        : [];
+                      const righe = [{ key: a.id, infortunio: a.infortunio, tipo: a.tipoInfortunio }];
+                      for (const inf of concorrenti) {
+                        righe.push({ key: `${a.id}-${inf.id}`, infortunio: inf.diagnosi, tipo: inf.tipo });
+                      }
+                      return righe.map(({ key, infortunio, tipo }) => (
+                        <div key={key} className="grid grid-cols-1 md:grid-cols-4 items-center px-5 py-4 hover:bg-gray-50 gap-2">
+                          <div className="col-span-2 flex items-center gap-3">
+                            <div className="w-8 h-8 bg-[#2B2B2B] rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
+                              {nd(a).trim().split(/\s+/).filter(Boolean).slice(0,2).map((w:string)=>(w[0]??"").toUpperCase()).join("")}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">{nd(a)}</p>
+                              <p className="text-xs text-gray-400">{a.categoria}{tipo ? ` · ${tipo}` : ""}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold text-gray-900 text-sm">{nd(a)}</p>
-                            <p className="text-xs text-gray-400">{a.categoria}{a.tipoInfortunio ? ` · ${a.tipoInfortunio}` : ""}</p>
+                          <p className="text-sm text-gray-600 truncate">
+                            {infortunio || (a.storicoInfortuni ?? []).at(-1)?.diagnosi || "—"}
+                          </p>
+                          <div className="flex md:justify-center">
+                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${statoColor[a.stato]}`}>{a.stato}</span>
                           </div>
                         </div>
-                        <p className="text-sm text-gray-600 truncate">
-                          {a.infortunio || (a.storicoInfortuni ?? []).at(-1)?.diagnosi || "—"}
-                        </p>
-                        <div className="flex md:justify-center">
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${statoColor[a.stato]}`}>{a.stato}</span>
-                        </div>
-                      </div>
-                    ))}
+                      ));
+                    })}
                 </div>
               </>
             )}
