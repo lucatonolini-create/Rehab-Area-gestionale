@@ -700,7 +700,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
               t.diffGinocchioSxAncaDx ? `D Sx/Dx: ${t.diffGinocchioSxAncaDx}°` : "",
             ].filter(Boolean).join(" / ");
             if (!testsByName.has(t.nome)) testsByName.set(t.nome, []);
-            testsByName.get(t.nome)!.push({ dateLabel, dateFull, sessione: prog.nome ?? "—", test: t, val: val || "—" });
+            testsByName.get(t.nome)!.push({ dateLabel, dateFull, sessione: injLabel, test: t, val: val || "—" });
           }
         }
         if (testsByName.size > 0) {
@@ -727,7 +727,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             const hasAsim = nome !== "QSLS" && (entries as TEntry[]).some((e: TEntry) =>
               isSLTest ? (e.test.rsiSx || e.test.rsiDx) : (e.test.risultatoSx || e.test.risultatoDx)
             );
-            const tableHead = hasAsim ? ["Data", "Sessione", "Valore", "Asim%"] : ["Data", "Sessione", "Valore"];
+            const tableHead = hasAsim ? ["Data", "Infortunio", "Risultato", "Asim%"] : ["Data", "Infortunio", "Risultato"];
             const tableStartY = y;
             autoTable(doc, {
               startY: tableStartY,
