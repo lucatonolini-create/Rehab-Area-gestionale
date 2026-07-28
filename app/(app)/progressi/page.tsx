@@ -434,10 +434,10 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         }
       };
 
-      const testColors: [number, number, number][] = [
-        [200, 16, 46], [37, 99, 235], [5, 150, 105], [124, 58, 237],
-        [234, 88, 12], [2, 132, 199], [219, 39, 119], [75, 85, 99],
-      ];
+      // Tabella sx + grafico dx affiancati; colori alternati rosso/grigio
+      const TEST_TABLE_W = 110;
+      const TEST_CHART_X = M + TEST_TABLE_W + 8;
+      const TEST_CHART_W = W - M - TEST_CHART_X;
 
       testNames.forEach((testName, testIdx) => {
         const entries = testsByName[testName];
@@ -448,84 +448,25 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         const isJurdan = testName === "Jurdan";
         const hasSxDx = !isJurdan && entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
 
-        const color = testColors[testIdx % testColors.length];
+        const color: [number, number, number] = testIdx % 2 === 0 ? [200, 16, 46] : [75, 85, 99];
         const [cr, cg, cb] = color;
 
         const mainData = entries
           .map((e) => { const v = getTestMainValue(e.test); return v !== null ? { dateLabel: e.dateLabel, value: v } : null; })
           .filter((d): d is { dateLabel: string; value: number } => d !== null);
 
+        const hasChart = mainData.length >= 2;
         const tableRows = entries.length;
-        const needed = (mainData.length >= 2 ? 58 : 0) + tableRows * 5.5 + 22;
+        const needed = 9 + Math.max(8 + tableRows * 5.5, hasChart ? 49 : 0) + 6;
         checkPg(needed);
 
         // Titolo test: grassetto nero corsivo, nessuna banda
         doc.setFont("helvetica", "bolditalic"); doc.setFontSize(8); doc.setTextColor(20, 20, 20);
         doc.text(testName, M, y + 5);
         y += 9;
+        const contentStartY = y;
 
-        // Line chart
-        if (mainData.length >= 2) {
-          const cX = M; const cW = W - 2 * M; const cH = 40; const cY = y;
-          doc.setFillColor(249, 250, 251); doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.3);
-          doc.rect(cX, cY, cW, cH, "FD");
-          const n = mainData.length;
-          const vals = mainData.map((d) => d.value);
-          const minV = Math.min(...vals); const maxV = Math.max(...vals);
-          const range = maxV - minV || 1;
-          const PAD = { top: 6, right: 6, bottom: 9, left: 18 };
-          const plotX = cX + PAD.left; const plotW = cW - PAD.left - PAD.right;
-          const plotY = cY + PAD.top; const plotH = cH - PAD.top - PAD.bottom;
-
-          for (let t = 0; t <= 4; t++) {
-            const tv = minV + (range / 4) * t;
-            const ty = plotY + plotH - (t / 4) * plotH;
-            doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.2);
-            doc.line(plotX, ty, plotX + plotW, ty);
-            doc.setFontSize(5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
-            doc.text(tv.toFixed(1), plotX - 1.5, ty + 1.5, { align: "right" });
-          }
-          const gX = (i: number) => plotX + (n > 1 ? (i / (n - 1)) * plotW : plotW / 2);
-          const gY = (v: number) => plotY + plotH - ((v - minV) / range) * plotH;
-
-          // Area fill
-          const lr = Math.round(cr * 0.12 + 255 * 0.88);
-          const lg = Math.round(cg * 0.12 + 255 * 0.88);
-          const lb = Math.round(cb * 0.12 + 255 * 0.88);
-          doc.setFillColor(lr, lg, lb);
-          const botY2 = plotY + plotH;
-          const segs: [number, number][] = [[0, gY(mainData[0].value) - botY2]];
-          for (let i = 1; i < n; i++) segs.push([gX(i) - gX(i - 1), gY(mainData[i].value) - gY(mainData[i - 1].value)]);
-          segs.push([0, botY2 - gY(mainData[n - 1].value)]);
-          segs.push([gX(0) - gX(n - 1), 0]);
-          (doc as any).lines(segs, gX(0), botY2, [1, 1], "F", true);
-
-          // Average dashed line
-          const avg = vals.reduce((a, b) => a + b, 0) / n;
-          doc.setDrawColor(...gray); doc.setLineWidth(0.4); doc.setLineDashPattern([1.5, 1.5], 0);
-          doc.line(plotX, gY(avg), plotX + plotW, gY(avg));
-          doc.setLineDashPattern([], 0);
-
-          // Main line + dots
-          doc.setDrawColor(...color); doc.setLineWidth(0.9);
-          for (let i = 0; i < n - 1; i++) doc.line(gX(i), gY(mainData[i].value), gX(i + 1), gY(mainData[i + 1].value));
-          doc.setFillColor(...color); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.4);
-          mainData.forEach((d, i) => doc.circle(gX(i), gY(d.value), i === n - 1 ? 1.3 : 1, "FD"));
-
-          // X labels
-          doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
-          const step = n <= 15 ? 1 : Math.ceil(n / 15);
-          mainData.forEach((d, i) => { if (i % step === 0) doc.text(d.dateLabel, gX(i), cY + cH + 4, { align: "center" }); });
-
-          // Y axis label
-          const yLbl = isSprintTempo ? "Tempo (s)" : isGaconIFT ? "Vo2Max (ml/kg/min)" : isDropJump ? "RSI" : isSLDropJump ? "RSI medio" : isJurdan ? "Gin.Dx (°)" : hasSxDx ? "Media Sx/Dx" : "Valore";
-          doc.setFontSize(4.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...color);
-          doc.text(yLbl, plotX, plotY - 1.5);
-
-          y = cY + cH + 9;
-        }
-
-        // Data table
+        // Tabella dati (sinistra)
         let head: string[];
         let tableBody: string[][];
 
@@ -580,13 +521,13 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
 
         const deltaCol = head.length - 1;
         autoTable(doc, {
-          startY: y,
+          startY: contentStartY,
           head: [head],
           body: tableBody,
           headStyles: { fillColor: color, textColor: [255, 255, 255] as [number, number, number], fontSize: 6.5, halign: "center" as const, valign: "middle" as const },
           bodyStyles: { fontSize: 7, cellPadding: 2, halign: "center" as const, valign: "middle" as const },
           alternateRowStyles: { fillColor: [250, 250, 250] as [number, number, number] },
-          margin: { left: M, right: M },
+          margin: { left: M, right: hasChart ? W - M - TEST_TABLE_W : M },
           columnStyles: { 0: { halign: "left" as const, cellWidth: 26 } },
           didParseCell: (data: any) => {
             if (data.section === "body" && data.column.index === deltaCol) {
@@ -599,7 +540,67 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
             }
           },
         });
-        y = (doc as any).lastAutoTable.finalY + 10;
+        const tableEndY = (doc as any).lastAutoTable.finalY + 4;
+
+        // Grafico andamento (destra)
+        if (hasChart) {
+          y = contentStartY;
+          const cX = TEST_CHART_X; const cW = TEST_CHART_W; const cH = 40; const cY = y;
+          doc.setFillColor(249, 250, 251); doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.3);
+          doc.rect(cX, cY, cW, cH, "FD");
+          const n = mainData.length;
+          const vals = mainData.map((d) => d.value);
+          const minV = Math.min(...vals); const maxV = Math.max(...vals);
+          const range = maxV - minV || 1;
+          const PAD = { top: 6, right: 6, bottom: 9, left: 18 };
+          const plotX = cX + PAD.left; const plotW = cW - PAD.left - PAD.right;
+          const plotY = cY + PAD.top; const plotH = cH - PAD.top - PAD.bottom;
+
+          for (let t = 0; t <= 4; t++) {
+            const tv = minV + (range / 4) * t;
+            const ty = plotY + plotH - (t / 4) * plotH;
+            doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.2);
+            doc.line(plotX, ty, plotX + plotW, ty);
+            doc.setFontSize(5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
+            doc.text(tv.toFixed(1), plotX - 1.5, ty + 1.5, { align: "right" });
+          }
+          const gX2 = (i: number) => plotX + (n > 1 ? (i / (n - 1)) * plotW : plotW / 2);
+          const gY2 = (v: number) => plotY + plotH - ((v - minV) / range) * plotH;
+
+          const lr = Math.round(cr * 0.12 + 255 * 0.88);
+          const lg = Math.round(cg * 0.12 + 255 * 0.88);
+          const lb = Math.round(cb * 0.12 + 255 * 0.88);
+          doc.setFillColor(lr, lg, lb);
+          const botY2 = plotY + plotH;
+          const segs: [number, number][] = [[0, gY2(mainData[0].value) - botY2]];
+          for (let i = 1; i < n; i++) segs.push([gX2(i) - gX2(i - 1), gY2(mainData[i].value) - gY2(mainData[i - 1].value)]);
+          segs.push([0, botY2 - gY2(mainData[n - 1].value)]);
+          segs.push([gX2(0) - gX2(n - 1), 0]);
+          (doc as any).lines(segs, gX2(0), botY2, [1, 1], "F", true);
+
+          const avg = vals.reduce((a, b) => a + b, 0) / n;
+          doc.setDrawColor(...gray); doc.setLineWidth(0.4); doc.setLineDashPattern([1.5, 1.5], 0);
+          doc.line(plotX, gY2(avg), plotX + plotW, gY2(avg));
+          doc.setLineDashPattern([], 0);
+
+          doc.setDrawColor(...color); doc.setLineWidth(0.9);
+          for (let i = 0; i < n - 1; i++) doc.line(gX2(i), gY2(mainData[i].value), gX2(i + 1), gY2(mainData[i + 1].value));
+          doc.setFillColor(...color); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.4);
+          mainData.forEach((d, i) => doc.circle(gX2(i), gY2(d.value), i === n - 1 ? 1.3 : 1, "FD"));
+
+          doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
+          const step = n <= 15 ? 1 : Math.ceil(n / 15);
+          mainData.forEach((d, i) => { if (i % step === 0) doc.text(d.dateLabel, gX2(i), cY + cH + 4, { align: "center" }); });
+
+          const yLbl = isSprintTempo ? "Tempo (s)" : isGaconIFT ? "Vo2Max (ml/kg/min)" : isDropJump ? "RSI" : isSLDropJump ? "RSI medio" : isJurdan ? "Gin.Dx (°)" : hasSxDx ? "Media Sx/Dx" : "Valore";
+          doc.setFontSize(4.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...color);
+          doc.text(yLbl, plotX, plotY - 1.5);
+
+          y = Math.max(tableEndY, contentStartY + cH + 9);
+        } else {
+          y = tableEndY;
+        }
+        y += 6;
       });
     }
   }
