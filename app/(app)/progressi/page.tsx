@@ -520,6 +520,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         }
 
         const deltaCol = head.length - 1;
+        const asimCol = (isSLDropJump || hasSxDx) ? 3 : -1;
         autoTable(doc, {
           startY: contentStartY,
           head: [head],
@@ -535,6 +536,13 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
               if (!isNaN(v) && Math.abs(v) >= 10) {
                 const good = isSprintTempo ? v <= -10 : v >= 10;
                 data.cell.styles.textColor = good ? [5, 150, 105] : [220, 38, 38];
+                data.cell.styles.fontStyle = "bold";
+              }
+            }
+            if (data.section === "body" && asimCol !== -1 && data.column.index === asimCol) {
+              const v = parseFloat(String(data.cell.raw));
+              if (!isNaN(v) && v > 10) {
+                data.cell.styles.textColor = [220, 38, 38];
                 data.cell.styles.fontStyle = "bold";
               }
             }
