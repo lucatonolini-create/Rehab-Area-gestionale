@@ -570,7 +570,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           head = ["Data", `Arto Sx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, `Arto Dx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "Asimmetria %", "Δ%"];
           tableBody = entries.map((e, i) => {
             const delta = testName === "QSLS" ? null : _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
-            const asim = _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
+            const asim = testName === "QSLS" ? null : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
             return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
           });
         } else {
@@ -1224,6 +1224,7 @@ export default function ProgressiPage() {
                               const isJurdan = testName === "Jurdan";
                               const isCMJ = testName === "CMJ – Counter Movement Jump" || testName === "CMJ braccia libere" || testName === "Squat Jump";
                               const isBroadJump = testName === "Broad Jump";
+                              const isQSLS = testName === "QSLS";
                               const hasSxDx = !isJurdan && !isCMJ && !isBroadJump && entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
                               const chartVals = entries.map((e) => getTestMainValue(e.test)).filter((v): v is number => v !== null);
                               return (
@@ -1281,7 +1282,7 @@ export default function ProgressiPage() {
                                           {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && hasSxDx && <>
                                             <th className="text-right pb-2 pr-4 font-semibold">Sx</th>
                                             <th className="text-right pb-2 pr-4 font-semibold">Dx</th>
-                                            <th className="text-right pb-2 pr-4 font-semibold">Asim%</th>
+                                            {!isQSLS && <th className="text-right pb-2 pr-4 font-semibold">Asim%</th>}
                                           </>}
                                           {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && !isCMJ && !isBroadJump && !hasSxDx && (
                                             <th className="text-right pb-2 pr-4 font-semibold">Risultato</th>
@@ -1295,7 +1296,7 @@ export default function ProgressiPage() {
                                           const delta = testName === "QSLS" ? null : _calcolaDelta(e.test, prev);
                                           const asim = isSLDropJump
                                             ? _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "")
-                                            : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
+                                            : isQSLS ? null : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
                                           const isLast = i === entries.length - 1;
                                           const isGoodDelta = delta !== null && (isSprintTempo ? delta < 0 : delta > 0);
                                           return (
@@ -1341,9 +1342,9 @@ export default function ProgressiPage() {
                                               {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && hasSxDx && <>
                                                 <td className="py-2 pr-4 text-right font-mono">{e.test.risultatoSx || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
                                                 <td className="py-2 pr-4 text-right font-mono">{e.test.risultatoDx || "—"}{e.test.unita && e.test.risultatoDx ? ` ${e.test.unita}` : ""}</td>
-                                                <td className={`py-2 pr-4 text-right font-mono ${asim !== null ? asim > 10 ? "text-red-600" : "text-green-600" : ""}`}>
+                                                {!isQSLS && <td className={`py-2 pr-4 text-right font-mono ${asim !== null ? asim > 10 ? "text-red-600" : "text-green-600" : ""}`}>
                                                   {asim !== null ? `${asim.toFixed(1)}%` : "—"}
-                                                </td>
+                                                </td>}
                                               </>}
                                               {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && !isCMJ && !isBroadJump && !hasSxDx && (
                                                 <td className="py-2 pr-4 text-right font-mono">{e.test.risultato || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
