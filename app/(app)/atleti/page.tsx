@@ -268,7 +268,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     const altRowIndices = new Set<number>();
     const absenteRowIndices = new Set<number>();
     const riposoRowIndices = new Set<number>();
-    const testRows: { dataStr: string; infortunio: string; nomeTest: string; risultato: string }[] = [];
+    const testRows: { dataStr: string; infortunio: string; nomeTest: string; risultato: string; delta: number | null }[] = [];
 
     Array.from(weekMap.entries()).forEach(([wk, wkProgs]) => {
       let weekLabel: string;
@@ -339,17 +339,15 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             t.ancaDx ? `Anca Dx: ${t.ancaDx}°` : "",
             t.diffGinocchioSxAncaDx ? `Δ: ${t.diffGinocchioSxAncaDx}°` : "",
           ].filter(Boolean).join(" / ");
-          const extras: string[] = [];
           const sxV = isSL ? (t.rsiSx ?? "") : (t.risultatoSx ?? "");
           const dxV = isSL ? (t.rsiDx ?? "") : (t.risultatoDx ?? "");
           const asim = _calcolaAsimmetria(sxV, dxV);
           const sup = _superioreTest(sxV, dxV);
-          if (asim !== null && sup !== null) extras.push(`${sup} +${asim.toFixed(1)}%`);
+          const asimStr = (asim !== null && sup !== null) ? `[${sup} +${asim.toFixed(1)}%]` : "";
           const prev = _trovaPrecedenteTest(programmi, prog.id, t.nome);
           const delta = _calcolaDelta(t, prev);
-          if (delta !== null) extras.push(`${delta >= 0 ? "↑" : "↓"} ${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%`);
-          const risultatoStr = [val, extras.length ? `[${extras.join(", ")}]` : ""].filter(Boolean).join(" ");
-          testRows.push({ dataStr, infortunio: prog.nome ?? "—", nomeTest: t.nome, risultato: risultatoStr || "—" });
+          const risultatoStr = [val, asimStr].filter(Boolean).join(" ") || "—";
+          testRows.push({ dataStr, infortunio: prog.nome ?? "—", nomeTest: t.nome, risultato: risultatoStr, delta });
         });
 
         const ca = prog.carico;
@@ -444,39 +442,50 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         const n = g.rows.length;
         g.rows.forEach((r, i) => {
           tRowGroup.push(gi);
+          const deltaStr = r.delta !== null ? `${r.delta >= 0 ? "+" : ""}${r.delta.toFixed(1)}%` : "—";
           if (i === 0) {
             tBody.push([
               { content: r.dataStr, rowSpan: n, styles: { halign: "center" as const, valign: "middle" as const } },
               { content: r.infortunio, rowSpan: n, styles: { valign: "middle" as const } },
               r.nomeTest,
               r.risultato,
+              deltaStr,
             ]);
           } else {
-            tBody.push([r.nomeTest, r.risultato]);
+            tBody.push([r.nomeTest, r.risultato, deltaStr]);
           }
         });
       }
 
       checkPage(20, sub);
-      doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(...dark);
-      doc.text("Test effettuati", M, y + 2);
-      y += 6;
+      y = secTitle("Test", y);
       autoTable(doc, {
         startY: y,
-        head: [["Data", "Infortunio", "Test", "Risultato"]],
+        head: [["Data", "Sessione", "Test", "Valore", "Δ%"]],
         body: tBody,
-        headStyles: { fillColor: [60, 60, 60] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 6, fontStyle: "bold", halign: "center", cellPadding: { top: 2, bottom: 2, left: 2, right: 2 } },
-        bodyStyles: { fontSize: 6, cellPadding: 2, overflow: "linebreak" as const, valign: "middle" as const },
+        headStyles: { fillColor: red as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 6.5, fontStyle: "bold", halign: "center", valign: "middle", cellPadding: { top: 2.5, bottom: 2.5, left: 2, right: 2 } },
+        bodyStyles: { fontSize: 6.5, cellPadding: 2.5, overflow: "linebreak" as const, valign: "middle" as const },
+        alternateRowStyles: { fillColor: [255, 255, 255] },
         margin: { left: M, right: M },
         columnStyles: {
-          0: { cellWidth: 18 },
-          1: { cellWidth: 40 },
-          2: { cellWidth: 60 },
+          0: { cellWidth: 18, halign: "center" as const },
+          1: { cellWidth: 38 },
+          2: { cellWidth: 55, fontStyle: "bold" as const },
           3: { cellWidth: "auto" as any },
+          4: { cellWidth: 18, halign: "center" as const },
         },
         didParseCell: (data: any) => {
           if (data.section === "body") {
-            data.cell.styles.fillColor = tRowGroup[data.row.index] % 2 === 0 ? [255, 255, 255] : [248, 248, 248];
+            const gi = tRowGroup[data.row.index];
+            data.cell.styles.fillColor = gi % 2 === 0 ? [255, 255, 255] : [247, 248, 252];
+            if (data.column.index === 4 && data.section === "body") {
+              const raw = String(data.cell.raw ?? "");
+              const v = parseFloat(raw);
+              if (!isNaN(v) && raw !== "—") {
+                data.cell.styles.textColor = v >= 0 ? [5, 150, 105] : [220, 38, 38];
+                data.cell.styles.fontStyle = "bold";
+              }
+            }
           }
         },
       });
