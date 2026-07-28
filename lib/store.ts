@@ -33,6 +33,7 @@ export const OBIETTIVI_CAMPO = [
   "Agility",
   "Attivazione muscolare",
   "Cambi di direzione",
+  "Duelli",
   "Forza",
   "HSR",
   "Lavoro Tattico",
