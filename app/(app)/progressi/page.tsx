@@ -287,12 +287,11 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         const dataStr = prog.data ? fmtDCl(prog.data) : "—";
         const obP = prog.obiettiviPalestra?.length ? prog.obiettiviPalestra.join(", ") : "—";
         const obCampo = prog.obiettiviCampo?.length ? prog.obiettiviCampo.join(", ") : "—";
-        const campoEsLines = (prog.esercizicampo ?? []).map((c) => {
+        const esC = (prog.esercizicampo ?? []).map((c, i) => {
           const parts = [c.tipo, c.serie ? `${c.serie}×` : "", c.durata || ""].filter(Boolean);
-          return parts.join(" ");
-        });
-        const esC = campoEsLines.join("\n") || "—";
-        const vasC = (prog.esercizicampo ?? []).map((c) => c.vas || "0").join("\n") || "—";
+          return `${i + 1}. ${parts.join(" ")}`;
+        }).join("\n") || "—";
+        const vasC = (prog.esercizicampo ?? []).map((c, i) => `${i + 1}. ${c.vas || "0"}`).join("\n") || "—";
         const esercizi = prog.esercizi ?? [];
 
         const testLines = (prog.tests ?? []).map((t) => {
