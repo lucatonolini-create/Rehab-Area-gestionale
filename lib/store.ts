@@ -142,6 +142,7 @@ export interface InfortunioStorico {
   inizioRehab: string;
   fineRehab: string;
   note?: string;
+  attivo?: true; // infortunio concorrente ancora aperto
 }
 
 export interface QuestionarioKinesiofobia {

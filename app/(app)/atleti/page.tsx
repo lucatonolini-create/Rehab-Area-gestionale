@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Search, User, ChevronRight, Phone, Mail, Trash2, AlertTriangle, CheckCircle2, Clock, Pencil, RotateCcw, FileDown, X, ExternalLink, Copy, Check } from "lucide-react";
 import {
-  loadAtleti, loadProgrammi, upsertAtleta, deleteAtleta, uid, nd,
+  loadAtleti, loadProgrammi, upsertAtleta, upsertProgramma, deleteAtleta, uid, nd,
   subscribeToAtleti, subscribeToProgrammi, subscribeToIntakeInsert,
   CATEGORIE, TIPI_INFORTUNIO, calcolaProgressoAuto,
   loadDettaglioSituazionale, upsertDettaglioSituazionale, formToDettaglio,
@@ -1111,6 +1111,9 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [nuovoInfRTS, setNuovoInfRTS] = useState("__corrente__");
   const [copiatoLink, setCopiatoLink] = useState<1 | 2 | null>(null);
   const [dettaglioSituazionale, setDettaglioSituazionale] = useState<DettaglioSituazionaleData | null>(null);
+  const [mostraFormInfortBis, setMostraFormInfortBis] = useState(false);
+  const [nuovoInfortBis, setNuovoInfortBis] = useState({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "" });
+  const [mostraFondi, setMostraFondi] = useState(false);
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
@@ -1221,6 +1224,55 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     await upsertAtleta(aggiornato);
   };
 
+  const aggiungiInfortBis = async () => {
+    if (!selected || !nuovoInfortBis.diagnosi.trim()) return;
+    const inf: InfortunioStorico = {
+      id: uid(), tipo: nuovoInfortBis.tipo || undefined,
+      diagnosi: nuovoInfortBis.diagnosi, inizioRehab: nuovoInfortBis.inizioRehab,
+      fineRehab: "", note: nuovoInfortBis.note || undefined, attivo: true,
+    };
+    const aggiornato = { ...selected, storicoInfortuni: [...(selected.storicoInfortuni ?? []), inf] };
+    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
+    setSelected(aggiornato);
+    await upsertAtleta(aggiornato);
+    setMostraFormInfortBis(false);
+    setNuovoInfortBis({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "" });
+  };
+
+  const chiudiInfortBis = async (id: string) => {
+    if (!selected) return;
+    const oggi = new Date().toISOString().slice(0, 10);
+    const aggiornato = {
+      ...selected,
+      storicoInfortuni: (selected.storicoInfortuni ?? []).map((inf) =>
+        inf.id === id ? { ...inf, attivo: undefined as unknown as true, fineRehab: oggi } : inf
+      ),
+    };
+    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
+    setSelected(aggiornato);
+    await upsertAtleta(aggiornato);
+  };
+
+  const fondiAtleta = async (altro: Atleta) => {
+    if (!selected) return;
+    const nuoviConcorrenti: InfortunioStorico[] = [];
+    if (altro.stato === "Infortunato" && altro.infortunio) {
+      nuoviConcorrenti.push({ id: uid(), tipo: altro.tipoInfortunio, diagnosi: altro.infortunio, inizioRehab: altro.inizioRehab || "", fineRehab: "", attivo: true });
+    } else if (altro.infortunio) {
+      nuoviConcorrenti.push({ id: uid(), tipo: altro.tipoInfortunio, diagnosi: altro.infortunio, inizioRehab: altro.inizioRehab || "", fineRehab: altro.fineRehab || new Date().toISOString().slice(0, 10) });
+    }
+    const storicoFuso: InfortunioStorico[] = [...(selected.storicoInfortuni ?? []), ...(altro.storicoInfortuni ?? []), ...nuoviConcorrenti];
+    const aggiornato = { ...selected, storicoInfortuni: storicoFuso };
+    setAtleti((prev) => prev.filter((a) => a.id !== altro.id).map((a) => a.id === selected.id ? aggiornato : a));
+    setSelected(aggiornato);
+    await upsertAtleta(aggiornato);
+    const programmiAltro = await loadProgrammi(altro.id);
+    for (const p of programmiAltro) await upsertProgramma({ ...p, atletaId: selected.id });
+    await deleteAtleta(altro.id);
+    loadProgrammi(selected.id).then(setProgrammiAtleta);
+    setMostraFondi(false);
+  };
+
   const ripristinaInfortunio = async (inf: InfortunioStorico, idx: number) => {
     if (!selected) return;
     if (!confirm("Ripristinare questo infortunio come attivo? L'atleta tornerà Infortunato.")) return;
@@ -1283,8 +1335,11 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     if (lista.length > 0) perCategoria[cat] = lista;
   });
 
-  const countPerStato = (s: Stato | "Tutti") =>
-    s === "Tutti" ? atleti.length : atleti.filter((a) => a.stato === s).length;
+  const countPerStato = (s: Stato | "Tutti") => {
+    if (s === "Tutti") return atleti.length;
+    if (s === "Infortunato") return atleti.filter((a) => a.stato === "Infortunato").reduce((sum, a) => sum + 1 + (a.storicoInfortuni ?? []).filter((i) => i.attivo).length, 0);
+    return atleti.filter((a) => a.stato === s).length;
+  };
 
   return (
     <div className="flex h-full">
@@ -1346,49 +1401,56 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
               <div key={cat}>
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-sm font-bold text-[#C8102E] uppercase tracking-widest">{cat}</span>
-                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{lista.length}</span>
+                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                    {lista.reduce((s, a) => s + 1 + (a.storicoInfortuni ?? []).filter(i => i.attivo).length, 0)}
+                  </span>
                   <div className="flex-1 h-px bg-gray-100" />
                 </div>
                 <div className="space-y-3">
-                  {lista.map((atleta) => (
-                    <div key={atleta.id} className="group flex items-center gap-2">
-                    <button onClick={() => { setSelected(atleta); setTab("dati"); }}
-                      className={`flex-1 min-w-0 bg-white rounded-xl p-4 border text-left transition-all hover:shadow-md ${
-                        selected?.id === atleta.id ? "border-[#C8102E] shadow-md" : "border-gray-100"
-                      }`}>
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${
-                          atleta.stato === "Disponibile" ? "bg-gray-300" : "bg-[#2B2B2B]"
+                  {lista.flatMap((atleta) => {
+                    const concorrenti = (atleta.storicoInfortuni ?? []).filter(inf => inf.attivo === true);
+                    const cards = [
+                      { infortunio: atleta.infortunio, tipo: atleta.tipoInfortunio, cardKey: atleta.id },
+                      ...concorrenti.map(inf => ({ infortunio: inf.diagnosi, tipo: inf.tipo, cardKey: `${atleta.id}-${inf.id}` })),
+                    ];
+                    return cards.map(({ infortunio, tipo, cardKey }) => (
+                      <div key={cardKey} className="group flex items-center gap-2">
+                      <button onClick={() => { setSelected(atleta); setTab("dati"); }}
+                        className={`flex-1 min-w-0 bg-white rounded-xl p-4 border text-left transition-all hover:shadow-md ${
+                          selected?.id === atleta.id ? "border-[#C8102E] shadow-md" : "border-gray-100"
                         }`}>
-                          {nd(atleta).trim().split(/\s+/).filter(Boolean).slice(0,2).map((w:string)=>(w[0]??"").toUpperCase()).join("")}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <p className={`font-semibold truncate ${atleta.stato === "Disponibile" ? "text-gray-500" : "text-gray-900"}`}>{nd(atleta)}</p>
-                            <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${statoColor[atleta.stato]}`}>
-                              {atleta.stato}
-                            </span>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${
+                            atleta.stato === "Disponibile" ? "bg-gray-300" : "bg-[#2B2B2B]"
+                          }`}>
+                            {nd(atleta).trim().split(/\s+/).filter(Boolean).slice(0,2).map((w:string)=>(w[0]??"").toUpperCase()).join("")}
                           </div>
-                          {atleta.infortunio && (
-                            <p className="text-xs text-gray-500 truncate font-medium">{atleta.infortunio}</p>
-                          )}
-                          <p className="text-xs text-gray-300 truncate mt-0.5">
-                            {[atleta.posizione, atleta.tipoInfortunio].filter(Boolean).join(" · ")}
-                          </p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <p className={`font-semibold truncate ${atleta.stato === "Disponibile" ? "text-gray-500" : "text-gray-900"}`}>{nd(atleta)}</p>
+                              <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${statoColor[atleta.stato]}`}>
+                                {atleta.stato}
+                              </span>
+                            </div>
+                            {infortunio && <p className="text-xs text-gray-500 truncate font-medium">{infortunio}</p>}
+                            <p className="text-xs text-gray-300 truncate mt-0.5">
+                              {[atleta.posizione, tipo].filter(Boolean).join(" · ")}
+                            </p>
+                          </div>
+                          <div className="shrink-0 flex items-center">
+                            <ChevronRight className="w-4 h-4 text-gray-200" />
+                          </div>
                         </div>
-                        <div className="shrink-0 flex items-center">
-                          <ChevronRight className="w-4 h-4 text-gray-200" />
-                        </div>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); if (confirm(`Eliminare ${nd(atleta)}?`)) elimina(atleta.id); }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500"
+                        title="Elimina atleta">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                       </div>
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); if (confirm(`Eliminare ${nd(atleta)}?`)) elimina(atleta.id); }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500"
-                      title="Elimina atleta">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    </div>
-                  ))}
+                    ));
+                  })}
                 </div>
               </div>
             ))}
@@ -1433,6 +1495,41 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                 <Plus className="w-3.5 h-3.5" /> Nuovo infortunio
               </button>
             )}
+
+            {/* Banner atleti duplicati */}
+            {(() => {
+              const duplicati = atleti.filter((a) => a.id !== selected.id && nd(a).toLowerCase() === nd(selected).toLowerCase());
+              if (!duplicati.length) return null;
+              return (
+                <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-amber-700 mb-1">
+                    {duplicati.length === 1 ? "Esiste un altro record con lo stesso nome" : `Esistono altri ${duplicati.length} record con lo stesso nome`}
+                  </p>
+                  {!mostraFondi ? (
+                    <button onClick={() => setMostraFondi(true)} className="text-xs font-semibold text-amber-700 underline">
+                      Fondi i record duplicati
+                    </button>
+                  ) : (
+                    <div className="space-y-2 mt-1">
+                      <p className="text-[11px] text-amber-600">L&apos;infortunio del duplicato verrà aggiunto come concorrente. Il record duplicato sarà eliminato.</p>
+                      {duplicati.map((altro) => (
+                        <div key={altro.id} className="bg-white border border-amber-200 rounded-lg p-2 flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-gray-800 truncate">{altro.infortunio || "—"}</p>
+                            <p className="text-[11px] text-gray-400">{altro.tipoInfortunio || altro.stato}</p>
+                          </div>
+                          <button onClick={() => { if (confirm(`Fondi "${altro.infortunio || altro.stato}" in questo atleta ed elimina il duplicato?`)) fondiAtleta(altro); }}
+                            className="shrink-0 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 px-2 py-1 rounded-lg">
+                            Fondi
+                          </button>
+                        </div>
+                      ))}
+                      <button onClick={() => setMostraFondi(false)} className="text-[11px] text-gray-400">Annulla</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="flex mt-3 bg-gray-100 rounded-xl p-1">
               {(["dati", "cartella", "storia"] as Tab[]).map((t) => (
@@ -1729,6 +1826,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
               /* ── Storico infortuni ── */
               (() => {
                 const storico = selected.storicoInfortuni ?? [];
+                const concorrenti = storico.filter((inf) => inf.attivo === true);
+                const precedenti = storico.filter((inf) => !inf.attivo);
                 const isSessione = (p: Programma) => !p.riposo;
                 const matchInf = (p: Programma, inf: InfortunioStorico) => {
                   const eid = p.infortunioId === "__corrente__" ? undefined : p.infortunioId;
@@ -1738,14 +1837,15 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                   if (inf.fineRehab && p.data > inf.fineRehab) return false;
                   return true;
                 };
-                const giorni = storico.map((inf) => programmiAtleta.filter((p) => matchInf(p, inf) && isSessione(p)).length);
+                const giorniPerInf = (inf: InfortunioStorico) =>
+                  programmiAtleta.filter((p) => matchInf(p, inf) && isSessione(p)).length;
                 const giorniCorrente = selected.stato === "Infortunato" && selected.inizioRehab
                   ? programmiAtleta.filter((p) => (
                       p.infortunioId === "__corrente__" ||
                       (!p.infortunioId && p.data >= selected.inizioRehab)
                     ) && isSessione(p)).length
                   : 0;
-                const totaleStagione = giorni.reduce((s, g) => s + g, 0) + giorniCorrente;
+                const totaleStagione = storico.reduce((s, inf) => s + giorniPerInf(inf), 0) + giorniCorrente;
 
                 const fmtData = (d: string) =>
                   d ? new Date(d + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
@@ -1756,9 +1856,9 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                     <div className={`grid gap-3 ${selected.stato === "Infortunato" ? "grid-cols-2" : "grid-cols-1"}`}>
                       {selected.stato === "Infortunato" && (
                         <div className="bg-orange-50 border border-orange-100 rounded-2xl p-3 text-center">
-                          <p className="text-[10px] text-orange-400 font-semibold uppercase tracking-widest mb-1">Infortunio attuale</p>
-                          <p className="text-3xl font-bold text-orange-600 leading-none">{giorniCorrente}</p>
-                          <p className="text-[11px] text-orange-400 mt-1">sessioni</p>
+                          <p className="text-[10px] text-orange-400 font-semibold uppercase tracking-widest mb-1">Infortuni attivi</p>
+                          <p className="text-3xl font-bold text-orange-600 leading-none">{1 + concorrenti.length}</p>
+                          <p className="text-[11px] text-orange-400 mt-1">in corso</p>
                         </div>
                       )}
                       <div className="bg-gray-50 border border-gray-100 rounded-2xl p-3 text-center">
@@ -1774,35 +1874,152 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       <FileDown className="w-3.5 h-3.5" /> Scarica PDF completo
                     </button>
 
-                    {/* Infortunio corrente */}
+                    {/* Infortuni in corso */}
                     {selected.stato === "Infortunato" && (selected.infortunio || selected.inizioRehab) && (
                       <div>
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">In corso</p>
-                        <div className="border border-orange-200 rounded-2xl p-4 space-y-2 bg-white">
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="font-semibold text-gray-900 leading-tight">{selected.infortunio || "—"}</span>
-                            <span className="shrink-0 text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-semibold">
-                              {giorniCorrente} sess.
-                            </span>
+                        <div className="space-y-2">
+                          {/* Infortunio principale */}
+                          <div className="border border-orange-200 rounded-2xl p-4 space-y-2 bg-white">
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="font-semibold text-gray-900 leading-tight">{selected.infortunio || "—"}</span>
+                              <span className="shrink-0 text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-semibold">
+                                {giorniCorrente} sess.
+                              </span>
+                            </div>
+                            {selected.tipoInfortunio && (
+                              <p className="text-xs text-gray-400">{selected.tipoInfortunio}</p>
+                            )}
+                            <p className="text-xs text-gray-400">
+                              Dal {fmtData(selected.inizioRehab)} <span className="text-orange-400 font-medium">· in corso</span>
+                            </p>
                           </div>
-                          {selected.tipoInfortunio && (
-                            <p className="text-xs text-gray-400">{selected.tipoInfortunio}</p>
+
+                          {/* Infortuni concorrenti */}
+                          {concorrenti.map((inf) => {
+                            const storicoIdx = storico.indexOf(inf);
+                            return (
+                              <div key={inf.id} className="border border-orange-200 rounded-2xl p-4 space-y-2 bg-white">
+                                <div className="flex items-start justify-between gap-2">
+                                  <span className="font-semibold text-gray-900 leading-tight">{inf.diagnosi}</span>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-semibold">
+                                      {giorniPerInf(inf)} sess.
+                                    </span>
+                                    <button onClick={() => { setEditStorico({ inf, idx: storicoIdx }); setEditStoricoForm({ ...inf }); }}
+                                      className="p-1 rounded-lg hover:bg-gray-100 text-gray-300 hover:text-gray-600" title="Modifica">
+                                      <Pencil className="w-3 h-3" />
+                                    </button>
+                                    <button onClick={() => chiudiInfortBis(inf.id)}
+                                      className="p-1 rounded-lg hover:bg-green-50 text-gray-300 hover:text-green-600" title="Chiudi infortunio">
+                                      <CheckCircle2 className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                </div>
+                                {inf.tipo && <p className="text-xs text-gray-400">{inf.tipo}</p>}
+                                <p className="text-xs text-gray-400">
+                                  Dal {fmtData(inf.inizioRehab)} <span className="text-orange-400 font-medium">· in corso</span>
+                                </p>
+                                {inf.note && <p className="text-xs text-gray-400 italic">{inf.note}</p>}
+                                {/* Edit form inline */}
+                                {editStorico?.idx === storicoIdx && editStoricoForm && (
+                                  <div className="space-y-2 pt-1 border-t border-gray-100 mt-2">
+                                    <div>
+                                      <p className="text-xs text-gray-400 mb-0.5">Diagnosi</p>
+                                      <input className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                                        value={editStoricoForm.diagnosi}
+                                        onChange={(e) => setEditStoricoForm({ ...editStoricoForm, diagnosi: e.target.value })} />
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-gray-400 mb-0.5">Tipo</p>
+                                      <select className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                                        value={editStoricoForm.tipo ?? ""}
+                                        onChange={(e) => setEditStoricoForm({ ...editStoricoForm, tipo: e.target.value || undefined })}>
+                                        <option value="">—</option>
+                                        {TIPI_INFORTUNIO.map((t) => <option key={t} value={t}>{t}</option>)}
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-gray-400 mb-0.5">Inizio</p>
+                                      <input type="date" className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                                        value={editStoricoForm.inizioRehab}
+                                        onChange={(e) => setEditStoricoForm({ ...editStoricoForm, inizioRehab: e.target.value })} />
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-gray-400 mb-0.5">Note</p>
+                                      <input className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                                        value={editStoricoForm.note ?? ""}
+                                        onChange={(e) => setEditStoricoForm({ ...editStoricoForm, note: e.target.value || undefined })} />
+                                    </div>
+                                    <div className="flex gap-2 pt-1">
+                                      <button onClick={salvaEditStorico}
+                                        className="flex-1 bg-[#C8102E] text-white text-xs font-semibold py-1.5 rounded-lg hover:bg-red-800">Salva</button>
+                                      <button onClick={() => { setEditStorico(null); setEditStoricoForm(null); }}
+                                        className="flex-1 border border-gray-200 text-gray-500 text-xs font-semibold py-1.5 rounded-lg hover:bg-gray-50">Annulla</button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {/* Aggiungi infortunio concorrente */}
+                          {!mostraFormInfortBis ? (
+                            <button onClick={() => setMostraFormInfortBis(true)}
+                              className="w-full flex items-center justify-center gap-1.5 border border-dashed border-orange-200 text-orange-500 text-xs font-semibold py-2 rounded-xl hover:bg-orange-50 transition-colors">
+                              <Plus className="w-3.5 h-3.5" /> Aggiungi infortunio
+                            </button>
+                          ) : (
+                            <div className="border border-orange-200 rounded-2xl p-4 space-y-2 bg-orange-50">
+                              <p className="text-xs font-semibold text-orange-700">Nuovo infortunio concorrente</p>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-0.5">Diagnosi *</p>
+                                <input className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white"
+                                  placeholder="es. Distorsione caviglia dx"
+                                  value={nuovoInfortBis.diagnosi}
+                                  onChange={(e) => setNuovoInfortBis({ ...nuovoInfortBis, diagnosi: e.target.value })} />
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-0.5">Tipo</p>
+                                <select className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white"
+                                  value={nuovoInfortBis.tipo}
+                                  onChange={(e) => setNuovoInfortBis({ ...nuovoInfortBis, tipo: e.target.value })}>
+                                  <option value="">—</option>
+                                  {TIPI_INFORTUNIO.map((t) => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-0.5">Inizio rehab</p>
+                                <input type="date" className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white"
+                                  value={nuovoInfortBis.inizioRehab}
+                                  onChange={(e) => setNuovoInfortBis({ ...nuovoInfortBis, inizioRehab: e.target.value })} />
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-0.5">Note</p>
+                                <input className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white"
+                                  value={nuovoInfortBis.note}
+                                  onChange={(e) => setNuovoInfortBis({ ...nuovoInfortBis, note: e.target.value })} />
+                              </div>
+                              <div className="flex gap-2 pt-1">
+                                <button onClick={aggiungiInfortBis}
+                                  className="flex-1 bg-[#C8102E] text-white text-xs font-semibold py-1.5 rounded-lg hover:bg-red-800">Salva</button>
+                                <button onClick={() => { setMostraFormInfortBis(false); setNuovoInfortBis({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "" }); }}
+                                  className="flex-1 border border-gray-200 text-gray-500 text-xs font-semibold py-1.5 rounded-lg hover:bg-white">Annulla</button>
+                              </div>
+                            </div>
                           )}
-                          <p className="text-xs text-gray-400">
-                            Dal {fmtData(selected.inizioRehab)} <span className="text-orange-400 font-medium">· in corso</span>
-                          </p>
                         </div>
                       </div>
                     )}
 
                     {/* Storico archiviato */}
-                    {storico.length > 0 && (
+                    {precedenti.length > 0 && (
                       <div>
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Infortuni precedenti</p>
                         <div className="space-y-2">
-                          {[...storico].reverse().map((inf, i) => {
-                            const realIdx = storico.length - 1 - i;
-                            const isEditing = editStorico?.idx === realIdx;
+                          {[...precedenti].reverse().map((inf) => {
+                            const storicoIdx = storico.indexOf(inf);
+                            const isEditing = editStorico?.idx === storicoIdx;
                             return (
                               <div key={inf.id} className="border border-gray-100 rounded-2xl p-4 space-y-2 bg-white">
                                 {isEditing && editStoricoForm ? (
@@ -1861,13 +2078,13 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                       <span className="font-semibold text-gray-900 leading-tight flex-1">{inf.diagnosi}</span>
                                       <div className="flex items-center gap-1 shrink-0">
                                         <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-semibold">
-                                          {giorni[realIdx]} sess.
+                                          {giorniPerInf(inf)} sess.
                                         </span>
-                                        <button onClick={() => { setEditStorico({ inf, idx: realIdx }); setEditStoricoForm({ ...inf }); }}
+                                        <button onClick={() => { setEditStorico({ inf, idx: storicoIdx }); setEditStoricoForm({ ...inf }); }}
                                           className="p-1 rounded-lg hover:bg-gray-100 text-gray-300 hover:text-gray-600" title="Modifica">
                                           <Pencil className="w-3 h-3" />
                                         </button>
-                                        <button onClick={() => ripristinaInfortunio(inf, realIdx)}
+                                        <button onClick={() => ripristinaInfortunio(inf, storicoIdx)}
                                           className="p-1 rounded-lg hover:bg-orange-50 text-gray-300 hover:text-orange-500" title="Ripristina come attivo">
                                           <RotateCcw className="w-3 h-3" />
                                         </button>
@@ -1893,7 +2110,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       </div>
                     )}
 
-                    {storico.length === 0 && selected.stato === "Disponibile" && (
+                    {precedenti.length === 0 && concorrenti.length === 0 && selected.stato === "Disponibile" && (
                       <div className="text-center py-10">
                         <Clock className="w-10 h-10 text-gray-200 mx-auto mb-2" />
                         <p className="text-gray-400 text-sm">Nessun infortunio in archivio</p>
