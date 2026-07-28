@@ -55,7 +55,7 @@ function esportaCSV(atleta: Atleta, programmi: Programma[]) {
     programmi.forEach(prog => {
       const dataProg = prog.data ? new Date(prog.data + "T12:00").toLocaleDateString("it-IT") : "—";
       prog.esercizi.forEach((e, i) => {
-        rows.push([dataProg, prog.nome ?? "—", prog.fase ?? "—", "Palestra", String(i + 1), e.nome, e.serie ?? "—", e.reps ?? "—", e.carico ?? "—", e.rir ?? "—", `${e.vas || "0"}/10`, e.note ?? ""]);
+        rows.push([dataProg, prog.nome ?? "—", prog.fase ?? "—", "Palestra", String(i + 1), e.nome, e.serie ?? "—", e.reps || e.durata || "—", e.carico ?? "—", e.rir ?? "—", `${e.vas || "0"}/10`, e.note ?? ""]);
       });
       (prog.esercizicampo ?? []).forEach((c, i) => {
         rows.push([dataProg, prog.nome ?? "—", prog.fase ?? "—", "Campo", String(i + 1), c.descrizione ?? c.tipo ?? "—", c.serie ?? "—", c.durata ?? "—", "", "", "", ""]);
@@ -338,7 +338,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           ca?.potenzaMetabolica ? `P.Met.: ${ca.potenzaMetabolica}W/kg` : "",
         ].filter(Boolean).map((s) => `- ${s}`).join("\n") || "—";
 
-        const esText = esercizi.map((e, i) => { const sx = [e.serie, e.reps].filter(Boolean).join("×"); const carico = e.carico ? ` (${e.carico})` : ""; return `${i + 1}. ${sx ? `${e.nome} ${sx}${carico}` : e.nome}`; }).join("\n") || "—";
+        const esText = esercizi.map((e, i) => { const metric = e.reps || e.durata; const sx = [e.serie, metric].filter(Boolean).join("×"); const carico = e.carico ? ` (${e.carico})` : ""; return `${i + 1}. ${sx ? `${e.nome} ${sx}${carico}` : e.nome}`; }).join("\n") || "—";
         const vasText = esercizi.map((e, i) => `${i + 1}. ${e.vas || "0"}`).join("\n") || "—";
         const fisio = prog.noteFisioterapia?.trim() || "—";
         if (isAlt) altRowIndices.add(body.length);

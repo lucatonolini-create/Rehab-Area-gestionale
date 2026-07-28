@@ -249,6 +249,7 @@ export interface Esercizio {
   nome: string;
   serie: string;
   reps: string;
+  durata: string;
   carico: string;
   rir: string;
   vas: string;

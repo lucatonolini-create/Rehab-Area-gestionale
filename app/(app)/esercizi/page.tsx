@@ -9,7 +9,7 @@ import {
   type Atleta, type Programma, type Esercizio, type TestFisiometrico, type Carico, type EsercizioCampo, type InfortunioStorico,
 } from "@/lib/store";
 
-const esVuoto: Esercizio = { nome: "", serie: "", reps: "", carico: "", rir: "", vas: "", note: "" };
+const esVuoto: Esercizio = { nome: "", serie: "", reps: "", durata: "", carico: "", rir: "", vas: "", note: "" };
 const testVuoto: TestFisiometrico = { nome: "", risultatoSx: "", risultatoDx: "", risultato: "", unita: "", note: "" };
 const caricoVuoto: Carico = { rpe: "", interno: "", durata: "", distanzaTotale: "", velocitaMax: "", hsr: "", velocita21: "", velocita25: "", accelerazioni: "", decelerazioni: "", sprint: "", potenzaMetabolica: "", note: "" };
 const campoVuoto: EsercizioCampo = { tipo: "", serie: "", durata: "", descrizione: "", vas: "" };
@@ -502,7 +502,7 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
         const rpe = prog.carico?.rpe ? `${prog.carico.rpe}/10` : "—";
         const esercizi = prog.esercizi ?? [];
         const esText = esercizi.map((e, i) => {
-          const sx = [e.serie, e.reps].filter(Boolean).join("×");
+          const metric = e.reps || e.durata; const sx = [e.serie, metric].filter(Boolean).join("×");
           const carico = e.carico ? ` (${e.carico})` : "";
           return `${i + 1}. ${sx ? `${e.nome} ${sx}${carico}` : e.nome}`;
         }).join("\n") || "—";
@@ -1081,6 +1081,7 @@ export default function EserciziPage() {
                                     <div className="flex items-center gap-2 text-xs text-gray-500">
                                       {es.serie && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.serie} serie</span>}
                                       {es.reps && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.reps}</span>}
+                                      {es.durata && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.durata}</span>}
                                       {es.carico && <span className="bg-white border border-blue-200 text-blue-600 px-2 py-0.5 rounded-full">{es.carico}</span>}
                                       {es.rir && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">RIR {es.rir}</span>}
                                       <span className="bg-white border border-red-200 text-red-600 px-2 py-0.5 rounded-full">VAS {es.vas || "0"}/10</span>
@@ -1582,9 +1583,9 @@ export default function EserciziPage() {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                        {/* Metriche: 4 colonne compatte */}
-                        <div className="grid grid-cols-4 gap-1.5">
-                          {([ ["Serie", "serie"], ["Reps", "reps"], ["Carico", "carico"], ["RIR", "rir"] ] as const).map(([label, key]) => (
+                        {/* Metriche: 5 colonne compatte */}
+                        <div className="grid grid-cols-5 gap-1.5">
+                          {([ ["Serie", "serie"], ["Reps", "reps"], ["Durata", "durata"], ["Carico", "carico"], ["RIR", "rir"] ] as const).map(([label, key]) => (
                             <div key={key}>
                               <p className="text-[10px] text-gray-400 mb-0.5 text-center">{label}</p>
                               <input value={es[key]} onChange={(e) => aggiornaEs(i, key, e.target.value)} placeholder="—"
