@@ -303,8 +303,8 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           continue;
         }
 
-        const obP = prog.obiettiviPalestra?.length ? prog.obiettiviPalestra.join("\n").replace(/\//g, "/ ") : "—";
-        const obCampo = prog.obiettiviCampo?.length ? prog.obiettiviCampo.join("\n").replace(/\//g, "/ ") : "—";
+        const obP = prog.obiettiviPalestra?.length ? prog.obiettiviPalestra.map(o => `- ${o.replace(/\//g, "/ ")}`).join("\n") : "—";
+        const obCampo = prog.obiettiviCampo?.length ? prog.obiettiviCampo.map(o => `- ${o.replace(/\//g, "/ ")}`).join("\n") : "—";
 
         const esC = (prog.esercizicampo ?? []).map((c, i) => {
           const parts = [c.tipo, c.serie ? `${c.serie}×` : "", c.durata || ""].filter(Boolean);
