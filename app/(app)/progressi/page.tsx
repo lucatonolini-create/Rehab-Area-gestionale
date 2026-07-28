@@ -277,9 +277,9 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         weekLabel = `SETTIMANA  ${mon.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" })} – ${sun.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
       }
       weekRowIndices.add(body.length);
-      body.push([{ content: weekLabel, colSpan: 13 }]);
+      body.push([{ content: weekLabel, colSpan: 12 }]);
       subHeaderRowIndices.add(body.length);
-      body.push(["Data", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS", "Obiettivi\nCampo", "Esercizi\nCampo", "GPS", "VAS\nCampo", "Test", "RPE"]);
+      body.push(["Data", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS", "Obiettivi\nCampo", "Esercizi\nCampo", "GPS", "VAS\nCampo", "RPE"]);
 
       let dataRowCount = 0;
       for (const prog of wkProgs) {
@@ -342,7 +342,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         const vasText = esercizi.map((e, i) => `${i + 1}. ${e.vas || "0"}`).join("\n") || "—";
         const fisio = prog.noteFisioterapia?.trim() || "—";
         if (isAlt) altRowIndices.add(body.length);
-        body.push([dataStr, prog.nome ?? "—", prog.fase ?? "—", fisio, obP, esText, vasText, obCampo, esC, gps, vasC, tests, rpe]);
+        body.push([dataStr, prog.nome ?? "—", prog.fase ?? "—", fisio, obP, esText, vasText, obCampo, esC, gps, vasC, rpe]);
         dataRowCount++;
       }
     });
@@ -362,11 +362,10 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         5:  { cellWidth: 31 },
         6:  { cellWidth: 10, halign: "center" as const },
         7:  { cellWidth: 28 },
-        8:  { cellWidth: 30 },
-        9:  { cellWidth: 29 },
+        8:  { cellWidth: 40 },
+        9:  { cellWidth: 49 },
         10: { cellWidth: 13, halign: "center" as const },
-        11: { cellWidth: 30 },
-        12: { cellWidth: 12, halign: "center" as const },
+        11: { cellWidth: 12, halign: "center" as const },
       },
       didParseCell: (data: any) => {
         if (data.section !== "body") return;
@@ -423,7 +422,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
       doc.addPage();
       addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`);
       let y = HDR + 8;
-      y = secTitle("Andamento Test", y);
+      y = secTitle("Test", y);
 
       const checkPg = (needed: number) => {
         if (y + needed > H - 18) {
