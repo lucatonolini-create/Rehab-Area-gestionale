@@ -345,7 +345,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           const sup = _superioreTest(sxV, dxV);
           const asimStr = (asim !== null && sup !== null) ? `${sup} +${asim.toFixed(1)}%` : "";
           const prev = _trovaPrecedenteTest(programmi, prog.id, t.nome);
-          const delta = _calcolaDelta(t, prev);
+          const delta = t.nome === "QSLS" ? null : _calcolaDelta(t, prev);
           const risultatoStr = val || "—";
           testRows.push({ dataStr, infortunio: prog.nome ?? "—", nomeTest: t.nome, risultato: risultatoStr, delta, asimStr });
         });
