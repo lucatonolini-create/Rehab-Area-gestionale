@@ -446,7 +446,9 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         const isDropJump = testName === "Drop Jump";
         const isSLDropJump = testName === "SL Drop Jump";
         const isJurdan = testName === "Jurdan";
-        const hasSxDx = !isJurdan && entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
+        const isCMJLike = (testName.includes("CMJ") && !testName.includes("SL")) || testName === "Squat Jump";
+        const isBroadJump = testName.includes("Broad Jump");
+        const hasSxDx = !isJurdan && !isCMJLike && !isBroadJump && entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
 
         const color: [number, number, number] = testIdx % 2 === 0 ? [200, 16, 46] : [75, 85, 99];
         const [cr, cg, cb] = color;
@@ -494,6 +496,12 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
             const d2 = e.test.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? Math.abs(gSx - aDx).toFixed(1) : "—");
             return [e.dateFull, e.test.ginocchioDx || "—", e.test.ancaSx || "—", d1, e.test.ginocchioSx || "—", e.test.ancaDx || "—", d2];
           });
+        } else if (isCMJLike) {
+          head = ["Data", "Altezza (cm)"];
+          tableBody = entries.map((e) => [e.dateFull, e.test.altezzaSalto || "—"]);
+        } else if (isBroadJump) {
+          head = ["Data", "Distanza (cm)"];
+          tableBody = entries.map((e) => [e.dateFull, e.test.altezzaSalto || "—"]);
         } else if (hasSxDx) {
           head = ["Data", `Arto Sx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, `Arto Dx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "Asimmetria %"];
           tableBody = entries.map((e) => {
