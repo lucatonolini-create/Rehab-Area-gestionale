@@ -501,8 +501,11 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   // Giorni persi = numero di sessioni inserite per quell'infortunio (non giorni di calendario)
   const isSessionePDF = (p: Programma) => !p.riposo;
   const matchesInfPDF = (p: Programma, inf: { id: string; inizioRehab: string; fineRehab: string }) => {
-    const eid = p.infortunioId === "__corrente__" ? undefined : p.infortunioId;
-    if (eid) return eid === inf.id;
+    // Sessione con ID storico esplicito: appartiene solo a quel infortunio
+    if (p.infortunioId && p.infortunioId !== "__corrente__") return p.infortunioId === inf.id;
+    // Sessione con __corrente__: appartiene solo all'infortunio principale (non agli storico)
+    if (p.infortunioId === "__corrente__") return inf.id === "__corrente__";
+    // Nessun ID: match per data
     if (!p.data || !inf.inizioRehab) return false;
     if (p.data < inf.inizioRehab) return false;
     if (inf.fineRehab && p.data > inf.fineRehab) return false;
@@ -607,15 +610,20 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   for (const inj of allInjuries) {
     const injProgs = programmi
       .filter((p) => {
-        const eid = p.infortunioId === "__corrente__" ? undefined : p.infortunioId;
-        if (eid) return eid === inj.id;
+        // ID storico esplicito: appartiene solo a quel infortunio
+        if (p.infortunioId && p.infortunioId !== "__corrente__") return p.infortunioId === inj.id;
+        // __corrente__ appartiene solo all'infortunio principale
+        if (p.infortunioId === "__corrente__") return inj.id === "__corrente__";
+        // Nessun ID: match per data, ma solo se non già attribuita ad un altro infortunio
+        if (usedProgIds.has(p.id)) return false;
         if (!p.data || !inj.inizio) return false;
         if (p.data < inj.inizio) return false;
         if (inj.fine && p.data > inj.fine) return false;
         return true;
       })
       .sort((a, b) => a.data.localeCompare(b.data));
-    injProgs.forEach((p) => usedProgIds.add(p.id));
+    // Marca solo le sessioni senza ID come usate (quelle con ID esplicito possono essere solo di un infortunio)
+    injProgs.filter((p) => !p.infortunioId).forEach((p) => usedProgIds.add(p.id));
 
     const injQRTS = (atleta.questionariKinesiofobia ?? []).filter((q) => q.infortunioId === inj.id);
     const giorni = inj.fine ? ggPersi(inj.inizio, inj.fine) : ggPersi(inj.inizio, today);
