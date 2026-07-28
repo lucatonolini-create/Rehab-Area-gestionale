@@ -1139,7 +1139,7 @@ export default function PerformancePage() {
                     const t = testTrend(tl);
                     const last = tl.points[tl.points.length - 1];
                     const showBilateral = tl.isBilateral && nome !== "Drop Jump";
-                    const asymPct = showBilateral && last?.sx != null && last?.dx != null && Math.max(last.sx, last.dx) > 0
+                    const asymPct = showBilateral && nome !== "QSLS" && last?.sx != null && last?.dx != null && Math.max(last.sx, last.dx) > 0
                       ? ((Math.abs(last.sx - last.dx) / Math.max(last.sx, last.dx)) * 100).toFixed(1)
                       : null;
                     return (
