@@ -767,9 +767,14 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
               tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.altezzaSalto || "—"]);
             } else if (hasSxDx) {
               const firstEntry = (entries as TEntry[])[0];
-              tableHead = ["Data", `Arto Sx${firstEntry?.test.unita ? ` (${firstEntry.test.unita})` : ""}`, `Arto Dx${firstEntry?.test.unita ? ` (${firstEntry.test.unita})` : ""}`, "Asimmetria %"];
+              const isQSLS = nome === "QSLS";
+              const unitSx = firstEntry?.test.unita ? ` (${firstEntry.test.unita})` : "";
+              tableHead = isQSLS
+                ? ["Data", `Arto Sx${unitSx}`, `Arto Dx${unitSx}`]
+                : ["Data", `Arto Sx${unitSx}`, `Arto Dx${unitSx}`, "Asimmetria %"];
               tableBody = (entries as TEntry[]).map((e: TEntry) => {
-                const asim = nome === "QSLS" ? null : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
+                if (isQSLS) return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—"];
+                const asim = _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
                 return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—"];
               });
             } else {
@@ -778,7 +783,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
               tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.risultato || e.val]);
             }
 
-            const asimCol = (isSLDropJump || hasSxDx) ? 3 : -1;
+            const asimCol = (isSLDropJump || (hasSxDx && nome !== "QSLS")) ? 3 : -1;
             const tableStartY = y;
             autoTable(doc, {
               startY: tableStartY,

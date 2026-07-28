@@ -501,9 +501,14 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           head = ["Data", "Distanza (cm)"];
           tableBody = entries.map((e) => [e.dateFull, e.test.altezzaSalto || "—"]);
         } else if (hasSxDx) {
-          head = ["Data", `Arto Sx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, `Arto Dx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "Asimmetria %"];
+          const isQSLS = testName === "QSLS";
+          const unitSx = entries[0]?.test.unita ? ` (${entries[0].test.unita})` : "";
+          head = isQSLS
+            ? ["Data", `Arto Sx${unitSx}`, `Arto Dx${unitSx}`]
+            : ["Data", `Arto Sx${unitSx}`, `Arto Dx${unitSx}`, "Asimmetria %"];
           tableBody = entries.map((e) => {
-            const asim = testName === "QSLS" ? null : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
+            if (isQSLS) return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—"];
+            const asim = _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
             return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—"];
           });
         } else {
@@ -511,7 +516,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           tableBody = entries.map((e) => [e.dateFull, e.test.risultato || "—"]);
         }
 
-        const asimCol = (isSLDropJump || hasSxDx) ? 3 : -1;
+        const asimCol = (isSLDropJump || (hasSxDx && testName !== "QSLS")) ? 3 : -1;
         autoTable(doc, {
           startY: contentStartY,
           head: [head],
