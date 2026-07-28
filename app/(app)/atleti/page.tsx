@@ -268,7 +268,6 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     const altRowIndices = new Set<number>();
     const absenteRowIndices = new Set<number>();
     const riposoRowIndices = new Set<number>();
-    const testRows: { dataStr: string; infortunio: string; nomeTest: string; risultato: string; delta: number | null; asimStr: string }[] = [];
 
     Array.from(weekMap.entries()).forEach(([wk, wkProgs]) => {
       let weekLabel: string;
@@ -313,42 +312,6 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         }).join("\n") || "—";
         const vasC = (prog.esercizicampo ?? []).map((c, i) => `${i + 1}. ${c.vas || "0"}`).join("\n") || "—";
 
-        (prog.tests ?? []).forEach((t) => {
-          const isSL = t.nome === "SL Drop Jump";
-          const val = [
-            t.risultato,
-            t.altezzaSalto ? `${t.altezzaSalto} cm` : "",
-            t.risultatoSx ? `Sx ${t.risultatoSx}` : "",
-            t.risultatoDx ? `Dx ${t.risultatoDx}` : "",
-            t.altezzaSaltoSx ? `Sx ↕${t.altezzaSaltoSx}cm` : "",
-            t.altezzaSaltoDx ? `Dx ↕${t.altezzaSaltoDx}cm` : "",
-            t.tempoContatto ? `Contatto: ${t.tempoContatto}s` : "",
-            t.rsi ? `RSI: ${t.rsi}` : "",
-            t.tempoContattoSx ? `Sx Cont.: ${t.tempoContattoSx}s` : "",
-            t.tempoContattoDx ? `Dx Cont.: ${t.tempoContattoDx}s` : "",
-            t.rsiSx ? `RSI Sx: ${t.rsiSx}` : "",
-            t.rsiDx ? `RSI Dx: ${t.rsiDx}` : "",
-            t.tempo ? `Tempo: ${t.tempo}s` : "",
-            t.livello ? `Liv: ${t.livello}` : "",
-            t.vo2max ? `Vo2Max: ${t.vo2max}` : "",
-            t.vam ? `VAM: ${t.vam}` : "",
-            t.ginocchioDx ? `Gin.Dx: ${t.ginocchioDx}°` : "",
-            t.ancaSx ? `Anca Sx: ${t.ancaSx}°` : "",
-            t.diffGinocchioDxAncaSx ? `Δ: ${t.diffGinocchioDxAncaSx}°` : "",
-            t.ginocchioSx ? `Gin.Sx: ${t.ginocchioSx}°` : "",
-            t.ancaDx ? `Anca Dx: ${t.ancaDx}°` : "",
-            t.diffGinocchioSxAncaDx ? `Δ: ${t.diffGinocchioSxAncaDx}°` : "",
-          ].filter(Boolean).join(" / ");
-          const sxV = isSL ? (t.rsiSx ?? "") : (t.risultatoSx ?? "");
-          const dxV = isSL ? (t.rsiDx ?? "") : (t.risultatoDx ?? "");
-          const asim = _calcolaAsimmetria(sxV, dxV);
-          const sup = _superioreTest(sxV, dxV);
-          const asimStr = (asim !== null && sup !== null && t.nome !== "QSLS") ? `${sup} +${asim.toFixed(1)}%` : "";
-          const prev = _trovaPrecedenteTest(programmi, prog.id, t.nome);
-          const delta = t.nome === "QSLS" ? null : _calcolaDelta(t, prev);
-          const risultatoStr = val || "—";
-          testRows.push({ dataStr, infortunio: prog.nome ?? "—", nomeTest: t.nome, risultato: risultatoStr, delta, asimStr });
-        });
 
         const ca = prog.carico;
         const rpe = ca?.rpe ? `${ca.rpe}/10` : "—";
@@ -424,77 +387,6 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     });
     y = (doc as any).lastAutoTable.finalY + 6;
 
-    if (testRows.length > 0) {
-      // Group consecutive rows by (dataStr + infortunio) for rowSpan
-      const tGroups: { dataStr: string; infortunio: string; rows: typeof testRows }[] = [];
-      for (const r of testRows) {
-        const last = tGroups[tGroups.length - 1];
-        if (last && last.dataStr === r.dataStr && last.infortunio === r.infortunio) {
-          last.rows.push(r);
-        } else {
-          tGroups.push({ dataStr: r.dataStr, infortunio: r.infortunio, rows: [r] });
-        }
-      }
-      const tBody: any[] = [];
-      const tRowGroup: number[] = [];
-      for (let gi = 0; gi < tGroups.length; gi++) {
-        const g = tGroups[gi];
-        const n = g.rows.length;
-        g.rows.forEach((r, i) => {
-          tRowGroup.push(gi);
-          const parts: string[] = [];
-          if (r.asimStr) parts.push(r.asimStr);
-          if (r.delta !== null) parts.push(`${r.delta >= 0 ? "+" : ""}${r.delta.toFixed(1)}%`);
-          const deltaStr = parts.join(" / ") || "—";
-          if (i === 0) {
-            tBody.push([
-              { content: r.dataStr, rowSpan: n, styles: { halign: "center" as const, valign: "middle" as const } },
-              { content: r.infortunio, rowSpan: n, styles: { valign: "middle" as const } },
-              r.nomeTest,
-              r.risultato,
-              deltaStr,
-            ]);
-          } else {
-            tBody.push([r.nomeTest, r.risultato, deltaStr]);
-          }
-        });
-      }
-
-      checkPage(20, sub);
-      y = secTitle("Test", y);
-      autoTable(doc, {
-        startY: y,
-        head: [["Data", "Sessione", "Test", "Valore", "%"]],
-        body: tBody,
-        headStyles: { fillColor: red as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 6.5, fontStyle: "bold", halign: "center", valign: "middle", cellPadding: { top: 2.5, bottom: 2.5, left: 2, right: 2 } },
-        bodyStyles: { fontSize: 6.5, cellPadding: 2.5, overflow: "linebreak" as const, valign: "middle" as const },
-        alternateRowStyles: { fillColor: [255, 255, 255] },
-        margin: { left: M, right: M },
-        columnStyles: {
-          0: { cellWidth: 18, halign: "center" as const },
-          1: { cellWidth: 38 },
-          2: { cellWidth: 55, fontStyle: "bold" as const },
-          3: { cellWidth: "auto" as any },
-          4: { cellWidth: 18, halign: "center" as const },
-        },
-        didParseCell: (data: any) => {
-          if (data.section === "body") {
-            const gi = tRowGroup[data.row.index];
-            data.cell.styles.fillColor = gi % 2 === 0 ? [255, 255, 255] : [247, 248, 252];
-            if (data.column.index === 4 && data.section === "body") {
-              const raw = String(data.cell.raw ?? "");
-              const deltaSegment = raw.includes(" / ") ? raw.split(" / ").pop()! : raw;
-              const v = parseFloat(deltaSegment);
-              if (!isNaN(v) && raw !== "—") {
-                data.cell.styles.textColor = v >= 0 ? [5, 150, 105] : [220, 38, 38];
-                data.cell.styles.fontStyle = "bold";
-              }
-            }
-          }
-        },
-      });
-      y = (doc as any).lastAutoTable.finalY + 6;
-    }
   };
 
   // ── Pagina 1: dati atleta ──────────────────────────────────────────────────
@@ -774,40 +666,104 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       y = secTitle(`Sessioni di lavoro — ${injProgs.filter(isSessionePDF).length} sessioni`, y);
       renderWeeklyTable(injProgs, sub);
 
-      // ── Grafici Test ─────────────────────────────────────────────────────
+      // ── Test per tipologia (tabella + grafico) ───────────────────────────
       {
-        const injTestMap = new Map<string, { dateLabel: string; value: number }[]>();
-        for (const p of injProgs) {
-          if (p.assente || p.riposo) continue;
-          for (const t of (p.tests ?? [])) {
-            if (t.nome === "Gacon" || t.nome === "IFT 30-15") continue;
-            const v = getTestMainValue(t);
-            if (v === null) continue;
-            const dateLabel = p.data ? new Date(p.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) : "—";
-            if (!injTestMap.has(t.nome)) injTestMap.set(t.nome, []);
-            injTestMap.get(t.nome)!.push({ dateLabel, value: v });
+        const testColors2: [number, number, number][] = [
+          [200, 16, 46], [37, 99, 235], [5, 150, 105], [124, 58, 237],
+          [234, 88, 12], [2, 132, 199], [219, 39, 119], [75, 85, 99],
+        ];
+        const testsByName = new Map<string, { dateLabel: string; dateFull: string; sessione: string; test: TestFisiometrico; val: string }[]>();
+        for (const prog of injProgs) {
+          if (prog.assente || prog.riposo) continue;
+          for (const t of (prog.tests ?? [])) {
+            const dateLabel = prog.data ? new Date(prog.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) : "—";
+            const dateFull = prog.data ? fmtD(prog.data) : "—";
+            const isSL = t.nome === "SL Drop Jump";
+            const val = [
+              t.risultato,
+              t.altezzaSalto ? `${t.altezzaSalto} cm` : "",
+              t.risultatoSx ? `Sx ${t.risultatoSx}` : "",
+              t.risultatoDx ? `Dx ${t.risultatoDx}` : "",
+              t.altezzaSaltoSx ? `Sx ↕${t.altezzaSaltoSx}cm` : "",
+              t.altezzaSaltoDx ? `Dx ↕${t.altezzaSaltoDx}cm` : "",
+              t.tempoContatto ? `Contatto: ${t.tempoContatto}s` : "",
+              t.rsi ? `RSI: ${t.rsi}` : "",
+              isSL && t.tempoContattoSx ? `Sx Cont.: ${t.tempoContattoSx}s` : "",
+              isSL && t.tempoContattoDx ? `Dx Cont.: ${t.tempoContattoDx}s` : "",
+              isSL && t.rsiSx ? `RSI Sx: ${t.rsiSx}` : "",
+              isSL && t.rsiDx ? `RSI Dx: ${t.rsiDx}` : "",
+              t.tempo ? `Tempo: ${t.tempo}s` : "",
+              t.livello ? `Liv: ${t.livello}` : "",
+              t.vo2max ? `Vo2Max: ${t.vo2max}` : "",
+              t.vam ? `VAM: ${t.vam}` : "",
+              t.ginocchioDx ? `Gin.Dx: ${t.ginocchioDx}°` : "",
+              t.ancaSx ? `Anca Sx: ${t.ancaSx}°` : "",
+              t.diffGinocchioDxAncaSx ? `D Dx/Sx: ${t.diffGinocchioDxAncaSx}°` : "",
+              t.ginocchioSx ? `Gin.Sx: ${t.ginocchioSx}°` : "",
+              t.ancaDx ? `Anca Dx: ${t.ancaDx}°` : "",
+              t.diffGinocchioSxAncaDx ? `D Sx/Dx: ${t.diffGinocchioSxAncaDx}°` : "",
+            ].filter(Boolean).join(" / ");
+            if (!testsByName.has(t.nome)) testsByName.set(t.nome, []);
+            testsByName.get(t.nome)!.push({ dateLabel, dateFull, sessione: prog.nome ?? "—", test: t, val: val || "—" });
           }
         }
-        const testCharts = Array.from(injTestMap.entries()).filter(([, d]) => d.length >= 2);
-        if (testCharts.length > 0) {
+        if (testsByName.size > 0) {
           checkPage(20, sub);
-          y = secTitle("Andamento Test", y);
-          const testColors2: [number, number, number][] = [
-            [200, 16, 46], [37, 99, 235], [5, 150, 105], [217, 119, 6],
-            [124, 58, 237], [236, 72, 153], [14, 116, 144], [101, 163, 13],
-          ];
-          const HALF_W = (W - 2 * M - 4) / 2;
-          for (let ci = 0; ci < testCharts.length; ci += 2) {
-            checkPage(62, sub);
-            const [nome0, data0] = testCharts[ci];
-            if (ci + 1 < testCharts.length) {
-              const [nome1, data1] = testCharts[ci + 1];
-              drawPerfChart(nome0, testColors2[ci % testColors2.length], data0, { startX: M, width: HALF_W, updateY: false });
-              drawPerfChart(nome1, testColors2[(ci + 1) % testColors2.length], data1, { startX: M + HALF_W + 4, width: HALF_W });
-            } else {
-              drawPerfChart(nome0, testColors2[ci % testColors2.length], data0);
+          y = secTitle("Test", y);
+          Array.from(testsByName.entries()).forEach(([nome, entries], colorIdx) => {
+            const color = testColors2[colorIdx % testColors2.length];
+            type TEntry = { dateLabel: string; dateFull: string; sessione: string; test: TestFisiometrico; val: string };
+            const chartData = (entries as TEntry[])
+              .map((e: TEntry) => ({ dateLabel: e.dateLabel, value: getTestMainValue(e.test) }))
+              .filter((d: { dateLabel: string; value: number | null }): d is { dateLabel: string; value: number } => d.value !== null);
+            const needed = 22 + entries.length * 7 + (chartData.length >= 2 ? 55 : 0);
+            checkPage(needed, sub);
+            // Banner test
+            doc.setFillColor(250, 250, 250); doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.3);
+            doc.rect(M, y, W - 2 * M, 7, "FD");
+            doc.setFillColor(...color); doc.rect(M, y, 2.5, 7, "F");
+            doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...color);
+            doc.text(nome, M + 6, y + 4.8);
+            y += 11;
+            // Tabella sessioni
+            const tableBody = (entries as TEntry[]).map((e: TEntry, i: number) => {
+              const prevTest = i > 0 ? (entries as TEntry[])[i - 1].test : null;
+              const delta = nome === "QSLS" ? null : _calcolaDelta(e.test, prevTest);
+              const deltaStr = delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—";
+              return [e.dateFull, e.sessione, e.val, deltaStr];
+            });
+            autoTable(doc, {
+              startY: y,
+              head: [["Data", "Sessione", "Valore", "%"]],
+              body: tableBody,
+              headStyles: { fillColor: color as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 6.5, fontStyle: "bold" as const, halign: "center" as const, valign: "middle" as const, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 } },
+              bodyStyles: { fontSize: 6.5, cellPadding: 2.5, overflow: "linebreak" as const, valign: "middle" as const },
+              alternateRowStyles: { fillColor: [247, 248, 252] as [number, number, number] },
+              margin: { left: M, right: M },
+              columnStyles: {
+                0: { cellWidth: 18, halign: "center" as const },
+                1: { cellWidth: 45 },
+                2: { cellWidth: "auto" as any },
+                3: { cellWidth: 20, halign: "center" as const },
+              },
+              didParseCell: (data: any) => {
+                if (data.section === "body" && data.column.index === 3) {
+                  const v = parseFloat(String(data.cell.raw ?? ""));
+                  if (!isNaN(v)) {
+                    data.cell.styles.textColor = v >= 0 ? [5, 150, 105] : [220, 38, 38];
+                    data.cell.styles.fontStyle = "bold";
+                  }
+                }
+              },
+            });
+            y = (doc as any).lastAutoTable.finalY + 4;
+            // Grafico andamento
+            if (chartData.length >= 2) {
+              checkPage(52, sub);
+              drawPerfChart(nome, color, chartData);
             }
-          }
+            y += 6;
+          });
         }
       }
 
