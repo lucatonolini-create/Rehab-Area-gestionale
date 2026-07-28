@@ -719,13 +719,10 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             const hasChart = chartData.length >= 2;
             const needed = 11 + Math.max(10 + entries.length * 7, hasChart ? 60 : 0) + 6;
             checkPage(needed, sub);
-            // Banner test
-            doc.setFillColor(250, 250, 250); doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.3);
-            doc.rect(M, y, W - 2 * M, 7, "FD");
-            doc.setFillColor(...color); doc.rect(M, y, 2.5, 7, "F");
-            doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...color);
-            doc.text(nome, M + 6, y + 4.8);
-            y += 11;
+            // Titolo test: grassetto nero corsivo, nessuna banda
+            doc.setFont("helvetica", "bolditalic"); doc.setFontSize(8); doc.setTextColor(20, 20, 20);
+            doc.text(nome, M, y + 5);
+            y += 9;
             const tableStartY = y;
             autoTable(doc, {
               startY: tableStartY,
