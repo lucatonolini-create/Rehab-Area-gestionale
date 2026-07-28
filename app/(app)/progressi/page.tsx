@@ -471,30 +471,20 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         let tableBody: string[][];
 
         if (isDropJump) {
-          head = ["Data", "Altezza (cm)", "Contatto (s)", "RSI", "%"];
-          tableBody = entries.map((e, i) => {
-            const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
-            return [e.dateFull, e.test.altezzaSalto || "—", e.test.tempoContatto || "—", e.test.rsi || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
-          });
+          head = ["Data", "Altezza (cm)", "Contatto (s)", "RSI"];
+          tableBody = entries.map((e) => [e.dateFull, e.test.altezzaSalto || "—", e.test.tempoContatto || "—", e.test.rsi || "—"]);
         } else if (isSLDropJump) {
-          head = ["Data", "RSI Sx", "RSI Dx", "Asimmetria %", "%"];
-          tableBody = entries.map((e, i) => {
-            const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
+          head = ["Data", "RSI Sx", "RSI Dx", "Asimmetria %"];
+          tableBody = entries.map((e) => {
             const asim = _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "");
-            return [e.dateFull, e.test.rsiSx || "—", e.test.rsiDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
+            return [e.dateFull, e.test.rsiSx || "—", e.test.rsiDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—"];
           });
         } else if (isSprintTempo) {
-          head = ["Data", "Tempo (s)", "%"];
-          tableBody = entries.map((e, i) => {
-            const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
-            return [e.dateFull, e.test.tempo || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
-          });
+          head = ["Data", "Tempo (s)"];
+          tableBody = entries.map((e) => [e.dateFull, e.test.tempo || "—"]);
         } else if (isGaconIFT) {
-          head = ["Data", "Livello", "Vo2Max (ml/kg/min)", "VAM (km/h)", "%"];
-          tableBody = entries.map((e, i) => {
-            const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
-            return [e.dateFull, e.test.livello || "—", e.test.vo2max || "—", e.test.vam || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
-          });
+          head = ["Data", "Livello", "Vo2Max (ml/kg/min)", "VAM (km/h)"];
+          tableBody = entries.map((e) => [e.dateFull, e.test.livello || "—", e.test.vo2max || "—", e.test.vam || "—"]);
         } else if (isJurdan) {
           head = ["Data", "Gin.Dx (°)", "Anca Sx (°)", "Δ Dx/Sx (°)", "Gin.Sx (°)", "Anca Dx (°)", "Δ Sx/Dx (°)"];
           tableBody = entries.map((e) => {
@@ -505,21 +495,16 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
             return [e.dateFull, e.test.ginocchioDx || "—", e.test.ancaSx || "—", d1, e.test.ginocchioSx || "—", e.test.ancaDx || "—", d2];
           });
         } else if (hasSxDx) {
-          head = ["Data", `Arto Sx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, `Arto Dx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "Asimmetria %", "%"];
-          tableBody = entries.map((e, i) => {
-            const delta = testName === "QSLS" ? null : _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
+          head = ["Data", `Arto Sx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, `Arto Dx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "Asimmetria %"];
+          tableBody = entries.map((e) => {
             const asim = testName === "QSLS" ? null : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
-            return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
+            return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—"];
           });
         } else {
-          head = ["Data", `Risultato${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "%"];
-          tableBody = entries.map((e, i) => {
-            const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
-            return [e.dateFull, e.test.risultato || "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
-          });
+          head = ["Data", `Risultato${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`];
+          tableBody = entries.map((e) => [e.dateFull, e.test.risultato || "—"]);
         }
 
-        const deltaCol = head.length - 1;
         const asimCol = (isSLDropJump || hasSxDx) ? 3 : -1;
         autoTable(doc, {
           startY: contentStartY,
@@ -531,14 +516,6 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           margin: { left: M, right: hasChart ? W - M - TEST_TABLE_W : M },
           columnStyles: { 0: { halign: "left" as const, cellWidth: 26 } },
           didParseCell: (data: any) => {
-            if (data.section === "body" && data.column.index === deltaCol) {
-              const v = parseFloat(String(data.cell.raw));
-              if (!isNaN(v) && Math.abs(v) >= 10) {
-                const good = isSprintTempo ? v <= -10 : v >= 10;
-                data.cell.styles.textColor = good ? [5, 150, 105] : [220, 38, 38];
-                data.cell.styles.fontStyle = "bold";
-              }
-            }
             if (data.section === "body" && asimCol !== -1 && data.column.index === asimCol) {
               const v = parseFloat(String(data.cell.raw));
               if (!isNaN(v) && v > 10) {
@@ -1295,20 +1272,14 @@ export default function ProgressiPage() {
                                           {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && !isCMJ && !isBroadJump && !hasSxDx && (
                                             <th className="text-right py-2 px-2 font-semibold">Risultato</th>
                                           )}
-                                          <th className="text-right py-2 px-2 font-semibold">%</th>
                                         </tr>
                                       </thead>
                                       <tbody>
                                         {entries.map((e, i) => {
-                                          const prev = i > 0 ? entries[i - 1].test : null;
-                                          const delta = testName === "QSLS" ? null : _calcolaDelta(e.test, prev);
                                           const asim = isSLDropJump
                                             ? _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "")
                                             : isQSLS ? null : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
                                           const isLast = i === entries.length - 1;
-                                          const isSignificant = delta !== null && Math.abs(delta) >= 10;
-                                          const isGoodDelta = isSignificant && (isSprintTempo ? delta <= -10 : delta >= 10);
-                                          const isBadDelta = isSignificant && (isSprintTempo ? delta >= 10 : delta <= -10);
                                           return (
                                             <tr key={i} className={`border-b border-gray-100 ${isLast ? "font-semibold" : ""}`}>
                                               <td className="py-2 px-2 text-gray-600">{fmtD(e.data)}</td>
@@ -1359,9 +1330,6 @@ export default function ProgressiPage() {
                                               {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && !isCMJ && !isBroadJump && !hasSxDx && (
                                                 <td className="py-2 px-2 text-right font-mono">{e.test.risultato || "—"}{e.test.unita ? ` ${e.test.unita}` : ""}</td>
                                               )}
-                                              <td className={`py-2 px-2 text-right font-mono font-semibold ${isGoodDelta ? "text-green-600" : isBadDelta ? "text-red-500" : "text-gray-400"}`}>
-                                                {delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"}
-                                              </td>
                                             </tr>
                                           );
                                         })}

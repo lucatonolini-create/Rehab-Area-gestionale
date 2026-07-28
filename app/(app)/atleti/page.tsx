@@ -723,15 +723,21 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             doc.setFont("helvetica", "bolditalic"); doc.setFontSize(8); doc.setTextColor(20, 20, 20);
             doc.text(nome, M, y + 5);
             y += 9;
+            const isSLTest = nome === "SL Drop Jump";
+            const hasAsim = nome !== "QSLS" && (entries as TEntry[]).some((e: TEntry) =>
+              isSLTest ? (e.test.rsiSx || e.test.rsiDx) : (e.test.risultatoSx || e.test.risultatoDx)
+            );
+            const tableHead = hasAsim ? ["Data", "Sessione", "Valore", "Asim%"] : ["Data", "Sessione", "Valore"];
             const tableStartY = y;
             autoTable(doc, {
               startY: tableStartY,
-              head: [["Data", "Sessione", "Valore", "%"]],
-              body: (entries as TEntry[]).map((e: TEntry, i: number) => {
-                const prevTest = i > 0 ? (entries as TEntry[])[i - 1].test : null;
-                const delta = nome === "QSLS" ? null : _calcolaDelta(e.test, prevTest);
-                const deltaStr = delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—";
-                return [e.dateFull, e.sessione, e.val, deltaStr];
+              head: [tableHead],
+              body: (entries as TEntry[]).map((e: TEntry) => {
+                const asim = hasAsim
+                  ? (isSLTest ? _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "") : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx))
+                  : null;
+                const asimStr = asim !== null ? `${asim.toFixed(1)}%` : "—";
+                return hasAsim ? [e.dateFull, e.sessione, e.val, asimStr] : [e.dateFull, e.sessione, e.val];
               }),
               headStyles: { fillColor: color as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 6.5, fontStyle: "bold" as const, halign: "center" as const, valign: "middle" as const, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 } },
               bodyStyles: { fontSize: 6.5, cellPadding: 2.5, overflow: "linebreak" as const, valign: "middle" as const },
@@ -741,15 +747,13 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
                 0: { cellWidth: 16, halign: "center" as const },
                 1: { cellWidth: hasChart ? 28 : 45 },
                 2: { cellWidth: "auto" as any },
-                3: { cellWidth: 14, halign: "center" as const },
+                ...(hasAsim ? { 3: { cellWidth: 14, halign: "center" as const } } : {}),
               },
               didParseCell: (data: any) => {
-                if (data.section === "body" && data.column.index === 3) {
+                if (hasAsim && data.section === "body" && data.column.index === 3) {
                   const v = parseFloat(String(data.cell.raw ?? ""));
-                  const isSprintTest = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(nome);
-                  if (!isNaN(v) && Math.abs(v) >= 10) {
-                    const good = isSprintTest ? v <= -10 : v >= 10;
-                    data.cell.styles.textColor = good ? [5, 150, 105] : [220, 38, 38];
+                  if (!isNaN(v) && v > 10) {
+                    data.cell.styles.textColor = [220, 38, 38];
                     data.cell.styles.fontStyle = "bold";
                   }
                 }
