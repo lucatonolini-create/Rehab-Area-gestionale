@@ -668,10 +668,6 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
 
       // ── Test per tipologia (tabella + grafico) ───────────────────────────
       {
-        const testColors2: [number, number, number][] = [
-          [200, 16, 46], [37, 99, 235], [5, 150, 105], [124, 58, 237],
-          [234, 88, 12], [2, 132, 199], [219, 39, 119], [75, 85, 99],
-        ];
         const testsByName = new Map<string, { dateLabel: string; dateFull: string; sessione: string; test: TestFisiometrico; val: string }[]>();
         for (const prog of injProgs) {
           if (prog.assente || prog.riposo) continue;
@@ -710,13 +706,18 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         if (testsByName.size > 0) {
           checkPage(20, sub);
           y = secTitle("Test", y);
+          // Tabella (sinistra) + grafico (destra) affiancati; colori alternati rosso/grigio
+          const TEST_TABLE_W = 95;
+          const TEST_CHART_X = M + TEST_TABLE_W + 5;
+          const TEST_CHART_W = W - M - TEST_CHART_X;
           Array.from(testsByName.entries()).forEach(([nome, entries], colorIdx) => {
-            const color = testColors2[colorIdx % testColors2.length];
+            const color: [number, number, number] = colorIdx % 2 === 0 ? [200, 16, 46] : [75, 85, 99];
             type TEntry = { dateLabel: string; dateFull: string; sessione: string; test: TestFisiometrico; val: string };
             const chartData = (entries as TEntry[])
               .map((e: TEntry) => ({ dateLabel: e.dateLabel, value: getTestMainValue(e.test) }))
               .filter((d: { dateLabel: string; value: number | null }): d is { dateLabel: string; value: number } => d.value !== null);
-            const needed = 22 + entries.length * 7 + (chartData.length >= 2 ? 55 : 0);
+            const hasChart = chartData.length >= 2;
+            const needed = 11 + Math.max(10 + entries.length * 7, hasChart ? 60 : 0) + 6;
             checkPage(needed, sub);
             // Banner test
             doc.setFillColor(250, 250, 250); doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.3);
@@ -725,26 +726,25 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...color);
             doc.text(nome, M + 6, y + 4.8);
             y += 11;
-            // Tabella sessioni
-            const tableBody = (entries as TEntry[]).map((e: TEntry, i: number) => {
-              const prevTest = i > 0 ? (entries as TEntry[])[i - 1].test : null;
-              const delta = nome === "QSLS" ? null : _calcolaDelta(e.test, prevTest);
-              const deltaStr = delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—";
-              return [e.dateFull, e.sessione, e.val, deltaStr];
-            });
+            const tableStartY = y;
             autoTable(doc, {
-              startY: y,
+              startY: tableStartY,
               head: [["Data", "Sessione", "Valore", "%"]],
-              body: tableBody,
+              body: (entries as TEntry[]).map((e: TEntry, i: number) => {
+                const prevTest = i > 0 ? (entries as TEntry[])[i - 1].test : null;
+                const delta = nome === "QSLS" ? null : _calcolaDelta(e.test, prevTest);
+                const deltaStr = delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—";
+                return [e.dateFull, e.sessione, e.val, deltaStr];
+              }),
               headStyles: { fillColor: color as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 6.5, fontStyle: "bold" as const, halign: "center" as const, valign: "middle" as const, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 } },
               bodyStyles: { fontSize: 6.5, cellPadding: 2.5, overflow: "linebreak" as const, valign: "middle" as const },
               alternateRowStyles: { fillColor: [247, 248, 252] as [number, number, number] },
-              margin: { left: M, right: M },
+              margin: { left: M, right: hasChart ? W - M - TEST_TABLE_W : M },
               columnStyles: {
-                0: { cellWidth: 18, halign: "center" as const },
-                1: { cellWidth: 45 },
+                0: { cellWidth: 16, halign: "center" as const },
+                1: { cellWidth: hasChart ? 28 : 45 },
                 2: { cellWidth: "auto" as any },
-                3: { cellWidth: 20, halign: "center" as const },
+                3: { cellWidth: 14, halign: "center" as const },
               },
               didParseCell: (data: any) => {
                 if (data.section === "body" && data.column.index === 3) {
@@ -756,11 +756,13 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
                 }
               },
             });
-            y = (doc as any).lastAutoTable.finalY + 4;
-            // Grafico andamento
-            if (chartData.length >= 2) {
-              checkPage(52, sub);
-              drawPerfChart(nome, color, chartData);
+            const tableEndY = (doc as any).lastAutoTable.finalY + 4;
+            if (hasChart) {
+              y = tableStartY;
+              drawPerfChart(nome, color, chartData, { startX: TEST_CHART_X, width: TEST_CHART_W, updateY: false });
+              y = Math.max(tableEndY, tableStartY + 58);
+            } else {
+              y = tableEndY;
             }
             y += 6;
           });
