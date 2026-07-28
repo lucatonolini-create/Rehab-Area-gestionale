@@ -268,7 +268,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     const altRowIndices = new Set<number>();
     const absenteRowIndices = new Set<number>();
     const riposoRowIndices = new Set<number>();
-    const testRows: { dataStr: string; infortunio: string; nomeTest: string; risultato: string; delta: number | null }[] = [];
+    const testRows: { dataStr: string; infortunio: string; nomeTest: string; risultato: string; delta: number | null; asimStr: string }[] = [];
 
     Array.from(weekMap.entries()).forEach(([wk, wkProgs]) => {
       let weekLabel: string;
@@ -343,11 +343,11 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           const dxV = isSL ? (t.rsiDx ?? "") : (t.risultatoDx ?? "");
           const asim = _calcolaAsimmetria(sxV, dxV);
           const sup = _superioreTest(sxV, dxV);
-          const asimStr = (asim !== null && sup !== null) ? `[${sup} +${asim.toFixed(1)}%]` : "";
+          const asimStr = (asim !== null && sup !== null) ? `${sup} +${asim.toFixed(1)}%` : "";
           const prev = _trovaPrecedenteTest(programmi, prog.id, t.nome);
           const delta = _calcolaDelta(t, prev);
-          const risultatoStr = [val, asimStr].filter(Boolean).join(" ") || "—";
-          testRows.push({ dataStr, infortunio: prog.nome ?? "—", nomeTest: t.nome, risultato: risultatoStr, delta });
+          const risultatoStr = val || "—";
+          testRows.push({ dataStr, infortunio: prog.nome ?? "—", nomeTest: t.nome, risultato: risultatoStr, delta, asimStr });
         });
 
         const ca = prog.carico;
@@ -442,7 +442,10 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         const n = g.rows.length;
         g.rows.forEach((r, i) => {
           tRowGroup.push(gi);
-          const deltaStr = r.delta !== null ? `${r.delta >= 0 ? "+" : ""}${r.delta.toFixed(1)}%` : "—";
+          const parts: string[] = [];
+          if (r.asimStr) parts.push(r.asimStr);
+          if (r.delta !== null) parts.push(`${r.delta >= 0 ? "+" : ""}${r.delta.toFixed(1)}%`);
+          const deltaStr = parts.join(" / ") || "—";
           if (i === 0) {
             tBody.push([
               { content: r.dataStr, rowSpan: n, styles: { halign: "center" as const, valign: "middle" as const } },
@@ -480,7 +483,8 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             data.cell.styles.fillColor = gi % 2 === 0 ? [255, 255, 255] : [247, 248, 252];
             if (data.column.index === 4 && data.section === "body") {
               const raw = String(data.cell.raw ?? "");
-              const v = parseFloat(raw);
+              const deltaSegment = raw.includes(" / ") ? raw.split(" / ").pop()! : raw;
+              const v = parseFloat(deltaSegment);
               if (!isNaN(v) && raw !== "—") {
                 data.cell.styles.textColor = v >= 0 ? [5, 150, 105] : [220, 38, 38];
                 data.cell.styles.fontStyle = "bold";
