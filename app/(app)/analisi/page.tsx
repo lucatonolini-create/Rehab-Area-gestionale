@@ -413,8 +413,7 @@ async function esportaPDFPanoramica(params: {
     attv.forEach((a) => {
       if (a.categoria) perCat[a.categoria] = (perCat[a.categoria] ?? 0) + 1;
       const infs = infortunitNelMese(a, a2, m2);
-      const tipo = infs.length > 0 ? infs[0].tipo : undefined;
-      if (tipo) perTipo[tipo] = (perTipo[tipo] ?? 0) + 1;
+      infs.forEach((inf) => { if (inf.tipo) perTipo[inf.tipo] = (perTipo[inf.tipo] ?? 0) + 1; });
     });
     return { label: MESI[m2], total: attv.length, perCat, perTipo };
   });
@@ -892,8 +891,7 @@ async function esportaPDFReport(
       attv.forEach((a) => {
         if (a.categoria) perCat[a.categoria] = (perCat[a.categoria] ?? 0) + 1;
         const infs = infortunitNelMese(a, a2, m2);
-        const tipo = infs.length > 0 ? infs[0].tipo : undefined;
-        if (tipo) perTipo[tipo] = (perTipo[tipo] ?? 0) + 1;
+        infs.forEach((inf) => { if (inf.tipo) perTipo[inf.tipo] = (perTipo[inf.tipo] ?? 0) + 1; });
       });
       return { label: MESI[m2], total: attv.length, perCat, perTipo };
     });
@@ -1144,6 +1142,9 @@ export default function AnalisiPage() {
       const tipoMap: Record<string, number> = {};
       catAttivi.forEach((a) => {
         if (a.tipoInfortunio) tipoMap[a.tipoInfortunio] = (tipoMap[a.tipoInfortunio] ?? 0) + 1;
+        (a.storicoInfortuni ?? []).filter((i) => i.attivo === true).forEach((i) => {
+          if (i.tipo) tipoMap[i.tipo] = (tipoMap[i.tipo] ?? 0) + 1;
+        });
       });
       const catTotal = catAttivi.length;
       return {
@@ -1170,8 +1171,7 @@ export default function AnalisiPage() {
       attv.forEach((a) => {
         if (a.categoria) perCat[a.categoria] = (perCat[a.categoria] ?? 0) + 1;
         const infs = infortunitNelMese(a, anno, mese);
-        const tipo = infs.length > 0 ? infs[0].tipo : undefined;
-        if (tipo) perTipo[tipo] = (perTipo[tipo] ?? 0) + 1;
+        infs.forEach((inf) => { if (inf.tipo) perTipo[inf.tipo] = (perTipo[inf.tipo] ?? 0) + 1; });
       });
       return { label, nomeMese: MESI[mese], total: attv.length, perCat, perTipo };
     });
