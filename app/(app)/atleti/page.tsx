@@ -728,7 +728,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             const isDropJump = nome === "Drop Jump";
             const isSLDropJump = nome === "SL Drop Jump";
             const isJurdan = nome === "Jurdan";
-            const isCMJLike = nome.includes("CMJ") || nome === "Squat Jump";
+            const isCMJLike = (nome.includes("CMJ") && !nome.includes("SL")) || nome === "Squat Jump";
             const isBroadJump = nome.includes("Broad Jump");
             const hasSxDx = !isJurdan && !isCMJLike && !isBroadJump && (entries as TEntry[]).some((e: TEntry) => e.test.risultatoSx || e.test.risultatoDx);
 
