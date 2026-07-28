@@ -199,11 +199,9 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   ) => {
     if (data.length < 2) return;
     const [cr, cg, cb] = color;
-    const cX = opts?.startX ?? M; const cW = opts?.width ?? (W - 2 * M); const cH = 40; const cY = y + 11;
-    doc.setFillColor(245, 245, 245); doc.rect(cX, y, cW, 8, "F");
-    doc.setFillColor(...red); doc.rect(cX, y, 2.5, 8, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(...dark);
-    doc.text(chartLabel, cX + 5, y + 5.5);
+    const cX = opts?.startX ?? M; const cW = opts?.width ?? (W - 2 * M); const cH = 40; const cY = y + 9;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(...color);
+    doc.text(chartLabel, cX, y + 2);
     doc.setFillColor(249, 250, 251); doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.3);
     doc.rect(cX, cY, cW, cH, "FD");
     const n = data.length;
