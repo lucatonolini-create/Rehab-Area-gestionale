@@ -746,8 +746,10 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
               didParseCell: (data: any) => {
                 if (data.section === "body" && data.column.index === 3) {
                   const v = parseFloat(String(data.cell.raw ?? ""));
-                  if (!isNaN(v)) {
-                    data.cell.styles.textColor = v >= 0 ? [5, 150, 105] : [220, 38, 38];
+                  const isSprintTest = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(nome);
+                  if (!isNaN(v) && Math.abs(v) >= 10) {
+                    const good = isSprintTest ? v <= -10 : v >= 10;
+                    data.cell.styles.textColor = good ? [5, 150, 105] : [220, 38, 38];
                     data.cell.styles.fontStyle = "bold";
                   }
                 }
