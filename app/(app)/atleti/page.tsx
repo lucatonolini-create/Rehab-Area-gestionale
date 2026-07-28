@@ -1770,72 +1770,99 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                         </div>
                       ))}
 
-                      {/* Punteggi registrati */}
-                      <div className="pt-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Punteggi RTS registrati</p>
-                          <button onClick={() => setMostraPunteggioRTS((v) => !v)}
-                            className="text-xs font-semibold text-[#C8102E] flex items-center gap-1">
-                            <Plus className="w-3.5 h-3.5" /> Aggiungi
-                          </button>
+                      {/* Punteggi RTS — form aggiunta */}
+                      {mostraPunteggioRTS && (
+                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-3 space-y-2">
+                          <p className="text-xs font-semibold text-gray-600">Aggiungi punteggio RTS</p>
+                          <input type="date" value={nuovaDataRTS} onChange={(e) => setNuovaDataRTS(e.target.value)}
+                            className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white" />
+                          <div className="flex gap-2">
+                            <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-2 py-1.5">
+                              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide w-10">TSK</span>
+                              <input type="number" min={10} max={40} placeholder="10–40"
+                                value={nuovoPunteggioTSK} onChange={(e) => setNuovoPunteggioTSK(e.target.value)}
+                                className="flex-1 text-xs bg-transparent outline-none" />
+                            </div>
+                            <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-2 py-1.5">
+                              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide w-10">AFAQ</span>
+                              <input type="number" min={0} max={100} placeholder="0–100"
+                                value={nuovoPunteggioAFAQ} onChange={(e) => setNuovoPunteggioAFAQ(e.target.value)}
+                                className="flex-1 text-xs bg-transparent outline-none" />
+                            </div>
+                          </div>
+                          {infortuniOpts.length > 0 && (
+                            <select value={nuovoInfRTS} onChange={(e) => setNuovoInfRTS(e.target.value)}
+                              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
+                              {infortuniOpts.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+                            </select>
+                          )}
+                          <div className="flex gap-2 justify-end">
+                            <button onClick={() => setMostraPunteggioRTS(false)}
+                              className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">Annulla</button>
+                            <button onClick={punteggioSalva}
+                              className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg bg-[#C8102E] hover:bg-[#a50d26]">Salva</button>
+                          </div>
                         </div>
+                      )}
 
-                        {mostraPunteggioRTS && (
-                          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-3 space-y-2">
-                            <input type="date" value={nuovaDataRTS} onChange={(e) => setNuovaDataRTS(e.target.value)}
-                              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white" />
-                            <div className="flex gap-2">
-                              <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-2 py-1.5">
-                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide w-10">TSK</span>
-                                <input type="number" min={10} max={40} placeholder="10–40"
-                                  value={nuovoPunteggioTSK} onChange={(e) => setNuovoPunteggioTSK(e.target.value)}
-                                  className="flex-1 text-xs bg-transparent outline-none" />
-                              </div>
-                              <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-2 py-1.5">
-                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide w-10">AFAQ</span>
-                                <input type="number" min={0} max={100} placeholder="0–100"
-                                  value={nuovoPunteggioAFAQ} onChange={(e) => setNuovoPunteggioAFAQ(e.target.value)}
-                                  className="flex-1 text-xs bg-transparent outline-none" />
-                              </div>
-                            </div>
-                            {infortuniOpts.length > 0 && (
-                              <select value={nuovoInfRTS} onChange={(e) => setNuovoInfRTS(e.target.value)}
-                                className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
-                                {infortuniOpts.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
-                              </select>
-                            )}
-                            <div className="flex gap-2 justify-end">
-                              <button onClick={() => setMostraPunteggioRTS(false)}
-                                className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">Annulla</button>
-                              <button onClick={punteggioSalva}
-                                className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg bg-[#C8102E] hover:bg-[#a50d26]">Salva</button>
-                            </div>
-                          </div>
-                        )}
-
-                        {(selected.questionariKinesiofobia ?? []).length === 0 ? (
-                          <p className="text-xs text-gray-400 italic">Nessun punteggio registrato</p>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {[...(selected.questionariKinesiofobia ?? [])].sort((a, b) => b.data.localeCompare(a.data)).map((q) => {
-                              const colore = q.punteggio >= 75 ? "text-green-600" : q.punteggio >= 56 ? "text-orange-500" : "text-red-600";
-                              const inf = infortuniOpts.find((o) => o.id === q.infortunioId);
-                              return (
-                                <div key={q.id} className="flex items-center justify-between bg-white border border-gray-100 rounded-xl px-3 py-2">
-                                  <div>
-                                    {q.tipoTest && <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-2">{q.tipoTest}</span>}
-                                    <span className={`text-sm font-bold ${colore}`}>{q.punteggio}/{q.tipoTest === "TSK" ? 40 : 100}</span>
-                                    <span className="text-xs text-gray-400 ml-2">{new Date(q.data + "T12:00").toLocaleDateString("it-IT")}</span>
-                                    {inf && <p className="text-[11px] text-gray-400 mt-0.5">{inf.label}</p>}
+                      {/* Punteggi RTS — raggruppati per infortunio */}
+                      <div className="pt-1 space-y-4">
+                        {(() => {
+                          const tuttiQ = selected.questionariKinesiofobia ?? [];
+                          // Gruppi: infortuni attivi + storico, poi "senza infortunio"
+                          const gruppiOpts = [
+                            ...infortuniOpts,
+                            ...(tuttiQ.some(q => !q.infortunioId) ? [{ id: "__nessuno__", label: "Senza infortunio" }] : []),
+                          ];
+                          if (gruppiOpts.length === 0 && tuttiQ.length === 0) {
+                            return <p className="text-xs text-gray-400 italic">Nessun punteggio registrato</p>;
+                          }
+                          return gruppiOpts.map((opt) => {
+                            const qGruppo = [...tuttiQ]
+                              .filter(q => opt.id === "__nessuno__" ? !q.infortunioId : q.infortunioId === opt.id)
+                              .sort((a, b) => b.data.localeCompare(a.data));
+                            const isAttivo = opt.id === "__corrente__" || (selected.storicoInfortuni ?? []).some(i => i.id === opt.id && i.attivo);
+                            return (
+                              <div key={opt.id}>
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate max-w-[70%]">{opt.label}</p>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {isAttivo && (
+                                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-500 font-semibold">In corso</span>
+                                    )}
+                                    {opt.id !== "__nessuno__" && (
+                                      <button onClick={() => { setNuovoInfRTS(opt.id); setMostraPunteggioRTS(true); }}
+                                        className="text-xs font-semibold text-[#C8102E] flex items-center gap-0.5">
+                                        <Plus className="w-3 h-3" /> Aggiungi
+                                      </button>
+                                    )}
                                   </div>
-                                  <button onClick={() => eliminaPunteggio(q.id)} className="text-gray-300 hover:text-red-400 transition-colors">
-                                    <X className="w-3.5 h-3.5" />
-                                  </button>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        )}
+                                {qGruppo.length === 0 ? (
+                                  <p className="text-xs text-gray-300 italic pl-1">Nessun punteggio</p>
+                                ) : (
+                                  <div className="space-y-1.5">
+                                    {qGruppo.map((q) => {
+                                      const colore = q.punteggio >= 75 ? "text-green-600" : q.punteggio >= 56 ? "text-orange-500" : "text-red-600";
+                                      return (
+                                        <div key={q.id} className="flex items-center justify-between bg-white border border-gray-100 rounded-xl px-3 py-2">
+                                          <div>
+                                            {q.tipoTest && <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-2">{q.tipoTest}</span>}
+                                            <span className={`text-sm font-bold ${colore}`}>{q.punteggio}/{q.tipoTest === "TSK" ? 40 : 100}</span>
+                                            <span className="text-xs text-gray-400 ml-2">{new Date(q.data + "T12:00").toLocaleDateString("it-IT")}</span>
+                                          </div>
+                                          <button onClick={() => eliminaPunteggio(q.id)} className="text-gray-300 hover:text-red-400 transition-colors">
+                                            <X className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          });
+                        })()}
                       </div>
                     </div>
                   );
