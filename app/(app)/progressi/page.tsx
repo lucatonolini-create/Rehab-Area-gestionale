@@ -459,13 +459,10 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         const needed = (mainData.length >= 2 ? 58 : 0) + tableRows * 5.5 + 22;
         checkPg(needed);
 
-        // Test name banner
-        doc.setFillColor(250, 250, 250); doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.3);
-        doc.rect(M, y, W - 2 * M, 7, "FD");
-        doc.setFillColor(...color); doc.rect(M, y, 2.5, 7, "F");
-        doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...color);
-        doc.text(testName, M + 6, y + 4.8);
-        y += 11;
+        // Titolo test: grassetto nero corsivo, nessuna banda
+        doc.setFont("helvetica", "bolditalic"); doc.setFontSize(8); doc.setTextColor(20, 20, 20);
+        doc.text(testName, M, y + 5);
+        y += 9;
 
         // Line chart
         if (mainData.length >= 2) {
