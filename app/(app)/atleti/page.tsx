@@ -343,7 +343,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           const dxV = isSL ? (t.rsiDx ?? "") : (t.risultatoDx ?? "");
           const asim = _calcolaAsimmetria(sxV, dxV);
           const sup = _superioreTest(sxV, dxV);
-          const asimStr = (asim !== null && sup !== null) ? `${sup} +${asim.toFixed(1)}%` : "";
+          const asimStr = (asim !== null && sup !== null && t.nome !== "QSLS") ? `${sup} +${asim.toFixed(1)}%` : "";
           const prev = _trovaPrecedenteTest(programmi, prog.id, t.nome);
           const delta = t.nome === "QSLS" ? null : _calcolaDelta(t, prev);
           const risultatoStr = val || "—";
@@ -464,7 +464,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       y = secTitle("Test", y);
       autoTable(doc, {
         startY: y,
-        head: [["Data", "Sessione", "Test", "Valore", "Δ%"]],
+        head: [["Data", "Sessione", "Test", "Valore", "%"]],
         body: tBody,
         headStyles: { fillColor: red as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 6.5, fontStyle: "bold", halign: "center", valign: "middle", cellPadding: { top: 2.5, bottom: 2.5, left: 2, right: 2 } },
         bodyStyles: { fontSize: 6.5, cellPadding: 2.5, overflow: "linebreak" as const, valign: "middle" as const },
