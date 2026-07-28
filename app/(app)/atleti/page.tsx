@@ -747,7 +747,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
                 0: { cellWidth: 16, halign: "center" as const },
                 1: { cellWidth: hasChart ? 28 : 45 },
                 2: { cellWidth: "auto" as any },
-                ...(hasAsim ? { 3: { cellWidth: 14, halign: "center" as const } } : {}),
+                ...(hasAsim ? { 3: { cellWidth: 22, halign: "center" as const } } : {}),
               },
               didParseCell: (data: any) => {
                 if (hasAsim && data.section === "body" && data.column.index === 3) {

@@ -514,7 +514,10 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           bodyStyles: { fontSize: 7, cellPadding: 2, halign: "center" as const, valign: "middle" as const },
           alternateRowStyles: { fillColor: [250, 250, 250] as [number, number, number] },
           margin: { left: M, right: hasChart ? W - M - TEST_TABLE_W : M },
-          columnStyles: { 0: { halign: "left" as const, cellWidth: 26 } },
+          columnStyles: {
+            0: { halign: "left" as const, cellWidth: 26 },
+            ...(asimCol !== -1 ? { [asimCol]: { cellWidth: 32, halign: "center" as const } } : {}),
+          },
           didParseCell: (data: any) => {
             if (data.section === "body" && asimCol !== -1 && data.column.index === asimCol) {
               const v = parseFloat(String(data.cell.raw));
