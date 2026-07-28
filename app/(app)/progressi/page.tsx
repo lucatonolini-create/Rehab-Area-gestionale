@@ -337,10 +337,10 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           ca?.decelerazioni ? `N.Dec: ${ca.decelerazioni}` : "",
           ca?.sprint ? `N.Spr: ${ca.sprint}` : "",
           ca?.potenzaMetabolica ? `P.Met.: ${ca.potenzaMetabolica}W/kg` : "",
-        ].filter(Boolean).join("\n") || "—";
+        ].filter(Boolean).map((s) => `- ${s}`).join("\n") || "—";
 
-        const esText = esercizi.map((e) => { const sx = [e.serie, e.reps].filter(Boolean).join("×"); return sx ? `${e.nome} ${sx}` : e.nome; }).join("\n") || "—";
-        const vasText = esercizi.map((e) => e.vas || "0").join("\n") || "—";
+        const esText = esercizi.map((e, i) => { const sx = [e.serie, e.reps].filter(Boolean).join("×"); const carico = e.carico ? ` (${e.carico})` : ""; return `${i + 1}. ${sx ? `${e.nome} ${sx}${carico}` : e.nome}`; }).join("\n") || "—";
+        const vasText = esercizi.map((e, i) => `${i + 1}. ${e.vas || "0"}`).join("\n") || "—";
         const fisio = prog.noteFisioterapia?.trim() || "—";
         if (isAlt) altRowIndices.add(body.length);
         body.push([dataStr, prog.nome ?? "—", prog.fase ?? "—", fisio, obP, esText, vasText, obCampo, esC, gps, vasC, tests, rpe]);
