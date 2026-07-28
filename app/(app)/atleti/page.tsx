@@ -555,7 +555,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       bodyStyles: { fontSize: 8, cellPadding: 2.5, overflow: "linebreak", halign: "left", valign: "middle" },
       alternateRowStyles: { fillColor: [250, 250, 250] },
       margin: { left: M, right: M },
-      columnStyles: { 0: { cellWidth: 90 }, 1: { cellWidth: 28 }, 2: { cellWidth: 28 }, 3: { cellWidth: 28 } },
+      columnStyles: { 0: { cellWidth: 98 }, 1: { cellWidth: 28 }, 2: { cellWidth: 28 }, 3: { cellWidth: 28 } },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
   } else {
