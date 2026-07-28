@@ -1137,7 +1137,7 @@ export default function EserciziPage() {
                                   ? superioreTest(t.rsiSx ?? "", t.rsiDx ?? "")
                                   : superioreTest(t.risultatoSx, t.risultatoDx);
                                 const prevTest = trovaPrecedenteTest(lista, prog.id, t.nome);
-                                const delta = calcolaDelta(t, prevTest);
+                                const delta = isQSLSInline ? null : calcolaDelta(t, prevTest);
                                 return (
                                   <div key={i} className={`rounded-xl p-3 border ${asim !== null && asim > 10 ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-100"}`}>
                                     <div className="flex items-center justify-between gap-2 flex-wrap">

@@ -305,7 +305,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           const sup = _superioreTest(sxV, dxV);
           if (asim !== null && sup !== null) extras.push(`${sup} +${asim.toFixed(1)}%`);
           const prev = _trovaPrecedenteTest(programmi, prog.id, t.nome);
-          const delta = _calcolaDelta(t, prev);
+          const delta = t.nome === "QSLS" ? null : _calcolaDelta(t, prev);
           if (delta !== null) extras.push(`${delta >= 0 ? "↑" : "↓"} ${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%`);
           return `${t.nome}${val ? `: ${val}` : ""}${extras.length ? ` [${extras.join(", ")}]` : ""}`;
         });
@@ -569,7 +569,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         } else if (hasSxDx) {
           head = ["Data", `Arto Sx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, `Arto Dx${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`, "Asimmetria %", "Δ%"];
           tableBody = entries.map((e, i) => {
-            const delta = _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
+            const delta = testName === "QSLS" ? null : _calcolaDelta(e.test, i > 0 ? entries[i - 1].test : null);
             const asim = _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
             return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—", delta !== null ? `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%` : "—"];
           });
@@ -1292,7 +1292,7 @@ export default function ProgressiPage() {
                                       <tbody>
                                         {entries.map((e, i) => {
                                           const prev = i > 0 ? entries[i - 1].test : null;
-                                          const delta = _calcolaDelta(e.test, prev);
+                                          const delta = testName === "QSLS" ? null : _calcolaDelta(e.test, prev);
                                           const asim = isSLDropJump
                                             ? _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "")
                                             : _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
