@@ -954,11 +954,12 @@ async function esportaPDFReportMensile(
             { content: a.categoria, rowSpan: count, styles: { valign: "middle" } },
           );
         }
-        row.push(inf.diagnosi, (inf.tipo ?? "—").replace(/\//g, "/ "));
-        if (i === 0) {
-          row.push({ content: a.meccanismo || "—", rowSpan: count, styles: { valign: "middle" } });
-          row.push({ content: a.note || "—", rowSpan: count, styles: { valign: "middle" } });
-        }
+        row.push(
+          inf.diagnosi,
+          (inf.tipo ?? "—").replace(/\//g, "/ "),
+          inf.meccanismo || "—",
+          inf.note || "—",
+        );
         row.push(
           inf.inizio ? fmtDP(inf.inizio) : "—",
           inf.fine ? fmtDP(inf.fine) : "—",
@@ -1017,7 +1018,7 @@ function atletaAttivoInMese(a: Atleta, anno: number, mese: number): boolean {
   return (a.storicoInfortuni ?? []).some((s) => periodoAttivo(s.inizioRehab, s.fineRehab));
 }
 
-type InfortunioNelMese = { diagnosi: string; tipo?: string; inizio: string; fine?: string };
+type InfortunioNelMese = { diagnosi: string; tipo?: string; inizio: string; fine?: string; meccanismo?: string; note?: string };
 function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNelMese[] {
   const meseStart = new Date(anno, mese, 1);
   const meseEnd = new Date(anno, mese + 1, 0);
@@ -1030,10 +1031,10 @@ function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNel
   };
   const result: InfortunioNelMese[] = [];
   if (inMese(a.inizioRehab, a.fineRehab) && a.infortunio)
-    result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab });
+    result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined });
   (a.storicoInfortuni ?? []).forEach((s) => {
     if (inMese(s.inizioRehab, s.fineRehab))
-      result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab });
+      result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note });
   });
   // Dedup: entrate duplicate nel database (stessa diagnosi + stesse date)
   const seen = new Set<string>();

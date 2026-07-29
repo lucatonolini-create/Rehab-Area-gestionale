@@ -69,7 +69,7 @@ function atletaAttivoInMese(a: Atleta, anno: number, mese: number): boolean {
   return (a.storicoInfortuni ?? []).some((s) => periodoAttivo(s.inizioRehab, s.fineRehab));
 }
 
-type InfortunioNelMese = { diagnosi: string; tipo?: string; inizio: string; fine?: string };
+type InfortunioNelMese = { diagnosi: string; tipo?: string; inizio: string; fine?: string; meccanismo?: string; note?: string };
 
 function infortunitNelPeriodo(a: Atleta, mesi: { anno: number; mese: number }[]): InfortunioNelMese[] {
   const seen = new Set<string>();
@@ -94,10 +94,10 @@ function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNel
   };
   const result: InfortunioNelMese[] = [];
   if (inMese(a.inizioRehab, a.fineRehab) && a.infortunio)
-    result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab });
+    result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined });
   (a.storicoInfortuni ?? []).forEach((s) => {
     if (inMese(s.inizioRehab, s.fineRehab))
-      result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab });
+      result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note });
   });
   // Dedup: stessa diagnosi + stessa data inizio (entrate duplicate nel database)
   const seen = new Set<string>();
@@ -553,11 +553,11 @@ async function esportaPDFPanoramica(params: {
   const athleteForRowT: number[] = [];
 
   atletiOrdinati.forEach((a, athleteIdx) => {
-    const infortuni: Array<{ diagnosi: string; tipo?: string; inizio?: string; fine?: string }> = [];
+    const infortuni: Array<{ diagnosi: string; tipo?: string; inizio?: string; fine?: string; meccanismo?: string; note?: string }> = [];
     if (a.infortunio || a.inizioRehab)
-      infortuni.push({ diagnosi: a.infortunio || "—", tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab });
+      infortuni.push({ diagnosi: a.infortunio || "—", tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined });
     (a.storicoInfortuni ?? []).forEach((s) =>
-      infortuni.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab })
+      infortuni.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note })
     );
 
     const n = infortuni.length;
@@ -573,13 +573,13 @@ async function esportaPDFPanoramica(params: {
             { content: a.categoria, rowSpan: n, styles: { valign: "middle" } },
             inf.diagnosi,
             (inf.tipo || "—").replace(/\//g, "/ "),
-            { content: a.meccanismo || "—", rowSpan: n, styles: { valign: "middle" } },
-            { content: a.note || "—", rowSpan: n, styles: { valign: "middle" } },
+            inf.meccanismo || "—",
+            inf.note || "—",
             { content: a.stato, rowSpan: n, styles: { valign: "middle" } },
             fmtD(inf.inizio), fmtD(inf.fine),
           ]);
         } else {
-          tuttiRows.push([inf.diagnosi, (inf.tipo || "—").replace(/\//g, "/ "), fmtD(inf.inizio), fmtD(inf.fine)]);
+          tuttiRows.push([inf.diagnosi, (inf.tipo || "—").replace(/\//g, "/ "), inf.meccanismo || "—", inf.note || "—", fmtD(inf.inizio), fmtD(inf.fine)]);
         }
         athleteForRowT.push(athleteIdx);
       });
@@ -1005,8 +1005,8 @@ async function esportaPDFReport(
         row.push(
           inf.diagnosi,
           (inf.tipo ?? "—").replace(/\//g, "/ "),
-          a.meccanismo || "—",
-          a.note || "—",
+          inf.meccanismo || "—",
+          inf.note || "—",
           inf.inizio ? fmtDPdf(inf.inizio) : "—",
           inf.fine ? fmtDPdf(inf.fine) : "—",
           inf.inizio ? ggPdf(inf.inizio, inf.fine) : "—",
