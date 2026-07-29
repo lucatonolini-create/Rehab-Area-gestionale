@@ -188,7 +188,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
     : "—";
 
   const tuttiInfortuni: Array<{ tipo?: string; diagnosi: string; inizio: string; fine?: string; squadraDate?: string }> = [];
-  if (atleta.infortunio || atleta.inizioRehab)
+  if (atleta.stato === "Infortunato" && (atleta.infortunio || atleta.inizioRehab))
     tuttiInfortuni.push({ tipo: atleta.tipoInfortunio, diagnosi: atleta.infortunio || "—", inizio: atleta.inizioRehab, fine: atleta.fineRehab });
   (atleta.storicoInfortuni ?? []).forEach((s) =>
     tuttiInfortuni.push({ tipo: s.tipo, diagnosi: s.diagnosi, inizio: s.inizioRehab, fine: s.fineRehab })
