@@ -99,7 +99,14 @@ function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNel
     if (inMese(s.inizioRehab, s.fineRehab))
       result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab });
   });
-  return result;
+  // Dedup: stessa diagnosi + stessa data inizio (entrate duplicate nel database)
+  const seen = new Set<string>();
+  return result.filter((inf) => {
+    const key = `${inf.diagnosi}|${inf.inizio ?? ""}|${inf.fine ?? ""}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 // ─── Logo helpers ─────────────────────────────────────────────────────────────

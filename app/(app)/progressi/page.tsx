@@ -193,8 +193,15 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
   (atleta.storicoInfortuni ?? []).forEach((s) =>
     tuttiInfortuni.push({ id: s.id, tipo: s.tipo, diagnosi: s.diagnosi, inizio: s.inizioRehab, fine: s.fineRehab })
   );
-  // Ordine cronologico: dal più vecchio al più recente
+  // Ordine cronologico: dal più vecchio al più recente; dedup per entrate duplicate
   tuttiInfortuni.sort((a, b) => (a.inizio ?? "").localeCompare(b.inizio ?? ""));
+  const _seenInf = new Set<string>();
+  tuttiInfortuni.splice(0, tuttiInfortuni.length, ...tuttiInfortuni.filter((inf) => {
+    const key = `${inf.diagnosi}|${inf.inizio ?? ""}|${inf.fine ?? ""}`;
+    if (_seenInf.has(key)) return false;
+    _seenInf.add(key);
+    return true;
+  }));
   tuttiInfortuni.forEach((inf) => {
     const sq = programmi
       .filter((p) => {
@@ -1028,7 +1035,14 @@ function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNel
     if (inMese(s.inizioRehab, s.fineRehab))
       result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab });
   });
-  return result;
+  // Dedup: entrate duplicate nel database (stessa diagnosi + stesse date)
+  const seen = new Set<string>();
+  return result.filter((inf) => {
+    const key = `${inf.diagnosi}|${inf.inizio ?? ""}|${inf.fine ?? ""}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function infortunitNelPeriodo(a: Atleta, mesi: { anno: number; mese: number }[]): InfortunioNelMese[] {
