@@ -143,6 +143,14 @@ export interface InfortunioStorico {
   fineRehab: string;
   note?: string;
   attivo?: true; // infortunio concorrente ancora aperto
+  // Dati clinici (stessi campi del main injury su Atleta)
+  evento?: string;
+  meccanismo?: string;
+  contatto?: string;
+  lato?: string;
+  posizioneInfortunio?: string;
+  osiicsCodice?: string;
+  osiicsDescrizione?: string;
 }
 
 export interface QuestionarioKinesiofobia {

@@ -5,10 +5,12 @@ import { Plus, Search, User, ChevronRight, Phone, Mail, Trash2, AlertTriangle, C
 import {
   loadAtleti, loadProgrammi, upsertAtleta, upsertProgramma, deleteAtleta, uid, nd,
   subscribeToAtleti, subscribeToProgrammi, subscribeToIntakeInsert,
-  CATEGORIE, TIPI_INFORTUNIO, calcolaProgressoAuto,
+  CATEGORIE, TIPI_INFORTUNIO, EVENTI_INFORTUNIO, MECCANISMI_INFORTUNIO, CONTATTI_INFORTUNIO,
+  LATI_INFORTUNIO, POSIZIONI_INFORTUNIO, TIPI_REFERTO, ESITI_REFERTO,
+  calcolaProgressoAuto,
   loadDettaglioSituazionale, upsertDettaglioSituazionale, formToDettaglio,
   type Atleta, type Stato, type InfortunioStorico, type Programma, type QuestionarioKinesiofobia,
-  type TestFisiometrico,
+  type TestFisiometrico, type RefertoClinico, type TipoReferto, type EsitoReferto,
   type DettaglioSituazionaleData, type DettaglioSituazionaleForm,
 } from "@/lib/store";
 import AtletaModal from "@/components/AtletaModal";
@@ -1137,8 +1139,12 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [copiatoLink, setCopiatoLink] = useState<1 | 2 | null>(null);
   const [dettaglioSituazionale, setDettaglioSituazionale] = useState<DettaglioSituazionaleData | null>(null);
   const [mostraFormInfortBis, setMostraFormInfortBis] = useState(false);
-  const [nuovoInfortBis, setNuovoInfortBis] = useState({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "" });
+  const [nuovoInfortBis, setNuovoInfortBis] = useState({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "" });
+  const [editDatiConcorrente, setEditDatiConcorrente] = useState<string | null>(null);
+  const [editDatiForm, setEditDatiForm] = useState<Partial<InfortunioStorico>>({});
   const [mostraFondi, setMostraFondi] = useState(false);
+  const [mostraFormReferto, setMostraFormReferto] = useState(false);
+  const [nuovoReferto, setNuovoReferto] = useState({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" });
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
@@ -1255,13 +1261,58 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
       id: uid(), tipo: nuovoInfortBis.tipo || undefined,
       diagnosi: nuovoInfortBis.diagnosi, inizioRehab: nuovoInfortBis.inizioRehab,
       fineRehab: "", note: nuovoInfortBis.note || undefined, attivo: true,
+      evento: nuovoInfortBis.evento || undefined,
+      meccanismo: nuovoInfortBis.meccanismo || undefined,
+      contatto: nuovoInfortBis.contatto || undefined,
+      lato: nuovoInfortBis.lato || undefined,
+      posizioneInfortunio: nuovoInfortBis.posizioneInfortunio || undefined,
     };
     const aggiornato = { ...selected, storicoInfortuni: [...(selected.storicoInfortuni ?? []), inf] };
     setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
     setSelected(aggiornato);
     await upsertAtleta(aggiornato);
     setMostraFormInfortBis(false);
-    setNuovoInfortBis({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "" });
+    setNuovoInfortBis({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "" });
+  };
+
+  const salvaInfortBisDati = async () => {
+    if (!selected || !editDatiConcorrente) return;
+    const aggiornato = {
+      ...selected,
+      storicoInfortuni: (selected.storicoInfortuni ?? []).map((inf) =>
+        inf.id === editDatiConcorrente ? { ...inf, ...editDatiForm } : inf
+      ),
+    };
+    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
+    setSelected(aggiornato);
+    await upsertAtleta(aggiornato);
+    setEditDatiConcorrente(null);
+    setEditDatiForm({});
+  };
+
+  const salvaReferto = async () => {
+    if (!selected || !nuovoReferto.tipo || !nuovoReferto.esito) return;
+    const referto: RefertoClinico = {
+      id: uid(),
+      data: nuovoReferto.data,
+      tipo: nuovoReferto.tipo as TipoReferto,
+      esito: nuovoReferto.esito as EsitoReferto,
+      note: nuovoReferto.note || undefined,
+    };
+    const aggiornato = { ...selected, refertiClinici: [...(selected.refertiClinici ?? []), referto] };
+    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
+    setSelected(aggiornato);
+    await upsertAtleta(aggiornato);
+    setMostraFormReferto(false);
+    setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" });
+  };
+
+  const eliminaReferto = async (id: string) => {
+    if (!selected) return;
+    const aggiornato = { ...selected, refertiClinici: (selected.refertiClinici ?? []).filter((r) => r.id !== id) };
+    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
+    setSelected(aggiornato);
+    await upsertAtleta(aggiornato);
   };
 
   const chiudiInfortBis = async (id: string) => {
@@ -1571,6 +1622,17 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
           <div className="flex-1 overflow-y-auto p-5">
             {tab === "dati" ? (
               <div className="space-y-2.5 text-sm">
+                {/* ── Sezione infortunio principale ── */}
+                {(() => {
+                  const concorrenti = (selected.storicoInfortuni ?? []).filter((i) => i.attivo === true);
+                  return concorrenti.length > 0 ? (
+                    <div className="flex items-center gap-2 pb-0.5">
+                      <p className="text-[10px] font-bold text-[#C8102E] uppercase tracking-widest">Infortunio principale</p>
+                      <div className="flex-1 h-px bg-red-100" />
+                    </div>
+                  ) : null;
+                })()}
+
                 {[
                   ["Piede dominante", selected.piedeDominante || "—"],
                   ["Diagnosi / Infortunio", selected.infortunio || "—"],
@@ -1651,6 +1713,133 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                     )}
                   </div>
                 )}
+
+                {/* ── Infortuni concorrenti (dati clinici) ── */}
+                {(selected.storicoInfortuni ?? []).filter((i) => i.attivo === true).map((inf) => (
+                  <div key={inf.id} className="pt-2 border-t-2 border-orange-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Infortunio concorrente</p>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600 font-semibold">In corso</span>
+                      </div>
+                      {editDatiConcorrente !== inf.id && (
+                        <button
+                          onClick={() => { setEditDatiConcorrente(inf.id); setEditDatiForm({ tipo: inf.tipo, evento: inf.evento, meccanismo: inf.meccanismo, contatto: inf.contatto, lato: inf.lato, posizioneInfortunio: inf.posizioneInfortunio, osiicsCodice: inf.osiicsCodice, osiicsDescrizione: inf.osiicsDescrizione, note: inf.note }); }}
+                          className="text-[10px] font-semibold text-[#C8102E] flex items-center gap-0.5 hover:underline"
+                        >
+                          <Pencil className="w-3 h-3" /> Modifica
+                        </button>
+                      )}
+                    </div>
+                    {editDatiConcorrente === inf.id ? (
+                      <div className="border border-orange-200 rounded-2xl p-4 space-y-2 bg-orange-50">
+                        <p className="text-xs font-semibold text-orange-700">{inf.diagnosi}</p>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-0.5">Tipologia</p>
+                          <select className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                            value={editDatiForm.tipo ?? ""} onChange={(e) => setEditDatiForm({ ...editDatiForm, tipo: e.target.value || undefined })}>
+                            <option value="">—</option>
+                            {TIPI_INFORTUNIO.map((t) => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-0.5">Evento</p>
+                          <select className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                            value={editDatiForm.evento ?? ""} onChange={(e) => setEditDatiForm({ ...editDatiForm, evento: e.target.value || undefined })}>
+                            <option value="">—</option>
+                            {EVENTI_INFORTUNIO.map((v) => <option key={v} value={v}>{v}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-0.5">Meccanismo</p>
+                          <select className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                            value={editDatiForm.meccanismo ?? ""} onChange={(e) => setEditDatiForm({ ...editDatiForm, meccanismo: e.target.value || undefined })}>
+                            <option value="">—</option>
+                            {MECCANISMI_INFORTUNIO.map((v) => <option key={v} value={v}>{v}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-0.5">Contatto</p>
+                          <select className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                            value={editDatiForm.contatto ?? ""} onChange={(e) => setEditDatiForm({ ...editDatiForm, contatto: e.target.value || undefined })}>
+                            <option value="">—</option>
+                            {CONTATTI_INFORTUNIO.map((v) => <option key={v} value={v}>{v}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-0.5">Lato</p>
+                          <select className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                            value={editDatiForm.lato ?? ""} onChange={(e) => setEditDatiForm({ ...editDatiForm, lato: e.target.value || undefined })}>
+                            <option value="">—</option>
+                            {LATI_INFORTUNIO.map((v) => <option key={v} value={v}>{v}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-0.5">Posizione</p>
+                          <select className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                            value={editDatiForm.posizioneInfortunio ?? ""} onChange={(e) => setEditDatiForm({ ...editDatiForm, posizioneInfortunio: e.target.value || undefined })}>
+                            <option value="">—</option>
+                            {POSIZIONI_INFORTUNIO.map((v) => <option key={v} value={v}>{v}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-0.5">Codice OSIICS</p>
+                          <input className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                            value={editDatiForm.osiicsCodice ?? ""} onChange={(e) => setEditDatiForm({ ...editDatiForm, osiicsCodice: e.target.value || undefined })} />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-0.5">Descrizione OSIICS</p>
+                          <input className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                            value={editDatiForm.osiicsDescrizione ?? ""} onChange={(e) => setEditDatiForm({ ...editDatiForm, osiicsDescrizione: e.target.value || undefined })} />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-0.5">Note</p>
+                          <input className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                            value={editDatiForm.note ?? ""} onChange={(e) => setEditDatiForm({ ...editDatiForm, note: e.target.value || undefined })} />
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <button onClick={salvaInfortBisDati} className="flex-1 bg-[#C8102E] text-white text-xs font-semibold py-1.5 rounded-lg hover:bg-red-800">Salva</button>
+                          <button onClick={() => { setEditDatiConcorrente(null); setEditDatiForm({}); }} className="flex-1 border border-gray-200 text-gray-500 text-xs font-semibold py-1.5 rounded-lg hover:bg-white">Annulla</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {[
+                          ["Diagnosi", inf.diagnosi],
+                          ["Inizio", inf.inizioRehab ? new Date(inf.inizioRehab + "T12:00").toLocaleDateString("it-IT") : "—"],
+                          inf.tipo ? ["Tipologia", inf.tipo] : null,
+                          inf.evento ? ["Evento", inf.evento] : null,
+                          inf.meccanismo ? ["Meccanismo", inf.meccanismo] : null,
+                          inf.contatto ? ["Contatto", inf.contatto] : null,
+                          inf.lato ? ["Lato", inf.lato] : null,
+                          inf.posizioneInfortunio ? ["Posizione", inf.posizioneInfortunio] : null,
+                        ].filter((r): r is [string, string] => r !== null).map(([label, value]) => (
+                          <div key={label} className="bg-orange-50 rounded-xl p-3">
+                            <p className="text-xs text-orange-400">{label}</p>
+                            <p className="font-medium text-orange-900">{value}</p>
+                          </div>
+                        ))}
+                        {(inf.osiicsCodice || inf.osiicsDescrizione) && (
+                          <div className="bg-blue-50 rounded-xl p-3 flex items-start gap-3">
+                            {inf.osiicsCodice && (
+                              <span className="font-mono font-bold text-base text-blue-700 shrink-0 bg-blue-100 px-2 py-1 rounded-lg">{inf.osiicsCodice}</span>
+                            )}
+                            <p className="font-medium text-blue-900 text-sm mt-1">{inf.osiicsDescrizione || "—"}</p>
+                          </div>
+                        )}
+                        {inf.note && (
+                          <div className="bg-orange-50 rounded-xl p-3">
+                            <p className="text-xs text-orange-400">Note</p>
+                            <p className="text-orange-900">{inf.note}</p>
+                          </div>
+                        )}
+                        {!inf.tipo && !inf.evento && !inf.meccanismo && !inf.contatto && !inf.lato && !inf.posizioneInfortunio && !inf.note && (
+                          <p className="text-xs text-gray-400 italic">Nessun dettaglio clinico inserito</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
 
 
                 {(selected.telefono || selected.email) && (
@@ -1873,6 +2062,73 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                     </div>
                   );
                 })()}
+
+                {/* ── Referti clinici ── */}
+                <div className="space-y-3 pt-2 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Referti clinici</p>
+                    <button onClick={() => setMostraFormReferto(true)}
+                      className="text-xs font-semibold text-[#C8102E] flex items-center gap-0.5 hover:underline">
+                      <Plus className="w-3.5 h-3.5" /> Aggiungi
+                    </button>
+                  </div>
+
+                  {mostraFormReferto && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2">
+                      <p className="text-xs font-semibold text-gray-600">Nuovo referto</p>
+                      <input type="date" value={nuovoReferto.data} onChange={(e) => setNuovoReferto({ ...nuovoReferto, data: e.target.value })}
+                        className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]" />
+                      <select value={nuovoReferto.tipo} onChange={(e) => setNuovoReferto({ ...nuovoReferto, tipo: e.target.value })}
+                        className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]">
+                        <option value="">Tipo referto *</option>
+                        {TIPI_REFERTO.map((t) => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <select value={nuovoReferto.esito} onChange={(e) => setNuovoReferto({ ...nuovoReferto, esito: e.target.value })}
+                        className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]">
+                        <option value="">Esito *</option>
+                        {ESITI_REFERTO.map((e) => <option key={e} value={e}>{e}</option>)}
+                      </select>
+                      <input placeholder="Note (opzionale)" value={nuovoReferto.note}
+                        onChange={(e) => setNuovoReferto({ ...nuovoReferto, note: e.target.value })}
+                        className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]" />
+                      <div className="flex gap-2 justify-end">
+                        <button onClick={() => { setMostraFormReferto(false); setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" }); }}
+                          className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">Annulla</button>
+                        <button onClick={salvaReferto} disabled={!nuovoReferto.tipo || !nuovoReferto.esito}
+                          className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg bg-[#C8102E] hover:bg-[#a50d26] disabled:opacity-40">Salva</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {(selected.refertiClinici ?? []).length === 0 && !mostraFormReferto ? (
+                    <p className="text-xs text-gray-400 italic">Nessun referto registrato</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {[...(selected.refertiClinici ?? [])].sort((a, b) => b.data.localeCompare(a.data)).map((r) => {
+                        const ESITO_STYLE: Record<string, string> = {
+                          "Positivo": "bg-red-100 text-red-700",
+                          "In miglioramento": "bg-yellow-100 text-yellow-700",
+                          "Negativo": "bg-green-100 text-green-700",
+                        };
+                        return (
+                          <div key={r.id} className="bg-white border border-gray-100 rounded-xl px-3.5 py-3 flex items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                <span className="text-xs font-semibold text-gray-800">{r.tipo}</span>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ESITO_STYLE[r.esito] ?? "bg-gray-100 text-gray-600"}`}>{r.esito}</span>
+                                <span className="text-[10px] text-gray-400">{new Date(r.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                              </div>
+                              {r.note && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{r.note}</p>}
+                            </div>
+                            <button onClick={() => eliminaReferto(r.id)} className="text-gray-300 hover:text-red-400 transition-colors shrink-0 mt-0.5">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               /* ── Storico infortuni ── */
@@ -2054,6 +2310,46 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                   onChange={(e) => setNuovoInfortBis({ ...nuovoInfortBis, inizioRehab: e.target.value })} />
                               </div>
                               <div>
+                                <p className="text-xs text-gray-500 mb-0.5">Evento</p>
+                                <select className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white"
+                                  value={nuovoInfortBis.evento} onChange={(e) => setNuovoInfortBis({ ...nuovoInfortBis, evento: e.target.value })}>
+                                  <option value="">—</option>
+                                  {EVENTI_INFORTUNIO.map((v) => <option key={v} value={v}>{v}</option>)}
+                                </select>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-0.5">Meccanismo</p>
+                                <select className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white"
+                                  value={nuovoInfortBis.meccanismo} onChange={(e) => setNuovoInfortBis({ ...nuovoInfortBis, meccanismo: e.target.value })}>
+                                  <option value="">—</option>
+                                  {MECCANISMI_INFORTUNIO.map((v) => <option key={v} value={v}>{v}</option>)}
+                                </select>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-0.5">Contatto</p>
+                                <select className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white"
+                                  value={nuovoInfortBis.contatto} onChange={(e) => setNuovoInfortBis({ ...nuovoInfortBis, contatto: e.target.value })}>
+                                  <option value="">—</option>
+                                  {CONTATTI_INFORTUNIO.map((v) => <option key={v} value={v}>{v}</option>)}
+                                </select>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-0.5">Lato</p>
+                                <select className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white"
+                                  value={nuovoInfortBis.lato} onChange={(e) => setNuovoInfortBis({ ...nuovoInfortBis, lato: e.target.value })}>
+                                  <option value="">—</option>
+                                  {LATI_INFORTUNIO.map((v) => <option key={v} value={v}>{v}</option>)}
+                                </select>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-0.5">Posizione</p>
+                                <select className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white"
+                                  value={nuovoInfortBis.posizioneInfortunio} onChange={(e) => setNuovoInfortBis({ ...nuovoInfortBis, posizioneInfortunio: e.target.value })}>
+                                  <option value="">—</option>
+                                  {POSIZIONI_INFORTUNIO.map((v) => <option key={v} value={v}>{v}</option>)}
+                                </select>
+                              </div>
+                              <div>
                                 <p className="text-xs text-gray-500 mb-0.5">Note</p>
                                 <input className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white"
                                   value={nuovoInfortBis.note}
@@ -2062,7 +2358,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                               <div className="flex gap-2 pt-1">
                                 <button onClick={aggiungiInfortBis}
                                   className="flex-1 bg-[#C8102E] text-white text-xs font-semibold py-1.5 rounded-lg hover:bg-red-800">Salva</button>
-                                <button onClick={() => { setMostraFormInfortBis(false); setNuovoInfortBis({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "" }); }}
+                                <button onClick={() => { setMostraFormInfortBis(false); setNuovoInfortBis({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "" }); }}
                                   className="flex-1 border border-gray-200 text-gray-500 text-xs font-semibold py-1.5 rounded-lg hover:bg-white">Annulla</button>
                               </div>
                             </div>
