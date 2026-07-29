@@ -684,9 +684,10 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         return true;
       })
       .sort((a, b) => a.data.localeCompare(b.data));
-    // Marca come usate: sessioni senza nome-match + sessioni orfane __corrente__ assegnate qui
-    injProgs.filter(p => !p.infortunioId && !nomeMatchInj(p.nome ?? "", inj.diagnosi, inj.tipo)).forEach(p => usedProgIds.add(p.id));
-    injProgs.filter(p => p.infortunioId === "__corrente__" && inj.id !== "__corrente__").forEach(p => usedProgIds.add(p.id));
+    // Sessioni con infortunioId esplicito (incluso __corrente__) → sempre marcate come usate.
+    // Sessioni senza infortunioId → marcate solo se abbinate per data (non per nome), perché
+    // quelle con nome-match possono legittimamente apparire sotto più infortuni.
+    injProgs.filter(p => p.infortunioId || !nomeMatchInj(p.nome ?? "", inj.diagnosi, inj.tipo)).forEach(p => usedProgIds.add(p.id));
 
     const injQRTS = (atleta.questionariKinesiofobia ?? []).filter((q) => q.infortunioId === inj.id);
     const giorni = inj.fine ? ggPersi(inj.inizio, inj.fine) : ggPersi(inj.inizio, today);
