@@ -1814,6 +1814,13 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                   </div>
                 )}
 
+                {selected.note && (
+                  <div className="bg-gray-50 rounded-xl p-3">
+                    <p className="text-xs text-gray-400">Note</p>
+                    <p className="text-gray-700">{selected.note}</p>
+                  </div>
+                )}
+
                 {/* ── Infortuni concorrenti (dati clinici) ── */}
                 {(selected.storicoInfortuni ?? []).filter((i) => i.attivo === true).map((inf) => (
                   <div key={inf.id} className="pt-2 border-t-2 border-orange-200 space-y-2">
@@ -1955,13 +1962,6 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                         <Mail className="w-3.5 h-3.5 text-gray-400" />{selected.email}
                       </div>
                     )}
-                  </div>
-                )}
-
-                {selected.note && (
-                  <div className="bg-gray-50 rounded-xl p-3">
-                    <p className="text-xs text-gray-400">Note</p>
-                    <p className="text-gray-700">{selected.note}</p>
                   </div>
                 )}
 
