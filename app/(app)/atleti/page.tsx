@@ -586,7 +586,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   // Infortunio corrente se in corso
   if (atleta.stato === "Infortunato" && (atleta.infortunio || atleta.inizioRehab)) {
     const squadraCorr = programmi
-      .filter((p) => (p.infortunioId === "__corrente__" || !p.infortunioId) && p.squadra)
+      .filter((p) => (p.infortunioId === "__corrente__" || !p.infortunioId) && p.squadra && (!atleta.inizioRehab || !p.data || p.data >= atleta.inizioRehab))
       .sort((a, b) => a.data.localeCompare(b.data))[0];
     storicoBody.push([`${atleta.infortunio || "—"}${atleta.tipoInfortunio ? ` (${atleta.tipoInfortunio})` : ""}`, fmtD(atleta.inizioRehab), "In corso", squadraCorr ? fmtD(squadraCorr.data) : "—", `${giorniCorrente} sess.`]);
   }
