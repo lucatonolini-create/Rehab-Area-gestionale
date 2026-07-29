@@ -272,7 +272,8 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
       doc.addPage();
       addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`);
       y = HDR + 8;
-      y = secTitle(`${sectionLabel}  —  ${injProgs.length} sessioni`, y);
+      const sessioniCount = injProgs.filter(p => !p.riposo && !p.assente).length;
+      y = secTitle(`${sectionLabel}  —  ${sessioniCount} sessioni`, y);
 
       const sorted = [...injProgs].sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""));
       const weekMap: Map<string, Programma[]> = new Map();
