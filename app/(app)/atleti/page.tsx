@@ -510,8 +510,16 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     }
   }
 
-  // ── Storico infortuni ──────────────────────────────────────────────────────
-  const storico = atleta.storicoInfortuni ?? [];
+  // ── Storico infortuni (deduplicato per chiave diagnosi+inizio+fine) ────────
+  const storico = (() => {
+    const seen = new Set<string>();
+    return (atleta.storicoInfortuni ?? []).filter((inf) => {
+      const key = `${inf.diagnosi}|${inf.inizioRehab}|${inf.fineRehab ?? ""}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  })();
   // Giorni persi = numero di sessioni inserite per quell'infortunio (non giorni di calendario)
   const isSessionePDF = (p: Programma) => !p.riposo;
   // Controlla se le parole del nome sessione compaiono nella diagnosi/tipo dell'infortunio
@@ -651,7 +659,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     evento?: string; meccanismo?: string; contatto?: string; lato?: string; posizione?: string;
     osiicsCodice?: string; osiicsDescrizione?: string; note?: string;
   }[] = [
-    ...(atleta.storicoInfortuni ?? []).map((inf) => ({
+    ...storico.map((inf) => ({
       id: inf.id,
       diagnosi: inf.diagnosi,
       tipo: inf.tipo,
@@ -2357,7 +2365,13 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
             ) : (
               /* ── Storico infortuni ── */
               (() => {
-                const storico = selected.storicoInfortuni ?? [];
+                const _seenUI = new Set<string>();
+                const storico = (selected.storicoInfortuni ?? []).filter((inf) => {
+                  const key = `${inf.diagnosi}|${inf.inizioRehab}|${inf.fineRehab ?? ""}`;
+                  if (_seenUI.has(key)) return false;
+                  _seenUI.add(key);
+                  return true;
+                });
                 const concorrenti = storico.filter((inf) => inf.attivo === true);
                 const precedenti = storico.filter((inf) => !inf.attivo);
                 const isSessione = (p: Programma) => !p.riposo;
