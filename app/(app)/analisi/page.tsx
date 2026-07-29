@@ -99,10 +99,14 @@ function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNel
     if (inMese(s.inizioRehab, s.fineRehab))
       result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note });
   });
-  // Dedup: stessa diagnosi + stessa data inizio (entrate duplicate nel database)
+  const fmtK = (d?: string) => {
+    if (!d) return "";
+    const p = new Date(d + "T12:00");
+    return isNaN(p.getTime()) ? d : p.toLocaleDateString("it-IT");
+  };
   const seen = new Set<string>();
   return result.filter((inf) => {
-    const key = `${inf.diagnosi}|${inf.inizio ?? ""}|${inf.fine ?? ""}`;
+    const key = `${inf.diagnosi}|${inf.tipo ?? ""}|${fmtK(inf.inizio)}|${fmtK(inf.fine)}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
