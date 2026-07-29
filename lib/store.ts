@@ -174,8 +174,6 @@ export interface RefertoClinico {
   tipo: TipoReferto;
   esito: EsitoReferto;
   note?: string;
-  documentoUrl?: string;  // URL pubblico su Supabase Storage
-  documentoNome?: string; // Nome file originale
 }
 
 export interface Atleta {

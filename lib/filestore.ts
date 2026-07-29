@@ -1,37 +1,5 @@
 "use client";
 
-import { supabase } from "./supabase";
-
-const BUCKET = "documenti-medici";
-
-export async function uploadRefertoToSupabase(
-  atletaId: string,
-  refertoId: string,
-  file: File
-): Promise<{ url: string; nome: string } | null> {
-  try {
-    const ext = file.name.split(".").pop() ?? "bin";
-    const path = `${atletaId}/${refertoId}.${ext}`;
-    const { error } = await supabase.storage
-      .from(BUCKET)
-      .upload(path, file, { upsert: true, contentType: file.type });
-    if (error) { console.error("[uploadReferto]", error.message); return null; }
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-    return { url: data.publicUrl, nome: file.name };
-  } catch (e) { console.error("[uploadReferto] exception", e); return null; }
-}
-
-export async function deleteRefertoFromSupabase(url: string): Promise<void> {
-  try {
-    // Extract storage path from public URL: …/storage/v1/object/public/<bucket>/<path>
-    const marker = `/object/public/${BUCKET}/`;
-    const idx = url.indexOf(marker);
-    if (idx === -1) return;
-    const storagePath = url.slice(idx + marker.length);
-    await supabase.storage.from(BUCKET).remove([storagePath]);
-  } catch {}
-}
-
 export interface DocMedico {
   id: string;
   atletaId: string;

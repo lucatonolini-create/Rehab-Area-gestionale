@@ -14,7 +14,6 @@ import {
   type DettaglioSituazionaleData, type DettaglioSituazionaleForm,
 } from "@/lib/store";
 import AtletaModal from "@/components/AtletaModal";
-import { uploadRefertoToSupabase, deleteRefertoFromSupabase } from "@/lib/filestore";
 
 const MAPPING_KEY = "perf_athlete_mapping";
 function getPerfId(rehabId: string): string | null {
@@ -1254,8 +1253,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [editDatiForm, setEditDatiForm] = useState<Partial<InfortunioStorico>>({});
   const [mostraFondi, setMostraFondi] = useState(false);
   const [mostraFormReferto, setMostraFormReferto] = useState(false);
-  const [nuovoReferto, setNuovoReferto] = useState({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "", file: null as File | null });
-  const [uploadingReferto, setUploadingReferto] = useState(false);
+  const [nuovoReferto, setNuovoReferto] = useState({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" });
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
@@ -1490,38 +1488,23 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
   const salvaReferto = async () => {
     if (!selected || !nuovoReferto.tipo || !nuovoReferto.esito) return;
-    setUploadingReferto(true);
-    const refertoId = uid();
-    let documentoUrl: string | undefined;
-    let documentoNome: string | undefined;
-    if (nuovoReferto.file) {
-      const uploaded = await uploadRefertoToSupabase(selected.id, refertoId, nuovoReferto.file);
-      if (uploaded) { documentoUrl = uploaded.url; documentoNome = uploaded.nome; }
-    }
     const referto: RefertoClinico = {
-      id: refertoId,
+      id: uid(),
       data: nuovoReferto.data,
       tipo: nuovoReferto.tipo as TipoReferto,
       esito: nuovoReferto.esito as EsitoReferto,
       note: nuovoReferto.note || undefined,
-      documentoUrl,
-      documentoNome,
     };
     const aggiornato = { ...selected, refertiClinici: [...(selected.refertiClinici ?? []), referto] };
     setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
     setSelected(aggiornato);
     await upsertAtleta(aggiornato);
-    setUploadingReferto(false);
     setMostraFormReferto(false);
-    setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "", file: null });
+    setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" });
   };
 
   const eliminaReferto = async (id: string) => {
     if (!selected) return;
-    const referto = (selected.refertiClinici ?? []).find((r) => r.id === id);
-    if (referto?.documentoUrl) {
-      deleteRefertoFromSupabase(referto.documentoUrl).catch(() => {});
-    }
     const aggiornato = { ...selected, refertiClinici: (selected.refertiClinici ?? []).filter((r) => r.id !== id) };
     setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
     setSelected(aggiornato);
@@ -2340,27 +2323,12 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       <input placeholder="Note (opzionale)" value={nuovoReferto.note}
                         onChange={(e) => setNuovoReferto({ ...nuovoReferto, note: e.target.value })}
                         className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]" />
-                      <div>
-                        <p className="text-[10px] text-gray-400 mb-1">Documento allegato (PDF / immagine, opzionale)</p>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <span className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors">
-                            {nuovoReferto.file ? nuovoReferto.file.name : "Scegli file…"}
-                          </span>
-                          <input type="file" accept=".pdf,image/*" className="hidden"
-                            onChange={(e) => setNuovoReferto({ ...nuovoReferto, file: e.target.files?.[0] ?? null })} />
-                          {nuovoReferto.file && (
-                            <button onClick={() => setNuovoReferto({ ...nuovoReferto, file: null })} className="text-gray-300 hover:text-red-400">
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </label>
-                      </div>
                       <div className="flex gap-2 justify-end">
-                        <button onClick={() => { setMostraFormReferto(false); setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "", file: null }); }}
+                        <button onClick={() => { setMostraFormReferto(false); setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" }); }}
                           className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">Annulla</button>
-                        <button onClick={salvaReferto} disabled={!nuovoReferto.tipo || !nuovoReferto.esito || uploadingReferto}
+                        <button onClick={salvaReferto} disabled={!nuovoReferto.tipo || !nuovoReferto.esito}
                           className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg bg-[#C8102E] hover:bg-[#a50d26] disabled:opacity-40">
-                          {uploadingReferto ? "Upload…" : "Salva"}
+                          Salva
                         </button>
                       </div>
                     </div>
@@ -2385,13 +2353,6 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                 <span className="text-[10px] text-gray-400">{new Date(r.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })}</span>
                               </div>
                               {r.note && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{r.note}</p>}
-                              {r.documentoUrl && (
-                                <a href={r.documentoUrl} target="_blank" rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-[10px] text-[#C8102E] font-medium mt-1 hover:underline">
-                                  <FileDown className="w-3 h-3" />
-                                  {r.documentoNome ?? "Apri documento"}
-                                </a>
-                              )}
                             </div>
                             <button onClick={() => eliminaReferto(r.id)} className="text-gray-300 hover:text-red-400 transition-colors shrink-0 mt-0.5">
                               <X className="w-3.5 h-3.5" />
