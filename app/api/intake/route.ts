@@ -116,28 +116,33 @@ export async function POST(req: NextRequest) {
       };
 
       if (esistente.stato === "Disponibile") {
-        // Re-infortunio: sposta il vecchio infortunio nello storico e rimette Infortunato
-        const vecchioInf = {
-          id: crypto.randomUUID(),
-          diagnosi: esistente.infortunio || "—",
-          tipo: esistente.tipo_infortunio || undefined,
-          inizioRehab: esistente.inizio_rehab || "",
-          fineRehab: esistente.fine_rehab || oggi,
-          note: esistente.note || undefined,
-          evento: esistente.evento || undefined,
-          meccanismo: esistente.meccanismo || undefined,
-          contatto: esistente.contatto || undefined,
-          lato: esistente.lato || undefined,
-          posizioneInfortunio: esistente.posizione_infortunio || undefined,
-        };
+        // Re-infortunio: se c'è ancora un infortunio nei campi principali (non ancora archiviato
+        // via modal), lo sposta nello storico. Se i campi sono già puliti (archiviati via modal)
+        // non aggiunge nulla per evitare entry vuote.
         const storicoEsistente: unknown[] = esistente.storico_infortuni ?? [];
+        const hasPrevInf = !!(esistente.infortunio || esistente.inizio_rehab);
+        const storicoAggiornato = hasPrevInf
+          ? [...storicoEsistente, {
+              id: crypto.randomUUID(),
+              diagnosi: esistente.infortunio || "—",
+              tipo: esistente.tipo_infortunio || undefined,
+              inizioRehab: esistente.inizio_rehab || "",
+              fineRehab: esistente.fine_rehab || oggi,
+              note: esistente.note || undefined,
+              evento: esistente.evento || undefined,
+              meccanismo: esistente.meccanismo || undefined,
+              contatto: esistente.contatto || undefined,
+              lato: esistente.lato || undefined,
+              posizioneInfortunio: esistente.posizione_infortunio || undefined,
+            }]
+          : storicoEsistente;
         const { error } = await supabase.from("atleti").update({
           ...nuoviDati,
           stato: "Infortunato",
           fine_rehab: null,
           progresso: 0,
           progresso_manuale: null,
-          storico_infortuni: [...storicoEsistente, vecchioInf],
+          storico_infortuni: storicoAggiornato,
         }).eq("id", esistente.id);
         if (error) {
           console.error("[intake PATCH disponibile]", error);

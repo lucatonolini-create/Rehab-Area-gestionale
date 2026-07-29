@@ -1447,9 +1447,45 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   };
 
   const elimina = async (id: string) => {
-    setAtleti((prev) => prev.filter((a) => a.id !== id));
-    if (selected?.id === id) setSelected(null);
-    await deleteAtleta(id);
+    const atleta = atleti.find((a) => a.id === id);
+    if (!atleta) return;
+
+    const hasStorico = (atleta.storicoInfortuni ?? []).filter((i) => !i.attivo).length > 0;
+
+    if (atleta.stato === "Infortunato" && hasStorico) {
+      // Ha infortuni precedenti archiviati: rimuove solo il corrente e torna Disponibile
+      if (!confirm(`Annullare l'infortunio corrente di ${nd(atleta)} e ripristinarlo come Disponibile?\n\nGli infortuni precedenti verranno conservati.`)) return;
+      const aggiornato: Atleta = {
+        ...atleta,
+        stato: "Disponibile",
+        infortunio: "",
+        tipoInfortunio: undefined,
+        inizioRehab: "",
+        fineRehab: undefined,
+        evento: undefined,
+        meccanismo: undefined,
+        contatto: undefined,
+        lato: undefined,
+        posizioneInfortunio: undefined,
+        osiicsCodeId: undefined,
+        osiicsCodice: undefined,
+        osiicsDescrizione: undefined,
+        progresso: 100,
+        progressoManuale: undefined,
+      };
+      setAtleti((prev) => prev.map((a) => a.id === id ? aggiornato : a));
+      if (selected?.id === id) setSelected(aggiornato);
+      await upsertAtleta(aggiornato);
+    } else {
+      // Nessuno storico archiviato: elimina tutto
+      const msg = atleta.stato === "Infortunato"
+        ? `Eliminare definitivamente ${nd(atleta)}? Nessun infortunio precedente verrà conservato.`
+        : `Eliminare ${nd(atleta)}?`;
+      if (!confirm(msg)) return;
+      setAtleti((prev) => prev.filter((a) => a.id !== id));
+      if (selected?.id === id) setSelected(null);
+      await deleteAtleta(id);
+    }
   };
 
   const filtered = atleti.filter((a) => {
@@ -1582,7 +1618,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                         </div>
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); if (confirm(`Eliminare ${nd(atleta)}?`)) elimina(atleta.id); }}
+                        onClick={(e) => { e.stopPropagation(); elimina(atleta.id); }}
                         className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500"
                         title="Elimina atleta">
                         <Trash2 className="w-4 h-4" />
