@@ -1113,7 +1113,11 @@ export default function AnalisiPage() {
     TIPI_INFORTUNIO.forEach((t) => { map[t] = 0; });
     atleti.forEach((a) => {
       if (a.tipoInfortunio) map[a.tipoInfortunio] = (map[a.tipoInfortunio] ?? 0) + 1;
+      const seenS = new Set<string>();
       (a.storicoInfortuni ?? []).forEach((s) => {
+        const k = `${s.diagnosi}|${s.tipo ?? ""}|${s.inizioRehab ?? ""}|${s.fineRehab ?? ""}`;
+        if (seenS.has(k)) return;
+        seenS.add(k);
         if (s.tipo && s.tipo in map) map[s.tipo] = (map[s.tipo] ?? 0) + 1;
       });
     });
@@ -1124,7 +1128,11 @@ export default function AnalisiPage() {
     const map: Record<string, number> = {};
     atleti.forEach((a) => {
       if (a.infortunio) map[a.infortunio.trim()] = (map[a.infortunio.trim()] ?? 0) + 1;
+      const seenS = new Set<string>();
       (a.storicoInfortuni ?? []).forEach((s) => {
+        const k = `${s.diagnosi}|${s.tipo ?? ""}|${s.inizioRehab ?? ""}|${s.fineRehab ?? ""}`;
+        if (seenS.has(k)) return;
+        seenS.add(k);
         if (s.diagnosi) map[s.diagnosi.trim()] = (map[s.diagnosi.trim()] ?? 0) + 1;
       });
     });
