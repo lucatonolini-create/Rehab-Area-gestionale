@@ -510,7 +510,14 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   };
   const matchesInfPDF = (p: Programma, inf: { id: string; diagnosi?: string; tipo?: string; inizioRehab: string; fineRehab: string }) => {
     if (p.infortunioId && p.infortunioId !== "__corrente__") return p.infortunioId === inf.id;
-    if (p.infortunioId === "__corrente__") return inf.id === "__corrente__";
+    if (p.infortunioId === "__corrente__") {
+      if (inf.id === "__corrente__") return true;
+      // Sessione orfana: l'infortunio era stato archiviato → match per data
+      if (!p.data || !inf.inizioRehab) return false;
+      if (p.data < inf.inizioRehab) return false;
+      if (inf.fineRehab && p.data > inf.fineRehab) return false;
+      return true;
+    }
     // Nessun ID: match per nome sessione (priorità), poi per data
     if (inf.diagnosi && nomeMatchInj(p.nome ?? "", inf.diagnosi, inf.tipo)) return true;
     // Se il nome corrisponde a un altro storico, escludi da questo
@@ -626,7 +633,15 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     const injProgs = programmi
       .filter((p) => {
         if (p.infortunioId && p.infortunioId !== "__corrente__") return p.infortunioId === inj.id;
-        if (p.infortunioId === "__corrente__") return inj.id === "__corrente__";
+        if (p.infortunioId === "__corrente__") {
+          if (inj.id === "__corrente__") return true;
+          // Sessione orfana: l'infortunio principale è stato archiviato → match per data
+          if (usedProgIds.has(p.id)) return false;
+          if (!p.data || !inj.inizio) return false;
+          if (p.data < inj.inizio) return false;
+          if (inj.fine && p.data > inj.fine) return false;
+          return true;
+        }
         // Nessun ID: match per nome sessione (priorità assoluta)
         if (nomeMatchInj(p.nome ?? "", inj.diagnosi, inj.tipo)) return true;
         if (allInjuries.some(other => other.id !== inj.id && nomeMatchInj(p.nome ?? "", other.diagnosi, other.tipo))) return false;
@@ -638,8 +653,9 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         return true;
       })
       .sort((a, b) => a.data.localeCompare(b.data));
-    // Marca come usate solo le sessioni senza nome-match (quelle con nome non rischiano duplicati)
+    // Marca come usate: sessioni senza nome-match + sessioni orfane __corrente__ assegnate qui
     injProgs.filter(p => !p.infortunioId && !nomeMatchInj(p.nome ?? "", inj.diagnosi, inj.tipo)).forEach(p => usedProgIds.add(p.id));
+    injProgs.filter(p => p.infortunioId === "__corrente__" && inj.id !== "__corrente__").forEach(p => usedProgIds.add(p.id));
 
     const injQRTS = (atleta.questionariKinesiofobia ?? []).filter((q) => q.infortunioId === inj.id);
     const giorni = inj.fine ? ggPersi(inj.inizio, inj.fine) : ggPersi(inj.inizio, today);
@@ -1220,6 +1236,16 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
               fineRehab: undefined,
               progresso: 100,
             };
+            // Rimappa le sessioni orfane __corrente__ al nuovo id storico
+            const remappati = programmiAtleta
+              .filter((p) => p.infortunioId === "__corrente__")
+              .map((p) => ({ ...p, infortunioId: inf.id }));
+            if (remappati.length > 0) {
+              await Promise.all(remappati.map((p) => upsertProgramma(p)));
+              setProgrammiAtleta((prev) =>
+                prev.map((p) => p.infortunioId === "__corrente__" ? { ...p, infortunioId: inf.id } : p)
+              );
+            }
           }
         }
         setAtleti((prev) => prev.map((a) => a.id === editAtleta.id ? aggiornato : a));

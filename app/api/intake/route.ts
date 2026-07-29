@@ -4,6 +4,73 @@ import webpush from "web-push";
 
 const CATEGORIE_VALIDE = ["1ª Squadra", "U19", "U17", "U16", "U15", "U14", "Altra squadra", "Provino"];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function notificaEBroadcast(
+  supabase: ReturnType<typeof createClient<any>>,
+  nome: string,
+  categoria: string,
+  atletaId: string,
+) {
+  // Aggiungi alla rosa se non già presente
+  try {
+    const { data: imp } = await supabase
+      .from("impostazioni")
+      .select("rosa")
+      .eq("id", 1)
+      .single();
+    const rosaAttuale: { nome: string; categoria: string; ruolo: string }[] = (imp as any)?.rosa ?? [];
+    const giàPresente = rosaAttuale.some((g) => g.nome.toLowerCase() === nome.toLowerCase());
+    if (!giàPresente) {
+      await (supabase.from("impostazioni") as any).upsert({
+        id: 1,
+        rosa: [...rosaAttuale, { nome, categoria, ruolo: "" }],
+      });
+    }
+  } catch {}
+
+  // Broadcast via Realtime REST
+  await fetch(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/realtime/v1/api/broadcast`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        "Authorization": `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
+      },
+      body: JSON.stringify({
+        messages: [{
+          topic: "intake-notify",
+          event: "new",
+          payload: { nome, categoria, id: atletaId },
+        }],
+      }),
+    },
+  ).catch(() => {});
+
+  // Web Push
+  if (process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+    webpush.setVapidDetails(
+      "mailto:rehab@uscremonese.it",
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY,
+    );
+    const { data: subs } = await (supabase.from("push_subscriptions") as any).select("endpoint, keys") as { data: { endpoint: string; keys: { p256dh: string; auth: string } }[] | null };
+    if (subs?.length) {
+      const payload = JSON.stringify({
+        title: "Nuovo infortunio segnalato",
+        body: `${nome} · ${categoria}`,
+        url: "/segnalazioni",
+      });
+      await Promise.allSettled(
+        subs.map((s) =>
+          webpush.sendNotification({ endpoint: s.endpoint, keys: s.keys }, payload)
+        )
+      );
+    }
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -21,9 +88,98 @@ export async function POST(req: NextRequest) {
     );
 
     const oggi = new Date().toISOString().slice(0, 10);
+    const nomeNorm = body.nome.trim();
+
+    // ── Cerca atleta esistente con lo stesso nome (case-insensitive) ──────────
+    const { data: esistenti } = await supabase
+      .from("atleti")
+      .select("*")
+      .ilike("nome", nomeNorm)
+      .limit(1);
+
+    const esistente = esistenti?.[0];
+
+    if (esistente) {
+      const nuoviDati = {
+        tipo_infortunio: body.tipoInfortunio ?? null,
+        evento: body.evento ?? null,
+        meccanismo: body.meccanismo ?? null,
+        contatto: body.contatto ?? null,
+        lato: body.lato ?? null,
+        posizione_infortunio: body.posizioneInfortunio ?? null,
+        infortunio: body.infortunio ?? "",
+        osiics_code_id: body.osiicsCodeId || null,
+        osiics_codice: body.osiicsCodice || null,
+        osiics_descrizione: body.osiicsDescrizione || null,
+        inizio_rehab: body.inizioRehab || oggi,
+        note: body.note || esistente.note || "",
+      };
+
+      if (esistente.stato === "Disponibile") {
+        // Re-infortunio: sposta il vecchio infortunio nello storico e rimette Infortunato
+        const vecchioInf = {
+          id: crypto.randomUUID(),
+          diagnosi: esistente.infortunio || "—",
+          tipo: esistente.tipo_infortunio || undefined,
+          inizioRehab: esistente.inizio_rehab || "",
+          fineRehab: esistente.fine_rehab || oggi,
+          note: esistente.note || undefined,
+          evento: esistente.evento || undefined,
+          meccanismo: esistente.meccanismo || undefined,
+          contatto: esistente.contatto || undefined,
+          lato: esistente.lato || undefined,
+          posizioneInfortunio: esistente.posizione_infortunio || undefined,
+        };
+        const storicoEsistente: unknown[] = esistente.storico_infortuni ?? [];
+        const { error } = await supabase.from("atleti").update({
+          ...nuoviDati,
+          stato: "Infortunato",
+          fine_rehab: null,
+          progresso: 0,
+          progresso_manuale: null,
+          storico_infortuni: [...storicoEsistente, vecchioInf],
+        }).eq("id", esistente.id);
+        if (error) {
+          console.error("[intake PATCH disponibile]", error);
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+        await notificaEBroadcast(supabase, nomeNorm, body.categoria, esistente.id);
+        return NextResponse.json({ ok: true, id: esistente.id });
+      }
+
+      if (esistente.stato === "Infortunato") {
+        // Infortunio concorrente: aggiunge allo storico con attivo:true
+        const storicoEsistente: unknown[] = esistente.storico_infortuni ?? [];
+        const nuovoConcorrente = {
+          id: crypto.randomUUID(),
+          diagnosi: body.infortunio || "—",
+          tipo: body.tipoInfortunio || undefined,
+          inizioRehab: body.inizioRehab || oggi,
+          fineRehab: "",
+          note: body.note || undefined,
+          attivo: true,
+          evento: body.evento || undefined,
+          meccanismo: body.meccanismo || undefined,
+          contatto: body.contatto || undefined,
+          lato: body.lato || undefined,
+          posizioneInfortunio: body.posizioneInfortunio || undefined,
+        };
+        const { error } = await supabase.from("atleti").update({
+          storico_infortuni: [...storicoEsistente, nuovoConcorrente],
+        }).eq("id", esistente.id);
+        if (error) {
+          console.error("[intake PATCH concorrente]", error);
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+        await notificaEBroadcast(supabase, nomeNorm, body.categoria, esistente.id);
+        return NextResponse.json({ ok: true, id: esistente.id });
+      }
+    }
+
+    // ── Atleta non trovato: crea nuovo record ─────────────────────────────────
     const row = {
       id: crypto.randomUUID(),
-      nome: body.nome.trim(),
+      nome: nomeNorm,
       categoria: body.categoria,
       posizione: body.posizione ?? "",
       piede_dominante: body.piedeDominante ?? "",
@@ -117,66 +273,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Aggiungi il giocatore alla rosa se non è già presente
-    try {
-      const { data: imp } = await supabase
-        .from("impostazioni")
-        .select("rosa")
-        .eq("id", 1)
-        .single();
-      const rosaAttuale: { nome: string; categoria: string; ruolo: string }[] = imp?.rosa ?? [];
-      const giàPresente = rosaAttuale.some(
-        (g) => g.nome.toLowerCase() === row.nome.toLowerCase(),
-      );
-      if (!giàPresente) {
-        await supabase.from("impostazioni").upsert({
-          id: 1,
-          rosa: [...rosaAttuale, { nome: row.nome, categoria: row.categoria, ruolo: row.posizione }],
-        });
-      }
-    } catch {}
-
-    // Broadcast via Realtime REST — bypasses RLS entirely
-    await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/realtime/v1/api/broadcast`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          "Authorization": `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
-        },
-        body: JSON.stringify({
-          messages: [{
-            topic: "intake-notify",
-            event: "new",
-            payload: { nome: row.nome, categoria: row.categoria },
-          }],
-        }),
-      },
-    ).catch(() => {});
-
-    // Web Push to all subscribed devices
-    if (process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-      webpush.setVapidDetails(
-        "mailto:rehab@uscremonese.it",
-        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-        process.env.VAPID_PRIVATE_KEY,
-      );
-      const { data: subs } = await supabase.from("push_subscriptions").select("endpoint, keys");
-      if (subs?.length) {
-        const payload = JSON.stringify({
-          title: "Nuovo infortunio segnalato",
-          body: `${row.nome} · ${row.categoria}`,
-          url: "/segnalazioni",
-        });
-        await Promise.allSettled(
-          subs.map((s) =>
-            webpush.sendNotification({ endpoint: s.endpoint, keys: s.keys }, payload)
-          )
-        );
-      }
-    }
+    await notificaEBroadcast(supabase, row.nome, row.categoria, row.id);
 
     return NextResponse.json({ ok: true, id: row.id });
   } catch (e) {
