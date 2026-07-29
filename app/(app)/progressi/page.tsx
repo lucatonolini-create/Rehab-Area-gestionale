@@ -433,13 +433,24 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
       });
     };
 
+    // Data di inizio del primo infortunio concorrente attivo: serve per limitare
+    // il date-range del __corrente__ ed evitare di catturare sessioni del concorrente
+    const concCurrentStart = (atleta.storicoInfortuni ?? [])
+      .filter(s => s.attivo === true && s.inizioRehab)
+      .map(s => s.inizioRehab)
+      .sort()[0] ?? "";
+
     // Una sezione per infortunio
     for (const inj of tuttiInfortuni) {
       const injProgs = programmi.filter((p) => {
         if (usedProgIds.has(p.id)) return false;
         if (inj.id === "__corrente__") {
           if (p.infortunioId === "__corrente__") return true;
-          if (!p.infortunioId && p.data && inj.inizio && p.data >= inj.inizio && (!inj.fine || p.data <= inj.fine)) return true;
+          if (!p.infortunioId && p.data && inj.inizio && p.data >= inj.inizio) {
+            // Cap al primo inizio concorrente per non rubare sessioni senza infortunioId
+            const endBound = inj.fine || concCurrentStart;
+            if (!endBound || p.data < endBound) return true;
+          }
         } else {
           if (p.infortunioId === inj.id) return true;
           if (!p.infortunioId && p.data && inj.inizio && p.data >= inj.inizio && (!inj.fine || p.data <= inj.fine)) return true;
