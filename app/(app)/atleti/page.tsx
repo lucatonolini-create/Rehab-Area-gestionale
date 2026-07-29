@@ -520,10 +520,16 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   };
   const sessStoricoMap = new Map(storico.map((inf) => [inf.id, programmi.filter((p) => matchesInfPDF(p, { id: inf.id, diagnosi: inf.diagnosi, tipo: inf.tipo, inizioRehab: inf.inizioRehab, fineRehab: inf.fineRehab }) && isSessionePDF(p)).length]));
   const giorniArchivio = storico.map((inf) => sessStoricoMap.get(inf.id) ?? 0);
+  // sessioni già attribuite agli infortuni concorrenti attivi (evita doppio conteggio nel totale)
+  const concurrentSessIdsPDF = new Set(
+    storico.filter((i) => i.attivo === true).flatMap((inf) =>
+      programmi.filter((p) => matchesInfPDF(p, { id: inf.id, diagnosi: inf.diagnosi, tipo: inf.tipo, inizioRehab: inf.inizioRehab, fineRehab: inf.fineRehab }) && isSessionePDF(p)).map((p) => p.id)
+    )
+  );
   const giorniCorrente = atleta.stato === "Infortunato" && atleta.inizioRehab
     ? programmi.filter((p) => (
         p.infortunioId === "__corrente__" ||
-        (!p.infortunioId && p.data >= atleta.inizioRehab)
+        (!p.infortunioId && p.data >= atleta.inizioRehab && !concurrentSessIdsPDF.has(p.id))
       ) && isSessionePDF(p)).length : 0;
   const totaleStagionePDF = giorniArchivio.reduce((s, g) => s + g, 0) + giorniCorrente;
 
