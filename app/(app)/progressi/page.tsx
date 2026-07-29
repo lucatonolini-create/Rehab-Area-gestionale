@@ -187,11 +187,11 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
     ? `${Math.round((new Date(fine + "T12:00").getTime() - new Date(inizio + "T12:00").getTime()) / 86400000)}gg`
     : "—";
 
-  const tuttiInfortuni: Array<{ tipo?: string; diagnosi: string; inizio: string; fine?: string; squadraDate?: string }> = [];
+  const tuttiInfortuni: Array<{ id: string; tipo?: string; diagnosi: string; inizio: string; fine?: string; squadraDate?: string }> = [];
   if (atleta.stato === "Infortunato" && (atleta.infortunio || atleta.inizioRehab))
-    tuttiInfortuni.push({ tipo: atleta.tipoInfortunio, diagnosi: atleta.infortunio || "—", inizio: atleta.inizioRehab, fine: atleta.fineRehab });
+    tuttiInfortuni.push({ id: "__corrente__", tipo: atleta.tipoInfortunio, diagnosi: atleta.infortunio || "—", inizio: atleta.inizioRehab, fine: atleta.fineRehab });
   (atleta.storicoInfortuni ?? []).forEach((s) =>
-    tuttiInfortuni.push({ tipo: s.tipo, diagnosi: s.diagnosi, inizio: s.inizioRehab, fine: s.fineRehab })
+    tuttiInfortuni.push({ id: s.id, tipo: s.tipo, diagnosi: s.diagnosi, inizio: s.inizioRehab, fine: s.fineRehab })
   );
   tuttiInfortuni.forEach((inf) => {
     const sq = programmi
@@ -255,14 +255,9 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
     doc.text(doc.splitTextToSize(atleta.note, W - M * 2), M, y);
   }
 
-  // ── Sessioni: tabella settimanale compatta ──────────────────────────────────
+  // ── Sessioni: una sezione per infortunio ────────────────────────────────────
   if (programmi.length > 0) {
-    doc.addPage();
-    addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`);
-    y = HDR + 8;
-    y = secTitle(`Sessioni di lavoro — ${programmi.length} sessioni`, y);
-
-    const sorted = [...programmi].sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""));
+    const usedProgIds = new Set<string>();
 
     const getMonday = (dateStr: string): string => {
       const d = new Date(dateStr + "T12:00");
@@ -272,161 +267,195 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
       return mon.toISOString().slice(0, 10);
     };
 
-    const weekMap: Map<string, Programma[]> = new Map();
-    for (const prog of sorted) {
-      const wk = prog.data ? getMonday(prog.data) : "__nodata__";
-      if (!weekMap.has(wk)) weekMap.set(wk, []);
-      weekMap.get(wk)!.push(prog);
+    const renderSessions = (sectionLabel: string, injProgs: Programma[]) => {
+      if (injProgs.length === 0) return;
+      doc.addPage();
+      addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`);
+      y = HDR + 8;
+      y = secTitle(`${sectionLabel}  —  ${injProgs.length} sessioni`, y);
+
+      const sorted = [...injProgs].sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""));
+      const weekMap: Map<string, Programma[]> = new Map();
+      for (const prog of sorted) {
+        const wk = prog.data ? getMonday(prog.data) : "__nodata__";
+        if (!weekMap.has(wk)) weekMap.set(wk, []);
+        weekMap.get(wk)!.push(prog);
+      }
+
+      const body: any[] = [];
+      const weekRowIndices = new Set<number>();
+      const subHeaderRowIndices = new Set<number>();
+      const altRowIndices = new Set<number>();
+      const absenteRowIndices = new Set<number>();
+      const riposoRowIndices = new Set<number>();
+      const squadraRowIndices = new Set<number>();
+
+      Array.from(weekMap.entries()).forEach(([wk, wkProgs]) => {
+        let weekLabel: string;
+        if (wk === "__nodata__") {
+          weekLabel = "SESSIONI SENZA DATA";
+        } else {
+          const mon = new Date(wk + "T12:00");
+          const sun = new Date(mon.getTime() + 6 * 864e5);
+          weekLabel = `SETTIMANA  ${mon.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" })} – ${sun.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
+        }
+        weekRowIndices.add(body.length);
+        body.push([{ content: weekLabel, colSpan: 12 }]);
+        subHeaderRowIndices.add(body.length);
+        body.push(["Data", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS", "Obiettivi\nCampo", "Esercizi\nCampo", "GPS", "VAS\nCampo", "RPE"]);
+
+        let dataRowCount = 0;
+        for (const prog of wkProgs) {
+          const isAlt = dataRowCount % 2 === 1;
+          const dataStr = prog.data ? fmtDCl(prog.data) : "—";
+          const obP = prog.obiettiviPalestra?.length ? prog.obiettiviPalestra.map(o => `- ${o}`).join("\n") : "—";
+          const obCampo = prog.obiettiviCampo?.length ? prog.obiettiviCampo.map(o => `- ${o}`).join("\n") : "—";
+          const esC = (prog.esercizicampo ?? []).map((c, i) => {
+            const parts = [c.tipo, c.serie ? `${c.serie}×` : "", c.durata || ""].filter(Boolean);
+            return `${i + 1}. ${parts.join(" ")}`;
+          }).join("\n") || "—";
+          const vasC = (prog.esercizicampo ?? []).map((c, i) => `${i + 1}. ${c.vas || "0"}`).join("\n") || "—";
+          const esercizi = prog.esercizi ?? [];
+
+          const testLines = (prog.tests ?? []).map((t) => {
+            const isSL = t.nome === "SL Drop Jump";
+            const val = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : "", t.tempo ? `Tempo: ${t.tempo}s` : "", t.livello ? `Liv: ${t.livello}` : "", t.vo2max ? `Vo2Max: ${t.vo2max}` : "", t.vam ? `VAM: ${t.vam}` : "", t.ginocchioDx ? `Gin.Dx: ${t.ginocchioDx}°` : "", t.ancaSx ? `Anca Sx: ${t.ancaSx}°` : "", t.diffGinocchioDxAncaSx ? `Δ: ${t.diffGinocchioDxAncaSx}°` : "", t.ginocchioSx ? `Gin.Sx: ${t.ginocchioSx}°` : "", t.ancaDx ? `Anca Dx: ${t.ancaDx}°` : "", t.diffGinocchioSxAncaDx ? `Δ: ${t.diffGinocchioSxAncaDx}°` : ""].filter(Boolean).join(" / ");
+            const extras: string[] = [];
+            const sxV = isSL ? (t.rsiSx ?? "") : (t.risultatoSx ?? "");
+            const dxV = isSL ? (t.rsiDx ?? "") : (t.risultatoDx ?? "");
+            const asim = _calcolaAsimmetria(sxV, dxV);
+            const sup = _superioreTest(sxV, dxV);
+            if (asim !== null && sup !== null) extras.push(`${sup} +${asim.toFixed(1)}%`);
+            const prev = _trovaPrecedenteTest(programmi, prog.id, t.nome);
+            const delta = t.nome === "QSLS" ? null : _calcolaDelta(t, prev);
+            if (delta !== null) extras.push(`${delta >= 0 ? "↑" : "↓"} ${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%`);
+            return `${t.nome}${val ? `: ${val}` : ""}${extras.length ? ` [${extras.join(", ")}]` : ""}`;
+          });
+          const tests = testLines.join("\n") || "—";
+          void tests;
+
+          if (prog.assente) {
+            absenteRowIndices.add(body.length);
+            body.push([dataStr, prog.nome ?? "—", { content: "ASSENTE" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 11, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
+            dataRowCount++;
+            continue;
+          }
+
+          if (prog.riposo) {
+            riposoRowIndices.add(body.length);
+            body.push([dataStr, prog.nome ?? "—", { content: "RIPOSO" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 11, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
+            dataRowCount++;
+            continue;
+          }
+
+          if (prog.squadra) {
+            squadraRowIndices.add(body.length);
+            body.push([dataStr, prog.nome ?? "—", { content: "RITORNO IN SQUADRA" + (prog.noteAssenza ? `  ·  ${prog.noteAssenza}` : ""), colSpan: 10, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
+            dataRowCount++;
+            continue;
+          }
+
+          const ca = prog.carico;
+          const rpe = ca?.rpe ? `${ca.rpe}/10` : "—";
+          const gps = [
+            ca?.distanzaTotale ? `Dist.: ${ca.distanzaTotale}m` : "",
+            ca?.velocitaMax ? `V.max: ${ca.velocitaMax}km/h` : "",
+            ca?.hsr ? `D>16km/h: ${ca.hsr}m` : "",
+            ca?.velocita21 ? `D>20km/h: ${ca.velocita21}m` : "",
+            ca?.velocita25 ? `D>25km/h: ${ca.velocita25}m` : "",
+            ca?.accelerazioni ? `N.Acc: ${ca.accelerazioni}` : "",
+            ca?.decelerazioni ? `N.Dec: ${ca.decelerazioni}` : "",
+            ca?.sprint ? `N.Spr: ${ca.sprint}` : "",
+            ca?.potenzaMetabolica ? `P.Met.: ${ca.potenzaMetabolica}W/kg` : "",
+          ].filter(Boolean).map((s) => `- ${s}`).join("\n") || "—";
+
+          const esText = esercizi.map((e, i) => { const metric = e.reps || e.durata; const sx = [e.serie, metric].filter(Boolean).join("×"); const carico = e.carico ? ` (${e.carico})` : ""; return `${i + 1}. ${sx ? `${e.nome} ${sx}${carico}` : e.nome}`; }).join("\n") || "—";
+          const vasText = esercizi.map((e, i) => `${i + 1}. ${e.vas || "0"}`).join("\n") || "—";
+          const fisio = prog.noteFisioterapia?.trim() || "—";
+          if (isAlt) altRowIndices.add(body.length);
+          body.push([dataStr, prog.nome ?? "—", prog.fase ?? "—", fisio, obP, esText, vasText, obCampo, esC, gps, vasC, rpe]);
+          dataRowCount++;
+        }
+      });
+
+      autoTable(doc, {
+        startY: y,
+        body,
+        bodyStyles: { fontSize: 7, cellPadding: 2.5, overflow: "linebreak" as const, halign: "left" as const, valign: "middle" as const },
+        margin: { left: M, right: M, top: HDR + 8 },
+        didDrawPage: () => { addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`); },
+        columnStyles: {
+          0:  { cellWidth: 15 },
+          1:  { cellWidth: 22 },
+          2:  { cellWidth: 11 },
+          3:  { cellWidth: 32 },
+          4:  { cellWidth: 26 },
+          5:  { cellWidth: 31 },
+          6:  { cellWidth: 13, halign: "center" as const },
+          7:  { cellWidth: 28 },
+          8:  { cellWidth: 40 },
+          9:  { cellWidth: 30 },
+          10: { cellWidth: 11, halign: "center" as const },
+          11: { cellWidth: 10, halign: "center" as const },
+        },
+        didParseCell: (data: any) => {
+          if (data.section !== "body") return;
+          if (weekRowIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [200, 16, 46];
+            data.cell.styles.textColor = [255, 255, 255];
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.fontSize = 7.5;
+            data.cell.styles.cellPadding = { top: 3.5, bottom: 3.5, left: 5, right: 2 };
+          } else if (subHeaderRowIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [110, 110, 110];
+            data.cell.styles.textColor = [255, 255, 255];
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.fontSize = 6.5;
+            data.cell.styles.halign = "center";
+            data.cell.styles.valign = "middle";
+            data.cell.styles.cellPadding = { top: 2.5, bottom: 2.5, left: 2, right: 1 };
+          } else if (absenteRowIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [255, 237, 213];
+            data.cell.styles.textColor = [154, 52, 18];
+          } else if (riposoRowIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [219, 234, 254];
+            data.cell.styles.textColor = [30, 64, 175];
+          } else if (squadraRowIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [187, 247, 208];
+            data.cell.styles.textColor = [22, 101, 52];
+            data.cell.styles.fontStyle = "bold";
+          } else if (altRowIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [243, 244, 246];
+          } else {
+            data.cell.styles.fillColor = [255, 255, 255];
+          }
+        },
+      });
+    };
+
+    // Una sezione per infortunio
+    for (const inj of tuttiInfortuni) {
+      const injProgs = programmi.filter((p) => {
+        if (usedProgIds.has(p.id)) return false;
+        if (inj.id === "__corrente__") {
+          if (p.infortunioId === "__corrente__") return true;
+          if (!p.infortunioId && p.data && inj.inizio && p.data >= inj.inizio && (!inj.fine || p.data <= inj.fine)) return true;
+        } else {
+          if (p.infortunioId === inj.id) return true;
+          if (!p.infortunioId && p.data && inj.inizio && p.data >= inj.inizio && (!inj.fine || p.data <= inj.fine)) return true;
+        }
+        return false;
+      });
+      injProgs.forEach((p) => usedProgIds.add(p.id));
+      const label = [inj.diagnosi, inj.tipo].filter(Boolean).join("  ·  ");
+      renderSessions(label, injProgs);
     }
 
-    const body: any[] = [];
-    const weekRowIndices = new Set<number>();
-    const subHeaderRowIndices = new Set<number>();
-    const altRowIndices = new Set<number>();
-    const absenteRowIndices = new Set<number>();
-    const riposoRowIndices = new Set<number>();
-    const squadraRowIndices = new Set<number>();
-
-    Array.from(weekMap.entries()).forEach(([wk, wkProgs]) => {
-      let weekLabel: string;
-      if (wk === "__nodata__") {
-        weekLabel = "SESSIONI SENZA DATA";
-      } else {
-        const mon = new Date(wk + "T12:00");
-        const sun = new Date(mon.getTime() + 6 * 864e5);
-        weekLabel = `SETTIMANA  ${mon.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" })} – ${sun.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
-      }
-      weekRowIndices.add(body.length);
-      body.push([{ content: weekLabel, colSpan: 12 }]);
-      subHeaderRowIndices.add(body.length);
-      body.push(["Data", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS", "Obiettivi\nCampo", "Esercizi\nCampo", "GPS", "VAS\nCampo", "RPE"]);
-
-      let dataRowCount = 0;
-      for (const prog of wkProgs) {
-        const isAlt = dataRowCount % 2 === 1;
-        const dataStr = prog.data ? fmtDCl(prog.data) : "—";
-        const obP = prog.obiettiviPalestra?.length ? prog.obiettiviPalestra.map(o => `- ${o}`).join("\n") : "—";
-        const obCampo = prog.obiettiviCampo?.length ? prog.obiettiviCampo.map(o => `- ${o}`).join("\n") : "—";
-        const esC = (prog.esercizicampo ?? []).map((c, i) => {
-          const parts = [c.tipo, c.serie ? `${c.serie}×` : "", c.durata || ""].filter(Boolean);
-          return `${i + 1}. ${parts.join(" ")}`;
-        }).join("\n") || "—";
-        const vasC = (prog.esercizicampo ?? []).map((c, i) => `${i + 1}. ${c.vas || "0"}`).join("\n") || "—";
-        const esercizi = prog.esercizi ?? [];
-
-        const testLines = (prog.tests ?? []).map((t) => {
-          const isSL = t.nome === "SL Drop Jump";
-          const val = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : "", t.tempo ? `Tempo: ${t.tempo}s` : "", t.livello ? `Liv: ${t.livello}` : "", t.vo2max ? `Vo2Max: ${t.vo2max}` : "", t.vam ? `VAM: ${t.vam}` : "", t.ginocchioDx ? `Gin.Dx: ${t.ginocchioDx}°` : "", t.ancaSx ? `Anca Sx: ${t.ancaSx}°` : "", t.diffGinocchioDxAncaSx ? `Δ: ${t.diffGinocchioDxAncaSx}°` : "", t.ginocchioSx ? `Gin.Sx: ${t.ginocchioSx}°` : "", t.ancaDx ? `Anca Dx: ${t.ancaDx}°` : "", t.diffGinocchioSxAncaDx ? `Δ: ${t.diffGinocchioSxAncaDx}°` : ""].filter(Boolean).join(" / ");
-          const extras: string[] = [];
-          const sxV = isSL ? (t.rsiSx ?? "") : (t.risultatoSx ?? "");
-          const dxV = isSL ? (t.rsiDx ?? "") : (t.risultatoDx ?? "");
-          const asim = _calcolaAsimmetria(sxV, dxV);
-          const sup = _superioreTest(sxV, dxV);
-          if (asim !== null && sup !== null) extras.push(`${sup} +${asim.toFixed(1)}%`);
-          const prev = _trovaPrecedenteTest(programmi, prog.id, t.nome);
-          const delta = t.nome === "QSLS" ? null : _calcolaDelta(t, prev);
-          if (delta !== null) extras.push(`${delta >= 0 ? "↑" : "↓"} ${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%`);
-          return `${t.nome}${val ? `: ${val}` : ""}${extras.length ? ` [${extras.join(", ")}]` : ""}`;
-        });
-        const tests = testLines.join("\n") || "—";
-
-        if (prog.assente) {
-          absenteRowIndices.add(body.length);
-          body.push([dataStr, prog.nome ?? "—", { content: "ASSENTE" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 11, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
-          dataRowCount++;
-          continue;
-        }
-
-        if (prog.riposo) {
-          riposoRowIndices.add(body.length);
-          body.push([dataStr, prog.nome ?? "—", { content: "RIPOSO" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 11, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
-          dataRowCount++;
-          continue;
-        }
-
-        if (prog.squadra) {
-          squadraRowIndices.add(body.length);
-          body.push([dataStr, prog.nome ?? "—", { content: "RITORNO IN SQUADRA" + (prog.noteAssenza ? `  ·  ${prog.noteAssenza}` : ""), colSpan: 10, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
-          dataRowCount++;
-          continue;
-        }
-
-        const ca = prog.carico;
-        const rpe = ca?.rpe ? `${ca.rpe}/10` : "—";
-        const gps = [
-          ca?.distanzaTotale ? `Dist.: ${ca.distanzaTotale}m` : "",
-          ca?.velocitaMax ? `V.max: ${ca.velocitaMax}km/h` : "",
-          ca?.hsr ? `D>16km/h: ${ca.hsr}m` : "",
-          ca?.velocita21 ? `D>20km/h: ${ca.velocita21}m` : "",
-          ca?.velocita25 ? `D>25km/h: ${ca.velocita25}m` : "",
-          ca?.accelerazioni ? `N.Acc: ${ca.accelerazioni}` : "",
-          ca?.decelerazioni ? `N.Dec: ${ca.decelerazioni}` : "",
-          ca?.sprint ? `N.Spr: ${ca.sprint}` : "",
-          ca?.potenzaMetabolica ? `P.Met.: ${ca.potenzaMetabolica}W/kg` : "",
-        ].filter(Boolean).map((s) => `- ${s}`).join("\n") || "—";
-
-        const esText = esercizi.map((e, i) => { const metric = e.reps || e.durata; const sx = [e.serie, metric].filter(Boolean).join("×"); const carico = e.carico ? ` (${e.carico})` : ""; return `${i + 1}. ${sx ? `${e.nome} ${sx}${carico}` : e.nome}`; }).join("\n") || "—";
-        const vasText = esercizi.map((e, i) => `${i + 1}. ${e.vas || "0"}`).join("\n") || "—";
-        const fisio = prog.noteFisioterapia?.trim() || "—";
-        if (isAlt) altRowIndices.add(body.length);
-        body.push([dataStr, prog.nome ?? "—", prog.fase ?? "—", fisio, obP, esText, vasText, obCampo, esC, gps, vasC, rpe]);
-        dataRowCount++;
-      }
-    });
-
-    autoTable(doc, {
-      startY: y,
-      body,
-      bodyStyles: { fontSize: 7, cellPadding: 2.5, overflow: "linebreak" as const, halign: "left" as const, valign: "middle" as const },
-      margin: { left: M, right: M, top: HDR + 8 },
-      didDrawPage: () => { addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`); },
-      columnStyles: {
-        0:  { cellWidth: 15 },
-        1:  { cellWidth: 22 },
-        2:  { cellWidth: 11 },
-        3:  { cellWidth: 32 },
-        4:  { cellWidth: 26 },
-        5:  { cellWidth: 31 },
-        6:  { cellWidth: 13, halign: "center" as const },
-        7:  { cellWidth: 28 },
-        8:  { cellWidth: 40 },
-        9:  { cellWidth: 30 },
-        10: { cellWidth: 11, halign: "center" as const },
-        11: { cellWidth: 10, halign: "center" as const },
-      },
-      didParseCell: (data: any) => {
-        if (data.section !== "body") return;
-        if (weekRowIndices.has(data.row.index)) {
-          data.cell.styles.fillColor = [200, 16, 46];
-          data.cell.styles.textColor = [255, 255, 255];
-          data.cell.styles.fontStyle = "bold";
-          data.cell.styles.fontSize = 7.5;
-          data.cell.styles.cellPadding = { top: 3.5, bottom: 3.5, left: 5, right: 2 };
-        } else if (subHeaderRowIndices.has(data.row.index)) {
-          data.cell.styles.fillColor = [110, 110, 110];
-          data.cell.styles.textColor = [255, 255, 255];
-          data.cell.styles.fontStyle = "bold";
-          data.cell.styles.fontSize = 6.5;
-          data.cell.styles.halign = "center";
-          data.cell.styles.valign = "middle";
-          data.cell.styles.cellPadding = { top: 2.5, bottom: 2.5, left: 2, right: 1 };
-        } else if (absenteRowIndices.has(data.row.index)) {
-          data.cell.styles.fillColor = [255, 237, 213];
-          data.cell.styles.textColor = [154, 52, 18];
-        } else if (riposoRowIndices.has(data.row.index)) {
-          data.cell.styles.fillColor = [219, 234, 254];
-          data.cell.styles.textColor = [30, 64, 175];
-        } else if (squadraRowIndices.has(data.row.index)) {
-          data.cell.styles.fillColor = [187, 247, 208];
-          data.cell.styles.textColor = [22, 101, 52];
-          data.cell.styles.fontStyle = "bold";
-        } else if (altRowIndices.has(data.row.index)) {
-          data.cell.styles.fillColor = [243, 244, 246];
-        } else {
-          data.cell.styles.fillColor = [255, 255, 255];
-        }
-      },
-    });
+    // Sessioni non abbinate a nessun infortunio
+    const unmatchedProgs = programmi.filter((p) => !usedProgIds.has(p.id));
+    if (unmatchedProgs.length > 0) {
+      renderSessions("Sessioni non associate", unmatchedProgs);
+    }
   }
 
   // ── Andamento Test ────────────────────────────────────────────────────────
