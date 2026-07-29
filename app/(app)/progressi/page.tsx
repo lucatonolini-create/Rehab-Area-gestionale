@@ -193,9 +193,15 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
   (atleta.storicoInfortuni ?? []).forEach((s) =>
     tuttiInfortuni.push({ id: s.id, tipo: s.tipo, diagnosi: s.diagnosi, inizio: s.inizioRehab, fine: s.fineRehab })
   );
+  // Ordine cronologico: dal più vecchio al più recente
+  tuttiInfortuni.sort((a, b) => (a.inizio ?? "").localeCompare(b.inizio ?? ""));
   tuttiInfortuni.forEach((inf) => {
     const sq = programmi
-      .filter((p) => p.squadra && p.data && inf.inizio && p.data >= inf.inizio && (!inf.fine || p.data <= inf.fine))
+      .filter((p) => {
+        if (!p.squadra || !p.data) return false;
+        if (p.infortunioId) return p.infortunioId === inf.id;
+        return !!(inf.inizio && p.data >= inf.inizio && (!inf.fine || p.data <= inf.fine));
+      })
       .sort((a, b) => a.data.localeCompare(b.data))[0];
     inf.squadraDate = sq?.data ?? "";
   });
@@ -338,21 +344,18 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           if (prog.assente) {
             absenteRowIndices.add(body.length);
             body.push([dataStr, prog.nome ?? "—", { content: "ASSENTE" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 11, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
-            dataRowCount++;
             continue;
           }
 
           if (prog.riposo) {
             riposoRowIndices.add(body.length);
             body.push([dataStr, prog.nome ?? "—", { content: "RIPOSO" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 11, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
-            dataRowCount++;
             continue;
           }
 
           if (prog.squadra) {
             squadraRowIndices.add(body.length);
             body.push([dataStr, prog.nome ?? "—", { content: "RITORNO IN SQUADRA" + (prog.noteAssenza ? `  ·  ${prog.noteAssenza}` : ""), colSpan: 10, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
-            dataRowCount++;
             continue;
           }
 
@@ -991,6 +994,7 @@ const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","
 
 function atletaAttivoInMese(a: Atleta, anno: number, mese: number): boolean {
   const meseStart = new Date(anno, mese, 1);
+  if (meseStart > new Date()) return false;
   const meseEnd = new Date(anno, mese + 1, 0);
   const periodoAttivo = (inizioStr?: string, fineStr?: string): boolean => {
     if (!inizioStr) return false;
@@ -1202,7 +1206,7 @@ export default function ProgressiPage() {
         ) : (
           <div className="space-y-4">
             {[...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")).map((atleta) => {
-              const nProg = programmi.filter((p) => p.atletaId === atleta.id).length;
+              const nProg = programmi.filter((p) => p.atletaId === atleta.id && !p.riposo && !p.assente).length;
               return (
                 <div key={atleta.id} className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
                   <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
