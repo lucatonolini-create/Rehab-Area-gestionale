@@ -1546,7 +1546,7 @@ export default function AnalisiPage() {
                         : [];
                       const righe = [{ key: a.id, infortunio: a.infortunio, tipo: a.tipoInfortunio }];
                       for (const inf of concorrenti) {
-                        righe.push({ key: `${a.id}-${inf.id}`, infortunio: inf.diagnosi, tipo: inf.tipo });
+                        righe.push({ key: `${a.id}-${inf.id}`, infortunio: inf.diagnosi, tipo: inf.tipo as typeof a.tipoInfortunio });
                       }
                       return righe.map(({ key, infortunio, tipo }) => (
                         <div key={key} className="grid grid-cols-1 md:grid-cols-4 items-center px-5 py-4 hover:bg-gray-50 gap-2">
