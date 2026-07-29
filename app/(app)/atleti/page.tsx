@@ -674,7 +674,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           osiicsCodice: atleta.osiicsCodice ?? undefined, osiicsDescrizione: atleta.osiicsDescrizione ?? undefined,
           note: atleta.note || undefined }]
       : []),
-  ];
+  ].sort((a, b) => (a.inizio || "").localeCompare(b.inizio || ""));
 
   const usedProgIds = new Set<string>();
 
