@@ -171,10 +171,15 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
   const info = [atleta.categoria, atleta.posizione, atleta.piedeDominante ? `Piede ${atleta.piedeDominante}` : ""].filter(Boolean).join("  ·  ");
   doc.setFontSize(8.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
   doc.text(info, M, HDR + 21);
-  // badge stato
-  doc.setFillColor(...red); doc.roundedRect(W - M - 36, HDR + 7, 36, 10, 2, 2, "F");
-  doc.setTextColor(255, 255, 255); doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
-  doc.text(atleta.stato, W - M - 18, HDR + 13.5, { align: "center" });
+  // badge stato — larghezza dinamica, verde se Disponibile
+  const badgeColor: [number, number, number] = atleta.stato === "Disponibile" ? [34, 139, 34] : red;
+  doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
+  const stateTextW = doc.getStringUnitWidth(atleta.stato) * 7.5 / doc.internal.scaleFactor;
+  const badgeW = Math.max(stateTextW + 12, 36);
+  const badgeX = W - M - badgeW;
+  doc.setFillColor(...badgeColor); doc.roundedRect(badgeX, HDR + 7, badgeW, 10, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.text(atleta.stato, badgeX + badgeW / 2, HDR + 13, { align: "center" });
   doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.3); doc.line(M, HDR + 27, W - M, HDR + 27);
 
   const fmtDCl = (d: string) => new Date(d + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" });
@@ -182,12 +187,18 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
     ? `${Math.round((new Date(fine + "T12:00").getTime() - new Date(inizio + "T12:00").getTime()) / 86400000)}gg`
     : "—";
 
-  const tuttiInfortuni: Array<{ tipo?: string; diagnosi: string; inizio: string; fine?: string }> = [];
+  const tuttiInfortuni: Array<{ tipo?: string; diagnosi: string; inizio: string; fine?: string; squadraDate?: string }> = [];
   if (atleta.infortunio || atleta.inizioRehab)
     tuttiInfortuni.push({ tipo: atleta.tipoInfortunio, diagnosi: atleta.infortunio || "—", inizio: atleta.inizioRehab, fine: atleta.fineRehab });
   (atleta.storicoInfortuni ?? []).forEach((s) =>
     tuttiInfortuni.push({ tipo: s.tipo, diagnosi: s.diagnosi, inizio: s.inizioRehab, fine: s.fineRehab })
   );
+  tuttiInfortuni.forEach((inf) => {
+    const sq = programmi
+      .filter((p) => p.squadra && p.data && inf.inizio && p.data >= inf.inizio && (!inf.fine || p.data <= inf.fine))
+      .sort((a, b) => a.data.localeCompare(b.data))[0];
+    inf.squadraDate = sq?.data ?? "";
+  });
 
   let y = HDR + 34;
   y = secTitle("Dati clinici", y);
@@ -209,13 +220,14 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
     y = secTitle("Storico infortuni", y);
     autoTable(doc, {
       startY: y,
-      head: [["#", "Tipo", "Diagnosi / Infortunio", "Inizio", "Fine", "Giorni"]],
+      head: [["#", "Tipo", "Diagnosi / Infortunio", "Inizio", "Fine", "Ritorno\nsquadra", "Giorni"]],
       body: tuttiInfortuni.map((inf, i) => [
         i + 1,
         inf.tipo ?? "—",
         inf.diagnosi,
         inf.inizio ? fmtDCl(inf.inizio) : "—",
         inf.fine ? fmtDCl(inf.fine) : "—",
+        inf.squadraDate ? fmtDCl(inf.squadraDate) : "—",
         inf.inizio ? ggCl(inf.inizio, inf.fine) : "—",
       ]),
       headStyles: { fillColor: dark, textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
@@ -223,8 +235,15 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
       alternateRowStyles: { fillColor: [250, 250, 250] },
       margin: { left: M, right: M },
       columnStyles: {
-        0: { cellWidth: 8 }, 1: { cellWidth: 60 }, 2: { cellWidth: 140 },
-        3: { cellWidth: 22 }, 4: { cellWidth: 22 }, 5: { cellWidth: 17 },
+        0: { cellWidth: 8 }, 1: { cellWidth: 55 }, 2: { cellWidth: 120 },
+        3: { cellWidth: 22 }, 4: { cellWidth: 22 }, 5: { cellWidth: 25 }, 6: { cellWidth: 17 },
+      },
+      didParseCell: (data: any) => {
+        if (data.section === "body" && data.column.index === 5 && data.cell.raw !== "—") {
+          data.cell.styles.fillColor = [187, 247, 208];
+          data.cell.styles.textColor = [22, 101, 52];
+          data.cell.styles.fontStyle = "bold";
+        }
       },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
@@ -266,6 +285,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
     const altRowIndices = new Set<number>();
     const absenteRowIndices = new Set<number>();
     const riposoRowIndices = new Set<number>();
+    const squadraRowIndices = new Set<number>();
 
     Array.from(weekMap.entries()).forEach(([wk, wkProgs]) => {
       let weekLabel: string;
@@ -320,6 +340,13 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         if (prog.riposo) {
           riposoRowIndices.add(body.length);
           body.push([dataStr, prog.nome ?? "—", { content: "RIPOSO" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 11, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
+          dataRowCount++;
+          continue;
+        }
+
+        if (prog.squadra) {
+          squadraRowIndices.add(body.length);
+          body.push([dataStr, prog.nome ?? "—", { content: "RITORNO IN SQUADRA" + (prog.noteAssenza ? `  ·  ${prog.noteAssenza}` : ""), colSpan: 10, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
           dataRowCount++;
           continue;
         }
@@ -389,6 +416,10 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         } else if (riposoRowIndices.has(data.row.index)) {
           data.cell.styles.fillColor = [219, 234, 254];
           data.cell.styles.textColor = [30, 64, 175];
+        } else if (squadraRowIndices.has(data.row.index)) {
+          data.cell.styles.fillColor = [187, 247, 208];
+          data.cell.styles.textColor = [22, 101, 52];
+          data.cell.styles.fontStyle = "bold";
         } else if (altRowIndices.has(data.row.index)) {
           data.cell.styles.fillColor = [243, 244, 246];
         } else {
