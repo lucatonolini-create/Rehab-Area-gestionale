@@ -278,7 +278,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
       doc.addPage();
       addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`);
       y = HDR + 8;
-      const sessioniCount = injProgs.filter(p => !p.riposo && !p.assente).length;
+      const sessioniCount = injProgs.filter(p => !p.riposo).length;
       y = secTitle(`${sectionLabel}  —  ${sessioniCount} sessioni`, y);
 
       const sorted = [...injProgs].sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""));
@@ -344,6 +344,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           if (prog.assente) {
             absenteRowIndices.add(body.length);
             body.push([dataStr, prog.nome ?? "—", { content: "ASSENTE" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 11, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
+            dataRowCount++;
             continue;
           }
 
@@ -1206,7 +1207,7 @@ export default function ProgressiPage() {
         ) : (
           <div className="space-y-4">
             {[...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")).map((atleta) => {
-              const nProg = programmi.filter((p) => p.atletaId === atleta.id && !p.riposo && !p.assente).length;
+              const nProg = programmi.filter((p) => p.atletaId === atleta.id && !p.riposo).length;
               return (
                 <div key={atleta.id} className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
                   <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">

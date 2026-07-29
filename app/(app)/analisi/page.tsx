@@ -1062,7 +1062,7 @@ export default function AnalisiPage() {
 
   const attivi = atleti.filter((a) => a.stato !== "Disponibile");
   const guariti = atleti.filter((a) => a.stato === "Disponibile");
-  const programmiReali = programmi.filter((p) => !p.riposo && !p.assente);
+  const programmiReali = programmi.filter((p) => !p.riposo);
 
   const mesiPeriodo: { anno: number; mese: number }[] = (() => {
     if (tipoReport === "mensile") return [{ anno: reportAnno, mese: reportMese }];
