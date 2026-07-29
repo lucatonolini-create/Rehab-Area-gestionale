@@ -1294,14 +1294,91 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
         await upsertAtleta(aggiornato);
         syncInjury(aggiornato);
       } else {
-        const nuovo = { ...dati, id: atletaId };
-        setAtleti((prev) => [...prev, nuovo]);
-        await upsertAtleta(nuovo);
-        syncInjury(nuovo);
-        if (dettaglio) {
-          const det = formToDettaglio(uid(), atletaId, dettaglio);
-          await upsertDettaglioSituazionale(det);
-          setDettaglioSituazionale(det);
+        // Controlla se esiste già un atleta con lo stesso nome (case-insensitive)
+        const nomeNorm = dati.nome.trim().toLowerCase();
+        const esistente = atleti.find((a) => a.nome.trim().toLowerCase() === nomeNorm);
+
+        if (esistente) {
+          const oggi = new Date().toISOString().slice(0, 10);
+          let aggiornato: Atleta;
+
+          if (esistente.stato === "Disponibile") {
+            // Archivia l'eventuale infortunio precedente
+            const storicoEsistente = esistente.storicoInfortuni ?? [];
+            const hasPrevInf = !!(esistente.infortunio || esistente.inizioRehab);
+            const storicoAggiornato: InfortunioStorico[] = hasPrevInf
+              ? [...storicoEsistente, {
+                  id: uid(),
+                  diagnosi: esistente.infortunio || "—",
+                  tipo: esistente.tipoInfortunio,
+                  inizioRehab: esistente.inizioRehab || "",
+                  fineRehab: esistente.fineRehab || oggi,
+                  note: esistente.note || undefined,
+                }]
+              : storicoEsistente;
+            aggiornato = {
+              ...esistente,
+              stato: "Infortunato",
+              infortunio: dati.infortunio ?? "",
+              tipoInfortunio: dati.tipoInfortunio,
+              osiicsCodeId: dati.osiicsCodeId || undefined,
+              osiicsCodice: dati.osiicsCodice || undefined,
+              osiicsDescrizione: dati.osiicsDescrizione || undefined,
+              evento: dati.evento || undefined,
+              meccanismo: dati.meccanismo || undefined,
+              contatto: dati.contatto || undefined,
+              lato: dati.lato || undefined,
+              posizioneInfortunio: dati.posizioneInfortunio || undefined,
+              inizioRehab: dati.inizioRehab || oggi,
+              fineRehab: undefined,
+              progresso: 0,
+              progressoManuale: undefined,
+              categoria: dati.categoria || esistente.categoria,
+              fisioterapista: dati.fisioterapista || esistente.fisioterapista,
+              note: dati.note || esistente.note || "",
+              storicoInfortuni: storicoAggiornato,
+            };
+          } else {
+            // Atleta già Infortunato: aggiunge come infortunio concorrente
+            const nuovoConcorrente: InfortunioStorico = {
+              id: uid(),
+              diagnosi: dati.infortunio || "—",
+              tipo: dati.tipoInfortunio,
+              inizioRehab: dati.inizioRehab || oggi,
+              fineRehab: "",
+              note: dati.note || undefined,
+              attivo: true,
+              evento: dati.evento ?? undefined,
+              meccanismo: dati.meccanismo ?? undefined,
+              contatto: dati.contatto ?? undefined,
+              lato: dati.lato ?? undefined,
+              posizioneInfortunio: dati.posizioneInfortunio ?? undefined,
+            };
+            aggiornato = {
+              ...esistente,
+              storicoInfortuni: [...(esistente.storicoInfortuni ?? []), nuovoConcorrente],
+            };
+          }
+
+          setAtleti((prev) => prev.map((a) => a.id === esistente.id ? aggiornato : a));
+          setSelected(aggiornato);
+          await upsertAtleta(aggiornato);
+          syncInjury(aggiornato);
+          if (dettaglio) {
+            const det = formToDettaglio(uid(), esistente.id, dettaglio);
+            await upsertDettaglioSituazionale(det);
+            setDettaglioSituazionale(det);
+          }
+        } else {
+          const nuovo = { ...dati, id: atletaId };
+          setAtleti((prev) => [...prev, nuovo]);
+          await upsertAtleta(nuovo);
+          syncInjury(nuovo);
+          if (dettaglio) {
+            const det = formToDettaglio(uid(), atletaId, dettaglio);
+            await upsertDettaglioSituazionale(det);
+            setDettaglioSituazionale(det);
+          }
         }
       }
       setMostraForm(false);
