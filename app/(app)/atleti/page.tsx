@@ -646,7 +646,11 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     return null;
   };
 
-  const allInjuries: { id: string; diagnosi: string; tipo?: string; inizio: string; fine: string | null; attivo: boolean }[] = [
+  const allInjuries: {
+    id: string; diagnosi: string; tipo?: string; inizio: string; fine: string | null; attivo: boolean;
+    evento?: string; meccanismo?: string; contatto?: string; lato?: string; posizione?: string;
+    osiicsCodice?: string; osiicsDescrizione?: string; note?: string;
+  }[] = [
     ...(atleta.storicoInfortuni ?? []).map((inf) => ({
       id: inf.id,
       diagnosi: inf.diagnosi,
@@ -654,9 +658,21 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       inizio: inf.inizioRehab,
       fine: inf.fineRehab || null,
       attivo: inf.attivo === true,
+      evento: inf.evento,
+      meccanismo: inf.meccanismo,
+      contatto: inf.contatto,
+      lato: inf.lato,
+      posizione: inf.posizioneInfortunio,
+      osiicsCodice: inf.osiicsCodice,
+      osiicsDescrizione: inf.osiicsDescrizione,
+      note: inf.note,
     })),
     ...(atleta.stato === "Infortunato" && (atleta.infortunio || atleta.inizioRehab)
-      ? [{ id: "__corrente__", diagnosi: atleta.infortunio || "—", tipo: atleta.tipoInfortunio as string | undefined, inizio: atleta.inizioRehab, fine: null as string | null, attivo: true }]
+      ? [{ id: "__corrente__", diagnosi: atleta.infortunio || "—", tipo: atleta.tipoInfortunio as string | undefined, inizio: atleta.inizioRehab, fine: null as string | null, attivo: true,
+          evento: atleta.evento ?? undefined, meccanismo: atleta.meccanismo ?? undefined, contatto: atleta.contatto ?? undefined,
+          lato: atleta.lato ?? undefined, posizione: atleta.posizioneInfortunio ?? undefined,
+          osiicsCodice: atleta.osiicsCodice ?? undefined, osiicsDescrizione: atleta.osiicsDescrizione ?? undefined,
+          note: atleta.note || undefined }]
       : []),
   ];
 
@@ -719,7 +735,35 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       doc.setFont("helvetica", "bold"); doc.setTextColor(22, 101, 52);
       doc.text(`Ritorno in squadra: ${fmtD(squadraDay.data)}`, M, y + 24);
     }
-    y += barH + 6;
+    y += barH + 4;
+
+    // ── Dati clinici ────────────────────────────────────────────────────────
+    {
+      const osiics = [inj.osiicsCodice, inj.osiicsDescrizione].filter(Boolean).join(" — ");
+      const clinFields: [string, string][] = ([
+        ["Sede anatomica", inj.posizione],
+        ["Evento", inj.evento],
+        ["Meccanismo", inj.meccanismo],
+        ["Contatto", inj.contatto],
+        ["Lato", inj.lato],
+        ["Codice OSIICS", osiics || undefined],
+        ["Note cliniche", inj.note],
+      ] as [string, string | undefined][]).filter((r): r is [string, string] => !!r[1]?.trim());
+      if (clinFields.length > 0) {
+        checkPage(10 + clinFields.length * 7, sub);
+        autoTable(doc, {
+          startY: y,
+          body: clinFields,
+          columnStyles: {
+            0: { cellWidth: 40, fontStyle: "bold", fillColor: [245, 245, 245], textColor: 50 },
+            1: { textColor: 30 },
+          },
+          bodyStyles: { fontSize: 8, cellPadding: 2.5 },
+          margin: { left: M, right: M },
+        });
+        y = (doc as any).lastAutoTable.finalY + 5;
+      }
+    }
 
     // RTS evaluations for this injury
     if (injQRTS.length > 0) {
