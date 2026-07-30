@@ -1005,9 +1005,9 @@ export default function EserciziPage() {
                 <span className="font-bold text-gray-800 flex-1">{nd(atleta)}</span>
                 <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{atleta.categoria}</span>
                 {isOpen && atleta.id in programmiPerAtleta && (() => {
-                  const assenze = lista.filter((p) => p.assente).length;
-                  const riposi = lista.filter((p) => p.riposo).length;
-                  const sessioni = lista.filter((p) => !p.assente && !p.riposo).length;
+                  const assenze = new Set(lista.filter((p) => p.assente).map((p) => p.data)).size;
+                  const riposi  = new Set(lista.filter((p) => p.riposo).map((p) => p.data)).size;
+                  const sessioni = new Set(lista.filter((p) => !p.assente && !p.riposo).map((p) => p.data)).size;
                   return (
                     <span className="text-xs flex items-center gap-1">
                       {sessioni > 0 && <span className="text-gray-400">{sessioni} sess.</span>}
