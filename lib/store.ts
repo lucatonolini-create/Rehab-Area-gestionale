@@ -208,6 +208,9 @@ export interface Atleta {
   // Antropometria
   peso?: string;
   altezza?: string;
+  plicometrieMedie?: string;
+  dataNascita?: string;
+  altezzaDaSeduto?: string;
   // Classificazione OSIICS
   osiicsCodice?: string;
   osiicsDescrizione?: string;
@@ -469,6 +472,9 @@ function rowToAtleta(r: Record<string, unknown>): Atleta {
       ? (r.progresso_manuale as number) : undefined,
     peso: (r.peso as string) ?? "",
     altezza: (r.altezza as string) ?? "",
+    plicometrieMedie: (r.plicometrie_medie as string) ?? undefined,
+    dataNascita: (r.data_nascita as string) ?? undefined,
+    altezzaDaSeduto: (r.altezza_da_seduto as string) ?? undefined,
     osiicsCodice: (r.osiics_codice as string) ?? undefined,
     osiicsDescrizione: (r.osiics_descrizione as string) ?? undefined,
     osiicsCodeId: (r.osiics_code_id as string) ?? undefined,
@@ -504,6 +510,9 @@ function atletaToRow(a: Atleta): Record<string, unknown> {
     progresso_manuale: a.progressoManuale ?? null,
     peso: a.peso ?? null,
     altezza: a.altezza ?? null,
+    plicometrie_medie: a.plicometrieMedie ?? null,
+    data_nascita: a.dataNascita ?? null,
+    altezza_da_seduto: a.altezzaDaSeduto ?? null,
     nome_completo: a.nomeCompleto ?? null,
     osiics_codice: a.osiicsCodice ?? null,
     osiics_descrizione: a.osiicsDescrizione ?? null,
@@ -604,7 +613,7 @@ export async function syncFlush(): Promise<void> {
           } else if (error.code === "PGRST204" || error.code === "42703") {
             // Strip columns that may not exist in older DB schemas yet,
             // but keep referti_clinici and progresso_manuale (they ARE in the schema).
-            const { peso, altezza, nome_completo, evento, meccanismo, contatto, lato, posizione_infortunio, questionari_kinesiofobia, ...safeRow } = row;
+            const { peso, altezza, plicometrie_medie, data_nascita, altezza_da_seduto, nome_completo, evento, meccanismo, contatto, lato, posizione_infortunio, questionari_kinesiofobia, ...safeRow } = row;
             const { error: e2 } = await supabase.from("atleti").upsert(safeRow);
             ok = !e2 || isExpectedSyncError(e2.code);
           } else {

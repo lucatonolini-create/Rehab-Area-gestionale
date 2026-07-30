@@ -432,6 +432,18 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       ["Piede dominante", atleta.piedeDominante || "—"],
       ["Stato attuale", atleta.stato],
       ...(atleta.peso || atleta.altezza ? [["Peso / Altezza", `${atleta.peso || "—"} kg  ·  ${atleta.altezza || "—"} cm`]] : [] as any),
+      ...(atleta.plicometrieMedie ? [["Plicometria media", `${atleta.plicometrieMedie} mm`]] : [] as any),
+      ...(atleta.altezzaDaSeduto ? [["Altezza da seduto", `${atleta.altezzaDaSeduto} cm`]] : [] as any),
+      ...(() => {
+        if (!atleta.altezzaDaSeduto || !atleta.peso || !atleta.altezza || !atleta.dataNascita) return [] as any;
+        const eta = (Date.now() - new Date(atleta.dataNascita + "T12:00").getTime()) / (365.25 * 24 * 3600 * 1000);
+        if (eta <= 0 || eta > 20) return [] as any;
+        const gambe = parseFloat(atleta.altezza) - parseFloat(atleta.altezzaDaSeduto);
+        const sit = parseFloat(atleta.altezzaDaSeduto);
+        const offset = -9.236 + 0.0002708*(gambe*sit) - 0.001663*(eta*gambe) + 0.007216*(eta*sit) + 0.02292*(parseFloat(atleta.peso)/parseFloat(atleta.altezza)*100);
+        const etaPHV = eta - offset;
+        return [["PHV (Mirwald)", `Età PHV stimata: ${etaPHV.toFixed(1)} anni  ·  Offset: ${offset >= 0 ? "+" : ""}${offset.toFixed(2)} anni`]] as any;
+      })(),
       ...(atleta.tipoInfortunio ? [["Tipologia", atleta.tipoInfortunio]] : [] as any),
       ...(atleta.evento ? [["Evento", atleta.evento]] : [] as any),
       ...(atleta.meccanismo ? [["Meccanismo", atleta.meccanismo]] : [] as any),
@@ -2206,7 +2218,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                   </div>
                 )}
 
-                {(selected.peso || selected.altezza) && (
+                {(selected.peso || selected.altezza || selected.plicometrieMedie || selected.altezzaDaSeduto) && (
                   <div className="pt-2 border-t border-gray-100">
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Dati antropometrici</p>
                     <div className="grid grid-cols-3 gap-2">
@@ -2222,7 +2234,40 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                           <p className="font-semibold text-gray-900">{selected.altezza} cm</p>
                         </div>
                       )}
+                      {selected.plicometrieMedie && (
+                        <div className="bg-gray-50 rounded-xl p-3 text-center">
+                          <p className="text-xs text-gray-400">Plicometria media</p>
+                          <p className="font-semibold text-gray-900">{selected.plicometrieMedie} mm</p>
+                        </div>
+                      )}
                     </div>
+                    {selected.altezzaDaSeduto && (
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <div className="bg-gray-50 rounded-xl p-3 text-center">
+                          <p className="text-xs text-gray-400">Altezza da seduto</p>
+                          <p className="font-semibold text-gray-900">{selected.altezzaDaSeduto} cm</p>
+                        </div>
+                        {selected.peso && selected.altezza && selected.dataNascita && (() => {
+                          const eta = (Date.now() - new Date(selected.dataNascita + "T12:00").getTime()) / (365.25 * 24 * 3600 * 1000);
+                          if (eta <= 0 || eta > 20) return null;
+                          const gambe = parseFloat(selected.altezza) - parseFloat(selected.altezzaDaSeduto!);
+                          const sit = parseFloat(selected.altezzaDaSeduto!);
+                          const offset = -9.236
+                            + 0.0002708 * (gambe * sit)
+                            - 0.001663  * (eta * gambe)
+                            + 0.007216  * (eta * sit)
+                            + 0.02292   * (parseFloat(selected.peso) / parseFloat(selected.altezza) * 100);
+                          const etaPHV = eta - offset;
+                          return (
+                            <div className="bg-purple-50 border border-purple-100 rounded-xl p-3 text-center">
+                              <p className="text-xs text-purple-400">PHV stimato</p>
+                              <p className="font-bold text-purple-700">{etaPHV.toFixed(1)} anni</p>
+                              <p className="text-[10px] text-purple-400">{offset >= 0 ? "+" : ""}{offset.toFixed(2)} anni da PHV</p>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -18,7 +18,23 @@ const atletaVuoto: Omit<Atleta, "id"> = {
   fisioterapista: "", preparatoreAtletico: "",
   telefono: "", email: "", note: "",
   peso: undefined, altezza: undefined,
+  plicometrieMedie: undefined, dataNascita: undefined, altezzaDaSeduto: undefined,
 };
+
+const CAT_ANTRO = ["U19", "U17", "U16", "U15", "U14"] as const;
+const CAT_PHV   = ["U15", "U14"] as const;
+
+function calcolaPHV(peso: number, altezza: number, altezzaDaSeduto: number, dataNascita: string) {
+  const eta = (Date.now() - new Date(dataNascita + "T12:00").getTime()) / (365.25 * 24 * 3600 * 1000);
+  if (eta <= 0 || eta > 20) return null;
+  const gambe = altezza - altezzaDaSeduto;
+  const offset = -9.236
+    + 0.0002708 * (gambe * altezzaDaSeduto)
+    - 0.001663  * (eta * gambe)
+    + 0.007216  * (eta * altezzaDaSeduto)
+    + 0.02292   * (peso / altezza * 100);
+  return { offset, etaPHV: eta - offset };
+}
 
 interface Props {
   atletaIniziale?: Atleta;
@@ -208,6 +224,63 @@ export default function AtletaModal({ atletaIniziale, onSalva, onChiudi }: Props
               placeholder="Note aggiuntive..." rows={3}
               className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] resize-none" />
           </div>
+
+          {/* Dati antropometrici — visibili solo per categorie giovanili */}
+          {CAT_ANTRO.includes(form.categoria as typeof CAT_ANTRO[number]) && (
+            <div className="border border-purple-100 rounded-xl p-3 bg-purple-50/40 space-y-3">
+              <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Dati Antropometrici</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label>Peso (kg)</Label>
+                  <Input className="mt-1" type="number" min="0" step="0.1"
+                    value={form.peso ?? ""} onChange={(e) => f("peso", e.target.value || undefined)}
+                    placeholder="Es. 70" />
+                </div>
+                <div>
+                  <Label>Altezza (cm)</Label>
+                  <Input className="mt-1" type="number" min="0" step="0.1"
+                    value={form.altezza ?? ""} onChange={(e) => f("altezza", e.target.value || undefined)}
+                    placeholder="Es. 175" />
+                </div>
+                <div>
+                  <Label>Plicometria media (mm)</Label>
+                  <Input className="mt-1" type="number" min="0" step="0.1"
+                    value={form.plicometrieMedie ?? ""} onChange={(e) => f("plicometrieMedie", e.target.value || undefined)}
+                    placeholder="Es. 10" />
+                </div>
+              </div>
+              {CAT_PHV.includes(form.categoria as typeof CAT_PHV[number]) && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Data di nascita</Label>
+                      <Input className="mt-1" type="date"
+                        value={form.dataNascita ?? ""} onChange={(e) => f("dataNascita", e.target.value || undefined)} />
+                    </div>
+                    <div>
+                      <Label>Altezza da seduto (cm)</Label>
+                      <Input className="mt-1" type="number" min="0" step="0.1"
+                        value={form.altezzaDaSeduto ?? ""} onChange={(e) => f("altezzaDaSeduto", e.target.value || undefined)}
+                        placeholder="Es. 88" />
+                    </div>
+                  </div>
+                  {form.peso && form.altezza && form.altezzaDaSeduto && form.dataNascita && (() => {
+                    const phv = calcolaPHV(parseFloat(form.peso!), parseFloat(form.altezza!), parseFloat(form.altezzaDaSeduto!), form.dataNascita!);
+                    if (!phv) return null;
+                    return (
+                      <div className="bg-white border border-purple-100 rounded-lg px-3 py-2 text-xs text-center">
+                        <span className="text-gray-500">PHV stimato: </span>
+                        <span className="font-bold text-purple-700">{phv.etaPHV.toFixed(1)} anni</span>
+                        <span className="text-gray-400 ml-2">
+                          (offset: {phv.offset >= 0 ? "+" : ""}{phv.offset.toFixed(2)} anni da PHV)
+                        </span>
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+          )}
 
           {/* Dettaglio situazionale FIICCS — sempre disponibile per atleti infortunati */}
           {form.stato === "Infortunato" && (
