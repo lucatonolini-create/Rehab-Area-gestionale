@@ -1112,7 +1112,7 @@ export default function AnalisiPage() {
     const map: Record<string, number> = {};
     TIPI_INFORTUNIO.forEach((t) => { map[t] = 0; });
     atleti.forEach((a) => {
-      if (a.tipoInfortunio) map[a.tipoInfortunio] = (map[a.tipoInfortunio] ?? 0) + 1;
+      if (a.stato === "Infortunato" && a.tipoInfortunio) map[a.tipoInfortunio] = (map[a.tipoInfortunio] ?? 0) + 1;
       const seenS = new Set<string>();
       (a.storicoInfortuni ?? []).forEach((s) => {
         const k = `${s.diagnosi}|${s.tipo ?? ""}|${s.inizioRehab ?? ""}|${s.fineRehab ?? ""}`;
@@ -1127,7 +1127,7 @@ export default function AnalisiPage() {
   const perInfortunio = useMemo(() => {
     const map: Record<string, number> = {};
     atleti.forEach((a) => {
-      if (a.infortunio) map[a.infortunio.trim()] = (map[a.infortunio.trim()] ?? 0) + 1;
+      if (a.stato === "Infortunato" && a.infortunio) map[a.infortunio.trim()] = (map[a.infortunio.trim()] ?? 0) + 1;
       const seenS = new Set<string>();
       (a.storicoInfortuni ?? []).forEach((s) => {
         const k = `${s.diagnosi}|${s.tipo ?? ""}|${s.inizioRehab ?? ""}|${s.fineRehab ?? ""}`;
