@@ -712,7 +712,7 @@ function esportaCSVReportMensile(
       rows.push([nd(a), a.categoria ?? "—", "—", "—", "—", "—", "—", a.stato]);
     } else {
       infortuni.forEach(inf => {
-        rows.push([nd(a), a.categoria ?? "—", inf.diagnosi, inf.tipo ?? "—", inf.inizio ? fmt(inf.inizio) : "—", inf.fine ? fmt(inf.fine) : "—", inf.inizio ? gg(inf.inizio, inf.fine) : "—", a.stato]);
+        rows.push([nd(a), a.categoria ?? "—", inf.diagnosi, inf.tipo ?? "—", inf.inizio ? fmt(inf.inizio) : "—", inf.fine ? fmt(inf.fine) : "—", inf.inizio ? gg(inf.inizio, inf.fine) : "—", inf.fine ? "Recuperato" : a.stato]);
       });
     }
   });
@@ -964,7 +964,7 @@ async function esportaPDFReportMensile(
           inf.inizio ? fmtDP(inf.inizio) : "—",
           inf.fine ? fmtDP(inf.fine) : "—",
           inf.inizio ? ggP(inf.inizio, inf.fine) : "—",
-          a.stato,
+          inf.fine ? "Recuperato" : a.stato,
         );
         pdfRows.push(row);
         athleteForRowP.push(athleteIdx);
