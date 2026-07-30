@@ -525,6 +525,45 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     }
   }
 
+  // ── Referti Clinici ───────────────────────────────────────────────────────
+  const referti = [...(atleta.refertiClinici ?? [])].sort((a, b) => b.data.localeCompare(a.data));
+  if (referti.length > 0) {
+    checkPage(20);
+    y = secTitle("Referti Clinici", y);
+    const esitoColor = (e: string): [number, number, number] => {
+      if (e === "Positivo")        return [200, 16, 46];
+      if (e === "In miglioramento") return [180, 83, 9];
+      return [22, 101, 52]; // Negativo
+    };
+    autoTable(doc, {
+      startY: y,
+      head: [["Data", "Tipo", "Esito", "Note"]],
+      body: referti.map((r) => [
+        new Date(r.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" }),
+        r.tipo,
+        r.esito,
+        r.note ?? "—",
+      ]),
+      headStyles: { fillColor: [55, 65, 81] as [number,number,number], textColor: 255, fontSize: 7.5, halign: "center", valign: "middle" },
+      bodyStyles: { fontSize: 8, cellPadding: 2.5, overflow: "linebreak", halign: "left", valign: "middle" },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      margin: { left: M, right: M },
+      columnStyles: {
+        0: { cellWidth: 28, halign: "center" },
+        1: { cellWidth: 44 },
+        2: { cellWidth: 36, halign: "center", fontStyle: "bold" },
+        3: { cellWidth: "auto" as any },
+      },
+      didParseCell: (data: any) => {
+        if (data.section === "body" && data.column.index === 2) {
+          const clr = esitoColor(data.cell.raw as string);
+          data.cell.styles.textColor = clr;
+        }
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+  }
+
   // ── Storico infortuni (deduplicato per chiave diagnosi+inizio+fine) ────────
   const storico = (() => {
     const seen = new Set<string>();
