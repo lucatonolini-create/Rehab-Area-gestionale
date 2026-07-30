@@ -63,8 +63,8 @@ function atletaAttivoInMese(a: Atleta, anno: number, mese: number): boolean {
     if (fineStr) return new Date(fineStr + "T12:00") >= meseStart;
     return true; // still ongoing
   };
-  // Infortunio attivo corrente
-  if (periodoAttivo(a.inizioRehab, a.fineRehab)) return true;
+  // Infortunio attivo corrente (per Disponibile richiede fineRehab settata, altrimenti usa solo storico)
+  if ((a.stato === "Infortunato" || a.fineRehab) && periodoAttivo(a.inizioRehab, a.fineRehab)) return true;
   // Infortuni passati archiviati (atleta guarito): contano nei mesi in cui si è svolta la riabilitazione
   return (a.storicoInfortuni ?? []).some((s) => periodoAttivo(s.inizioRehab, s.fineRehab));
 }
@@ -93,7 +93,7 @@ function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNel
     return true;
   };
   const result: InfortunioNelMese[] = [];
-  if (inMese(a.inizioRehab, a.fineRehab) && a.infortunio)
+  if (a.stato === "Infortunato" && inMese(a.inizioRehab, a.fineRehab) && a.infortunio)
     result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined });
   (a.storicoInfortuni ?? []).forEach((s) => {
     if (inMese(s.inizioRehab, s.fineRehab))
