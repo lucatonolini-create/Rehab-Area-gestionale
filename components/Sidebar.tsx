@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import Image from "next/image";
 import {
   LayoutDashboard, Users, Dumbbell, TrendingUp, Settings, Menu, X, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity,
 } from "lucide-react";
@@ -92,7 +91,8 @@ export default function Sidebar() {
           {!collapsed && (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0 p-0.5">
-                <Image src="/app-icon.jpg" alt="Rehab Area" width={40} height={40} className="object-contain" unoptimized />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/app-icon.jpg" alt="Rehab Area" className="w-10 h-10 object-contain" />
               </div>
               <div>
                 <h1 className="font-bold text-sm text-white leading-tight">U.S.C.</h1>

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
@@ -79,10 +78,11 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center mx-auto mb-4 p-1.5">
-            <Image src="/app-icon.jpg" alt="Rehab Area" width={56} height={56} className="object-contain" unoptimized />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/app-icon.jpg" alt="Rehab Area" className="w-14 h-14 object-contain rounded-xl" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900">U.S.C.</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Rehab Area — Accesso riservato</p>
+          <h1 className="text-xl font-bold text-gray-900">Rehab Area</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Accesso riservato</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
