@@ -174,7 +174,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">
-          Accesso riservato allo staff medico U.S.C.
+          Accesso riservato allo staff medico
         </p>
       </div>
     </div>
