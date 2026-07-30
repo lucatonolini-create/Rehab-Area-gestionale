@@ -9,8 +9,8 @@ export const metadata: Metadata = {
   description: "Gestionale area riabilitazione U.S. Cremonese",
   manifest: "/manifest.json",
   icons: {
-    apple: "/app-icon.png",
-    icon: "/app-icon.png",
+    apple: "/app-icon.jpg",
+    icon: "/app-icon.jpg",
   },
 };
 

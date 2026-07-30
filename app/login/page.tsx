@@ -79,7 +79,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center mx-auto mb-4 p-1.5">
-            <Image src="/app-icon.png" alt="Rehab Area" width={56} height={56} className="object-contain" />
+            <Image src="/app-icon.jpg" alt="Rehab Area" width={56} height={56} className="object-contain" />
           </div>
           <h1 className="text-xl font-bold text-gray-900">U.S. Cremonese</h1>
           <p className="text-sm text-gray-500 mt-0.5">Rehab Area — Accesso riservato</p>
