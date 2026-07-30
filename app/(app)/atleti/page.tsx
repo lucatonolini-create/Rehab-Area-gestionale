@@ -2378,9 +2378,15 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                 const precedenti = storico.filter((inf) => !inf.attivo);
                 const isSessione = (p: Programma) => !p.riposo;
                 const matchInf = (p: Programma, inf: InfortunioStorico) => {
-                  if (p.infortunioId === "__corrente__") return false; // appartiene solo all'infortunio principale
-                  const eid = p.infortunioId;
-                  if (eid) return eid === inf.id;
+                  if (p.infortunioId && p.infortunioId !== "__corrente__") return p.infortunioId === inf.id;
+                  if (p.infortunioId === "__corrente__") {
+                    // Sessione orfana: se atleta è Disponibile, mappa per data sull'infortunio archiviato
+                    if (selected.stato === "Infortunato") return false;
+                    if (!p.data || !inf.inizioRehab) return false;
+                    if (p.data < inf.inizioRehab) return false;
+                    if (inf.fineRehab && p.data > inf.fineRehab) return false;
+                    return true;
+                  }
                   if (!p.data || !inf.inizioRehab) return false;
                   if (p.data < inf.inizioRehab) return false;
                   if (inf.fineRehab && p.data > inf.fineRehab) return false;
