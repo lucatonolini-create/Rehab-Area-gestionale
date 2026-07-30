@@ -398,7 +398,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         didDrawPage: () => { addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`); },
         columnStyles: {
           0:  { cellWidth: 15 },
-          1:  { cellWidth: 22 },
+          1:  { cellWidth: 28 },
           2:  { cellWidth: 11 },
           3:  { cellWidth: 32 },
           4:  { cellWidth: 26 },
@@ -406,7 +406,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           6:  { cellWidth: 13, halign: "center" as const },
           7:  { cellWidth: 28 },
           8:  { cellWidth: 40 },
-          9:  { cellWidth: 30 },
+          9:  { cellWidth: 24 },
           10: { cellWidth: 11, halign: "center" as const },
           11: { cellWidth: 10, halign: "center" as const },
         },
