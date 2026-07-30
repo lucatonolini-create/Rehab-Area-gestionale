@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "Gestionale area riabilitazione Rehab Area",
   manifest: "/manifest.json",
   icons: {
-    apple: "/app-icon.jpg",
+    apple: "/apple-touch-icon.png",
     icon: "/favicon.svg",
   },
 };
