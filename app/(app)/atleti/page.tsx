@@ -661,6 +661,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     id: string; diagnosi: string; tipo?: string; inizio: string; fine: string | null; attivo: boolean;
     evento?: string; meccanismo?: string; contatto?: string; lato?: string; posizione?: string;
     osiicsCodice?: string; osiicsDescrizione?: string; note?: string;
+    dettaglioSituazionale?: import("@/lib/store").DettaglioSituazionaleForm;
   }[] = [
     ...storico.map((inf) => ({
       id: inf.id,
@@ -677,6 +678,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       osiicsCodice: inf.osiicsCodice,
       osiicsDescrizione: inf.osiicsDescrizione,
       note: inf.note,
+      dettaglioSituazionale: inf.dettaglioSituazionale,
     })),
     ...(atleta.stato === "Infortunato" && (atleta.infortunio || atleta.inizioRehab)
       ? [{ id: "__corrente__", diagnosi: atleta.infortunio || "—", tipo: atleta.tipoInfortunio as string | undefined, inizio: atleta.inizioRehab, fine: null as string | null, attivo: true,
@@ -773,6 +775,64 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           margin: { left: M, right: M },
         });
         y = (doc as any).lastAutoTable.finalY + 5;
+      }
+    }
+
+    // Dettaglio situazionale embedded (infortuni concorrenti / storici)
+    if (inj.dettaglioSituazionale) {
+      const d = inj.dettaglioSituazionale;
+      const detRows: [string, string][] = ([
+        d.fonte_informazione?.length ? ["Fonte informazione", d.fonte_informazione.join(", ") + (d.fonte_informazione_altro ? ` — ${d.fonte_informazione_altro}` : "")] : null,
+        d.giorni_referto ? ["Giorni a referto", d.giorni_referto] : null,
+        d.modalita_insorgenza ? ["Modalità insorgenza", d.modalita_insorgenza + (d.modalita_insorgenza_altro ? ` — ${d.modalita_insorgenza_altro}` : "")] : null,
+        d.attivita_fisica ? ["Attività fisica", d.attivita_fisica] : null,
+        d.tipo_corsa ? ["Tipo corsa", d.tipo_corsa] : null,
+        d.corsa_gradi ? ["Gradi cambio direzione", d.corsa_gradi] : null,
+        d.corsa_gamba_coinvolta ? ["Gamba coinvolta", d.corsa_gamba_coinvolta] : null,
+        d.salto_fase ? ["Fase salto", d.salto_fase] : null,
+        d.salto_atterraggio_dove ? ["Atterraggio su", d.salto_atterraggio_dove] : null,
+        d.salto_gamba_atterraggio ? ["Gamba atterraggio", d.salto_gamba_atterraggio] : null,
+        d.caduta_dettagli ? ["Dettagli caduta", d.caduta_dettagli] : null,
+        d.contatto_dettaglio ? ["Tipo contatto", d.contatto_dettaglio] : null,
+        d.situazione_duello ? ["Situazione duello", d.situazione_duello] : null,
+        d.direzione_contrasto ? ["Direzione contrasto", d.direzione_contrasto] : null,
+        d.collisione_con ? ["Collisione con", d.collisione_con] : null,
+        d.duello_aereo ? ["Duello aereo", d.duello_aereo] : null,
+        d.azione_con_palla != null && d.azione_con_palla !== false ? ["Azione con palla", "Sì"] : null,
+        d.situazione_gioco_palla ? ["Situazione di gioco", d.situazione_gioco_palla] : null,
+        d.attivita_con_palla ? ["Attività con palla", d.attivita_con_palla] : null,
+        d.calcio_azione ? ["Azione di calcio", d.calcio_azione] : null,
+        d.calcio_intensita ? ["Intensità calcio", d.calcio_intensita] : null,
+        d.calcio_tipo ? ["Tipo calcio", d.calcio_tipo] : null,
+        d.calcio_fase ? ["Fase calcio", d.calcio_fase] : null,
+        d.dribbling_tipo ? ["Tipo dribbling", d.dribbling_tipo] : null,
+        d.palla_altezza ? ["Altezza palla", d.palla_altezza] : null,
+        d.tipo_seduta ? ["Tipo seduta", d.tipo_seduta + (d.tipo_esercitazione ? ` — ${d.tipo_esercitazione}` : "")] : null,
+        d.partita_sede ? ["Sede partita", d.partita_sede] : null,
+        d.partita_competizione ? ["Competizione", d.partita_competizione] : null,
+        d.partita_punteggio ? ["Punteggio", d.partita_punteggio] : null,
+        d.fase_gioco ? ["Fase di gioco", d.fase_gioco + (d.sotto_fase_gioco ? ` — ${d.sotto_fase_gioco}` : "")] : null,
+        d.terreno_gioco ? ["Terreno di gioco", d.terreno_gioco] : null,
+        d.decisione_arbitrale ? ["Decisione arbitrale", d.decisione_arbitrale] : null,
+        d.minuto_infortunio ? ["Minuto infortunio", `${d.minuto_infortunio}'`] : null,
+        d.minuti_giocati_prima ? ["Minuti giocati prima", `${d.minuti_giocati_prima}'`] : null,
+      ] as ([string, string] | null)[]).filter((r): r is [string, string] => r !== null);
+      if (detRows.length > 0) {
+        checkPage(20, sub);
+        y = secTitle("Dettaglio Situazionale (FIICCS)", y);
+        autoTable(doc, {
+          startY: y,
+          body: detRows,
+          theme: "striped",
+          styles: { fontSize: 8, cellPadding: 2.5, overflow: "linebreak", halign: "left", valign: "middle" },
+          columnStyles: {
+            0: { cellWidth: 70, fontStyle: "bold", textColor: [30, 64, 175] as [number, number, number] },
+            1: { textColor: dark },
+          },
+          alternateRowStyles: { fillColor: [239, 246, 255] as [number, number, number] },
+          margin: { left: M, right: M },
+        });
+        y = (doc as any).lastAutoTable.finalY + 6;
       }
     }
 
