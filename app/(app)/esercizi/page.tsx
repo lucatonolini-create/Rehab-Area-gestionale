@@ -1007,10 +1007,12 @@ export default function EserciziPage() {
                 {isOpen && atleta.id in programmiPerAtleta && (() => {
                   const assenze = lista.filter((p) => p.assente).length;
                   const riposi = lista.filter((p) => p.riposo).length;
-                  const squadre = lista.filter((p) => p.squadra).length;
+                  const sessioni = lista.filter((p) => !p.assente && !p.riposo).length;
                   return (
-                    <span className="text-xs text-gray-400">
-                      {lista.length} sessioni{assenze > 0 && <span className="text-orange-400"> · {assenze} ass.</span>}{riposi > 0 && <span className="text-blue-400"> · {riposi} rip.</span>}{squadre > 0 && <span className="text-[#C8102E]"> · {squadre} sq.</span>}
+                    <span className="text-xs flex items-center gap-1">
+                      {sessioni > 0 && <span className="text-gray-400">{sessioni} sess.</span>}
+                      {riposi > 0 && <><span className="text-gray-300">·</span><span className="text-blue-400">{riposi} rip.</span></>}
+                      {assenze > 0 && <><span className="text-gray-300">·</span><span className="text-orange-400">{assenze} ass.</span></>}
                     </span>
                   );
                 })()}
