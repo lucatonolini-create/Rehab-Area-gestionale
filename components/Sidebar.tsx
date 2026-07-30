@@ -95,8 +95,7 @@ export default function Sidebar() {
                 <img src="/app-icon.jpg" alt="Rehab Area" className="w-10 h-10 object-contain" />
               </div>
               <div>
-                <h1 className="font-bold text-sm text-white leading-tight">U.S.C.</h1>
-                <p className="text-white/50 text-xs">Rehab Area</p>
+                <h1 className="font-bold text-sm text-white leading-tight">Rehab Area</h1>
               </div>
             </div>
           )}
@@ -165,7 +164,7 @@ export default function Sidebar() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">{userEmail ?? "Staff Medico"}</p>
-                <p className="text-white/40 text-xs">U.S.C.</p>
+                <p className="text-white/40 text-xs">Rehab Area</p>
               </div>
               <button onClick={handleLogout} title="Esci" className="text-white/40 hover:text-white transition-colors shrink-0">
                 <LogOut className="w-4 h-4" />
