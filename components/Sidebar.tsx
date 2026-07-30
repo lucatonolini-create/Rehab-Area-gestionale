@@ -90,9 +90,8 @@ export default function Sidebar() {
         <div className={`border-b border-white/10 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}>
           {!collapsed && (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0 p-0.5">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/app-icon.jpg" alt="Rehab Area" className="w-10 h-10 object-contain" />
+              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
+                <Dumbbell className="w-6 h-6 text-[#2B2B2B]" />
               </div>
               <div>
                 <h1 className="font-bold text-sm text-white leading-tight">Rehab Area</h1>

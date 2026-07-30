@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Dumbbell } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
@@ -77,9 +78,8 @@ export default function LoginPage() {
     >
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center mx-auto mb-4 p-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/app-icon.jpg" alt="Rehab Area" className="w-14 h-14 object-contain rounded-xl" />
+          <div className="w-16 h-16 bg-[#2B2B2B] rounded-2xl shadow-md flex items-center justify-center mx-auto mb-4">
+            <Dumbbell className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-xl font-bold text-gray-900">Rehab Area</h1>
           <p className="text-sm text-gray-500 mt-0.5">Accesso riservato</p>
