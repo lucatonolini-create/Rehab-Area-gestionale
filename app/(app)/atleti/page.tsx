@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Plus, Search, User, ChevronRight, Phone, Mail, Trash2, AlertTriangle, CheckCircle2, Clock, Pencil, RotateCcw, FileDown, X, ExternalLink, Copy, Check } from "lucide-react";
 import {
   loadAtleti, loadProgrammi, upsertAtleta, upsertProgramma, deleteAtleta, uid, nd,
@@ -14,6 +14,9 @@ import {
   type DettaglioSituazionaleData, type DettaglioSituazionaleForm,
 } from "@/lib/store";
 import AtletaModal from "@/components/AtletaModal";
+import OsiicsCombobox from "@/components/OsiicsCombobox";
+import DettaglioSituazionale, { type DettaglioSituazionaleHandle } from "@/components/DettaglioSituazionale";
+import type { OsiicsCode } from "@/lib/store";
 
 const MAPPING_KEY = "perf_athlete_mapping";
 function getPerfId(rehabId: string): string | null {
@@ -1248,9 +1251,11 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [copiatoLink, setCopiatoLink] = useState<1 | 2 | null>(null);
   const [dettaglioSituazionale, setDettaglioSituazionale] = useState<DettaglioSituazionaleData | null>(null);
   const [mostraFormInfortBis, setMostraFormInfortBis] = useState(false);
-  const [nuovoInfortBis, setNuovoInfortBis] = useState({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "" });
+  const [nuovoInfortBis, setNuovoInfortBis] = useState({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "", osiicsCodice: "", osiicsDescrizione: "", osiicsCodeId: "" });
   const [editDatiConcorrente, setEditDatiConcorrente] = useState<string | null>(null);
   const [editDatiForm, setEditDatiForm] = useState<Partial<InfortunioStorico>>({});
+  const editDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
+  const nuovoDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
   const [mostraFondi, setMostraFondi] = useState(false);
   const [mostraFormReferto, setMostraFormReferto] = useState(false);
   const [nuovoReferto, setNuovoReferto] = useState({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" });
@@ -1453,6 +1458,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
   const aggiungiInfortBis = async () => {
     if (!selected || !nuovoInfortBis.diagnosi.trim()) return;
+    const detForm = nuovoDettaglioRef.current?.hasData() ? nuovoDettaglioRef.current.getValues() : undefined;
     const inf: InfortunioStorico = {
       id: uid(), tipo: nuovoInfortBis.tipo || undefined,
       diagnosi: nuovoInfortBis.diagnosi, inizioRehab: nuovoInfortBis.inizioRehab,
@@ -1462,21 +1468,28 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
       contatto: nuovoInfortBis.contatto || undefined,
       lato: nuovoInfortBis.lato || undefined,
       posizioneInfortunio: nuovoInfortBis.posizioneInfortunio || undefined,
+      osiicsCodice: nuovoInfortBis.osiicsCodice || undefined,
+      osiicsDescrizione: nuovoInfortBis.osiicsDescrizione || undefined,
+      osiicsCodeId: nuovoInfortBis.osiicsCodeId || undefined,
+      ...(detForm ? { dettaglioSituazionale: detForm } : {}),
     };
     const aggiornato = { ...selected, storicoInfortuni: [...(selected.storicoInfortuni ?? []), inf] };
     setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
     setSelected(aggiornato);
     await upsertAtleta(aggiornato);
     setMostraFormInfortBis(false);
-    setNuovoInfortBis({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "" });
+    setNuovoInfortBis({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "", osiicsCodice: "", osiicsDescrizione: "", osiicsCodeId: "" });
   };
 
   const salvaInfortBisDati = async () => {
     if (!selected || !editDatiConcorrente) return;
+    const detForm = editDettaglioRef.current?.hasData() ? editDettaglioRef.current.getValues() : undefined;
     const aggiornato = {
       ...selected,
       storicoInfortuni: (selected.storicoInfortuni ?? []).map((inf) =>
-        inf.id === editDatiConcorrente ? { ...inf, ...editDatiForm } : inf
+        inf.id === editDatiConcorrente
+          ? { ...inf, ...editDatiForm, ...(detForm ? { dettaglioSituazionale: detForm } : {}) }
+          : inf
       ),
     };
     setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
@@ -1963,7 +1976,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       </div>
                       {editDatiConcorrente !== inf.id && (
                         <button
-                          onClick={() => { setEditDatiConcorrente(inf.id); setEditDatiForm({ tipo: inf.tipo, evento: inf.evento, meccanismo: inf.meccanismo, contatto: inf.contatto, lato: inf.lato, posizioneInfortunio: inf.posizioneInfortunio, osiicsCodice: inf.osiicsCodice, osiicsDescrizione: inf.osiicsDescrizione, note: inf.note }); }}
+                          onClick={() => { setEditDatiConcorrente(inf.id); setEditDatiForm({ tipo: inf.tipo, evento: inf.evento, meccanismo: inf.meccanismo, contatto: inf.contatto, lato: inf.lato, posizioneInfortunio: inf.posizioneInfortunio, osiicsCodice: inf.osiicsCodice, osiicsDescrizione: inf.osiicsDescrizione, osiicsCodeId: inf.osiicsCodeId, note: inf.note }); }}
                           className="text-[10px] font-semibold text-[#C8102E] flex items-center gap-0.5 hover:underline"
                         >
                           <Pencil className="w-3 h-3" /> Modifica
@@ -2022,20 +2035,25 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                           </select>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 mb-0.5">Codice OSIICS</p>
-                          <input className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
-                            value={editDatiForm.osiicsCodice ?? ""} onChange={(e) => setEditDatiForm({ ...editDatiForm, osiicsCodice: e.target.value || undefined })} />
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 mb-0.5">Descrizione OSIICS</p>
-                          <input className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
-                            value={editDatiForm.osiicsDescrizione ?? ""} onChange={(e) => setEditDatiForm({ ...editDatiForm, osiicsDescrizione: e.target.value || undefined })} />
+                          <p className="text-xs text-gray-500 mb-0.5">Classificazione OSIICS</p>
+                          <OsiicsCombobox
+                            value={editDatiForm.osiicsCodeId ? { id: editDatiForm.osiicsCodeId, codice: editDatiForm.osiicsCodice ?? "", descrizioneIta: editDatiForm.osiicsDescrizione ?? "" } : null}
+                            onChange={(code: OsiicsCode | null) => {
+                              if (code) setEditDatiForm({ ...editDatiForm, osiicsCodeId: code.id, osiicsCodice: code.codice, osiicsDescrizione: code.descrizioneIta });
+                              else setEditDatiForm({ ...editDatiForm, osiicsCodeId: undefined, osiicsCodice: undefined, osiicsDescrizione: undefined });
+                            }}
+                          />
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 mb-0.5">Note</p>
                           <input className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
                             value={editDatiForm.note ?? ""} onChange={(e) => setEditDatiForm({ ...editDatiForm, note: e.target.value || undefined })} />
                         </div>
+                        <DettaglioSituazionale
+                          ref={editDettaglioRef}
+                          contatto={editDatiForm.contatto}
+                          initialValues={inf.dettaglioSituazionale}
+                        />
                         <div className="flex gap-2 pt-1">
                           <button onClick={salvaInfortBisDati} className="flex-1 bg-[#C8102E] text-white text-xs font-semibold py-1.5 rounded-lg hover:bg-red-800">Salva</button>
                           <button onClick={() => { setEditDatiConcorrente(null); setEditDatiForm({}); }} className="flex-1 border border-gray-200 text-gray-500 text-xs font-semibold py-1.5 rounded-lg hover:bg-white">Annulla</button>
@@ -2072,9 +2090,40 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                             <p className="text-orange-900">{inf.note}</p>
                           </div>
                         )}
-                        {!inf.tipo && !inf.evento && !inf.meccanismo && !inf.contatto && !inf.lato && !inf.posizioneInfortunio && !inf.note && (
+                        {!inf.tipo && !inf.evento && !inf.meccanismo && !inf.contatto && !inf.lato && !inf.posizioneInfortunio && !inf.note && !inf.osiicsCodice && !inf.dettaglioSituazionale && (
                           <p className="text-xs text-gray-400 italic">Nessun dettaglio clinico inserito</p>
                         )}
+                        {inf.dettaglioSituazionale && (() => {
+                          const d = inf.dettaglioSituazionale!;
+                          const righe: [string, string][] = ([
+                            d.fonte_informazione?.length ? ["Fonte", d.fonte_informazione.join(", ")] : null,
+                            d.giorni_referto ? ["Giorni a referto", d.giorni_referto] : null,
+                            d.modalita_insorgenza ? ["Insorgenza", d.modalita_insorgenza + (d.modalita_insorgenza_altro ? ` — ${d.modalita_insorgenza_altro}` : "")] : null,
+                            d.attivita_fisica ? ["Attività fisica", d.attivita_fisica] : null,
+                            d.tipo_corsa ? ["Tipo corsa", d.tipo_corsa] : null,
+                            d.salto_fase ? ["Fase salto", d.salto_fase] : null,
+                            d.contatto_dettaglio ? ["Tipo contatto", d.contatto_dettaglio] : null,
+                            d.direzione_contrasto ? ["Direzione contrasto", d.direzione_contrasto] : null,
+                            d.attivita_con_palla ? ["Azione con palla", d.attivita_con_palla] : null,
+                            d.tipo_seduta ? ["Tipo seduta", d.tipo_seduta + (d.tipo_esercitazione ? ` — ${d.tipo_esercitazione}` : "")] : null,
+                            d.partita_competizione ? ["Competizione", d.partita_competizione] : null,
+                            d.fase_gioco ? ["Fase di gioco", d.fase_gioco] : null,
+                            d.minuto_infortunio ? ["Minuto", `${d.minuto_infortunio}'`] : null,
+                            d.terreno_gioco ? ["Terreno", d.terreno_gioco] : null,
+                          ] as ([string, string] | null)[]).filter((r): r is [string, string] => r !== null);
+                          if (!righe.length) return null;
+                          return (
+                            <div className="pt-2 border-t border-orange-100 space-y-1.5">
+                              <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">Dettaglio situazionale</p>
+                              {righe.map(([label, value]) => (
+                                <div key={label} className="bg-orange-50 rounded-xl p-2.5">
+                                  <p className="text-xs text-orange-400">{label}</p>
+                                  <p className="font-medium text-orange-900 text-sm">{value}</p>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
@@ -2596,15 +2645,29 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                 </select>
                               </div>
                               <div>
+                                <p className="text-xs text-gray-500 mb-0.5">Classificazione OSIICS</p>
+                                <OsiicsCombobox
+                                  value={nuovoInfortBis.osiicsCodeId ? { id: nuovoInfortBis.osiicsCodeId, codice: nuovoInfortBis.osiicsCodice, descrizioneIta: nuovoInfortBis.osiicsDescrizione } : null}
+                                  onChange={(code: OsiicsCode | null) => {
+                                    if (code) setNuovoInfortBis({ ...nuovoInfortBis, osiicsCodeId: code.id, osiicsCodice: code.codice, osiicsDescrizione: code.descrizioneIta });
+                                    else setNuovoInfortBis({ ...nuovoInfortBis, osiicsCodeId: "", osiicsCodice: "", osiicsDescrizione: "" });
+                                  }}
+                                />
+                              </div>
+                              <div>
                                 <p className="text-xs text-gray-500 mb-0.5">Note</p>
                                 <input className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white"
                                   value={nuovoInfortBis.note}
                                   onChange={(e) => setNuovoInfortBis({ ...nuovoInfortBis, note: e.target.value })} />
                               </div>
+                              <DettaglioSituazionale
+                                ref={nuovoDettaglioRef}
+                                contatto={nuovoInfortBis.contatto}
+                              />
                               <div className="flex gap-2 pt-1">
                                 <button onClick={aggiungiInfortBis}
                                   className="flex-1 bg-[#C8102E] text-white text-xs font-semibold py-1.5 rounded-lg hover:bg-red-800">Salva</button>
-                                <button onClick={() => { setMostraFormInfortBis(false); setNuovoInfortBis({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "" }); }}
+                                <button onClick={() => { setMostraFormInfortBis(false); setNuovoInfortBis({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "", osiicsCodice: "", osiicsDescrizione: "", osiicsCodeId: "" }); nuovoDettaglioRef.current?.reset(); }}
                                   className="flex-1 border border-gray-200 text-gray-500 text-xs font-semibold py-1.5 rounded-lg hover:bg-white">Annulla</button>
                               </div>
                             </div>

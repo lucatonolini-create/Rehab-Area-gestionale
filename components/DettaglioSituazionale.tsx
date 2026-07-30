@@ -14,7 +14,8 @@ export interface DettaglioSituazionaleHandle {
 }
 
 interface Props {
-  contatto?: string; // dalla form principale, per visibilità sezione B
+  contatto?: string;
+  initialValues?: Partial<DettaglioSituazionaleForm>;
 }
 
 const DEFAULT_VALUES: DettaglioSituazionaleForm = {
@@ -72,10 +73,10 @@ const Sel = (props: React.SelectHTMLAttributes<HTMLSelectElement> & { children: 
 );
 
 const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
-  ({ contatto }, ref) => {
+  ({ contatto, initialValues }, ref) => {
     const [aperto, setAperto] = useState(false);
     const { register, watch, getValues, reset } = useForm<DettaglioSituazionaleForm>({
-      defaultValues: DEFAULT_VALUES,
+      defaultValues: initialValues ? { ...DEFAULT_VALUES, ...initialValues } : DEFAULT_VALUES,
     });
 
     // Campi watched per la logica condizionale a cascata

@@ -151,6 +151,8 @@ export interface InfortunioStorico {
   posizioneInfortunio?: string;
   osiicsCodice?: string;
   osiicsDescrizione?: string;
+  osiicsCodeId?: string;
+  dettaglioSituazionale?: DettaglioSituazionaleForm;
 }
 
 export interface QuestionarioKinesiofobia {
