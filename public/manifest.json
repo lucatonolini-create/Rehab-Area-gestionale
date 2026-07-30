@@ -1,6 +1,6 @@
 {
-  "name": "U.S.C. Rehab Area",
-  "short_name": "USC Rehab",
+  "name": "Rehab Area",
+  "short_name": "Rehab Area",
   "description": "Sistema di gestione per l'area riabilitazione U.S.C.",
   "start_url": "/",
   "display": "standalone",
