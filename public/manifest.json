@@ -8,7 +8,7 @@
   "theme_color": "#C8102E",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/app-icon.png",
       "sizes": "any",
       "type": "image/png",
       "purpose": "any maskable"
