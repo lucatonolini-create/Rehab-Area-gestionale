@@ -465,6 +465,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           }
         } else {
           if (p.infortunioId === inj.id) return true;
+          if (p.infortunioId === "__corrente__" && atleta.stato !== "Infortunato" && p.data && inj.inizio && p.data >= inj.inizio && (!inj.fine || p.data <= inj.fine)) return true;
           if (!p.infortunioId && p.data && inj.inizio && p.data >= inj.inizio && (!inj.fine || p.data <= inj.fine)) return true;
         }
         return false;
