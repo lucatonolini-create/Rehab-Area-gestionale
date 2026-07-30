@@ -1028,7 +1028,7 @@ export default function EserciziPage() {
                   ) : (
                   <div className="space-y-4">
                 {(() => {
-                  const tuttiOrdinati = [...lista].sort((a, b) => a.data.localeCompare(b.data));
+                  const tuttiOrdinati = [...lista].sort((a, b) => b.data.localeCompare(a.data));
                   return (
                     <div className="space-y-2">
                       {tuttiOrdinati.map((prog) => (
