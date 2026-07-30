@@ -78,8 +78,8 @@ export default function LoginPage() {
     >
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[#2B2B2B] rounded-2xl shadow-md flex items-center justify-center mx-auto mb-4">
-            <Dumbbell className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center mx-auto mb-4">
+            <Dumbbell className="w-8 h-8 text-[#2B2B2B]" />
           </div>
           <h1 className="text-xl font-bold text-gray-900">Rehab Area</h1>
           <p className="text-sm text-gray-500 mt-0.5">Accesso riservato</p>
