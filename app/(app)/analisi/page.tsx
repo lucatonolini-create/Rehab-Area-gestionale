@@ -223,7 +223,7 @@ function esportaCSVReport(
       rows.push([nd(a), a.categoria ?? "—", "—", "—", "—", "—", "—", a.stato]);
     } else {
       infortuni.forEach(inf => {
-        rows.push([nd(a), a.categoria ?? "—", inf.diagnosi, inf.tipo ?? "—", inf.inizio ? fmt(inf.inizio) : "—", inf.fine ? fmt(inf.fine) : "—", inf.inizio ? gg(inf.inizio, inf.fine) : "—", a.stato]);
+        rows.push([nd(a), a.categoria ?? "—", inf.diagnosi, inf.tipo ?? "—", inf.inizio ? fmt(inf.inizio) : "—", inf.fine ? fmt(inf.fine) : "—", inf.inizio ? gg(inf.inizio, inf.fine) : "—", inf.fine ? "Recuperato" : a.stato]);
       });
     }
   });
@@ -571,6 +571,7 @@ async function esportaPDFPanoramica(params: {
       athleteForRowT.push(athleteIdx);
     } else {
       infortuni.forEach((inf, infIdx) => {
+        const statoInf = inf.fine ? "Recuperato" : a.stato;
         if (infIdx === 0) {
           tuttiRows.push([
             { content: nd(a), rowSpan: n, styles: { ...nomeDataStyle, valign: "middle" as const } },
@@ -579,11 +580,11 @@ async function esportaPDFPanoramica(params: {
             (inf.tipo || "—").replace(/\//g, "/ "),
             inf.meccanismo || "—",
             inf.note || "—",
-            { content: a.stato, rowSpan: n, styles: { valign: "middle" } },
+            statoInf,
             fmtD(inf.inizio), fmtD(inf.fine),
           ]);
         } else {
-          tuttiRows.push([inf.diagnosi, (inf.tipo || "—").replace(/\//g, "/ "), inf.meccanismo || "—", inf.note || "—", fmtD(inf.inizio), fmtD(inf.fine)]);
+          tuttiRows.push([inf.diagnosi, (inf.tipo || "—").replace(/\//g, "/ "), inf.meccanismo || "—", inf.note || "—", statoInf, fmtD(inf.inizio), fmtD(inf.fine)]);
         }
         athleteForRowT.push(athleteIdx);
       });
@@ -1014,7 +1015,7 @@ async function esportaPDFReport(
           inf.inizio ? fmtDPdf(inf.inizio) : "—",
           inf.fine ? fmtDPdf(inf.fine) : "—",
           inf.inizio ? ggPdf(inf.inizio, inf.fine) : "—",
-          a.stato,
+          inf.fine ? "Recuperato" : a.stato,
         );
         analisiRows.push(row);
         athleteForRowA.push(athleteIdx);
