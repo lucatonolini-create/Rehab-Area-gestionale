@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Rehab Area",
   description: "Gestionale area riabilitazione Rehab Area",
-  manifest: "/manifest.json",
+  manifest: "/manifest.json?v=2",
   icons: {
     apple: "/apple-touch-icon.png",
     icon: "/favicon.svg",
