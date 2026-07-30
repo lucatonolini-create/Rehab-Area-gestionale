@@ -1,7 +1,7 @@
 {
-  "name": "USC Rehab Area",
+  "name": "U.S.C. Rehab Area",
   "short_name": "USC Rehab",
-  "description": "Sistema di gestione per l'area riabilitazione U.S. Cremonese",
+  "description": "Sistema di gestione per l'area riabilitazione U.S.C.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#2B2B2B",

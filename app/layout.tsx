@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "U.S. Cremonese – Rehab Area",
-  description: "Gestionale area riabilitazione U.S. Cremonese",
+  title: "U.S.C. – Rehab Area",
+  description: "Gestionale area riabilitazione U.S.C.",
   manifest: "/manifest.json",
   icons: {
     apple: "/app-icon.jpg",
