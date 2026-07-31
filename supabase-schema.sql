@@ -29,6 +29,11 @@ create table if not exists atleti (
   note                 text default '',
   peso                 text,
   altezza              text,
+  plicometrie_medie    text,
+  altezza_da_seduto    text,
+  osiics_codice        text,
+  osiics_descrizione   text,
+  osiics_code_id       text,
   storico_infortuni    jsonb default '[]'::jsonb,
   questionari_kinesiofobia jsonb default '[]'::jsonb,
   referti_clinici      jsonb default '[]'::jsonb,
@@ -46,6 +51,11 @@ alter table atleti add column if not exists posizione_infortunio text;
 alter table atleti add column if not exists progresso_manuale    integer;
 alter table atleti add column if not exists peso                 text;
 alter table atleti add column if not exists altezza              text;
+alter table atleti add column if not exists plicometrie_medie    text;
+alter table atleti add column if not exists altezza_da_seduto    text;
+alter table atleti add column if not exists osiics_codice        text;
+alter table atleti add column if not exists osiics_descrizione   text;
+alter table atleti add column if not exists osiics_code_id       text;
 alter table atleti add column if not exists questionari_kinesiofobia jsonb default '[]'::jsonb;
 alter table atleti add column if not exists referti_clinici      jsonb default '[]'::jsonb;
 

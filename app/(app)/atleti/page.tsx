@@ -1401,7 +1401,15 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   }, [selected?.id]);
 
   const apriNuovo = () => { setEditAtleta(undefined); setMostraForm(true); setSelected(null); };
-  const apriModifica = (a: Atleta) => { setEditAtleta(a); setMostraForm(true); };
+  const apriModifica = (a: Atleta) => {
+    // Clear injury-specific fields for Disponibile athletes so stale values
+    // from a previous injury never pre-fill the form for the next one.
+    const cleaned = a.stato === "Disponibile"
+      ? { ...a, evento: undefined, meccanismo: undefined, contatto: undefined, lato: undefined, posizioneInfortunio: undefined, osiicsCodice: undefined, osiicsDescrizione: undefined, osiicsCodeId: undefined }
+      : a;
+    setEditAtleta(cleaned);
+    setMostraForm(true);
+  };
 
   const apriNuovoInfortunio = (a: Atleta) => {
     const template: Atleta = {
@@ -1412,6 +1420,14 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
       inizioRehab: "",
       fineRehab: undefined,
       progresso: 0,
+      evento: undefined,
+      meccanismo: undefined,
+      contatto: undefined,
+      lato: undefined,
+      posizioneInfortunio: undefined,
+      osiicsCodice: undefined,
+      osiicsDescrizione: undefined,
+      osiicsCodeId: undefined,
     };
     setEditAtleta(template);
     setMostraForm(true);

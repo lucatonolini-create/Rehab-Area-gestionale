@@ -618,7 +618,7 @@ export async function syncFlush(): Promise<void> {
           } else if (error.code === "PGRST204" || error.code === "42703") {
             // Strip columns that may not exist in older DB schemas yet,
             // but keep referti_clinici and progresso_manuale (they ARE in the schema).
-            const { peso, altezza, plicometrie_medie, data_nascita, altezza_da_seduto, nome_completo, evento, meccanismo, contatto, lato, posizione_infortunio, questionari_kinesiofobia, ...safeRow } = row;
+            const { peso, altezza, plicometrie_medie, data_nascita, altezza_da_seduto, nome_completo, evento, meccanismo, contatto, lato, posizione_infortunio, questionari_kinesiofobia, osiics_codice, osiics_descrizione, osiics_code_id, ...safeRow } = row;
             const { error: e2 } = await supabase.from("atleti").upsert(safeRow);
             ok = !e2 || isExpectedSyncError(e2.code);
           } else {
@@ -672,7 +672,7 @@ export async function pushAllLocalToSupabase(): Promise<{ ok: number; fail: numb
       } else if (error.code === "PGRST204" || error.code === "42703") {
         // Strip columns that may not exist in older DB schemas yet,
         // but keep referti_clinici and progresso_manuale (they ARE in the schema).
-        const { peso, altezza, nome_completo, evento, meccanismo, contatto, lato, posizione_infortunio, questionari_kinesiofobia, ...safeRow } = row;
+        const { peso, altezza, plicometrie_medie, data_nascita, altezza_da_seduto, nome_completo, evento, meccanismo, contatto, lato, posizione_infortunio, questionari_kinesiofobia, osiics_codice, osiics_descrizione, osiics_code_id, ...safeRow } = row;
         const { error: e2 } = await supabase.from("atleti").upsert(safeRow);
         if (!e2 || isExpectedSyncError(e2.code)) ok++;
         else { lastError = `atleti: ${e2.code} ${e2.message}`; fail++; }
