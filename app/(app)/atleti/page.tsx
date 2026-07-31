@@ -978,23 +978,14 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         if (testsByName.size > 0) {
           checkPage(20, sub);
           y = secTitle("Test", y);
-          // Tabella (sinistra) + grafico (destra) affiancati; colori alternati rosso/grigio
-          const TEST_TABLE_W = 95;
-          const TEST_CHART_X = M + TEST_TABLE_W + 5;
-          const TEST_CHART_W = W - M - TEST_CHART_X;
-          Array.from(testsByName.entries()).forEach(([nome, entries], colorIdx) => {
+
+          type TEntry = { dateLabel: string; dateFull: string; sessione: string; test: TestFisiometrico; val: string };
+          const HALF_W = Math.floor((W - 2 * M - 6) / 2);
+          const GAP = 6;
+
+          const buildTestData = (nome: string, rawEntries: any[], colorIdx: number) => {
+            const entries = rawEntries as TEntry[];
             const color: [number, number, number] = colorIdx % 2 === 0 ? [200, 16, 46] : [75, 85, 99];
-            type TEntry = { dateLabel: string; dateFull: string; sessione: string; test: TestFisiometrico; val: string };
-            const chartData = (entries as TEntry[])
-              .map((e: TEntry) => ({ dateLabel: e.dateLabel, value: getTestMainValue(e.test) }))
-              .filter((d: { dateLabel: string; value: number | null }): d is { dateLabel: string; value: number } => d.value !== null);
-            const hasChart = chartData.length >= 2;
-            const needed = 11 + Math.max(10 + entries.length * 7, hasChart ? 60 : 0) + 6;
-            checkPage(needed, sub);
-            // Titolo test: grassetto nero corsivo, nessuna banda
-            doc.setFont("helvetica", "bolditalic"); doc.setFontSize(8); doc.setTextColor(20, 20, 20);
-            doc.text(nome, M, y + 5);
-            y += 9;
             const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(nome);
             const isGaconIFT = nome === "Gacon" || nome === "IFT 30-15";
             const isDropJump = nome === "Drop Jump";
@@ -1002,29 +993,29 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             const isJurdan = nome === "Jurdan";
             const isCMJLike = (nome.includes("CMJ") && !nome.includes("SL")) || nome === "Squat Jump";
             const isBroadJump = nome.includes("Broad Jump");
-            const hasSxDx = !isJurdan && !isCMJLike && !isBroadJump && (entries as TEntry[]).some((e: TEntry) => e.test.risultatoSx || e.test.risultatoDx);
+            const hasSxDx = !isJurdan && !isCMJLike && !isBroadJump && entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
 
-            let tableHead: string[];
-            let tableBody: string[][];
+            let head: string[];
+            let dataRows: string[][];
 
             if (isDropJump) {
-              tableHead = ["Data", "Altezza (cm)", "Contatto (s)", "RSI"];
-              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.altezzaSalto || "—", e.test.tempoContatto || "—", e.test.rsi || "—"]);
+              head = ["Data", "Alt. (cm)", "Cont. (s)", "RSI"];
+              dataRows = entries.map((e) => [e.dateFull, e.test.altezzaSalto || "—", e.test.tempoContatto || "—", e.test.rsi || "—"]);
             } else if (isSLDropJump) {
-              tableHead = ["Data", "RSI Sx", "RSI Dx", "Asimmetria %"];
-              tableBody = (entries as TEntry[]).map((e: TEntry) => {
+              head = ["Data", "RSI Sx", "RSI Dx", "Asim. %"];
+              dataRows = entries.map((e) => {
                 const asim = _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "");
                 return [e.dateFull, e.test.rsiSx || "—", e.test.rsiDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—"];
               });
             } else if (isSprintTempo) {
-              tableHead = ["Data", "Tempo (s)"];
-              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.tempo || "—"]);
+              head = ["Data", "Tempo (s)"];
+              dataRows = entries.map((e) => [e.dateFull, e.test.tempo || "—"]);
             } else if (isGaconIFT) {
-              tableHead = ["Data", "Livello", "Vo2Max (ml/kg/min)", "VAM (km/h)"];
-              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.livello || "—", e.test.vo2max || "—", e.test.vam || "—"]);
+              head = ["Data", "Livello", "Vo2Max", "VAM"];
+              dataRows = entries.map((e) => [e.dateFull, e.test.livello || "—", e.test.vo2max || "—", e.test.vam || "—"]);
             } else if (isJurdan) {
-              tableHead = ["Data", "Gin.Dx (°)", "Anca Sx (°)", "Diff Dx/Sx", "Gin.Sx (°)", "Anca Dx (°)", "Diff Sx/Dx"];
-              tableBody = (entries as TEntry[]).map((e: TEntry) => {
+              head = ["Data", "Gin.Dx°", "Anca Sx°", "Δ Dx/Sx", "Gin.Sx°", "Anca Dx°", "Δ Sx/Dx"];
+              dataRows = entries.map((e) => {
                 const gDx = parseFloat(e.test.ginocchioDx ?? ""), aSx = parseFloat(e.test.ancaSx ?? "");
                 const gSx = parseFloat(e.test.ginocchioSx ?? ""), aDx = parseFloat(e.test.ancaDx ?? "");
                 const d1 = e.test.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? Math.abs(gDx - aSx).toFixed(1) : "—");
@@ -1032,63 +1023,106 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
                 return [e.dateFull, e.test.ginocchioDx || "—", e.test.ancaSx || "—", d1, e.test.ginocchioSx || "—", e.test.ancaDx || "—", d2];
               });
             } else if (isCMJLike) {
-              tableHead = ["Data", "Altezza (cm)"];
-              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.altezzaSalto || "—"]);
+              head = ["Data", "Alt. (cm)"];
+              dataRows = entries.map((e) => [e.dateFull, e.test.altezzaSalto || "—"]);
             } else if (isBroadJump) {
-              tableHead = ["Data", "Distanza (cm)"];
-              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.altezzaSalto || "—"]);
+              head = ["Data", "Dist. (cm)"];
+              dataRows = entries.map((e) => [e.dateFull, e.test.altezzaSalto || "—"]);
             } else if (hasSxDx) {
-              const firstEntry = (entries as TEntry[])[0];
               const isQSLS = nome === "QSLS";
-              const unitSx = firstEntry?.test.unita ? ` (${firstEntry.test.unita})` : "";
-              tableHead = isQSLS
-                ? ["Data", `Arto Sx${unitSx}`, `Arto Dx${unitSx}`]
-                : ["Data", `Arto Sx${unitSx}`, `Arto Dx${unitSx}`, "Asimmetria %"];
-              tableBody = (entries as TEntry[]).map((e: TEntry) => {
+              const unitSx = entries[0]?.test.unita ? ` (${entries[0].test.unita})` : "";
+              head = isQSLS ? ["Data", `Sx${unitSx}`, `Dx${unitSx}`] : ["Data", `Sx${unitSx}`, `Dx${unitSx}`, "Asim. %"];
+              dataRows = entries.map((e) => {
                 if (isQSLS) return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—"];
                 const asim = _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
                 return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—"];
               });
             } else {
-              const firstEntry = (entries as TEntry[])[0];
-              tableHead = ["Data", `Risultato${firstEntry?.test.unita ? ` (${firstEntry.test.unita})` : ""}`];
-              tableBody = (entries as TEntry[]).map((e: TEntry) => [e.dateFull, e.test.risultato || e.val]);
+              head = ["Data", `Risultato${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`];
+              dataRows = entries.map((e) => [e.dateFull, e.test.risultato || e.val]);
             }
 
             const asimCol = (isSLDropJump || (hasSxDx && nome !== "QSLS")) ? 3 : -1;
-            const tableStartY = y;
-            autoTable(doc, {
-              startY: tableStartY,
-              head: [tableHead],
-              body: tableBody,
-              headStyles: { fillColor: color as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 6.5, fontStyle: "bold" as const, halign: "center" as const, valign: "middle" as const, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 } },
-              bodyStyles: { fontSize: 6.5, cellPadding: 2.5, overflow: "linebreak" as const, valign: "middle" as const, halign: "center" as const },
-              alternateRowStyles: { fillColor: [247, 248, 252] as [number, number, number] },
-              margin: { left: M, right: hasChart ? W - M - TEST_TABLE_W : M },
-              columnStyles: {
-                0: { cellWidth: 16, halign: "left" as const },
-                ...(asimCol !== -1 ? { [asimCol]: { cellWidth: 22, halign: "center" as const } } : {}),
-              },
-              didParseCell: (data: any) => {
-                if (data.section === "body" && asimCol !== -1 && data.column.index === asimCol) {
-                  const v = parseFloat(String(data.cell.raw ?? ""));
-                  if (!isNaN(v) && v > 10) {
-                    data.cell.styles.textColor = [220, 38, 38];
-                    data.cell.styles.fontStyle = "bold";
-                  }
-                }
-              },
-            });
-            const tableEndY = (doc as any).lastAutoTable.finalY + 4;
-            if (hasChart) {
-              y = tableStartY;
-              drawPerfChart(nome, color, chartData, { startX: TEST_CHART_X, width: TEST_CHART_W, updateY: false });
-              y = Math.max(tableEndY, tableStartY + 58);
-            } else {
-              y = tableEndY;
+            const avgRow: string[] = ["Media"];
+            for (let c = 1; c < head.length; c++) {
+              const nums = dataRows.map(r => parseFloat(r[c])).filter(v => !isNaN(v));
+              avgRow.push(nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1) : "—");
             }
-            y += 6;
-          });
+            const hasTrend = dataRows.length >= 2;
+            const trendRow: string[] = ["Trend"];
+            if (hasTrend) {
+              for (let c = 1; c < head.length; c++) {
+                const first = parseFloat(dataRows[0][c]), last = parseFloat(dataRows[dataRows.length - 1][c]);
+                if (!isNaN(first) && !isNaN(last) && Math.abs(first) > 0) {
+                  const pct = ((last - first) / Math.abs(first)) * 100;
+                  trendRow.push(`${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`);
+                } else { trendRow.push("—"); }
+              }
+            }
+            const avgRowIdx = dataRows.length;
+            const trendRowIdx = hasTrend ? dataRows.length + 1 : -1;
+            const body: string[][] = [...dataRows, avgRow, ...(hasTrend ? [trendRow] : [])];
+            return { head, body, color, asimCol, avgRowIdx, trendRowIdx };
+          };
+
+          const testEntries = Array.from(testsByName.entries());
+          for (let pi = 0; pi < testEntries.length; pi += 2) {
+            const [leftNome, leftRaw] = testEntries[pi];
+            const rightEntry = testEntries[pi + 1] ?? null;
+            const leftData = buildTestData(leftNome, leftRaw, pi);
+            const rightData = rightEntry ? buildTestData(rightEntry[0], rightEntry[1], pi + 1) : null;
+            const maxRows = Math.max(leftData.body.length, rightData ? rightData.body.length : 0);
+            checkPage(15 + maxRows * 7, sub);
+
+            doc.setFont("helvetica", "bolditalic"); doc.setFontSize(7.5); doc.setTextColor(20, 20, 20);
+            doc.text(leftNome, M, y + 5);
+            if (rightData) doc.text(rightEntry![0], M + HALF_W + GAP, y + 5);
+            y += 9;
+            const pairStartY = y;
+
+            const renderHalf = (td: ReturnType<typeof buildTestData>, mL: number, mR: number) => {
+              autoTable(doc, {
+                startY: pairStartY,
+                head: [td.head],
+                body: td.body,
+                headStyles: { fillColor: td.color, textColor: [255, 255, 255] as [number, number, number], fontSize: 6, fontStyle: "bold" as const, halign: "center" as const, valign: "middle" as const, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 } },
+                bodyStyles: { fontSize: 6, cellPadding: 2, overflow: "linebreak" as const, valign: "middle" as const, halign: "center" as const },
+                margin: { left: mL, right: mR, top: HDR + 8 },
+                columnStyles: { 0: { cellWidth: 14, halign: "left" as const } },
+                didDrawPage: () => { addHeader(sub); },
+                didParseCell: (data: any) => {
+                  if (data.section !== "body") return;
+                  const ri = data.row.index;
+                  if (ri === td.avgRowIdx) {
+                    data.cell.styles.fillColor = [229, 231, 235]; data.cell.styles.fontStyle = "bold";
+                  } else if (ri === td.trendRowIdx) {
+                    data.cell.styles.fillColor = [255, 255, 255]; data.cell.styles.fontStyle = "bold";
+                    if (data.column.index > 0) {
+                      const raw = String(data.cell.raw ?? "");
+                      if (raw.startsWith("+")) data.cell.styles.textColor = [22, 101, 52];
+                      else if (raw.startsWith("-")) data.cell.styles.textColor = [220, 38, 38];
+                    }
+                  } else if (td.asimCol !== -1 && data.column.index === td.asimCol) {
+                    const v = parseFloat(String(data.cell.raw ?? ""));
+                    if (!isNaN(v) && v > 10) { data.cell.styles.textColor = [220, 38, 38]; data.cell.styles.fontStyle = "bold"; }
+                  } else if (ri % 2 === 1) {
+                    data.cell.styles.fillColor = [247, 248, 252];
+                  } else {
+                    data.cell.styles.fillColor = [255, 255, 255];
+                  }
+                },
+              });
+            };
+
+            renderHalf(leftData, M, W - M - HALF_W);
+            const leftFinalY = (doc as any).lastAutoTable.finalY;
+            if (rightData) {
+              renderHalf(rightData, M + HALF_W + GAP, M);
+              y = Math.max(leftFinalY, (doc as any).lastAutoTable.finalY) + 8;
+            } else {
+              y = leftFinalY + 8;
+            }
+          }
         }
       }
 

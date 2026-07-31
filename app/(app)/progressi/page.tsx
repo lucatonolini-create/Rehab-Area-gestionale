@@ -535,62 +535,43 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         }
       };
 
-      // Tabella sx + grafico dx affiancati; colori alternati rosso/grigio
-      const TEST_TABLE_W = 110;
-      const TEST_CHART_X = M + TEST_TABLE_W + 8;
-      const TEST_CHART_W = W - M - TEST_CHART_X;
+      type TEntry = { dateLabel: string; dateFull: string; test: TestFisiometrico };
+      const HALF_W = Math.floor((W - 2 * M - 8) / 2);
+      const GAP = 8;
 
-      testNames.forEach((testName, testIdx) => {
-        const entries = testsByName[testName];
-        const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(testName);
-        const isGaconIFT = testName === "Gacon" || testName === "IFT 30-15";
-        const isDropJump = testName === "Drop Jump";
-        const isSLDropJump = testName === "SL Drop Jump";
-        const isJurdan = testName === "Jurdan";
-        const isCMJLike = (testName.includes("CMJ") && !testName.includes("SL")) || testName === "Squat Jump";
-        const isBroadJump = testName.includes("Broad Jump");
+      const buildTestData = (nome: string, rawEntries: TEntry[], colorIdx: number) => {
+        const entries = rawEntries;
+        const color: [number, number, number] = colorIdx % 2 === 0 ? [200, 16, 46] : [75, 85, 99];
+        const isSprintTempo = ["Sprint 10m", "Sprint 20m", "Sprint 30m", "10x100m"].includes(nome);
+        const isGaconIFT = nome === "Gacon" || nome === "IFT 30-15";
+        const isDropJump = nome === "Drop Jump";
+        const isSLDropJump = nome === "SL Drop Jump";
+        const isJurdan = nome === "Jurdan";
+        const isCMJLike = (nome.includes("CMJ") && !nome.includes("SL")) || nome === "Squat Jump";
+        const isBroadJump = nome.includes("Broad Jump");
         const hasSxDx = !isJurdan && !isCMJLike && !isBroadJump && entries.some((e) => e.test.risultatoSx || e.test.risultatoDx);
 
-        const color: [number, number, number] = testIdx % 2 === 0 ? [200, 16, 46] : [75, 85, 99];
-        const [cr, cg, cb] = color;
-
-        const mainData = entries
-          .map((e) => { const v = getTestMainValue(e.test); return v !== null ? { dateLabel: e.dateLabel, value: v } : null; })
-          .filter((d): d is { dateLabel: string; value: number } => d !== null);
-
-        const hasChart = mainData.length >= 2;
-        const tableRows = entries.length;
-        const needed = 9 + Math.max(8 + tableRows * 5.5, hasChart ? 49 : 0) + 6;
-        checkPg(needed);
-
-        // Titolo test: grassetto nero corsivo, nessuna banda
-        doc.setFont("helvetica", "bolditalic"); doc.setFontSize(8); doc.setTextColor(20, 20, 20);
-        doc.text(testName, M, y + 5);
-        y += 9;
-        const contentStartY = y;
-
-        // Tabella dati (sinistra)
         let head: string[];
-        let tableBody: string[][];
+        let dataRows: string[][];
 
         if (isDropJump) {
-          head = ["Data", "Altezza (cm)", "Contatto (s)", "RSI"];
-          tableBody = entries.map((e) => [e.dateFull, e.test.altezzaSalto || "—", e.test.tempoContatto || "—", e.test.rsi || "—"]);
+          head = ["Data", "Alt. (cm)", "Cont. (s)", "RSI"];
+          dataRows = entries.map((e) => [e.dateFull, e.test.altezzaSalto || "—", e.test.tempoContatto || "—", e.test.rsi || "—"]);
         } else if (isSLDropJump) {
-          head = ["Data", "RSI Sx", "RSI Dx", "Asimmetria %"];
-          tableBody = entries.map((e) => {
+          head = ["Data", "RSI Sx", "RSI Dx", "Asim. %"];
+          dataRows = entries.map((e) => {
             const asim = _calcolaAsimmetria(e.test.rsiSx ?? "", e.test.rsiDx ?? "");
             return [e.dateFull, e.test.rsiSx || "—", e.test.rsiDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—"];
           });
         } else if (isSprintTempo) {
           head = ["Data", "Tempo (s)"];
-          tableBody = entries.map((e) => [e.dateFull, e.test.tempo || "—"]);
+          dataRows = entries.map((e) => [e.dateFull, e.test.tempo || "—"]);
         } else if (isGaconIFT) {
-          head = ["Data", "Livello", "Vo2Max (ml/kg/min)", "VAM (km/h)"];
-          tableBody = entries.map((e) => [e.dateFull, e.test.livello || "—", e.test.vo2max || "—", e.test.vam || "—"]);
+          head = ["Data", "Livello", "Vo2Max", "VAM"];
+          dataRows = entries.map((e) => [e.dateFull, e.test.livello || "—", e.test.vo2max || "—", e.test.vam || "—"]);
         } else if (isJurdan) {
-          head = ["Data", "Gin.Dx (°)", "Anca Sx (°)", "Δ Dx/Sx (°)", "Gin.Sx (°)", "Anca Dx (°)", "Δ Sx/Dx (°)"];
-          tableBody = entries.map((e) => {
+          head = ["Data", "Gin.Dx°", "Anca Sx°", "Δ Dx/Sx", "Gin.Sx°", "Anca Dx°", "Δ Sx/Dx"];
+          dataRows = entries.map((e) => {
             const gDx = parseFloat(e.test.ginocchioDx ?? ""), aSx = parseFloat(e.test.ancaSx ?? "");
             const gSx = parseFloat(e.test.ginocchioSx ?? ""), aDx = parseFloat(e.test.ancaDx ?? "");
             const d1 = e.test.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? Math.abs(gDx - aSx).toFixed(1) : "—");
@@ -598,112 +579,106 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
             return [e.dateFull, e.test.ginocchioDx || "—", e.test.ancaSx || "—", d1, e.test.ginocchioSx || "—", e.test.ancaDx || "—", d2];
           });
         } else if (isCMJLike) {
-          head = ["Data", "Altezza (cm)"];
-          tableBody = entries.map((e) => [e.dateFull, e.test.altezzaSalto || "—"]);
+          head = ["Data", "Alt. (cm)"];
+          dataRows = entries.map((e) => [e.dateFull, e.test.altezzaSalto || "—"]);
         } else if (isBroadJump) {
-          head = ["Data", "Distanza (cm)"];
-          tableBody = entries.map((e) => [e.dateFull, e.test.altezzaSalto || "—"]);
+          head = ["Data", "Dist. (cm)"];
+          dataRows = entries.map((e) => [e.dateFull, e.test.altezzaSalto || "—"]);
         } else if (hasSxDx) {
-          const isQSLS = testName === "QSLS";
+          const isQSLS = nome === "QSLS";
           const unitSx = entries[0]?.test.unita ? ` (${entries[0].test.unita})` : "";
-          head = isQSLS
-            ? ["Data", `Arto Sx${unitSx}`, `Arto Dx${unitSx}`]
-            : ["Data", `Arto Sx${unitSx}`, `Arto Dx${unitSx}`, "Asimmetria %"];
-          tableBody = entries.map((e) => {
+          head = isQSLS ? ["Data", `Sx${unitSx}`, `Dx${unitSx}`] : ["Data", `Sx${unitSx}`, `Dx${unitSx}`, "Asim. %"];
+          dataRows = entries.map((e) => {
             if (isQSLS) return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—"];
             const asim = _calcolaAsimmetria(e.test.risultatoSx, e.test.risultatoDx);
             return [e.dateFull, e.test.risultatoSx || "—", e.test.risultatoDx || "—", asim !== null ? `${asim.toFixed(1)}%` : "—"];
           });
         } else {
           head = ["Data", `Risultato${entries[0]?.test.unita ? ` (${entries[0].test.unita})` : ""}`];
-          tableBody = entries.map((e) => [e.dateFull, e.test.risultato || "—"]);
+          dataRows = entries.map((e) => [e.dateFull, e.test.risultato || "—"]);
         }
 
-        const asimCol = (isSLDropJump || (hasSxDx && testName !== "QSLS")) ? 3 : -1;
-        autoTable(doc, {
-          startY: contentStartY,
-          head: [head],
-          body: tableBody,
-          headStyles: { fillColor: color, textColor: [255, 255, 255] as [number, number, number], fontSize: 6.5, halign: "center" as const, valign: "middle" as const },
-          bodyStyles: { fontSize: 7, cellPadding: 2, halign: "center" as const, valign: "middle" as const },
-          alternateRowStyles: { fillColor: [250, 250, 250] as [number, number, number] },
-          margin: { left: M, right: hasChart ? W - M - TEST_TABLE_W : M },
-          columnStyles: {
-            0: { halign: "left" as const, cellWidth: 26 },
-            ...(asimCol !== -1 ? { [asimCol]: { cellWidth: 32, halign: "center" as const } } : {}),
-          },
-          didParseCell: (data: any) => {
-            if (data.section === "body" && asimCol !== -1 && data.column.index === asimCol) {
-              const v = parseFloat(String(data.cell.raw));
-              if (!isNaN(v) && v > 10) {
-                data.cell.styles.textColor = [220, 38, 38];
-                data.cell.styles.fontStyle = "bold";
-              }
-            }
-          },
-        });
-        const tableEndY = (doc as any).lastAutoTable.finalY + 4;
-
-        // Grafico andamento (destra)
-        if (hasChart) {
-          y = contentStartY;
-          const cX = TEST_CHART_X; const cW = TEST_CHART_W; const cH = 40; const cY = y;
-          doc.setFillColor(249, 250, 251); doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.3);
-          doc.rect(cX, cY, cW, cH, "FD");
-          const n = mainData.length;
-          const vals = mainData.map((d) => d.value);
-          const minV = Math.min(...vals); const maxV = Math.max(...vals);
-          const range = maxV - minV || 1;
-          const PAD = { top: 6, right: 6, bottom: 9, left: 18 };
-          const plotX = cX + PAD.left; const plotW = cW - PAD.left - PAD.right;
-          const plotY = cY + PAD.top; const plotH = cH - PAD.top - PAD.bottom;
-
-          for (let t = 0; t <= 4; t++) {
-            const tv = minV + (range / 4) * t;
-            const ty = plotY + plotH - (t / 4) * plotH;
-            doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.2);
-            doc.line(plotX, ty, plotX + plotW, ty);
-            doc.setFontSize(5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
-            doc.text(tv.toFixed(1), plotX - 1.5, ty + 1.5, { align: "right" });
+        const asimCol = (isSLDropJump || (hasSxDx && nome !== "QSLS")) ? 3 : -1;
+        const avgRow: string[] = ["Media"];
+        for (let c = 1; c < head.length; c++) {
+          const nums = dataRows.map(r => parseFloat(r[c])).filter(v => !isNaN(v));
+          avgRow.push(nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1) : "—");
+        }
+        const hasTrend = dataRows.length >= 2;
+        const trendRow: string[] = ["Trend"];
+        if (hasTrend) {
+          for (let c = 1; c < head.length; c++) {
+            const first = parseFloat(dataRows[0][c]), last = parseFloat(dataRows[dataRows.length - 1][c]);
+            if (!isNaN(first) && !isNaN(last) && Math.abs(first) > 0) {
+              const pct = ((last - first) / Math.abs(first)) * 100;
+              trendRow.push(`${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`);
+            } else { trendRow.push("—"); }
           }
-          const gX2 = (i: number) => plotX + (n > 1 ? (i / (n - 1)) * plotW : plotW / 2);
-          const gY2 = (v: number) => plotY + plotH - ((v - minV) / range) * plotH;
-
-          const lr = Math.round(cr * 0.12 + 255 * 0.88);
-          const lg = Math.round(cg * 0.12 + 255 * 0.88);
-          const lb = Math.round(cb * 0.12 + 255 * 0.88);
-          doc.setFillColor(lr, lg, lb);
-          const botY2 = plotY + plotH;
-          const segs: [number, number][] = [[0, gY2(mainData[0].value) - botY2]];
-          for (let i = 1; i < n; i++) segs.push([gX2(i) - gX2(i - 1), gY2(mainData[i].value) - gY2(mainData[i - 1].value)]);
-          segs.push([0, botY2 - gY2(mainData[n - 1].value)]);
-          segs.push([gX2(0) - gX2(n - 1), 0]);
-          (doc as any).lines(segs, gX2(0), botY2, [1, 1], "F", true);
-
-          const avg = vals.reduce((a, b) => a + b, 0) / n;
-          doc.setDrawColor(...gray); doc.setLineWidth(0.4); doc.setLineDashPattern([1.5, 1.5], 0);
-          doc.line(plotX, gY2(avg), plotX + plotW, gY2(avg));
-          doc.setLineDashPattern([], 0);
-
-          doc.setDrawColor(...color); doc.setLineWidth(0.9);
-          for (let i = 0; i < n - 1; i++) doc.line(gX2(i), gY2(mainData[i].value), gX2(i + 1), gY2(mainData[i + 1].value));
-          doc.setFillColor(...color); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.4);
-          mainData.forEach((d, i) => doc.circle(gX2(i), gY2(d.value), i === n - 1 ? 1.3 : 1, "FD"));
-
-          doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
-          const step = n <= 15 ? 1 : Math.ceil(n / 15);
-          mainData.forEach((d, i) => { if (i % step === 0) doc.text(d.dateLabel, gX2(i), cY + cH + 4, { align: "center" }); });
-
-          const yLbl = isSprintTempo ? "Tempo (s)" : isGaconIFT ? "Vo2Max (ml/kg/min)" : isDropJump ? "RSI" : isSLDropJump ? "RSI medio" : isJurdan ? "Gin.Dx (°)" : hasSxDx ? "Media Sx/Dx" : "Valore";
-          doc.setFontSize(4.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...color);
-          doc.text(yLbl, plotX, plotY - 1.5);
-
-          y = Math.max(tableEndY, contentStartY + cH + 9);
-        } else {
-          y = tableEndY;
         }
-        y += 6;
-      });
+        const avgRowIdx = dataRows.length;
+        const trendRowIdx = hasTrend ? dataRows.length + 1 : -1;
+        const body: string[][] = [...dataRows, avgRow, ...(hasTrend ? [trendRow] : [])];
+        return { head, body, color, asimCol, avgRowIdx, trendRowIdx };
+      };
+
+      const testEntries = Object.entries(testsByName);
+      for (let pi = 0; pi < testEntries.length; pi += 2) {
+        const [leftNome, leftRaw] = testEntries[pi];
+        const rightEntry = testEntries[pi + 1] ?? null;
+        const leftData = buildTestData(leftNome, leftRaw, pi);
+        const rightData = rightEntry ? buildTestData(rightEntry[0], rightEntry[1], pi + 1) : null;
+        const maxRows = Math.max(leftData.body.length, rightData ? rightData.body.length : 0);
+        checkPg(15 + maxRows * 7);
+
+        doc.setFont("helvetica", "bolditalic"); doc.setFontSize(7.5); doc.setTextColor(20, 20, 20);
+        doc.text(leftNome, M, y + 5);
+        if (rightData) doc.text(rightEntry![0], M + HALF_W + GAP, y + 5);
+        y += 9;
+        const pairStartY = y;
+
+        const renderHalf = (td: ReturnType<typeof buildTestData>, mL: number, mR: number) => {
+          autoTable(doc, {
+            startY: pairStartY,
+            head: [td.head],
+            body: td.body,
+            headStyles: { fillColor: td.color, textColor: [255, 255, 255] as [number, number, number], fontSize: 6, fontStyle: "bold" as const, halign: "center" as const, valign: "middle" as const, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 } },
+            bodyStyles: { fontSize: 6, cellPadding: 2, overflow: "linebreak" as const, valign: "middle" as const, halign: "center" as const },
+            margin: { left: mL, right: mR, top: HDR + 8 },
+            columnStyles: { 0: { cellWidth: 20, halign: "left" as const } },
+            didDrawPage: () => { addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`); },
+            didParseCell: (data: any) => {
+              if (data.section !== "body") return;
+              const ri = data.row.index;
+              if (ri === td.avgRowIdx) {
+                data.cell.styles.fillColor = [229, 231, 235]; data.cell.styles.fontStyle = "bold";
+              } else if (ri === td.trendRowIdx) {
+                data.cell.styles.fillColor = [255, 255, 255]; data.cell.styles.fontStyle = "bold";
+                if (data.column.index > 0) {
+                  const raw = String(data.cell.raw ?? "");
+                  if (raw.startsWith("+")) data.cell.styles.textColor = [22, 101, 52];
+                  else if (raw.startsWith("-")) data.cell.styles.textColor = [220, 38, 38];
+                }
+              } else if (td.asimCol !== -1 && data.column.index === td.asimCol) {
+                const v = parseFloat(String(data.cell.raw ?? ""));
+                if (!isNaN(v) && v > 10) { data.cell.styles.textColor = [220, 38, 38]; data.cell.styles.fontStyle = "bold"; }
+              } else if (ri % 2 === 1) {
+                data.cell.styles.fillColor = [247, 248, 252];
+              } else {
+                data.cell.styles.fillColor = [255, 255, 255];
+              }
+            },
+          });
+        };
+
+        renderHalf(leftData, M, W - M - HALF_W);
+        const leftFinalY = (doc as any).lastAutoTable.finalY;
+        if (rightData) {
+          renderHalf(rightData, M + HALF_W + GAP, M);
+          y = Math.max(leftFinalY, (doc as any).lastAutoTable.finalY) + 8;
+        } else {
+          y = leftFinalY + 8;
+        }
+      }
     }
   }
 
