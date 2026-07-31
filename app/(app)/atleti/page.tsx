@@ -2886,6 +2886,16 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                         {TIPI_INFORTUNIO.map((t) => <option key={t} value={t}>{t}</option>)}
                                       </select>
                                     </div>
+                                    <div>
+                                      <p className="text-xs text-gray-400 mb-0.5">Classificazione OSIICS</p>
+                                      <OsiicsCombobox
+                                        value={editStoricoForm.osiicsCodeId ? { id: editStoricoForm.osiicsCodeId, codice: editStoricoForm.osiicsCodice ?? "", descrizioneIta: editStoricoForm.osiicsDescrizione ?? "" } : null}
+                                        onChange={(code) => {
+                                          if (code) setEditStoricoForm({ ...editStoricoForm, osiicsCodeId: code.id, osiicsCodice: code.codice, osiicsDescrizione: code.descrizioneIta });
+                                          else setEditStoricoForm({ ...editStoricoForm, osiicsCodeId: undefined, osiicsCodice: undefined, osiicsDescrizione: undefined });
+                                        }}
+                                      />
+                                    </div>
                                     <div className="grid grid-cols-2 gap-2">
                                       <div>
                                         <p className="text-xs text-gray-400 mb-0.5">Inizio</p>
