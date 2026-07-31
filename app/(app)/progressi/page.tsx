@@ -298,13 +298,9 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
         weekMap.get(wk)!.push(prog);
       }
 
-      const body: any[] = [];
-      const weekRowIndices = new Set<number>();
-      const subHeaderRowIndices = new Set<number>();
-      const altRowIndices = new Set<number>();
-      const absenteRowIndices = new Set<number>();
-      const riposoRowIndices = new Set<number>();
-      const squadraRowIndices = new Set<number>();
+      const MIN_WEEK_SPACE = 45;
+      let weekStartY = y;
+      let isFirstWeek = true;
 
       Array.from(weekMap.entries()).forEach(([wk, wkProgs]) => {
         let weekLabel: string;
@@ -315,10 +311,27 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           const sun = new Date(mon.getTime() + 6 * 864e5);
           weekLabel = `SETTIMANA  ${mon.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" })} – ${sun.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
         }
-        weekRowIndices.add(body.length);
-        body.push([{ content: weekLabel, colSpan: 12 }]);
-        subHeaderRowIndices.add(body.length);
-        body.push(["Data", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS", "Obiettivi\nCampo", "Esercizi\nCampo", "GPS", "VAS\nCampo", "RPE"]);
+
+        if (!isFirstWeek) {
+          const prevY = (doc as any).lastAutoTable?.finalY ?? weekStartY;
+          if (H - M - prevY < MIN_WEEK_SPACE) {
+            doc.addPage();
+            addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`);
+            weekStartY = HDR + 8;
+          } else {
+            weekStartY = prevY + 4;
+          }
+        }
+        isFirstWeek = false;
+
+        const body: any[] = [];
+        const altRowIndices = new Set<number>();
+        const absenteRowIndices = new Set<number>();
+        const riposoRowIndices = new Set<number>();
+        const squadraRowIndices = new Set<number>();
+
+        body.push([{ content: weekLabel, colSpan: 12 }]);        // row 0: week header
+        body.push(["Data", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS", "Obiettivi\nCampo", "Esercizi\nCampo", "GPS", "VAS\nCampo", "RPE"]); // row 1: subheader
 
         let dataRowCount = 0;
         for (const prog of wkProgs) {
@@ -350,21 +363,23 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           const tests = testLines.join("\n") || "—";
           void tests;
 
+          const rowIdx = body.length;
+
           if (prog.assente) {
-            absenteRowIndices.add(body.length);
+            absenteRowIndices.add(rowIdx);
             body.push([dataStr, prog.nome ?? "—", { content: "ASSENTE" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 11, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
             dataRowCount++;
             continue;
           }
 
           if (prog.riposo) {
-            riposoRowIndices.add(body.length);
+            riposoRowIndices.add(rowIdx);
             body.push([dataStr, prog.nome ?? "—", { content: "RIPOSO" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 11, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
             continue;
           }
 
           if (prog.squadra) {
-            squadraRowIndices.add(body.length);
+            squadraRowIndices.add(rowIdx);
             body.push([dataStr, prog.nome ?? "—", { content: "RITORNO IN SQUADRA" + (prog.noteAssenza ? `  ·  ${prog.noteAssenza}` : ""), colSpan: 10, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
             continue;
           }
@@ -386,64 +401,64 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           const esText = esercizi.map((e, i) => { const metric = e.reps || e.durata; const sx = [e.serie, metric].filter(Boolean).join("×"); const carico = e.carico ? ` (${e.carico})` : ""; return `${i + 1}. ${sx ? `${e.nome} ${sx}${carico}` : e.nome}`; }).join("\n") || "—";
           const vasText = esercizi.map((e, i) => `${i + 1}. ${e.vas || "0"}`).join("\n") || "—";
           const fisio = prog.noteFisioterapia?.trim() || "—";
-          if (isAlt) altRowIndices.add(body.length);
+          if (isAlt) altRowIndices.add(rowIdx);
           body.push([dataStr, prog.nome ?? "—", prog.fase ?? "—", fisio, obP, esText, vasText, obCampo, esC, gps, vasC, rpe]);
           dataRowCount++;
         }
-      });
 
-      autoTable(doc, {
-        startY: y,
-        body,
-        bodyStyles: { fontSize: 7, cellPadding: 2.5, overflow: "linebreak" as const, halign: "left" as const, valign: "middle" as const },
-        margin: { left: M, right: M, top: HDR + 8 },
-        didDrawPage: () => { addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`); },
-        columnStyles: {
-          0:  { cellWidth: 15 },
-          1:  { cellWidth: 28 },
-          2:  { cellWidth: 20 },
-          3:  { cellWidth: 32 },
-          4:  { cellWidth: 26 },
-          5:  { cellWidth: 31 },
-          6:  { cellWidth: 13, halign: "center" as const },
-          7:  { cellWidth: 28 },
-          8:  { cellWidth: 40 },
-          9:  { cellWidth: 15 },
-          10: { cellWidth: 11, halign: "center" as const },
-          11: { cellWidth: 10, halign: "center" as const },
-        },
-        didParseCell: (data: any) => {
-          if (data.section !== "body") return;
-          if (weekRowIndices.has(data.row.index)) {
-            data.cell.styles.fillColor = [200, 16, 46];
-            data.cell.styles.textColor = [255, 255, 255];
-            data.cell.styles.fontStyle = "bold";
-            data.cell.styles.fontSize = 7.5;
-            data.cell.styles.cellPadding = { top: 3.5, bottom: 3.5, left: 5, right: 2 };
-          } else if (subHeaderRowIndices.has(data.row.index)) {
-            data.cell.styles.fillColor = [110, 110, 110];
-            data.cell.styles.textColor = [255, 255, 255];
-            data.cell.styles.fontStyle = "bold";
-            data.cell.styles.fontSize = 6.5;
-            data.cell.styles.halign = "center";
-            data.cell.styles.valign = "middle";
-            data.cell.styles.cellPadding = { top: 2.5, bottom: 2.5, left: 2, right: 1 };
-          } else if (absenteRowIndices.has(data.row.index)) {
-            data.cell.styles.fillColor = [255, 237, 213];
-            data.cell.styles.textColor = [154, 52, 18];
-          } else if (riposoRowIndices.has(data.row.index)) {
-            data.cell.styles.fillColor = [219, 234, 254];
-            data.cell.styles.textColor = [30, 64, 175];
-          } else if (squadraRowIndices.has(data.row.index)) {
-            data.cell.styles.fillColor = [187, 247, 208];
-            data.cell.styles.textColor = [22, 101, 52];
-            data.cell.styles.fontStyle = "bold";
-          } else if (altRowIndices.has(data.row.index)) {
-            data.cell.styles.fillColor = [243, 244, 246];
-          } else {
-            data.cell.styles.fillColor = [255, 255, 255];
-          }
-        },
+        autoTable(doc, {
+          startY: weekStartY,
+          body,
+          bodyStyles: { fontSize: 7, cellPadding: 2.5, overflow: "linebreak" as const, halign: "left" as const, valign: "middle" as const },
+          margin: { left: M, right: M, top: HDR + 8 },
+          didDrawPage: () => { addHeader(`${nd(atleta)}  ·  ${atleta.categoria}`); },
+          columnStyles: {
+            0:  { cellWidth: 15 },
+            1:  { cellWidth: 28 },
+            2:  { cellWidth: 20 },
+            3:  { cellWidth: 32 },
+            4:  { cellWidth: 26 },
+            5:  { cellWidth: 31 },
+            6:  { cellWidth: 13, halign: "center" as const },
+            7:  { cellWidth: 28 },
+            8:  { cellWidth: 40 },
+            9:  { cellWidth: 15 },
+            10: { cellWidth: 11, halign: "center" as const },
+            11: { cellWidth: 10, halign: "center" as const },
+          },
+          didParseCell: (data: any) => {
+            if (data.section !== "body") return;
+            if (data.row.index === 0) {
+              data.cell.styles.fillColor = [200, 16, 46];
+              data.cell.styles.textColor = [255, 255, 255];
+              data.cell.styles.fontStyle = "bold";
+              data.cell.styles.fontSize = 7.5;
+              data.cell.styles.cellPadding = { top: 3.5, bottom: 3.5, left: 5, right: 2 };
+            } else if (data.row.index === 1) {
+              data.cell.styles.fillColor = [110, 110, 110];
+              data.cell.styles.textColor = [255, 255, 255];
+              data.cell.styles.fontStyle = "bold";
+              data.cell.styles.fontSize = 6.5;
+              data.cell.styles.halign = "center";
+              data.cell.styles.valign = "middle";
+              data.cell.styles.cellPadding = { top: 2.5, bottom: 2.5, left: 2, right: 1 };
+            } else if (absenteRowIndices.has(data.row.index)) {
+              data.cell.styles.fillColor = [255, 237, 213];
+              data.cell.styles.textColor = [154, 52, 18];
+            } else if (riposoRowIndices.has(data.row.index)) {
+              data.cell.styles.fillColor = [219, 234, 254];
+              data.cell.styles.textColor = [30, 64, 175];
+            } else if (squadraRowIndices.has(data.row.index)) {
+              data.cell.styles.fillColor = [187, 247, 208];
+              data.cell.styles.textColor = [22, 101, 52];
+              data.cell.styles.fontStyle = "bold";
+            } else if (altRowIndices.has(data.row.index)) {
+              data.cell.styles.fillColor = [243, 244, 246];
+            } else {
+              data.cell.styles.fillColor = [255, 255, 255];
+            }
+          },
+        });
       });
     };
 

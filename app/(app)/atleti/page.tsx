@@ -267,13 +267,8 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       weekMap.get(wk)!.push(prog);
     }
 
-    const body: any[] = [];
-    const weekRowIndices = new Set<number>();
-    const subHeaderRowIndices = new Set<number>();
-    const altRowIndices = new Set<number>();
-    const absenteRowIndices = new Set<number>();
-    const riposoRowIndices = new Set<number>();
-    const squadraRowIndices = new Set<number>();
+    const MIN_WEEK_SPACE = 45;
+    let isFirstWeek = true;
 
     Array.from(weekMap.entries()).forEach(([wk, wkProgs]) => {
       let weekLabel: string;
@@ -284,6 +279,31 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         const sun = new Date(mon.getTime() + 6 * 864e5);
         weekLabel = `SETTIMANA  ${mon.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" })} – ${sun.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
       }
+
+      let weekStartY: number;
+      if (isFirstWeek) {
+        checkPage(30, sub);
+        weekStartY = y;
+      } else {
+        const prevY = (doc as any).lastAutoTable?.finalY ?? y;
+        if (H - M - prevY < MIN_WEEK_SPACE) {
+          doc.addPage();
+          addHeader(sub);
+          weekStartY = HDR + 8;
+        } else {
+          weekStartY = prevY + 4;
+        }
+      }
+      isFirstWeek = false;
+
+      const body: any[] = [];
+      const weekRowIndices = new Set<number>();
+      const subHeaderRowIndices = new Set<number>();
+      const altRowIndices = new Set<number>();
+      const absenteRowIndices = new Set<number>();
+      const riposoRowIndices = new Set<number>();
+      const squadraRowIndices = new Set<number>();
+
       weekRowIndices.add(body.length);
       body.push([{ content: weekLabel, colSpan: 12 }]);
       subHeaderRowIndices.add(body.length);
@@ -325,7 +345,6 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         }).join("\n") || "—";
         const vasC = (prog.esercizicampo ?? []).map((c, i) => `${i + 1}. ${c.vas || "0"}`).join("\n") || "—";
 
-
         const ca = prog.carico;
         const rpe = ca?.rpe ? `${ca.rpe}/10` : "—";
         const gps = [
@@ -347,61 +366,62 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         body.push([dataStr, prog.nome ?? "—", prog.fase ?? "—", fisio, obP, esText, vasText, obCampo, esC, vasC, gps, rpe]);
         dataRowCount++;
       }
+
+      autoTable(doc, {
+        startY: weekStartY,
+        body,
+        bodyStyles: { fontSize: 5.5, cellPadding: 1.5, overflow: "linebreak" as const, halign: "left" as const, valign: "middle" as const },
+        margin: { left: M, right: M },
+        columnStyles: {
+          0:  { cellWidth: 15 },
+          1:  { cellWidth: 20 },
+          2:  { cellWidth: 9 },
+          3:  { cellWidth: 18 },
+          4:  { cellWidth: 18 },
+          5:  { cellWidth: 18 },
+          6:  { cellWidth: 7, halign: "center" as const },
+          7:  { cellWidth: 18 },
+          8:  { cellWidth: 18 },
+          9:  { cellWidth: 10, halign: "center" as const },
+          10: { cellWidth: 24 },
+          11: { cellWidth: 7, halign: "center" as const },
+        },
+        didDrawPage: () => { addHeader(sub); },
+        didParseCell: (data: any) => {
+          if (data.section !== "body") return;
+          if (weekRowIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [200, 16, 46];
+            data.cell.styles.textColor = [255, 255, 255];
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.fontSize = 6.5;
+            data.cell.styles.cellPadding = { top: 3, bottom: 3, left: 4, right: 2 };
+          } else if (subHeaderRowIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [110, 110, 110];
+            data.cell.styles.textColor = [255, 255, 255];
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.fontSize = 5.3;
+            data.cell.styles.halign = "center";
+            data.cell.styles.valign = "middle";
+            data.cell.styles.cellPadding = { top: 2, bottom: 2, left: 1.5, right: 1 };
+          } else if (absenteRowIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [255, 237, 213];
+            data.cell.styles.textColor = [154, 52, 18];
+          } else if (riposoRowIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [219, 234, 254];
+            data.cell.styles.textColor = [30, 64, 175];
+          } else if (squadraRowIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [187, 247, 208];
+            data.cell.styles.textColor = [22, 101, 52];
+            data.cell.styles.fontStyle = "bold";
+          } else if (altRowIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [243, 244, 246];
+          } else {
+            data.cell.styles.fillColor = [255, 255, 255];
+          }
+        },
+      });
     });
 
-    checkPage(30, sub);
-    autoTable(doc, {
-      startY: y,
-      body,
-      bodyStyles: { fontSize: 5.5, cellPadding: 1.5, overflow: "linebreak" as const, halign: "left" as const, valign: "middle" as const },
-      margin: { left: M, right: M },
-      columnStyles: {
-        0:  { cellWidth: 15 },
-        1:  { cellWidth: 20 },
-        2:  { cellWidth: 9 },
-        3:  { cellWidth: 18 },
-        4:  { cellWidth: 18 },
-        5:  { cellWidth: 18 },
-        6:  { cellWidth: 7, halign: "center" as const },
-        7:  { cellWidth: 18 },
-        8:  { cellWidth: 18 },
-        9:  { cellWidth: 10, halign: "center" as const },
-        10: { cellWidth: 24 },
-        11: { cellWidth: 7, halign: "center" as const },
-      },
-      didParseCell: (data: any) => {
-        if (data.section !== "body") return;
-        if (weekRowIndices.has(data.row.index)) {
-          data.cell.styles.fillColor = [200, 16, 46];
-          data.cell.styles.textColor = [255, 255, 255];
-          data.cell.styles.fontStyle = "bold";
-          data.cell.styles.fontSize = 6.5;
-          data.cell.styles.cellPadding = { top: 3, bottom: 3, left: 4, right: 2 };
-        } else if (subHeaderRowIndices.has(data.row.index)) {
-          data.cell.styles.fillColor = [110, 110, 110];
-          data.cell.styles.textColor = [255, 255, 255];
-          data.cell.styles.fontStyle = "bold";
-          data.cell.styles.fontSize = 5.3;
-          data.cell.styles.halign = "center";
-          data.cell.styles.valign = "middle";
-          data.cell.styles.cellPadding = { top: 2, bottom: 2, left: 1.5, right: 1 };
-        } else if (absenteRowIndices.has(data.row.index)) {
-          data.cell.styles.fillColor = [255, 237, 213];
-          data.cell.styles.textColor = [154, 52, 18];
-        } else if (riposoRowIndices.has(data.row.index)) {
-          data.cell.styles.fillColor = [219, 234, 254];
-          data.cell.styles.textColor = [30, 64, 175];
-        } else if (squadraRowIndices.has(data.row.index)) {
-          data.cell.styles.fillColor = [187, 247, 208];
-          data.cell.styles.textColor = [22, 101, 52];
-          data.cell.styles.fontStyle = "bold";
-        } else if (altRowIndices.has(data.row.index)) {
-          data.cell.styles.fillColor = [243, 244, 246];
-        } else {
-          data.cell.styles.fillColor = [255, 255, 255];
-        }
-      },
-    });
     y = (doc as any).lastAutoTable.finalY + 6;
 
   };
