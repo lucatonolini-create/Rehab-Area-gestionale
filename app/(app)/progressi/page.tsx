@@ -459,7 +459,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
       const injProgs = programmi.filter((p) => {
         if (usedProgIds.has(p.id)) return false;
         if (inj.id === "__corrente__") {
-          if (p.infortunioId === "__corrente__") return true;
+          if (p.infortunioId === "__corrente__" && p.data >= inj.inizio) return true;
           if (!p.infortunioId && p.data && inj.inizio && p.data >= inj.inizio) {
             // Cap al primo inizio concorrente per non rubare sessioni senza infortunioId
             const endBound = inj.fine || concCurrentStart;
@@ -467,7 +467,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           }
         } else {
           if (p.infortunioId === inj.id) return true;
-          if (p.infortunioId === "__corrente__" && atleta.stato !== "Infortunato" && p.data && inj.inizio && p.data >= inj.inizio && (!inj.fine || p.data <= inj.fine)) return true;
+          if (p.infortunioId === "__corrente__" && p.data && inj.inizio && p.data >= inj.inizio && (!inj.fine || p.data <= inj.fine) && (atleta.stato !== "Infortunato" || !atleta.inizioRehab || p.data < atleta.inizioRehab)) return true;
           if (!p.infortunioId && p.data && inj.inizio && p.data >= inj.inizio && (!inj.fine || p.data <= inj.fine)) return true;
         }
         return false;
