@@ -900,15 +900,28 @@ export default function PerformancePage() {
         doc.roundedRect(bx, by, barW, bh, r, r, "FD");
       });
 
-      // RPE line (right axis, red solid) + dots + value labels
+      // RPE line (right axis, red solid) + dots + value labels – smooth Catmull-Rom
       doc.setDrawColor(...RED_RGB);
       doc.setLineWidth(0.6);
       doc.setLineDashPattern([], 0);
-      for (let i = 0; i < n - 1; i++) {
-        const s0 = tlSessions[i], s1 = tlSessions[i + 1];
-        if (s0.rpe !== null && s1.rpe !== null) {
-          doc.line(bX(i), rpeY(s0.rpe), bX(i + 1), rpeY(s1.rpe));
+      const rpePts = tlSessions
+        .map((s, i) => s.rpe !== null ? { i, v: s.rpe } : null)
+        .filter((p): p is { i: number; v: number } => p !== null);
+      if (rpePts.length >= 2) {
+        const tension = 0.25;
+        const rx = (k: number) => bX(rpePts[Math.max(0, Math.min(rpePts.length - 1, k))].i);
+        const ry = (k: number) => rpeY(rpePts[Math.max(0, Math.min(rpePts.length - 1, k))].v);
+        doc.moveTo(rx(0), ry(0));
+        for (let k = 0; k < rpePts.length - 1; k++) {
+          doc.curveTo(
+            rx(k)   + (rx(k + 1) - rx(k - 1)) * tension,
+            ry(k)   + (ry(k + 1) - ry(k - 1)) * tension,
+            rx(k+1) - (rx(k + 2) - rx(k))     * tension,
+            ry(k+1) - (ry(k + 2) - ry(k))     * tension,
+            rx(k + 1), ry(k + 1)
+          );
         }
+        doc.stroke();
       }
       tlSessions.forEach((s, i) => {
         if (s.rpe === null) return;
