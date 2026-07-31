@@ -944,21 +944,50 @@ export default function PerformancePage() {
       doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...DARK_RGB);
       doc.text("Test", M, ty + 2);
       ty += 7;
+      const groupedBody: any[] = [];
+      const sessionHeaderIndices = new Set<number>();
+      const altRowIndices = new Set<number>();
+      let lastSessionKey = "";
+      let altCount = 0;
+      testTableRows.forEach((r) => {
+        const key = r.data + "||" + r.infortunio;
+        if (key !== lastSessionKey) {
+          lastSessionKey = key;
+          altCount = 0;
+          sessionHeaderIndices.add(groupedBody.length);
+          groupedBody.push([{ content: `${r.dateLabel}  ·  ${r.infortunio}`, colSpan: 2 }]);
+        }
+        if (altCount % 2 === 1) altRowIndices.add(groupedBody.length);
+        groupedBody.push([r.nomeTest, r.risultato]);
+        altCount++;
+      });
+
       autoTable(doc, {
         startY: ty,
-        head: [["Data", "Infortunio", "Test", "Risultato"]],
-        body: testTableRows.map((r) => [r.dateLabel, r.infortunio, r.nomeTest, r.risultato]),
+        head: [["Test", "Risultato"]],
+        body: groupedBody,
         headStyles: { fillColor: DARK_RGB, textColor: 255, fontSize: 6.5, halign: "center", valign: "middle" },
         bodyStyles: { fontSize: 6.5, cellPadding: 1.8, overflow: "linebreak" as const, valign: "middle" as const },
-        alternateRowStyles: { fillColor: [249, 249, 249] },
         margin: { left: M, right: M, top: 18 },
         columnStyles: {
-          0: { cellWidth: 18, halign: "center" as const },
-          1: { cellWidth: 45 },
-          2: { cellWidth: 65 },
-          3: { cellWidth: "auto" as any },
+          0: { cellWidth: 110 },
+          1: { cellWidth: "auto" as any },
         },
         didDrawPage: (() => { let first = true; return () => { if (first) first = false; else addHeader(true); }; })(),
+        didParseCell: (data: any) => {
+          if (data.section !== "body") return;
+          if (sessionHeaderIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [200, 16, 46];
+            data.cell.styles.textColor = [255, 255, 255];
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.fontSize = 7;
+            data.cell.styles.cellPadding = { top: 3, bottom: 3, left: 4, right: 2 };
+          } else if (altRowIndices.has(data.row.index)) {
+            data.cell.styles.fillColor = [243, 244, 246];
+          } else {
+            data.cell.styles.fillColor = [255, 255, 255];
+          }
+        },
       });
     }
 
