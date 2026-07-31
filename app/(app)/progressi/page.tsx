@@ -1229,7 +1229,25 @@ export default function ProgressiPage() {
         ) : (
           <div className="space-y-4">
             {[...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")).map((atleta) => {
-              const nProg = programmi.filter((p) => p.atletaId === atleta.id && !p.riposo).length;
+              const concurrentSessIds = new Set(
+                (atleta.storicoInfortuni ?? [])
+                  .filter((i) => i.attivo === true)
+                  .flatMap((inf) =>
+                    programmi
+                      .filter((p) => p.atletaId === atleta.id && p.infortunioId === inf.id && !p.riposo)
+                      .map((p) => p.id)
+                  )
+              );
+              const nProg =
+                atleta.stato === "Infortunato" && atleta.inizioRehab
+                  ? programmi.filter(
+                      (p) =>
+                        p.atletaId === atleta.id &&
+                        !p.riposo &&
+                        ((p.infortunioId === "__corrente__" && p.data >= atleta.inizioRehab!) ||
+                          (!p.infortunioId && p.data >= atleta.inizioRehab! && !concurrentSessIds.has(p.id)))
+                    ).length
+                  : programmi.filter((p) => p.atletaId === atleta.id && !p.riposo).length;
               return (
                 <div key={atleta.id} className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
                   <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
