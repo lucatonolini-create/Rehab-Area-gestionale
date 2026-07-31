@@ -865,15 +865,16 @@ export default function PerformancePage() {
         const bh = (s.interno / maxTL) * plotH;
         const bx = bX(i) - barW / 2;
         const by = cY + PAD.top + plotH - bh;
+        const r = Math.min(1.0, barW / 2, bh / 2);
         doc.setFillColor(55, 65, 81);
         doc.setDrawColor(37, 47, 63);
         doc.setLineWidth(0.15);
-        doc.rect(bx, by, barW, bh, "FD");
+        doc.roundedRect(bx, by, barW, bh, r, r, "FD");
       });
 
       // RPE line (right axis, red solid) + dots + value labels
       doc.setDrawColor(...RED_RGB);
-      doc.setLineWidth(0.9);
+      doc.setLineWidth(0.6);
       doc.setLineDashPattern([], 0);
       for (let i = 0; i < n - 1; i++) {
         const s0 = tlSessions[i], s1 = tlSessions[i + 1];
@@ -885,8 +886,8 @@ export default function PerformancePage() {
         if (s.rpe === null) return;
         doc.setFillColor(...RED_RGB);
         doc.setDrawColor(255, 255, 255);
-        doc.setLineWidth(0.3);
-        doc.circle(bX(i), rpeY(s.rpe), 1, "FD");
+        doc.setLineWidth(0.35);
+        doc.circle(bX(i), rpeY(s.rpe), 0.8, "FD");
         const barTopP = s.interno !== null ? cY + PAD.top + (1 - s.interno / maxTL) * plotH : cY + PAD.top;
         const insideBarP = rpeY(s.rpe) - 2 >= barTopP;
         doc.setFontSize(4.5);
@@ -910,14 +911,14 @@ export default function PerformancePage() {
       const legX = cX + PAD.left;
       // TL bar swatch
       doc.setFillColor(55, 65, 81); doc.setDrawColor(37, 47, 63); doc.setLineWidth(0.15);
-      doc.rect(legX, legY - 2.5, 4, 2.5, "FD");
+      doc.roundedRect(legX, legY - 2.5, 4, 2.5, 0.6, 0.6, "FD");
       doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(60, 60, 60);
       doc.text("Training Load (UA)", legX + 5.5, legY);
       // RPE line swatch
-      doc.setDrawColor(...RED_RGB); doc.setLineWidth(0.9); doc.setLineDashPattern([], 0);
+      doc.setDrawColor(...RED_RGB); doc.setLineWidth(0.6); doc.setLineDashPattern([], 0);
       doc.line(legX + 46, legY - 1.2, legX + 50, legY - 1.2);
-      doc.setFillColor(...RED_RGB); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.3);
-      doc.circle(legX + 48, legY - 1.2, 0.9, "FD");
+      doc.setFillColor(...RED_RGB); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.35);
+      doc.circle(legX + 48, legY - 1.2, 0.7, "FD");
       doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(60, 60, 60);
       doc.text("RPE (scala 0-10)", legX + 51.5, legY);
 
