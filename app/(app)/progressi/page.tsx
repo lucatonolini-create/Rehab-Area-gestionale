@@ -46,6 +46,7 @@ function esportaCSV(atleta: Atleta, programmi: Programma[]) {
   rows.push(["Inizio riabilitazione", fmt(atleta.inizioRehab)]);
   rows.push(["Fine riabilitazione", fmt(atleta.fineRehab)]);
   rows.push(["Stato attuale", atleta.stato]);
+  rows.push(["Codice OSIICS", atleta.osiicsCodice ? `${atleta.osiicsCodice}${atleta.osiicsDescrizione ? ` – ${atleta.osiicsDescrizione}` : ""}` : "—"]);
   if (atleta.note) rows.push(["Note", atleta.note]);
   rows.push([]);
 
@@ -187,11 +188,11 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
     ? `${Math.round((new Date(fine + "T12:00").getTime() - new Date(inizio + "T12:00").getTime()) / 86400000)}gg`
     : "—";
 
-  const tuttiInfortuni: Array<{ id: string; tipo?: string; diagnosi: string; inizio: string; fine?: string; squadraDate?: string }> = [];
+  const tuttiInfortuni: Array<{ id: string; tipo?: string; diagnosi: string; inizio: string; fine?: string; squadraDate?: string; osiicsCodice?: string }> = [];
   if (atleta.stato === "Infortunato" && (atleta.infortunio || atleta.inizioRehab))
-    tuttiInfortuni.push({ id: "__corrente__", tipo: atleta.tipoInfortunio, diagnosi: atleta.infortunio || "—", inizio: atleta.inizioRehab, fine: atleta.fineRehab });
+    tuttiInfortuni.push({ id: "__corrente__", tipo: atleta.tipoInfortunio, diagnosi: atleta.infortunio || "—", inizio: atleta.inizioRehab, fine: atleta.fineRehab, osiicsCodice: atleta.osiicsCodice });
   (atleta.storicoInfortuni ?? []).forEach((s) =>
-    tuttiInfortuni.push({ id: s.id, tipo: s.tipo, diagnosi: s.diagnosi, inizio: s.inizioRehab, fine: s.fineRehab })
+    tuttiInfortuni.push({ id: s.id, tipo: s.tipo, diagnosi: s.diagnosi, inizio: s.inizioRehab, fine: s.fineRehab, osiicsCodice: s.osiicsCodice })
   );
   // Ordine cronologico: dal più vecchio al più recente; dedup per entrate duplicate
   tuttiInfortuni.sort((a, b) => (a.inizio ?? "").localeCompare(b.inizio ?? ""));
@@ -220,6 +221,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
     body: [
       ["Piede dominante", atleta.piedeDominante || "—"],
       ["Stato attuale", atleta.stato],
+      ...(atleta.osiicsCodice ? [["Codice OSIICS", `${atleta.osiicsCodice}${atleta.osiicsDescrizione ? ` – ${atleta.osiicsDescrizione}` : ""}`]] : []),
     ],
     theme: "striped",
     styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak", halign: "left", valign: "middle" },
@@ -237,7 +239,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
       body: tuttiInfortuni.map((inf, i) => [
         i + 1,
         inf.tipo ?? "—",
-        inf.diagnosi,
+        inf.osiicsCodice ? `${inf.diagnosi} [${inf.osiicsCodice}]` : inf.diagnosi,
         inf.inizio ? fmtDCl(inf.inizio) : "—",
         inf.fine ? fmtDCl(inf.fine) : "—",
         inf.squadraDate ? fmtDCl(inf.squadraDate) : "—",
@@ -705,15 +707,15 @@ function esportaCSVReportMensile(
   const rows: string[][] = [];
   rows.push([`U.S. CREMONESE – REHAB AREA – Report ${nomeP}${filtroCat !== "Tutte" ? ` – ${filtroCat}` : ""}`]);
   rows.push([]);
-  rows.push(["Nome", "Categoria", "Infortunio", "Tipo", "Inizio", "Fine", "Giorni", "Stato"]);
+  rows.push(["Nome", "Categoria", "Infortunio", "Tipo", "Codice OSIICS", "Inizio", "Fine", "Giorni", "Stato"]);
 
   atletiMese.forEach(a => {
     const infortuni = infortunitNelPeriodo(a, mesiP ?? [{ anno, mese }]);
     if (infortuni.length === 0) {
-      rows.push([nd(a), a.categoria ?? "—", "—", "—", "—", "—", "—", a.stato]);
+      rows.push([nd(a), a.categoria ?? "—", "—", "—", "—", "—", "—", "—", a.stato]);
     } else {
       infortuni.forEach(inf => {
-        rows.push([nd(a), a.categoria ?? "—", inf.diagnosi, inf.tipo ?? "—", inf.inizio ? fmt(inf.inizio) : "—", inf.fine ? fmt(inf.fine) : "—", inf.inizio ? gg(inf.inizio, inf.fine) : "—", inf.fine ? "Recuperato" : a.stato]);
+        rows.push([nd(a), a.categoria ?? "—", inf.diagnosi, inf.tipo ?? "—", inf.osiicsCodice ?? "—", inf.inizio ? fmt(inf.inizio) : "—", inf.fine ? fmt(inf.fine) : "—", inf.inizio ? gg(inf.inizio, inf.fine) : "—", inf.fine ? "Recuperato" : a.stato]);
       });
     }
   });
@@ -956,7 +958,7 @@ async function esportaPDFReportMensile(
           );
         }
         row.push(
-          inf.diagnosi,
+          inf.osiicsCodice ? `${inf.diagnosi} [${inf.osiicsCodice}]` : inf.diagnosi,
           (inf.tipo ?? "—").replace(/\//g, "/ "),
           inf.meccanismo || "—",
           inf.note || "—",
@@ -1019,7 +1021,7 @@ function atletaAttivoInMese(a: Atleta, anno: number, mese: number): boolean {
   return (a.storicoInfortuni ?? []).some((s) => periodoAttivo(s.inizioRehab, s.fineRehab));
 }
 
-type InfortunioNelMese = { diagnosi: string; tipo?: string; inizio: string; fine?: string; meccanismo?: string; note?: string };
+type InfortunioNelMese = { diagnosi: string; tipo?: string; inizio: string; fine?: string; meccanismo?: string; note?: string; osiicsCodice?: string };
 function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNelMese[] {
   const meseStart = new Date(anno, mese, 1);
   const meseEnd = new Date(anno, mese + 1, 0);
@@ -1032,10 +1034,10 @@ function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNel
   };
   const result: InfortunioNelMese[] = [];
   if (inMese(a.inizioRehab, a.fineRehab) && a.infortunio)
-    result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined });
+    result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined, osiicsCodice: a.osiicsCodice });
   (a.storicoInfortuni ?? []).forEach((s) => {
     if (inMese(s.inizioRehab, s.fineRehab))
-      result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note });
+      result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note, osiicsCodice: s.osiicsCodice });
   });
   const fmtK = (d?: string) => {
     if (!d) return "";

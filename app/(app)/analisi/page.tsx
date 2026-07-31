@@ -69,7 +69,7 @@ function atletaAttivoInMese(a: Atleta, anno: number, mese: number): boolean {
   return (a.storicoInfortuni ?? []).some((s) => periodoAttivo(s.inizioRehab, s.fineRehab));
 }
 
-type InfortunioNelMese = { diagnosi: string; tipo?: string; inizio: string; fine?: string; meccanismo?: string; note?: string };
+type InfortunioNelMese = { diagnosi: string; tipo?: string; inizio: string; fine?: string; meccanismo?: string; note?: string; osiicsCodice?: string };
 
 function infortunitNelPeriodo(a: Atleta, mesi: { anno: number; mese: number }[]): InfortunioNelMese[] {
   const seen = new Set<string>();
@@ -94,10 +94,10 @@ function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNel
   };
   const result: InfortunioNelMese[] = [];
   if (a.stato === "Infortunato" && inMese(a.inizioRehab, a.fineRehab) && a.infortunio)
-    result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined });
+    result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined, osiicsCodice: a.osiicsCodice });
   (a.storicoInfortuni ?? []).forEach((s) => {
     if (inMese(s.inizioRehab, s.fineRehab))
-      result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note });
+      result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note, osiicsCodice: s.osiicsCodice });
   });
   const fmtK = (d?: string) => {
     if (!d) return "";
@@ -215,15 +215,15 @@ function esportaCSVReport(
   rows.push([`U.S. CREMONESE – REHAB AREA – Report ${subtitle}`]);
   rows.push([`Totale atleti: ${atletiMese.length}`, "", `Generato il ${oggi}`]);
   rows.push([]);
-  rows.push(["Nome", "Categoria", "Infortunio", "Tipo", "Inizio", "Fine", "Giorni", "Stato"]);
+  rows.push(["Nome", "Categoria", "Infortunio", "Tipo", "Codice OSIICS", "Inizio", "Fine", "Giorni", "Stato"]);
 
   atletiMese.forEach(a => {
     const infortuni = infortunitNelPeriodo(a, mesiP ?? [{ anno, mese }]);
     if (infortuni.length === 0) {
-      rows.push([nd(a), a.categoria ?? "—", "—", "—", "—", "—", "—", a.stato]);
+      rows.push([nd(a), a.categoria ?? "—", "—", "—", "—", "—", "—", "—", a.stato]);
     } else {
       infortuni.forEach(inf => {
-        rows.push([nd(a), a.categoria ?? "—", inf.diagnosi, inf.tipo ?? "—", inf.inizio ? fmt(inf.inizio) : "—", inf.fine ? fmt(inf.fine) : "—", inf.inizio ? gg(inf.inizio, inf.fine) : "—", inf.fine ? "Recuperato" : a.stato]);
+        rows.push([nd(a), a.categoria ?? "—", inf.diagnosi, inf.tipo ?? "—", inf.osiicsCodice ?? "—", inf.inizio ? fmt(inf.inizio) : "—", inf.fine ? fmt(inf.fine) : "—", inf.inizio ? gg(inf.inizio, inf.fine) : "—", inf.fine ? "Recuperato" : a.stato]);
       });
     }
   });
@@ -557,11 +557,11 @@ async function esportaPDFPanoramica(params: {
   const athleteForRowT: number[] = [];
 
   atletiOrdinati.forEach((a, athleteIdx) => {
-    const infortuni: Array<{ diagnosi: string; tipo?: string; inizio?: string; fine?: string; meccanismo?: string; note?: string }> = [];
+    const infortuni: Array<{ diagnosi: string; tipo?: string; inizio?: string; fine?: string; meccanismo?: string; note?: string; osiicsCodice?: string }> = [];
     if (a.infortunio || a.inizioRehab)
-      infortuni.push({ diagnosi: a.infortunio || "—", tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined });
+      infortuni.push({ diagnosi: a.infortunio || "—", tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined, osiicsCodice: a.osiicsCodice });
     (a.storicoInfortuni ?? []).forEach((s) =>
-      infortuni.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note })
+      infortuni.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note, osiicsCodice: s.osiicsCodice })
     );
 
     const n = infortuni.length;
@@ -576,7 +576,7 @@ async function esportaPDFPanoramica(params: {
           tuttiRows.push([
             { content: nd(a), rowSpan: n, styles: { ...nomeDataStyle, valign: "middle" as const } },
             { content: a.categoria, rowSpan: n, styles: { valign: "middle" } },
-            inf.diagnosi,
+            inf.osiicsCodice ? `${inf.diagnosi} [${inf.osiicsCodice}]` : inf.diagnosi,
             (inf.tipo || "—").replace(/\//g, "/ "),
             inf.meccanismo || "—",
             inf.note || "—",
@@ -584,7 +584,7 @@ async function esportaPDFPanoramica(params: {
             fmtD(inf.inizio), fmtD(inf.fine),
           ]);
         } else {
-          tuttiRows.push([inf.diagnosi, (inf.tipo || "—").replace(/\//g, "/ "), inf.meccanismo || "—", inf.note || "—", statoInf, fmtD(inf.inizio), fmtD(inf.fine)]);
+          tuttiRows.push([inf.osiicsCodice ? `${inf.diagnosi} [${inf.osiicsCodice}]` : inf.diagnosi, (inf.tipo || "—").replace(/\//g, "/ "), inf.meccanismo || "—", inf.note || "—", statoInf, fmtD(inf.inizio), fmtD(inf.fine)]);
         }
         athleteForRowT.push(athleteIdx);
       });
@@ -1008,7 +1008,7 @@ async function esportaPDFReport(
           );
         }
         row.push(
-          inf.diagnosi,
+          inf.osiicsCodice ? `${inf.diagnosi} [${inf.osiicsCodice}]` : inf.diagnosi,
           (inf.tipo ?? "—").replace(/\//g, "/ "),
           inf.meccanismo || "—",
           inf.note || "—",
