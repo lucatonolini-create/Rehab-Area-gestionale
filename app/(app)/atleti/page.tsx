@@ -1688,6 +1688,16 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     await upsertAtleta(aggiornato);
   };
 
+  const eliminaInfortunioStorico = async (inf: InfortunioStorico) => {
+    if (!selected) return;
+    if (!confirm(`Eliminare definitivamente "${inf.diagnosi}"? L'operazione non è reversibile.`)) return;
+    const nuovoStorico = (selected.storicoInfortuni ?? []).filter((s) => s.id !== inf.id);
+    const aggiornato = { ...selected, storicoInfortuni: nuovoStorico };
+    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
+    setSelected(aggiornato);
+    await upsertAtleta(aggiornato);
+  };
+
   const scaricaPDFStorico = async () => {
     if (!selected) return;
     const programmi = await loadProgrammi(selected.id);
@@ -2668,6 +2678,10 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                       className="p-1 rounded-lg hover:bg-green-50 text-gray-300 hover:text-green-600" title="Chiudi infortunio">
                                       <CheckCircle2 className="w-3 h-3" />
                                     </button>
+                                    <button onClick={() => eliminaInfortunioStorico(inf)}
+                                      className="p-1 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500" title="Elimina infortunio">
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
                                   </div>
                                 </div>
                                 {inf.tipo && <p className="text-xs text-gray-400">{inf.tipo}</p>}
@@ -2895,6 +2909,10 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                         <button onClick={() => ripristinaInfortunio(inf, storicoIdx)}
                                           className="p-1 rounded-lg hover:bg-orange-50 text-gray-300 hover:text-orange-500" title="Ripristina come attivo">
                                           <RotateCcw className="w-3 h-3" />
+                                        </button>
+                                        <button onClick={() => eliminaInfortunioStorico(inf)}
+                                          className="p-1 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500" title="Elimina infortunio">
+                                          <Trash2 className="w-3 h-3" />
                                         </button>
                                       </div>
                                     </div>
