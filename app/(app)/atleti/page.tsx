@@ -2611,11 +2611,13 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                 const matchInf = (p: Programma, inf: InfortunioStorico) => {
                   if (p.infortunioId && p.infortunioId !== "__corrente__") return p.infortunioId === inf.id;
                   if (p.infortunioId === "__corrente__") {
-                    // Sessione orfana: se atleta è Disponibile, mappa per data sull'infortunio archiviato
-                    if (selected.stato === "Infortunato") return false;
+                    // Sessione orfana: mappa per data sull'infortunio archiviato
                     if (!p.data || !inf.inizioRehab) return false;
                     if (p.data < inf.inizioRehab) return false;
                     if (inf.fineRehab && p.data > inf.fineRehab) return false;
+                    // Se l'atleta è attualmente infortunato, non assegnare sessioni dopo
+                    // l'inizio del nuovo infortunio (appartengono a quello corrente)
+                    if (selected.stato === "Infortunato" && selected.inizioRehab && p.data >= selected.inizioRehab) return false;
                     return true;
                   }
                   if (!p.data || !inf.inizioRehab) return false;
