@@ -619,7 +619,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   );
   const giorniCorrente = atleta.stato === "Infortunato" && atleta.inizioRehab
     ? programmi.filter((p) => (
-        p.infortunioId === "__corrente__" ||
+        (p.infortunioId === "__corrente__" && p.data >= atleta.inizioRehab) ||
         (!p.infortunioId && p.data >= atleta.inizioRehab && !concurrentSessIdsPDF.has(p.id))
       ) && isSessionePDF(p)).length : 0;
   const totaleStagionePDF = giorniArchivio.reduce((s, g) => s + g, 0) + giorniCorrente;
@@ -2633,7 +2633,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                 );
                 const giorniCorrente = selected.stato === "Infortunato" && selected.inizioRehab
                   ? programmiAtleta.filter((p) => (
-                      p.infortunioId === "__corrente__" ||
+                      (p.infortunioId === "__corrente__" && p.data >= selected.inizioRehab) ||
                       (!p.infortunioId && p.data >= selected.inizioRehab && !concurrentSessIds.has(p.id))
                     ) && isSessione(p)).length
                   : 0;
