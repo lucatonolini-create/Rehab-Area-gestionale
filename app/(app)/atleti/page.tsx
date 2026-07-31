@@ -204,50 +204,80 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   ) => {
     if (data.length < 2) return;
     const [cr, cg, cb] = color;
-    const cX = opts?.startX ?? M; const cW = opts?.width ?? (W - 2 * M); const cH = 40; const cY = y + 9;
-    doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(...color);
-    doc.text(chartLabel, cX, y + 2);
-    doc.setFillColor(249, 250, 251); doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.3);
-    doc.rect(cX, cY, cW, cH, "FD");
+    const cX = opts?.startX ?? M; const cW = opts?.width ?? (W - 2 * M); const cH = 42; const cY = y + 8;
+
+    const CARD_BG: [number, number, number] = [18, 25, 42];
+    const GRID_C: [number, number, number] = [32, 42, 65];
+    const AXIS_C: [number, number, number] = [95, 112, 145];
+    const GOLD: [number, number, number] = [196, 155, 30];
+    const TITLE_C: [number, number, number] = [235, 238, 248];
+
     const n = data.length;
     const vals = data.map((d) => d.value);
     const minV = Math.min(...vals); const maxV = Math.max(...vals);
     const range = maxV - minV || 1;
-    const PAD = { top: 6, right: 4, bottom: 8, left: 16 };
+    const avg = vals.reduce((a, b) => a + b, 0) / n;
+    const fmtV = (v: number) => Number.isInteger(v) ? String(v) : v.toFixed(1);
+
+    const PAD = { top: 8, right: 5, bottom: 8, left: 18 };
     const plotX = cX + PAD.left; const plotW = cW - PAD.left - PAD.right;
     const plotY = cY + PAD.top; const plotH = cH - PAD.top - PAD.bottom;
+
+    // Dark card with colored border
+    doc.setFillColor(...CARD_BG);
+    doc.roundedRect(cX, cY, cW, cH, 1.5, 1.5, "F");
+    doc.setDrawColor(cr, cg, cb); doc.setLineWidth(0.3);
+    doc.roundedRect(cX, cY, cW, cH, 1.5, 1.5, "S");
+
+    // Title (white) + stats top-right
+    doc.setFont("helvetica", "bold"); doc.setFontSize(6.5); doc.setTextColor(...TITLE_C);
+    doc.text(chartLabel, cX + PAD.left, cY + 5.5);
+    doc.setFontSize(5); doc.setFont("helvetica", "normal"); doc.setTextColor(...AXIS_C);
+    doc.text(`Ult: ${fmtV(vals[n - 1])}  ·  Med: ${fmtV(avg)}  ·  Max: ${fmtV(maxV)}`, cX + cW - PAD.right, cY + 5.5, { align: "right" });
+
+    // Grid + Y labels
     for (let t = 0; t <= 4; t++) {
       const tv = minV + (range / 4) * t;
       const ty = plotY + plotH - (t / 4) * plotH;
-      doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.2);
+      doc.setDrawColor(...GRID_C); doc.setLineWidth(0.15);
       doc.line(plotX, ty, plotX + plotW, ty);
-      doc.setFontSize(5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
+      doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...AXIS_C);
       doc.text(tv.toFixed(1), plotX - 1.5, ty + 1.5, { align: "right" });
     }
+
     const gX = (i: number) => plotX + (n > 1 ? (i / (n - 1)) * plotW : plotW / 2);
     const gY = (v: number) => plotY + plotH - ((v - minV) / range) * plotH;
-    const lr = Math.round(cr * 0.12 + 255 * 0.88);
-    const lg = Math.round(cg * 0.12 + 255 * 0.88);
-    const lb = Math.round(cb * 0.12 + 255 * 0.88);
-    doc.setFillColor(lr, lg, lb);
+
+    // Area fill (dark tint of metric color)
+    const ar = Math.round(cr * 0.25 + 18 * 0.75);
+    const ag = Math.round(cg * 0.25 + 25 * 0.75);
+    const ab = Math.round(cb * 0.25 + 42 * 0.75);
+    doc.setFillColor(ar, ag, ab);
     const botY2 = plotY + plotH;
     const segs: [number, number][] = [[0, gY(data[0].value) - botY2]];
     for (let i = 1; i < n; i++) segs.push([gX(i) - gX(i - 1), gY(data[i].value) - gY(data[i - 1].value)]);
     segs.push([0, botY2 - gY(data[n - 1].value)]);
     segs.push([gX(0) - gX(n - 1), 0]);
     (doc as any).lines(segs, gX(0), botY2, [1, 1], "F", true);
-    const avg = vals.reduce((a, b) => a + b, 0) / n;
-    const avgY2 = gY(avg);
-    doc.setDrawColor(...gray); doc.setLineWidth(0.5); doc.setLineDashPattern([1.5, 1.5], 0);
-    doc.line(plotX, avgY2, plotX + plotW, avgY2);
+
+    // Average dashed line (gold)
+    doc.setDrawColor(...GOLD); doc.setLineWidth(0.4); doc.setLineDashPattern([1.5, 1.5], 0);
+    doc.line(plotX, gY(avg), plotX + plotW, gY(avg));
     doc.setLineDashPattern([], 0);
-    doc.setDrawColor(...color); doc.setLineWidth(0.8);
+
+    // Main line
+    doc.setDrawColor(cr, cg, cb); doc.setLineWidth(0.9);
     for (let i = 0; i < n - 1; i++) doc.line(gX(i), gY(data[i].value), gX(i + 1), gY(data[i + 1].value));
-    doc.setFillColor(...color); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.4);
-    data.forEach((d, i) => doc.circle(gX(i), gY(d.value), 0.9, "FD"));
-    doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
+
+    // Dots (colored fill, dark border)
+    doc.setFillColor(cr, cg, cb); doc.setDrawColor(...CARD_BG); doc.setLineWidth(0.35);
+    data.forEach((d) => doc.circle(gX(data.indexOf(d)), gY(d.value), 0.85, "FD"));
+
+    // X-axis labels
+    doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...AXIS_C);
     const step = n <= 12 ? 1 : n <= 24 ? 2 : Math.ceil(n / 12);
     data.forEach((d, i) => { if (i % step === 0) doc.text(d.dateLabel, gX(i), cY + cH + 4, { align: "center" }); });
+
     if (opts?.updateY !== false) y = cY + cH + 9;
   };
 
@@ -1322,16 +1352,22 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         }
 
         // ── Grafici Carico Esterno GPS ──────────────────────────────────
+        const CRE: [number,number,number][] = [
+          [200, 16, 46],   // rosso Cremonese
+          [30, 58, 138],   // blu
+          [196, 155, 30],  // oro
+          [55, 65, 81],    // grigio
+        ];
         const extMetrics: { label: string; color: [number,number,number]; getData: (s: CaricoSession) => number | null }[] = [
-          { label: "Distanza Totale (m)",        color: [37, 99, 235],   getData: (s) => s.distanza },
-          { label: "D>16 km/h (m)",               color: [234, 88, 12],   getData: (s) => s.hsr      },
-          { label: "D>20 km/h (m)",              color: [217, 119, 6],   getData: (s) => s.vel21    },
-          { label: "D>25 km/h (m)",              color: [160, 83, 9],    getData: (s) => s.vel25    },
-          { label: "Velocità Massima (km/h)",    color: [124, 58, 237],  getData: (s) => s.velMax   },
-          { label: "N. Accelerazioni",           color: [5, 150, 105],   getData: (s) => s.acc      },
-          { label: "N. Decelerazioni",           color: [2, 132, 199],   getData: (s) => s.dec      },
-          { label: "N. Sprint",                  color: [219, 39, 119],  getData: (s) => s.sprint   },
-          { label: "Potenza Metabolica (W/kg)",  color: [75, 85, 99],    getData: (s) => s.potenza  },
+          { label: "Distanza Totale (m)",        color: CRE[0], getData: (s) => s.distanza },
+          { label: "D>16 km/h (m)",              color: CRE[1], getData: (s) => s.hsr      },
+          { label: "D>20 km/h (m)",              color: CRE[2], getData: (s) => s.vel21    },
+          { label: "D>25 km/h (m)",              color: CRE[3], getData: (s) => s.vel25    },
+          { label: "Velocità Massima (km/h)",    color: CRE[0], getData: (s) => s.velMax   },
+          { label: "N. Accelerazioni",           color: CRE[1], getData: (s) => s.acc      },
+          { label: "N. Decelerazioni",           color: CRE[2], getData: (s) => s.dec      },
+          { label: "N. Sprint",                  color: CRE[3], getData: (s) => s.sprint   },
+          { label: "Potenza Metabolica (W/kg)",  color: CRE[0], getData: (s) => s.potenza  },
         ];
         const extCharts = extMetrics
           .map(({ label, color, getData }) => ({

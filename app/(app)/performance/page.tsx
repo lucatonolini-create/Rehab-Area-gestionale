@@ -201,17 +201,17 @@ interface MetricDef {
 
 const METRICS: MetricDef[] = [
   { key: "rpe",      label: "RPE",                 shortLabel: "RPE",       unit: "",        color: "#C8102E", dec: 1 },
-  { key: "durata",   label: "Durata",              shortLabel: "Durata",    unit: "min",     color: "#6b7280", dec: 0 },
-  { key: "interno",  label: "Carico Interno",       shortLabel: "TL",        unit: "UA",      color: "#7c3aed", dec: 0 },
-  { key: "distanza", label: "Distanza Totale",      shortLabel: "Dist. Tot.", unit: "m",       color: "#2563eb", dec: 0 },
-  { key: "hsr",      label: "D>16 km/h",           shortLabel: "D>16 km/h", unit: "m",       color: "#0891b2", dec: 0 },
-  { key: "vel21",    label: "D>20 km/h",           shortLabel: "D>20 km/h", unit: "m",       color: "#16a34a", dec: 0 },
-  { key: "vel25",    label: "D>25 km/h",           shortLabel: "D>25 km/h", unit: "m",       color: "#15803d", dec: 0 },
-  { key: "velMax",   label: "Velocità Max",         shortLabel: "Vel. Max",  unit: "km/h",    color: "#059669", dec: 1 },
-  { key: "acc",      label: "Accelerazioni",        shortLabel: "N. Acc.",   unit: "",        color: "#d97706", dec: 0 },
-  { key: "dec",      label: "Decelerazioni",        shortLabel: "N. Dec.",   unit: "",        color: "#ea580c", dec: 0 },
-  { key: "sprint",   label: "Sprint",               shortLabel: "N. Sprint", unit: "",        color: "#db2777", dec: 0 },
-  { key: "potenza",  label: "Potenza Metabolica",   shortLabel: "Potenza",   unit: "W/kg",    color: "#65a30d", dec: 1 },
+  { key: "durata",   label: "Durata",              shortLabel: "Durata",    unit: "min",     color: "#374151", dec: 0 },
+  { key: "interno",  label: "Carico Interno",       shortLabel: "TL",        unit: "UA",      color: "#374151", dec: 0 },
+  { key: "distanza", label: "Distanza Totale",      shortLabel: "Dist. Tot.", unit: "m",       color: "#C8102E", dec: 0 },
+  { key: "hsr",      label: "D>16 km/h",           shortLabel: "D>16 km/h", unit: "m",       color: "#1E3A8A", dec: 0 },
+  { key: "vel21",    label: "D>20 km/h",           shortLabel: "D>20 km/h", unit: "m",       color: "#C49B1E", dec: 0 },
+  { key: "vel25",    label: "D>25 km/h",           shortLabel: "D>25 km/h", unit: "m",       color: "#374151", dec: 0 },
+  { key: "velMax",   label: "Velocità Max",         shortLabel: "Vel. Max",  unit: "km/h",    color: "#C8102E", dec: 1 },
+  { key: "acc",      label: "Accelerazioni",        shortLabel: "N. Acc.",   unit: "",        color: "#1E3A8A", dec: 0 },
+  { key: "dec",      label: "Decelerazioni",        shortLabel: "N. Dec.",   unit: "",        color: "#C49B1E", dec: 0 },
+  { key: "sprint",   label: "Sprint",               shortLabel: "N. Sprint", unit: "",        color: "#374151", dec: 0 },
+  { key: "potenza",  label: "Potenza Metabolica",   shortLabel: "Potenza",   unit: "W/kg",    color: "#C8102E", dec: 1 },
 ];
 
 // ── SVG Chart ────────────────────────────────────────────────────────────────
@@ -651,43 +651,49 @@ export default function PerformancePage() {
       const py = (v: number) => cy + PAD.top + (1 - (v - vMin) / vRange) * iH;
       const botY = cy + PAD.top + iH;
 
-      // Card background + border
-      doc.setFillColor(249, 250, 251);
+      const CARD_BG: [number, number, number] = [18, 25, 42];
+      const GRID_C: [number, number, number] = [32, 42, 65];
+      const AXIS_C: [number, number, number] = [95, 112, 145];
+      const GOLD: [number, number, number] = [196, 155, 30];
+      const TITLE_C: [number, number, number] = [235, 238, 248];
+
+      // Dark card + colored border
+      doc.setFillColor(...CARD_BG);
       doc.roundedRect(cx, cy, cw, ch, 1.5, 1.5, "F");
-      doc.setDrawColor(229, 231, 235);
-      doc.setLineWidth(0.15);
+      doc.setDrawColor(cr, cg, cb);
+      doc.setLineWidth(0.3);
       doc.roundedRect(cx, cy, cw, ch, 1.5, 1.5, "S");
 
-      // Title (metric name + unit)
+      // Title (white)
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(cr, cg, cb);
+      doc.setTextColor(...TITLE_C);
       doc.text(`${m.label}${m.unit ? ` (${m.unit})` : ""}`, cx + PAD.left, cy + 5.5);
 
-      // Stats in top-right
+      // Stats top-right
       doc.setFontSize(5);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(120, 120, 120);
+      doc.setTextColor(...AXIS_C);
       const statStr = `Ult: ${fv(vals[n-1], m.dec)}  ·  Med: ${fv(dAvg, m.dec)}  ·  Max: ${fv(dMax, m.dec)}`;
       doc.text(statStr, cx + cw - PAD.right, cy + 5.5, { align: "right" });
 
       // Y grid + tick labels
       [0, 0.25, 0.5, 0.75, 1].forEach((t) => {
         const gy = cy + PAD.top + t * iH;
-        doc.setDrawColor(229, 231, 235);
+        doc.setDrawColor(...GRID_C);
         doc.setLineWidth(0.15);
         doc.line(cx + PAD.left, gy, cx + cw - PAD.right, gy);
         doc.setFontSize(4.5);
         doc.setFont("helvetica", "normal");
-        doc.setTextColor(165, 165, 165);
+        doc.setTextColor(...AXIS_C);
         doc.text((vMax - t * vRange).toFixed(m.dec), cx + PAD.left - 1, gy + 1.5, { align: "right" });
       });
 
-      // Area fill — lightened tint of the metric color
-      const lr = Math.round(cr * 0.12 + 255 * 0.88);
-      const lg = Math.round(cg * 0.12 + 255 * 0.88);
-      const lb = Math.round(cb * 0.12 + 255 * 0.88);
-      doc.setFillColor(lr, lg, lb);
+      // Area fill (dark tint of metric color)
+      const ar = Math.round(cr * 0.25 + 18 * 0.75);
+      const ag = Math.round(cg * 0.25 + 25 * 0.75);
+      const ab = Math.round(cb * 0.25 + 42 * 0.75);
+      doc.setFillColor(ar, ag, ab);
       const segs: number[][] = [[0, py(pts[0].v) - botY]];
       for (let i = 1; i < n; i++) {
         segs.push([px(i) - px(i - 1), py(pts[i].v) - py(pts[i - 1].v)]);
@@ -695,9 +701,9 @@ export default function PerformancePage() {
       segs.push([0, botY - py(pts[n - 1].v)]);
       doc.lines(segs, px(0), botY, [1, 1], "F", true);
 
-      // Average dashed line
-      doc.setDrawColor(cr, cg, cb);
-      doc.setLineWidth(0.3);
+      // Average dashed line (gold)
+      doc.setDrawColor(...GOLD);
+      doc.setLineWidth(0.35);
       doc.setLineDashPattern([1.5, 1.5], 0);
       doc.line(cx + PAD.left, py(dAvg), cx + cw - PAD.right, py(dAvg));
       doc.setLineDashPattern([], 0);
@@ -709,9 +715,9 @@ export default function PerformancePage() {
         doc.line(px(i), py(pts[i].v), px(i + 1), py(pts[i + 1].v));
       }
 
-      // Dots (skip some when many points to avoid clutter)
+      // Dots (colored fill, dark card border)
       doc.setFillColor(cr, cg, cb);
-      doc.setDrawColor(255, 255, 255);
+      doc.setDrawColor(...CARD_BG);
       doc.setLineWidth(0.35);
       const dotStep = n <= 30 ? 1 : 2;
       pts.forEach((p, i) => {
@@ -722,7 +728,7 @@ export default function PerformancePage() {
       const lblStep = n <= 12 ? 1 : n <= 24 ? 2 : Math.ceil(n / 12);
       doc.setFontSize(4.5);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(120, 120, 120);
+      doc.setTextColor(...AXIS_C);
       pts.forEach((p, i) => {
         if (i % lblStep === 0) doc.text(p.label, px(i), cy + ch - 1, { align: "center" });
       });
