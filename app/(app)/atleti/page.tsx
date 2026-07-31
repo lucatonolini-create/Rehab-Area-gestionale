@@ -1452,7 +1452,6 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
               osiicsCodice: undefined,
               osiicsDescrizione: undefined,
               osiicsCodeId: undefined,
-              dettaglioSituazionale: undefined,
             };
             // Rimappa le sessioni orfane __corrente__ al nuovo id storico
             const remappati = programmiAtleta
