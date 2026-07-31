@@ -717,14 +717,17 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     // Injury info bar (white bg, red text wrapped + underline, dates below)
     const squadraDay = injProgs.filter(p => p.squadra).sort((a, b) => a.data.localeCompare(b.data))[0];
     doc.setFont("helvetica", "bolditalic"); doc.setFontSize(9.5);
-    const titleLines = doc.splitTextToSize(injLabel, W - 2 * M) as string[];
     const lineH = 5.5;
-    const titleH = titleLines.length * lineH;
+    // Diagnosi su una o più righe, tipo sempre su riga separata
+    const diagLines = doc.splitTextToSize(inj.diagnosi || "—", W - 2 * M) as string[];
+    const tipoLine = inj.tipo ? `(${inj.tipo})` : null;
+    const allTitleLines = tipoLine ? [...diagLines, tipoLine] : diagLines;
+    const titleH = allTitleLines.length * lineH;
     const barH = titleH + (squadraDay ? 20 : 14);
     doc.setFillColor(255, 255, 255); doc.rect(M, y, W - 2 * M, barH, "F");
     doc.setTextColor(...red);
-    titleLines.forEach((line, i) => { doc.text(line, M, y + lineH + i * lineH); });
-    const lastLineW = doc.getTextWidth(titleLines[titleLines.length - 1]);
+    allTitleLines.forEach((line, i) => { doc.text(line, M, y + lineH + i * lineH); });
+    const lastLineW = doc.getTextWidth(allTitleLines[allTitleLines.length - 1]);
     doc.setDrawColor(...red); doc.setLineWidth(0.5);
     doc.line(M, y + titleH + 1.5, M + lastLineW, y + titleH + 1.5);
     const periodY = y + titleH + 8;
