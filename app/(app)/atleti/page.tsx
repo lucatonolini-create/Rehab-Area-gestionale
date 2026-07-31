@@ -371,7 +371,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         startY: weekStartY,
         body,
         bodyStyles: { fontSize: 5.5, cellPadding: 1.5, overflow: "linebreak" as const, halign: "left" as const, valign: "middle" as const },
-        margin: { left: M, right: M },
+        margin: { left: M, right: M, top: HDR + 8 },
         columnStyles: {
           0:  { cellWidth: 15 },
           1:  { cellWidth: 20 },
