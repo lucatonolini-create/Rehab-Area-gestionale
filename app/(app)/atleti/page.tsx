@@ -747,13 +747,17 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       .filter((p) => {
         if (p.infortunioId && p.infortunioId !== "__corrente__") return p.infortunioId === inj.id;
         if (p.infortunioId === "__corrente__") {
-          if (inj.id === "__corrente__") return true;
-          // Sessione orfana: solo se Disponibile (infortunio archiviato)
-          if (atleta.stato === "Infortunato") return false;
+          if (inj.id === "__corrente__") {
+            // Solo sessioni dalla data di inizio dell'infortunio corrente
+            return !atleta.inizioRehab || !p.data || p.data >= atleta.inizioRehab;
+          }
+          // Sessione orfana: mappa per data sull'infortunio archiviato
           if (usedProgIds.has(p.id)) return false;
           if (!p.data || !inj.inizio) return false;
           if (p.data < inj.inizio) return false;
           if (inj.fine && p.data > inj.fine) return false;
+          // Non assegnare sessioni successive all'inizio dell'infortunio corrente
+          if (atleta.stato === "Infortunato" && atleta.inizioRehab && p.data >= atleta.inizioRehab) return false;
           return true;
         }
         // Nessun ID: match per nome sessione (priorità assoluta)
