@@ -714,23 +714,28 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     addHeader(sub);
     y = HDR + 8;
 
-    // Injury info bar (white bg, red text + underline, dates below)
+    // Injury info bar (white bg, red text wrapped + underline, dates below)
     const squadraDay = injProgs.filter(p => p.squadra).sort((a, b) => a.data.localeCompare(b.data))[0];
-    const barH = squadraDay ? 28 : 22;
+    doc.setFont("helvetica", "bolditalic"); doc.setFontSize(9.5);
+    const titleLines = doc.splitTextToSize(injLabel, W - 2 * M) as string[];
+    const lineH = 5.5;
+    const titleH = titleLines.length * lineH;
+    const barH = titleH + (squadraDay ? 20 : 14);
     doc.setFillColor(255, 255, 255); doc.rect(M, y, W - 2 * M, barH, "F");
-    doc.setFont("helvetica", "bolditalic"); doc.setFontSize(9.5); doc.setTextColor(...red);
-    doc.text(injLabel, M, y + 9);
-    const injLabelW = doc.getTextWidth(injLabel);
+    doc.setTextColor(...red);
+    titleLines.forEach((line, i) => { doc.text(line, M, y + lineH + i * lineH); });
+    const lastLineW = doc.getTextWidth(titleLines[titleLines.length - 1]);
     doc.setDrawColor(...red); doc.setLineWidth(0.5);
-    doc.line(M, y + 10.5, M + injLabelW, y + 10.5);
+    doc.line(M, y + titleH + 1.5, M + lastLineW, y + titleH + 1.5);
+    const periodY = y + titleH + 8;
     const periodStr = inj.attivo
       ? `Dal ${fmtD(inj.inizio)} - In corso (${giorni} giorni)`
       : `${fmtD(inj.inizio)} - ${fmtD(inj.fine ?? "")}  (${giorni} giorni)`;
     doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(...gray);
-    doc.text(periodStr, M, y + 17);
+    doc.text(periodStr, M, periodY);
     if (squadraDay) {
       doc.setFont("helvetica", "bold"); doc.setTextColor(22, 101, 52);
-      doc.text(`Ritorno in squadra: ${fmtD(squadraDay.data)}`, M, y + 24);
+      doc.text(`Ritorno in squadra: ${fmtD(squadraDay.data)}`, M, periodY + 7);
     }
     y += barH + 4;
 
