@@ -221,6 +221,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
     body: [
       ["Piede dominante", atleta.piedeDominante || "—"],
       ["Stato attuale", atleta.stato],
+      ...(atleta.peso || atleta.altezza ? [["Peso / Altezza", `${atleta.peso || "—"} kg  ·  ${atleta.altezza || "—"} cm`]] : []),
       ...(atleta.osiicsCodice ? [["Codice OSIICS", `${atleta.osiicsCodice}${atleta.osiicsDescrizione ? ` – ${atleta.osiicsDescrizione}` : ""}`]] : []),
     ],
     theme: "striped",
