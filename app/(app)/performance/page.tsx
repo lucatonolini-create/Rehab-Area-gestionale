@@ -944,13 +944,29 @@ export default function PerformancePage() {
       doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...DARK_RGB);
       doc.text("Test", M, ty + 2);
       ty += 7;
-      const groupedBody: any[] = [];
+      // Group by session to compute rowSpan counts
+      const sessions: { dateLabel: string; infortunio: string; tests: { nome: string; risultato: string }[] }[] = [];
       let lastSessionKey = "";
       testTableRows.forEach((r) => {
         const key = r.data + "||" + r.infortunio;
-        const isFirst = key !== lastSessionKey;
-        if (isFirst) lastSessionKey = key;
-        groupedBody.push([isFirst ? r.dateLabel : "", isFirst ? r.infortunio : "", r.nomeTest, r.risultato]);
+        if (key !== lastSessionKey) { lastSessionKey = key; sessions.push({ dateLabel: r.dateLabel, infortunio: r.infortunio, tests: [] }); }
+        sessions[sessions.length - 1].tests.push({ nome: r.nomeTest, risultato: r.risultato });
+      });
+
+      const groupedBody: any[] = [];
+      sessions.forEach((s) => {
+        s.tests.forEach((t, i) => {
+          if (i === 0) {
+            groupedBody.push([
+              { content: s.dateLabel, rowSpan: s.tests.length, styles: { valign: "middle" as const, halign: "center" as const } },
+              { content: s.infortunio, rowSpan: s.tests.length, styles: { valign: "middle" as const } },
+              t.nome,
+              t.risultato,
+            ]);
+          } else {
+            groupedBody.push([t.nome, t.risultato]);
+          }
+        });
       });
 
       autoTable(doc, {
