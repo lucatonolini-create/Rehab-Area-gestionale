@@ -2641,7 +2641,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       (!p.infortunioId && p.data >= selected.inizioRehab && !concurrentSessIds.has(p.id))
                     ) && isSessione(p)).length
                   : 0;
-                const totaleStagione = storico.reduce((s, inf) => s + giorniPerInf(inf), 0) + giorniCorrente;
+                const totaleStagione = programmiAtleta.filter(isSessione).length;
 
                 const fmtData = (d: string) =>
                   d ? new Date(d + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
