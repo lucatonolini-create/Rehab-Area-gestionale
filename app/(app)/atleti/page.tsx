@@ -1444,6 +1444,15 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
               inizioRehab: "",
               fineRehab: undefined,
               progresso: 100,
+              meccanismo: undefined,
+              evento: undefined,
+              contatto: undefined,
+              lato: undefined,
+              posizioneInfortunio: undefined,
+              osiicsCodice: undefined,
+              osiicsDescrizione: undefined,
+              osiicsCodeId: undefined,
+              dettaglioSituazionale: undefined,
             };
             // Rimappa le sessioni orfane __corrente__ al nuovo id storico
             const remappati = programmiAtleta
