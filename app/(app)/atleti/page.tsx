@@ -1452,9 +1452,13 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
               fineRehab,
               note: dati.note || editAtleta.note || undefined,
             };
+            // Also close any concurrent injuries that were open at the same time
+            const storicoChiuso = (editAtleta.storicoInfortuni ?? []).map((s) =>
+              s.attivo ? { ...s, attivo: undefined as unknown as true, fineRehab: s.fineRehab || fineRehab } : s
+            );
             aggiornato = {
               ...aggiornato,
-              storicoInfortuni: [...(editAtleta.storicoInfortuni ?? []), inf],
+              storicoInfortuni: [...storicoChiuso, inf],
               infortunio: "",
               tipoInfortunio: undefined,
               inizioRehab: "",
@@ -1665,7 +1669,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     const aggiornato = {
       ...selected,
       storicoInfortuni: (selected.storicoInfortuni ?? []).map((inf) =>
-        inf.id === id ? { ...inf, attivo: undefined as unknown as true, fineRehab: oggi } : inf
+        inf.id === id ? { ...inf, attivo: undefined as unknown as true, fineRehab: inf.fineRehab || oggi } : inf
       ),
     };
     setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
