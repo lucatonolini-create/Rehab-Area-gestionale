@@ -450,8 +450,8 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     body: [
       ["Categoria / Ruolo", `${atleta.categoria}  ·  ${atleta.posizione || "—"}`],
       ["Piede dominante", atleta.piedeDominante || "—"],
-      ["Stato attuale", atleta.stato],
       ...(atleta.peso || atleta.altezza ? [["Peso / Altezza", `${atleta.peso || "—"} kg  ·  ${atleta.altezza || "—"} cm`]] : [] as any),
+      ["Stato attuale", atleta.stato],
       ...(atleta.plicometrieMedie ? [["Plicometria media", `${atleta.plicometrieMedie} mm`]] : [] as any),
       ...(atleta.altezzaDaSeduto ? [["Altezza da seduto", `${atleta.altezzaDaSeduto} cm`]] : [] as any),
       ...(() => {
