@@ -1272,12 +1272,13 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             if (s.interno === null) return;
             const bx = gX(i) - barW / 2;
             const bh = (s.interno / maxTL) * plotH;
+            const r = Math.min(1.0, barW / 2, bh / 2);
             doc.setFillColor(55, 65, 81); doc.setDrawColor(37, 47, 63); doc.setLineWidth(0.15);
-            doc.rect(bx, plotY + plotH - bh, barW, bh, "FD");
+            doc.roundedRect(bx, plotY + plotH - bh, barW, bh, r, r, "FD");
           });
 
           // RPE line (right axis, red solid)
-          doc.setDrawColor(200, 16, 46); doc.setLineWidth(0.9); doc.setLineDashPattern([], 0);
+          doc.setDrawColor(200, 16, 46); doc.setLineWidth(0.6); doc.setLineDashPattern([], 0);
           let rpeI = -1; let rpeYv = 0;
           chartSessions.forEach((s, i) => {
             if (s.rpe === null) return;
@@ -1288,8 +1289,8 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           chartSessions.forEach((s, i) => {
             if (s.rpe === null) return;
             const px = gX(i); const py = gY_rpe(s.rpe);
-            doc.setFillColor(200, 16, 46); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.4);
-            doc.circle(px, py, 1.1, "FD");
+            doc.setFillColor(200, 16, 46); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.35);
+            doc.circle(px, py, 0.8, "FD");
             const barTop = s.interno !== null ? plotY + plotH - (s.interno / maxTL) * plotH : plotY;
             const insideBar = py - 2.5 >= barTop;
             doc.setFontSize(5); doc.setFont("helvetica", "bold");
@@ -1307,14 +1308,14 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           // Legend
           const legY = cY + cH + 9;
           doc.setFillColor(55, 65, 81); doc.setDrawColor(37, 47, 63); doc.setLineWidth(0.15);
-          doc.rect(cX, legY - 2.5, 9, 4.5, "FD");
+          doc.roundedRect(cX, legY - 2.5, 9, 4.5, 0.8, 0.8, "FD");
           doc.setFontSize(5.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...dark);
           doc.text("Training Load (UA)", cX + 11, legY + 1.5);
           const leg2X = cX + 60;
-          doc.setDrawColor(200, 16, 46); doc.setLineWidth(0.9); doc.setLineDashPattern([], 0);
+          doc.setDrawColor(200, 16, 46); doc.setLineWidth(0.6); doc.setLineDashPattern([], 0);
           doc.line(leg2X, legY, leg2X + 9, legY);
-          doc.setFillColor(200, 16, 46); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.4);
-          doc.circle(leg2X + 4.5, legY, 0.9, "FD");
+          doc.setFillColor(200, 16, 46); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.35);
+          doc.circle(leg2X + 4.5, legY, 0.7, "FD");
           doc.setFontSize(5.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...dark);
           doc.text("RPE (scala 0-10)", leg2X + 11, legY + 1.5);
           y = legY + 10;
