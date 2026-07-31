@@ -219,6 +219,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
   autoTable(doc, {
     startY: y,
     body: [
+      ...(atleta.posizione ? [["Ruolo", atleta.posizione]] : []),
       ["Piede dominante", atleta.piedeDominante || "—"],
       ...(atleta.peso || atleta.altezza ? [["Peso / Altezza", `${atleta.peso || "—"} kg  ·  ${atleta.altezza || "—"} cm`]] : []),
       ["Stato attuale", atleta.stato],
