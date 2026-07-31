@@ -693,17 +693,32 @@ export default function PerformancePage() {
         doc.text((vMax - t * vRange).toFixed(m.dec), cx + PAD.left - 1, gy + 1.5, { align: "right" });
       });
 
-      // Area fill (light tint of metric color)
+      // Catmull-Rom → Bezier control points for smooth curve
+      const tension = 0.25;
+      const smoothCp = (i: number) => {
+        const xi = (k: number) => px(Math.max(0, Math.min(n - 1, k)));
+        const yi = (k: number) => py(pts[Math.max(0, Math.min(n - 1, k))].v);
+        return {
+          cp1x: xi(i)     + (xi(i + 1) - xi(i - 1)) * tension,
+          cp1y: yi(i)     + (yi(i + 1) - yi(i - 1)) * tension,
+          cp2x: xi(i + 1) - (xi(i + 2) - xi(i))     * tension,
+          cp2y: yi(i + 1) - (yi(i + 2) - yi(i))     * tension,
+        };
+      };
+
+      // Area fill (light tint, smooth curve)
       const ar = Math.round(cr * 0.10 + 255 * 0.90);
       const ag = Math.round(cg * 0.10 + 255 * 0.90);
       const ab = Math.round(cb * 0.10 + 255 * 0.90);
       doc.setFillColor(ar, ag, ab);
-      const segs: number[][] = [[0, py(pts[0].v) - botY]];
-      for (let i = 1; i < n; i++) {
-        segs.push([px(i) - px(i - 1), py(pts[i].v) - py(pts[i - 1].v)]);
+      doc.moveTo(px(0), botY);
+      doc.lineTo(px(0), py(pts[0].v));
+      for (let i = 0; i < n - 1; i++) {
+        const { cp1x, cp1y, cp2x, cp2y } = smoothCp(i);
+        doc.curveTo(cp1x, cp1y, cp2x, cp2y, px(i + 1), py(pts[i + 1].v));
       }
-      segs.push([0, botY - py(pts[n - 1].v)]);
-      doc.lines(segs, px(0), botY, [1, 1], "F", true);
+      doc.lineTo(px(n - 1), botY);
+      doc.fill();
 
       // Average dashed line (light gray)
       doc.setDrawColor(...AVG_C);
@@ -712,12 +727,15 @@ export default function PerformancePage() {
       doc.line(cx + PAD.left, py(dAvg), cx + cw - PAD.right, py(dAvg));
       doc.setLineDashPattern([], 0);
 
-      // Main line
+      // Main smooth line
       doc.setDrawColor(cr, cg, cb);
       doc.setLineWidth(0.85);
+      doc.moveTo(px(0), py(pts[0].v));
       for (let i = 0; i < n - 1; i++) {
-        doc.line(px(i), py(pts[i].v), px(i + 1), py(pts[i + 1].v));
+        const { cp1x, cp1y, cp2x, cp2y } = smoothCp(i);
+        doc.curveTo(cp1x, cp1y, cp2x, cp2y, px(i + 1), py(pts[i + 1].v));
       }
+      doc.stroke();
 
       // Dots (colored fill, white border)
       doc.setFillColor(cr, cg, cb);

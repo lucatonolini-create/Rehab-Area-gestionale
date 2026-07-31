@@ -252,26 +252,47 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     const gX = (i: number) => plotX + (n > 1 ? (i / (n - 1)) * plotW : plotW / 2);
     const gY = (v: number) => plotY + plotH - ((v - minV) / range) * plotH;
 
-    // Area fill (light tint of metric color)
+    // Catmull-Rom → Bezier control points for smooth curve
+    const tension = 0.25;
+    const smoothCp = (i: number) => {
+      const xi = (k: number) => gX(Math.max(0, Math.min(n - 1, k)));
+      const yi = (k: number) => gY(data[Math.max(0, Math.min(n - 1, k))].value);
+      return {
+        cp1x: xi(i)     + (xi(i + 1) - xi(i - 1)) * tension,
+        cp1y: yi(i)     + (yi(i + 1) - yi(i - 1)) * tension,
+        cp2x: xi(i + 1) - (xi(i + 2) - xi(i))     * tension,
+        cp2y: yi(i + 1) - (yi(i + 2) - yi(i))     * tension,
+      };
+    };
+
+    // Area fill (light tint, smooth curve)
     const ar = Math.round(cr * 0.10 + 255 * 0.90);
     const ag = Math.round(cg * 0.10 + 255 * 0.90);
     const ab = Math.round(cb * 0.10 + 255 * 0.90);
-    doc.setFillColor(ar, ag, ab);
     const botY2 = plotY + plotH;
-    const segs: [number, number][] = [[0, gY(data[0].value) - botY2]];
-    for (let i = 1; i < n; i++) segs.push([gX(i) - gX(i - 1), gY(data[i].value) - gY(data[i - 1].value)]);
-    segs.push([0, botY2 - gY(data[n - 1].value)]);
-    segs.push([gX(0) - gX(n - 1), 0]);
-    (doc as any).lines(segs, gX(0), botY2, [1, 1], "F", true);
+    doc.setFillColor(ar, ag, ab);
+    doc.moveTo(gX(0), botY2);
+    doc.lineTo(gX(0), gY(data[0].value));
+    for (let i = 0; i < n - 1; i++) {
+      const { cp1x, cp1y, cp2x, cp2y } = smoothCp(i);
+      doc.curveTo(cp1x, cp1y, cp2x, cp2y, gX(i + 1), gY(data[i + 1].value));
+    }
+    doc.lineTo(gX(n - 1), botY2);
+    doc.fill();
 
     // Average dashed line (light gray)
     doc.setDrawColor(...AVG_C); doc.setLineWidth(0.4); doc.setLineDashPattern([1.5, 1.5], 0);
     doc.line(plotX, gY(avg), plotX + plotW, gY(avg));
     doc.setLineDashPattern([], 0);
 
-    // Main line
+    // Main smooth line
     doc.setDrawColor(cr, cg, cb); doc.setLineWidth(0.85);
-    for (let i = 0; i < n - 1; i++) doc.line(gX(i), gY(data[i].value), gX(i + 1), gY(data[i + 1].value));
+    doc.moveTo(gX(0), gY(data[0].value));
+    for (let i = 0; i < n - 1; i++) {
+      const { cp1x, cp1y, cp2x, cp2y } = smoothCp(i);
+      doc.curveTo(cp1x, cp1y, cp2x, cp2y, gX(i + 1), gY(data[i + 1].value));
+    }
+    doc.stroke();
 
     // Dots (colored fill, white border)
     doc.setFillColor(cr, cg, cb); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.35);
