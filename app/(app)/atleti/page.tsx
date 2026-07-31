@@ -469,7 +469,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     styles: { fontSize: 8.5, cellPadding: 3, overflow: "linebreak", halign: "left", valign: "middle" },
     columnStyles: { 0: { cellWidth: 58, fontStyle: "bold", textColor: dark }, 1: { textColor: dark } },
     alternateRowStyles: { fillColor: [250, 250, 250] },
-    margin: { left: M, right: M },
+    margin: { left: M, right: M, top: HDR + 8 },
   });
 
   y = (doc as any).lastAutoTable.finalY + 10;
@@ -496,7 +496,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       headStyles: { fillColor: [55, 65, 81] as [number,number,number], textColor: 255, fontSize: 7.5, halign: "center", valign: "middle" },
       bodyStyles: { fontSize: 8, cellPadding: 2.5, overflow: "linebreak", halign: "left", valign: "middle" },
       alternateRowStyles: { fillColor: [250, 250, 250] },
-      margin: { left: M, right: M },
+      margin: { left: M, right: M, top: HDR + 8 },
       columnStyles: {
         0: { cellWidth: 28, halign: "center" },
         1: { cellWidth: 44 },
@@ -617,7 +617,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       headStyles: { fillColor: red, textColor: 255, fontSize: 7.5, halign: "center", valign: "middle" },
       bodyStyles: { fontSize: 8, cellPadding: 2.5, overflow: "linebreak", halign: "left", valign: "middle" },
       alternateRowStyles: { fillColor: [250, 250, 250] },
-      margin: { left: M, right: M },
+      margin: { left: M, right: M, top: HDR + 8 },
       columnStyles: { 0: { cellWidth: 82 }, 1: { cellWidth: 24 }, 2: { cellWidth: 24 }, 3: { cellWidth: 28, fontStyle: "bold" }, 4: { cellWidth: 24 } },
       didParseCell: (data: any) => {
         if (data.section === "body" && data.column.index === 3) {
@@ -786,7 +786,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             1: { textColor: 30 },
           },
           bodyStyles: { fontSize: 8, cellPadding: 2.5 },
-          margin: { left: M, right: M },
+          margin: { left: M, right: M, top: HDR + 8 },
         });
         y = (doc as any).lastAutoTable.finalY + 5;
       }
@@ -844,7 +844,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             1: { textColor: dark },
           },
           alternateRowStyles: { fillColor: [239, 246, 255] as [number, number, number] },
-          margin: { left: M, right: M },
+          margin: { left: M, right: M, top: HDR + 8 },
         });
         y = (doc as any).lastAutoTable.finalY + 6;
       }
@@ -903,7 +903,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             1: { textColor: dark },
           },
           alternateRowStyles: { fillColor: [239, 246, 255] as [number, number, number] },
-          margin: { left: M, right: M },
+          margin: { left: M, right: M, top: HDR + 8 },
         });
         y = (doc as any).lastAutoTable.finalY + 6;
       }
@@ -925,7 +925,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         headStyles: hS(dark),
         bodyStyles: bS,
         alternateRowStyles: aS,
-        margin: { left: M, right: M },
+        margin: { left: M, right: M, top: HDR + 8 },
         columnStyles: { 0: { cellWidth: 28 }, 1: { cellWidth: 20, fontStyle: "bold" }, 2: { cellWidth: 28, fontStyle: "bold" } },
       });
       y = (doc as any).lastAutoTable.finalY + 6;
@@ -1168,7 +1168,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           headStyles: { fillColor: [200, 16, 46] as [number,number,number], textColor: [255,255,255] as [number,number,number], fontSize: 5.5, halign: "center" as const, valign: "middle" as const, cellPadding: { top: 3, bottom: 3, left: 1.5, right: 1.5 } },
           bodyStyles: { fontSize: 6.5, cellPadding: 2, halign: "left" as const, valign: "middle" as const },
           alternateRowStyles: { fillColor: [250, 250, 250] as [number,number,number] },
-          margin: { left: M, right: M },
+          margin: { left: M, right: M, top: HDR + 8 },
           columnStyles: colStyles,
           didParseCell: (data: any) => {
             if (data.section === "body" && data.row.index === sessionRows.length) {

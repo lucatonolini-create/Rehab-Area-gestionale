@@ -324,7 +324,7 @@ async function esportaPDFPanoramica(params: {
     headStyles: { fillColor: red, textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
     bodyStyles: { fontSize: 8, cellPadding: 2.5, overflow: "ellipsize" },
     alternateRowStyles: { fillColor: [250, 250, 250] },
-    margin: { left: M, right: M },
+    margin: { left: M, right: M, top: HDR + 8 },
     columnStyles: { 0: { fontStyle: "bold", textColor: dark }, 1: {}, 2: {}, 3: {} },
     didParseCell: (data: any) => {
       if (data.section === "body" && data.row.index === params.perCategoria.length) {
@@ -348,7 +348,7 @@ async function esportaPDFPanoramica(params: {
       headStyles: { fillColor: [160, 160, 160], textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
       bodyStyles: { fontSize: 8, cellPadding: 2.5, overflow: "linebreak", halign: "left", valign: "middle" },
       alternateRowStyles: { fillColor: [250, 250, 250] },
-      margin: { left: M, right: M },
+      margin: { left: M, right: M, top: HDR + 8 },
       columnStyles: { 0: { fontStyle: "bold", textColor: dark }, 1: {}, 2: {} },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
@@ -540,7 +540,7 @@ async function esportaPDFPanoramica(params: {
           data.cell.styles.fillColor = [248, 248, 248];
         }
       },
-      margin: { left: M, right: M },
+      margin: { left: M, right: M, top: HDR + 8 },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
   }
@@ -602,7 +602,7 @@ async function esportaPDFPanoramica(params: {
       body: tuttiRows,
       headStyles: { fillColor: dark, textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
       bodyStyles: { fontSize: 6.5, cellPadding: 2, overflow: "linebreak", halign: "left", valign: "middle" },
-      margin: { left: M, right: M },
+      margin: { left: M, right: M, top: HDR + 8 },
       columnStyles: {
         0: { cellWidth: 26 },
         1: { cellWidth: 20 },
@@ -871,7 +871,7 @@ async function esportaPDFReport(
           data.cell.styles.fillColor = [248, 248, 248];
         }
       },
-      margin: { left: M, right: M },
+      margin: { left: M, right: M, top: HDR + 8 },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
   }
@@ -1029,7 +1029,7 @@ async function esportaPDFReport(
     body: analisiRows,
     headStyles: { fillColor: dark, textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
     bodyStyles: { fontSize: 7, cellPadding: 2.5, halign: "left", valign: "middle" },
-    margin: { left: M, right: M },
+    margin: { left: M, right: M, top: HDR + 8 },
     columnStyles: {
       0: { cellWidth: 26 }, 1: { cellWidth: 18 }, 2: { cellWidth: 44 },
       3: { cellWidth: 42 }, 4: { cellWidth: 26 }, 5: { cellWidth: 41 },

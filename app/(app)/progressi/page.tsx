@@ -227,7 +227,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
     styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak", halign: "left", valign: "middle" },
     columnStyles: { 0: { cellWidth: 58, fontStyle: "bold", textColor: dark }, 1: { textColor: dark } },
     alternateRowStyles: { fillColor: [250, 250, 250] },
-    margin: { left: M, right: M },
+    margin: { left: M, right: M, top: HDR + 8 },
   });
   y = (doc as any).lastAutoTable.finalY + 8;
 
@@ -248,7 +248,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
       headStyles: { fillColor: dark, textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
       bodyStyles: { fontSize: 8, cellPadding: 3, halign: "left", valign: "middle" },
       alternateRowStyles: { fillColor: [250, 250, 250] },
-      margin: { left: M, right: M },
+      margin: { left: M, right: M, top: HDR + 8 },
       columnStyles: {
         0: { cellWidth: 8 }, 1: { cellWidth: 55 }, 2: { cellWidth: 120 },
         3: { cellWidth: 22 }, 4: { cellWidth: 22 }, 5: { cellWidth: 25 }, 6: { cellWidth: 17 },
@@ -996,7 +996,7 @@ async function esportaPDFReportMensile(
     body: pdfRows,
     headStyles: { fillColor: dark, textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
     bodyStyles: { fontSize: 7, cellPadding: 2, halign: "left", valign: "middle" },
-    margin: { left: M, right: M },
+    margin: { left: M, right: M, top: HDR + 8 },
     columnStyles: {
       0: { cellWidth: 26 }, 1: { cellWidth: 18 }, 2: { cellWidth: 46 },
       3: { cellWidth: 36 }, 4: { cellWidth: 26 }, 5: { cellWidth: 43 },
