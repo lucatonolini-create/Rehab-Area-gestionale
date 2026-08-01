@@ -5,27 +5,13 @@ import { Copy, Check, Link2, FileDown } from "lucide-react";
 
 const CATEGORIE = ["U19", "U17", "U16", "U15", "U14"] as const;
 
-async function apriModuloCartaceo() {
-  const res = await fetch("/modulo_cartaceo.pdf");
-  if (!res.ok) return;
-  const blob = await res.blob();
-  const file = new File([blob], "modulo_cartaceo.pdf", { type: "application/pdf" });
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    await navigator.share({ files: [file], title: "Modulo cartaceo — Segnalazione Infortunio" });
-  } else {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "modulo_cartaceo.pdf";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+function apriModuloCartaceo() {
+  window.open("/modulo_cartaceo.pdf");
 }
 
 export default function SegnalazioniPage() {
   const [origin, setOrigin] = useState("");
   const [copiato, setCopiato] = useState<string | null>(null);
-  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -38,16 +24,6 @@ export default function SegnalazioniPage() {
     setTimeout(() => setCopiato(null), 2000);
   };
 
-  const handleModuloCartaceo = async () => {
-    setPdfLoading(true);
-    try {
-      await apriModuloCartaceo();
-    } catch (e) {
-      if (e instanceof Error && e.name !== "AbortError") console.error(e);
-    } finally {
-      setPdfLoading(false);
-    }
-  };
 
   return (
     <div className="p-6 max-w-xl mx-auto">
@@ -88,9 +64,8 @@ export default function SegnalazioniPage() {
         })}
 
         <button
-          onClick={handleModuloCartaceo}
-          disabled={pdfLoading}
-          className="w-full flex items-center gap-4 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-60 text-left"
+          onClick={apriModuloCartaceo}
+          className="w-full flex items-center gap-4 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:bg-gray-50 transition-colors text-left"
         >
           <div className="w-10 h-10 rounded-xl bg-[#2B2B2B] flex items-center justify-center shrink-0">
             <FileDown className="w-5 h-5 text-white" />
@@ -101,7 +76,7 @@ export default function SegnalazioniPage() {
           </div>
           <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gray-100 text-gray-600 shrink-0">
             <FileDown className="w-3.5 h-3.5" />
-            {pdfLoading ? "…" : "Apri"}
+            Apri
           </span>
         </button>
       </div>
