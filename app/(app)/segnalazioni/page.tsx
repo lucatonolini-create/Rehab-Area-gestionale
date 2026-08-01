@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Copy, Check, Link2 } from "lucide-react";
+import { Copy, Check, Link2, FileDown } from "lucide-react";
 
 const CATEGORIE = ["U19", "U17", "U16", "U15", "U14"] as const;
 
@@ -59,7 +59,27 @@ export default function SegnalazioniPage() {
         })}
       </div>
 
-      <div className="mt-6 bg-blue-50 border border-blue-100 rounded-2xl p-4">
+      <div className="mt-6">
+        <a
+          href="/modulo_cartaceo.pdf"
+          download="modulo_cartaceo.pdf"
+          className="flex items-center gap-4 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:bg-gray-50 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-xl bg-[#2B2B2B] flex items-center justify-center shrink-0">
+            <FileDown className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-900">Modulo cartaceo</p>
+            <p className="text-xs text-gray-400">Segnalazione infortunio — PDF stampabile</p>
+          </div>
+          <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 shrink-0">
+            <FileDown className="w-3.5 h-3.5" />
+            Scarica
+          </span>
+        </a>
+      </div>
+
+      <div className="mt-3 bg-blue-50 border border-blue-100 rounded-2xl p-4">
         <p className="text-xs text-blue-700 leading-relaxed">
           <strong>Come funziona:</strong> il fisioterapista apre il link, compila il form con i dati del giocatore infortunato e lo invia.
           Il giocatore appare subito nella sezione <strong>Atleti</strong> con stato <strong>Infortunato</strong>.
