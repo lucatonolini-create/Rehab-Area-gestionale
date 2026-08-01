@@ -5,8 +5,17 @@ import { Copy, Check, Link2, FileDown } from "lucide-react";
 
 const CATEGORIE = ["U19", "U17", "U16", "U15", "U14"] as const;
 
-function apriModuloCartaceo() {
-  window.open("/modulo_cartaceo.pdf");
+async function apriModuloCartaceo() {
+  const res = await fetch("/modulo_cartaceo.pdf");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "modulo_cartaceo.pdf";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export default function SegnalazioniPage() {
