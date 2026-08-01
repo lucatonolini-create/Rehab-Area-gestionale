@@ -1,30 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Copy, Check, Link2, FileDown } from "lucide-react";
 
 const CATEGORIE = ["U19", "U17", "U16", "U15", "U14"] as const;
 
-async function apriModuloCartaceo() {
-  const res = await fetch("/modulo_cartaceo.pdf");
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "modulo_cartaceo.pdf";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
 export default function SegnalazioniPage() {
   const [origin, setOrigin] = useState("");
   const [copiato, setCopiato] = useState<string | null>(null);
+  const pdfBlob = useRef<Blob | null>(null);
 
   useEffect(() => {
     setOrigin(window.location.origin);
+    // Pre-fetch il blob in modo che il click sia sincrono (come doc.save() di jsPDF)
+    fetch("/modulo_cartaceo.pdf").then(r => r.blob()).then(b => { pdfBlob.current = b; });
   }, []);
+
+  const apriModuloCartaceo = () => {
+    const blob = pdfBlob.current;
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "modulo_cartaceo.pdf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
   const copia = async (cat: string) => {
     const url = `${origin}/intake/${cat.toLowerCase()}`;
