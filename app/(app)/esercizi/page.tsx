@@ -220,10 +220,16 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
 
       // Esercizi uniti in celle multi-riga: un atleta = una riga, niente rowSpan
       const esText = esercizi.map((e, i) => {
-        const sx = [e.serie, e.reps].filter(Boolean).join("×");
-        const parts = [sx, e.durata].filter(Boolean).join(" ");
+        let det = "";
+        if (e.serie && (e.reps || e.durata)) {
+          det = `${e.serie}×${e.reps || e.durata}${e.reps && e.durata ? ` ${e.durata}` : ""}`;
+        } else if (!e.serie && !e.reps && e.durata) {
+          det = `×${e.durata}`;
+        } else {
+          det = [e.serie, e.reps, e.durata].filter(Boolean).join(" ");
+        }
         const carico = e.carico ? ` (${e.carico})` : "";
-        return `${i + 1}. ${parts ? `${e.nome} ${parts}${carico}` : e.nome}`;
+        return `${i + 1}. ${det ? `${e.nome} ${det}${carico}` : e.nome}`;
       }).join("\n") || "—";
       const vasText = esercizi.map((e, i) => `${i + 1}. ${e.vas || "0"}`).join("\n") || "—";
 
