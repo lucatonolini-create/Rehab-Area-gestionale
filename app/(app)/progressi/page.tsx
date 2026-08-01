@@ -400,7 +400,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
             ca?.potenzaMetabolica ? `P.Met.: ${ca.potenzaMetabolica}W/kg` : "",
           ].filter(Boolean).map((s) => `- ${s}`).join("\n") || "—";
 
-          const esText = esercizi.map((e, i) => { const metric = e.reps || e.durata; const sx = [e.serie, metric].filter(Boolean).join("×"); const carico = e.carico ? ` (${e.carico})` : ""; return `${i + 1}. ${sx ? `${e.nome} ${sx}${carico}` : e.nome}`; }).join("\n") || "—";
+          const esText = esercizi.map((e, i) => { const sx = [e.serie, e.reps].filter(Boolean).join("×"); const parts = [sx, e.durata].filter(Boolean).join(" "); const carico = e.carico ? ` (${e.carico})` : ""; return `${i + 1}. ${parts ? `${e.nome} ${parts}${carico}` : e.nome}`; }).join("\n") || "—";
           const vasText = esercizi.map((e, i) => `${i + 1}. ${e.vas || "0"}`).join("\n") || "—";
           const fisio = prog.noteFisioterapia?.trim() || "—";
           if (isAlt) altRowIndices.add(rowIdx);
