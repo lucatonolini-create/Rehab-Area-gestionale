@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Copy, Check, Link2, FileDown } from "lucide-react";
 
 const CATEGORIE = ["U19", "U17", "U16", "U15", "U14"] as const;
@@ -60,9 +61,8 @@ export default function SegnalazioniPage() {
       </div>
 
       <div className="mt-6">
-        <a
-          href="/modulo_cartaceo.pdf"
-          download="modulo_cartaceo.pdf"
+        <Link
+          href="/modulo-cartaceo"
           className="flex items-center gap-4 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:bg-gray-50 transition-colors"
         >
           <div className="w-10 h-10 rounded-xl bg-[#2B2B2B] flex items-center justify-center shrink-0">
@@ -76,7 +76,7 @@ export default function SegnalazioniPage() {
             <FileDown className="w-3.5 h-3.5" />
             Scarica
           </span>
-        </a>
+        </Link>
       </div>
 
       <div className="mt-3 bg-blue-50 border border-blue-100 rounded-2xl p-4">
