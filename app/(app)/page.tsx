@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Activity, TrendingUp, ChevronRight, X } from "lucide-react";
+import { Users, Activity, TrendingUp, Dumbbell, ChevronRight, X } from "lucide-react";
 
 function AppLogo({ className }: { className?: string }) {
   return (
@@ -90,8 +90,8 @@ export default function Dashboard() {
     { label: "Atleti Totali",     value: atleti.length,         icon: Users,      color: "bg-[#2B2B2B]", href: "/atleti" },
     { label: "Infortunati",        value: inRecupero,            icon: Activity,   color: "bg-orange-500", href: "/atleti" },
     { label: "Disponibili",       value: guariti,                icon: TrendingUp, color: "bg-green-500",  href: "/atleti" },
-    { label: "Programmi Attivi",  value: programmiAttivi,       icon: AppLogo,   color: "bg-[#C8102E]",  href: "/esercizi" },
-    { label: "Programmi Totali",  value: programmiReali.length, icon: AppLogo,   color: "bg-[#2B2B2B]",  href: "/esercizi" },
+    { label: "Programmi Attivi",  value: programmiAttivi,       icon: Dumbbell,  color: "bg-[#C8102E]",  href: "/esercizi" },
+    { label: "Programmi Totali",  value: programmiReali.length, icon: Dumbbell,  color: "bg-[#2B2B2B]",  href: "/esercizi" },
   ];
 
   return (
