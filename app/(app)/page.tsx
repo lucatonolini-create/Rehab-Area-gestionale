@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { Users, Activity, TrendingUp, ChevronRight, X } from "lucide-react";
 
 function AppLogo({ className }: { className?: string }) {
-  return <Image src="/app-logo.svg" alt="" width={20} height={20} className={className} unoptimized />;
+  return <img src="/app-logo.svg" alt="" className={className} />;
 }
 import {
   loadAtleti, loadProgrammi, upsertAtleta, nd,

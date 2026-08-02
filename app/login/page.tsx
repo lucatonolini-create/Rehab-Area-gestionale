@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
@@ -78,7 +77,7 @@ export default function LoginPage() {
     >
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <Image src="/app-logo.svg" alt="Logo" width={64} height={64} className="w-16 h-16 rounded-2xl shadow-md mx-auto mb-4" unoptimized />
+          <img src="/app-logo.svg" alt="Logo" className="w-16 h-16 rounded-2xl shadow-md mx-auto mb-4" />
           <h1 className="text-xl font-bold text-gray-900">Rehab Area</h1>
           <p className="text-sm text-gray-500 mt-0.5">Accesso riservato</p>
         </div>
