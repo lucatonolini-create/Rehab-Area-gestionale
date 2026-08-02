@@ -10,7 +10,11 @@ export const metadata: Metadata = {
   manifest: "/manifest.json?v=3",
   icons: {
     icon: "/favicon.svg",
-    apple: "/rehab-icon.png",
+    apple: [{ url: "/rehab-icon.png", sizes: "512x512", type: "image/png" }],
+  },
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
   },
 };
 
@@ -22,11 +26,6 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="it">
-      <head>
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <link rel="apple-touch-icon" sizes="512x512" href="/rehab-icon.png" />
-      </head>
       <body className={inter.className}>{children}</body>
     </html>
   );
