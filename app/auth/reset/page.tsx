@@ -68,11 +68,13 @@ function ResetPasswordContent() {
   const Logo = () => (
     <svg width="64" height="64" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 rounded-2xl shadow-md mx-auto mb-4">
       <rect width="400" height="400" rx="90" fill="#3a3d42"/>
-      <rect x="95"  y="248" width="52" height="82"  rx="12" fill="#f2efe9"/>
-      <rect x="174" y="180" width="52" height="150" rx="12" fill="#f2efe9"/>
-      <rect x="253" y="96"  width="52" height="234" rx="12" fill="#9c3b3b"/>
-      <rect x="269" y="120" width="20" height="60" rx="5" fill="#f2efe9"/>
-      <rect x="249" y="140" width="60" height="20" rx="5" fill="#f2efe9"/>
+      <g transform="translate(60,60) scale(11.6667)" stroke="#f2efe9" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none">
+        <path d="M14.4 14.4 9.6 9.6"/>
+        <path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z"/>
+        <path d="m21.5 21.5-1.4-1.4"/>
+        <path d="M3.9 3.9 2.5 2.5"/>
+        <path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z"/>
+      </g>
     </svg>
   );
 
