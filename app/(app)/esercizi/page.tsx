@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Dumbbell, Trash2, X, ChevronDown, Edit2, Gauge, Upload, AlertTriangle, Footprints, CalendarX2, Users, BatteryFull, FileText, ShieldPlus, TrendingUp } from "lucide-react";
+import Image from "next/image";
+import { Plus, Trash2, X, ChevronDown, Edit2, Gauge, Upload, AlertTriangle, Footprints, CalendarX2, Users, BatteryFull, FileText, ShieldPlus, TrendingUp } from "lucide-react";
+
+function AppLogo({ className }: { className?: string }) {
+  return <Image src="/app-logo.svg" alt="" width={20} height={20} className={className} unoptimized />;
+}
 import {
   loadAtleti, loadProgrammi, upsertProgramma, upsertAtleta, deleteProgramma, uid, nd, calcolaProgressoAuto,
   subscribeToAtleti, subscribeToProgrammi,
@@ -987,13 +992,13 @@ export default function EserciziPage() {
 
       {atleti.length === 0 ? (
         <div className="text-center py-20">
-          <Dumbbell className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+          <AppLogo className="w-16 h-16 text-gray-200 mx-auto mb-4" />
           <p className="text-gray-400 text-lg font-medium">Nessun atleta ancora</p>
           <p className="text-gray-300 text-sm mt-1">Aggiungi prima un atleta per creare programmi</p>
         </div>
       ) : atletiOrdinati.filter((a) => a.stato === "Infortunato").length === 0 ? (
         <div className="text-center py-20">
-          <Dumbbell className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+          <AppLogo className="w-16 h-16 text-gray-200 mx-auto mb-4" />
           <p className="text-gray-400 text-lg font-medium">Nessun atleta in riabilitazione</p>
           <p className="text-gray-300 text-sm mt-1">Tutti gli atleti sono disponibili</p>
         </div>
@@ -1043,7 +1048,7 @@ export default function EserciziPage() {
                     <button onClick={() => setAperto(aperto === prog.id ? null : prog.id)}
                       className="w-full flex items-center gap-4 p-5 hover:bg-gray-50 text-left">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${prog.assente ? "bg-orange-400" : prog.riposo ? "bg-blue-400" : prog.squadra ? "bg-[#C8102E]" : "bg-[#C8102E]"}`}>
-                        {prog.assente ? <CalendarX2 className="w-5 h-5 text-white" /> : prog.riposo ? <CalendarX2 className="w-5 h-5 text-white" /> : prog.squadra ? <Users className="w-5 h-5 text-white" /> : <Dumbbell className="w-5 h-5 text-white" />}
+                        {prog.assente ? <CalendarX2 className="w-5 h-5 text-white" /> : prog.riposo ? <CalendarX2 className="w-5 h-5 text-white" /> : prog.squadra ? <Users className="w-5 h-5 text-white" /> : <AppLogo className="w-5 h-5 text-white" />}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-0.5 flex-wrap">
@@ -1081,7 +1086,7 @@ export default function EserciziPage() {
                         {/* Esercizi */}
                         {prog.esercizi.length > 0 && (
                           <div className="mb-4">
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1"><Dumbbell className="w-3.5 h-3.5" /> Esercizi in Palestra</p>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1"><AppLogo className="w-3.5 h-3.5" /> Esercizi in Palestra</p>
                             <div className="space-y-2">
                               {prog.esercizi.map((es, i) => (
                                 <div key={i} className="bg-gray-100 border border-gray-300 rounded-xl p-3">
@@ -1525,7 +1530,7 @@ export default function EserciziPage() {
               {(() => {
                 const tabs = [
                   { key: "fisioterapia" as FormSection, label: "Fisio",       icon: ShieldPlus,         count: null },
-                  { key: "esercizi"     as FormSection, label: "Palestra",    icon: Dumbbell,     count: form.esercizi.length },
+                  { key: "esercizi"     as FormSection, label: "Palestra",    icon: AppLogo,     count: form.esercizi.length },
                   { key: "campo"        as FormSection, label: "Campo",       icon: Footprints,   count: esercizicampo.length },
                   { key: "carico"       as FormSection, label: "GPS",         icon: Gauge,        count: null },
                   { key: "test"         as FormSection, label: "Test",        icon: TrendingUp, count: tests.length },
