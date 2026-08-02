@@ -760,6 +760,16 @@ export async function upsertAtleta(a: Atleta): Promise<void> {
   if (isOnline()) syncFlush().catch(() => {});
 }
 
+// Targeted patch of just the referti_clinici column — avoids schema issues with other columns.
+export async function patchRefertiClinici(atletaId: string, referti: RefertoClinico[]): Promise<boolean> {
+  if (!isOnline()) return true; // offline → queue will handle it
+  try {
+    const { error } = await supabase.from("atleti").update({ referti_clinici: referti }).eq("id", atletaId);
+    if (error) { console.error("[patchRefertiClinici]", error.code, error.message); return false; }
+    return true;
+  } catch { return false; }
+}
+
 export async function deleteAtleta(id: string): Promise<void> {
   const db = getDB();
   await db.atleti.delete(id);
