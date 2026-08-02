@@ -6,12 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, TrendingUp, Settings, Menu, X, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity,
 } from "lucide-react";
-import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
 
 function AppLogo({ className }: { className?: string }) {
-  return <Image src="/app-logo.svg" alt="Logo" width={20} height={20} className={className} unoptimized />;
+  return <img src="/app-logo.svg" alt="" className={className} />;
 }
 
 const navItems = [
@@ -95,7 +94,7 @@ export default function Sidebar() {
         <div className={`border-b border-white/10 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}>
           {!collapsed && (
             <div className="flex items-center gap-3">
-              <Image src="/app-logo.svg" alt="Logo" width={40} height={40} className="w-10 h-10 rounded-xl" unoptimized />
+              <img src="/app-logo.svg" alt="Logo" className="w-10 h-10 rounded-xl" />
               <div>
                 <h1 className="font-bold text-sm text-white leading-tight">Rehab Area</h1>
               </div>
