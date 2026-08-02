@@ -90,11 +90,28 @@ alter table impostazioni add column if not exists rosa jsonb default '[]'::jsonb
 
 insert into impostazioni (id) values (1) on conflict do nothing;
 
--- ── Row Level Security (accesso libero – aggiungere auth in futuro) ───────────
+-- ── Row Level Security (solo utenti autenticati) ─────────────────────────────
 alter table atleti enable row level security;
 alter table programmi enable row level security;
 alter table impostazioni enable row level security;
 
-create policy "Accesso completo atleti"       on atleti       for all using (true) with check (true);
-create policy "Accesso completo programmi"    on programmi    for all using (true) with check (true);
-create policy "Accesso completo impostazioni" on impostazioni for all using (true) with check (true);
+-- Rimuovi le vecchie policy permissive prima di creare le nuove
+drop policy if exists "Accesso completo atleti"       on atleti;
+drop policy if exists "Accesso completo programmi"    on programmi;
+drop policy if exists "Accesso completo impostazioni" on impostazioni;
+
+-- Solo utenti autenticati possono leggere/scrivere i dati
+create policy "Solo autenticati atleti"
+  on atleti for all
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
+
+create policy "Solo autenticati programmi"
+  on programmi for all
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
+
+create policy "Solo autenticati impostazioni"
+  on impostazioni for all
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);

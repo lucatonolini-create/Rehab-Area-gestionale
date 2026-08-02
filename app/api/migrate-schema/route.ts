@@ -1,5 +1,18 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+async function getAuthUser() {
+  const cookieStore = cookies();
+  const sb = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
+  );
+  const { data: { user } } = await sb.auth.getUser();
+  return user;
+}
 
 const COLONNE_ATLETI: { nome: string; tipo: string; default?: string }[] = [
   { nome: "referti_clinici", tipo: "jsonb", default: "'[]'::jsonb" },
@@ -19,6 +32,9 @@ const COLONNE_PROGRAMMI: { nome: string; tipo: string }[] = [
 ];
 
 export async function GET() {
+  if (!await getAuthUser()) {
+    return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
+  }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) {

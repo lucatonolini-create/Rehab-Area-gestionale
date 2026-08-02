@@ -1,7 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+async function getAuthUser() {
+  const cookieStore = cookies();
+  const sb = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
+  );
+  const { data: { user } } = await sb.auth.getUser();
+  return user;
+}
 
 export async function POST(req: NextRequest) {
+  if (!await getAuthUser()) {
+    return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
+  }
   try {
     const sub = await req.json();
     if (!sub?.endpoint) {
@@ -32,6 +48,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  if (!await getAuthUser()) {
+    return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
+  }
   try {
     const { endpoint } = await req.json();
     if (!endpoint) {
