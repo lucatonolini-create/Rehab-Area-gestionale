@@ -13,8 +13,22 @@ export const metadata: Metadata = {
   description: "Gestionale area riabilitazione USC Cremonese",
   manifest: "/manifest.json?v=3",
   icons: {
-    icon: "/favicon.svg",
-    apple: "/apple-touch-icon.png",
+    icon: "/favicon.svg?v=2",
+    apple: [{ url: "/apple-touch-icon.png?v=2", sizes: "512x512", type: "image/png" }],
+  },
+  openGraph: {
+    title: "Rehab Area",
+    description: "Gestionale area riabilitazione USC Cremonese",
+    siteName: "Rehab Area",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Rehab Area" }],
+    locale: "it_IT",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Rehab Area",
+    description: "Gestionale area riabilitazione USC Cremonese",
+    images: ["/og-image.png"],
   },
   openGraph: {
     title: "Rehab Area",
