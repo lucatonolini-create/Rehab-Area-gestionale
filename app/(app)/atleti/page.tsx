@@ -9,6 +9,7 @@ import {
   LATI_INFORTUNIO, POSIZIONI_INFORTUNIO, TIPI_REFERTO, ESITI_REFERTO,
   calcolaProgressoAuto,
   loadDettaglioSituazionale, upsertDettaglioSituazionale, formToDettaglio,
+  patchRefertiClinici,
   type Atleta, type Stato, type InfortunioStorico, type Programma, type QuestionarioKinesiofobia,
   type TestFisiometrico, type RefertoClinico, type TipoReferto, type EsitoReferto,
   type DettaglioSituazionaleData, type DettaglioSituazionaleForm,
@@ -1498,6 +1499,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [mostraFondi, setMostraFondi] = useState(false);
   const [mostraFormReferto, setMostraFormReferto] = useState(false);
   const [nuovoReferto, setNuovoReferto] = useState({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" });
+  const [refertoSaving, setRefertoSaving] = useState(false);
+  const [refertoSalvato, setRefertoSalvato] = useState(false);
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
@@ -1767,7 +1770,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   };
 
   const salvaReferto = async () => {
-    if (!selected || !nuovoReferto.tipo || !nuovoReferto.esito) return;
+    if (!selected || !nuovoReferto.tipo || !nuovoReferto.esito || refertoSaving) return;
+    setRefertoSaving(true);
     const referto: RefertoClinico = {
       id: uid(),
       data: nuovoReferto.data,
@@ -1775,20 +1779,29 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
       esito: nuovoReferto.esito as EsitoReferto,
       note: nuovoReferto.note || undefined,
     };
-    const aggiornato = { ...selected, refertiClinici: [...(selected.refertiClinici ?? []), referto] };
+    const nuoviReferti = [...(selected.refertiClinici ?? []), referto];
+    const aggiornato = { ...selected, refertiClinici: nuoviReferti };
     setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
     setSelected(aggiornato);
+    // Offline-first save (IndexedDB + sync queue)
     await upsertAtleta(aggiornato);
+    // Targeted Supabase patch — more reliable than full-row upsert when schema has new columns
+    await patchRefertiClinici(selected.id, nuoviReferti);
+    setRefertoSaving(false);
     setMostraFormReferto(false);
     setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" });
+    setRefertoSalvato(true);
+    setTimeout(() => setRefertoSalvato(false), 2000);
   };
 
   const eliminaReferto = async (id: string) => {
     if (!selected) return;
-    const aggiornato = { ...selected, refertiClinici: (selected.refertiClinici ?? []).filter((r) => r.id !== id) };
+    const nuoviReferti = (selected.refertiClinici ?? []).filter((r) => r.id !== id);
+    const aggiornato = { ...selected, refertiClinici: nuoviReferti };
     setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
     setSelected(aggiornato);
     await upsertAtleta(aggiornato);
+    await patchRefertiClinici(selected.id, nuoviReferti);
   };
 
   const chiudiInfortBis = async (id: string) => {
@@ -2657,8 +2670,15 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                 {/* ── Referti clinici ── */}
                 <div className="space-y-3 pt-2 border-t border-gray-100">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Referti clinici</p>
-                    <button onClick={() => setMostraFormReferto(true)}
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Referti clinici</p>
+                      {refertoSalvato && (
+                        <span className="text-[10px] text-green-600 font-medium flex items-center gap-0.5">
+                          <CheckCircle2 className="w-3 h-3" /> Salvato
+                        </span>
+                      )}
+                    </div>
+                    <button onClick={() => { setMostraFormReferto(true); setRefertoSalvato(false); }}
                       className="text-xs font-semibold text-[#C8102E] flex items-center gap-0.5 hover:underline">
                       <Plus className="w-3.5 h-3.5" /> Aggiungi
                     </button>
@@ -2684,10 +2704,11 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                         className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]" />
                       <div className="flex gap-2 justify-end">
                         <button onClick={() => { setMostraFormReferto(false); setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" }); }}
-                          className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">Annulla</button>
-                        <button onClick={salvaReferto} disabled={!nuovoReferto.tipo || !nuovoReferto.esito}
-                          className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg bg-[#C8102E] hover:bg-[#a50d26] disabled:opacity-40">
-                          Salva
+                          disabled={refertoSaving}
+                          className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-200 bg-white disabled:opacity-40">Annulla</button>
+                        <button onClick={salvaReferto} disabled={!nuovoReferto.tipo || !nuovoReferto.esito || refertoSaving}
+                          className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg bg-[#C8102E] hover:bg-[#a50d26] disabled:opacity-40 min-w-[64px]">
+                          {refertoSaving ? "Salvataggio…" : "Salva"}
                         </button>
                       </div>
                     </div>
