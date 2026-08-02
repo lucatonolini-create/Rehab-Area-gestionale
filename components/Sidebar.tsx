@@ -4,15 +4,20 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Users, Dumbbell, TrendingUp, Settings, Menu, X, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity,
+  LayoutDashboard, Users, TrendingUp, Settings, Menu, X, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity,
 } from "lucide-react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
+
+function AppLogo({ className }: { className?: string }) {
+  return <Image src="/app-logo.svg" alt="Logo" width={20} height={20} className={className} unoptimized />;
+}
 
 const navItems = [
   { href: "/",             label: "Dashboard",   icon: LayoutDashboard },
   { href: "/atleti",       label: "Atleti",       icon: Users },
-  { href: "/esercizi",     label: "Programmi",    icon: Dumbbell },
+  { href: "/esercizi",     label: "Programmi",    icon: AppLogo },
   { href: "/progressi",    label: "Progressi",    icon: TrendingUp },
   { href: "/analisi",        label: "Analisi",        icon: BarChart2   },
   { href: "/performance",   label: "Performance",   icon: Activity    },
@@ -90,9 +95,7 @@ export default function Sidebar() {
         <div className={`border-b border-white/10 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}>
           {!collapsed && (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
-                <Dumbbell className="w-6 h-6 text-[#2B2B2B]" />
-              </div>
+              <Image src="/app-logo.svg" alt="Logo" width={40} height={40} className="w-10 h-10 rounded-xl" unoptimized />
               <div>
                 <h1 className="font-bold text-sm text-white leading-tight">Rehab Area</h1>
               </div>
