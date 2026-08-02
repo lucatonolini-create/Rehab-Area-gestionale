@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Users, TrendingUp, Settings, Menu, X, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity,
+  LayoutDashboard, Users, TrendingUp, Dumbbell, Settings, Menu, X, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
@@ -25,7 +25,7 @@ function AppLogo({ className }: { className?: string }) {
 const navItems = [
   { href: "/",             label: "Dashboard",   icon: LayoutDashboard },
   { href: "/atleti",       label: "Atleti",       icon: Users },
-  { href: "/esercizi",     label: "Programmi",    icon: AppLogo },
+  { href: "/esercizi",     label: "Programmi",    icon: Dumbbell },
   { href: "/progressi",    label: "Progressi",    icon: TrendingUp },
   { href: "/analisi",        label: "Analisi",        icon: BarChart2   },
   { href: "/performance",   label: "Performance",   icon: Activity    },
