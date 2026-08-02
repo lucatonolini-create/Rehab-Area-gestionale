@@ -10,7 +10,16 @@ import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
 
 function AppLogo({ className }: { className?: string }) {
-  return <img src="/app-logo.svg" alt="" className={className} />;
+  return (
+    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <rect width="400" height="400" rx="90" fill="#3a3d42"/>
+      <rect x="95"  y="248" width="52" height="82"  rx="12" fill="#f2efe9"/>
+      <rect x="174" y="180" width="52" height="150" rx="12" fill="#f2efe9"/>
+      <rect x="253" y="96"  width="52" height="234" rx="12" fill="#9c3b3b"/>
+      <rect x="269" y="120" width="20" height="60" rx="5" fill="#f2efe9"/>
+      <rect x="249" y="140" width="60" height="20" rx="5" fill="#f2efe9"/>
+    </svg>
+  );
 }
 
 const navItems = [
@@ -94,7 +103,14 @@ export default function Sidebar() {
         <div className={`border-b border-white/10 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}>
           {!collapsed && (
             <div className="flex items-center gap-3">
-              <img src="/app-logo.svg" alt="Logo" className="w-10 h-10 rounded-xl" />
+              <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 rounded-xl shrink-0">
+                <rect width="400" height="400" rx="90" fill="#3a3d42"/>
+                <rect x="95"  y="248" width="52" height="82"  rx="12" fill="#f2efe9"/>
+                <rect x="174" y="180" width="52" height="150" rx="12" fill="#f2efe9"/>
+                <rect x="253" y="96"  width="52" height="234" rx="12" fill="#9c3b3b"/>
+                <rect x="269" y="120" width="20" height="60" rx="5" fill="#f2efe9"/>
+                <rect x="249" y="140" width="60" height="20" rx="5" fill="#f2efe9"/>
+              </svg>
               <div>
                 <h1 className="font-bold text-sm text-white leading-tight">Rehab Area</h1>
               </div>

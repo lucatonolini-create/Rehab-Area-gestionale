@@ -5,7 +5,16 @@ import { useRouter } from "next/navigation";
 import { Users, Activity, TrendingUp, ChevronRight, X } from "lucide-react";
 
 function AppLogo({ className }: { className?: string }) {
-  return <img src="/app-logo.svg" alt="" className={className} />;
+  return (
+    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <rect width="400" height="400" rx="90" fill="#3a3d42"/>
+      <rect x="95"  y="248" width="52" height="82"  rx="12" fill="#f2efe9"/>
+      <rect x="174" y="180" width="52" height="150" rx="12" fill="#f2efe9"/>
+      <rect x="253" y="96"  width="52" height="234" rx="12" fill="#9c3b3b"/>
+      <rect x="269" y="120" width="20" height="60" rx="5" fill="#f2efe9"/>
+      <rect x="249" y="140" width="60" height="20" rx="5" fill="#f2efe9"/>
+    </svg>
+  );
 }
 import {
   loadAtleti, loadProgrammi, upsertAtleta, nd,
