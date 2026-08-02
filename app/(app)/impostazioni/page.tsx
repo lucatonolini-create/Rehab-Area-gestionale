@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Save, Plus, Trash2, Check, RefreshCw, AlertCircle, Bell, BellOff, Send, Pencil, X } from "lucide-react";
-import { loadImpostazioni, saveImpostazioni, pushAllLocalToSupabase, type Impostazioni, type GiocatoreRosa } from "@/lib/store";
+import { Save, Plus, Trash2, Check, RefreshCw, AlertCircle, Bell, BellOff, Send, Download, X } from "lucide-react";
+import { loadImpostazioni, saveImpostazioni, pushAllLocalToSupabase, loadAtleti, loadProgrammi, type Impostazioni, type GiocatoreRosa } from "@/lib/store";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
 
@@ -13,6 +13,72 @@ function urlBase64ToUint8Array(base64: string): ArrayBuffer {
   const arr = new Uint8Array(raw.length);
   for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
   return arr.buffer;
+}
+
+function BackupSection() {
+  const [stato, setStato] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [msg, setMsg] = useState("");
+
+  const esporta = async () => {
+    setStato("loading");
+    setMsg("");
+    try {
+      const atleti = await loadAtleti();
+      const programmi = await Promise.all(atleti.map((a) => loadProgrammi(a.id))).then((r) => r.flat());
+      const payload = {
+        esportato_il: new Date().toISOString(),
+        atleti,
+        programmi,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `rehab-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStato("ok");
+      setMsg(`Esportati ${atleti.length} atleti e ${programmi.length} programmi.`);
+    } catch (err) {
+      setStato("error");
+      setMsg(`Errore: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    setTimeout(() => setStato("idle"), 6000);
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+      <h2 className="font-bold text-gray-900 mb-1">Backup dati</h2>
+      <p className="text-sm text-gray-500 mb-4">
+        Scarica una copia di tutti gli atleti e i programmi in formato JSON. Conservala come backup manuale.
+      </p>
+      <button
+        onClick={esporta}
+        disabled={stato === "loading"}
+        className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all ${
+          stato === "ok" ? "bg-green-500 text-white" :
+          stato === "error" ? "bg-orange-500 text-white" :
+          "bg-[#2B2B2B] text-white hover:bg-black"
+        }`}
+      >
+        {stato === "loading"
+          ? <><RefreshCw className="w-4 h-4 animate-spin" /> Esportazione…</>
+          : stato === "ok"
+          ? <><Check className="w-4 h-4" /> Scaricato!</>
+          : stato === "error"
+          ? <><AlertCircle className="w-4 h-4" /> Errore</>
+          : <><Download className="w-4 h-4" /> Esporta backup JSON</>}
+      </button>
+      {msg && (
+        <p className={`mt-3 text-xs font-medium ${stato === "error" ? "text-orange-600" : "text-green-600"}`}>
+          {msg}
+        </p>
+      )}
+      <p className="mt-3 text-xs text-gray-400">
+        Per backup automatici abilitare i Point-in-Time Recovery nel pannello Supabase (piano Pro).
+      </p>
+    </div>
+  );
 }
 
 function NotificheSection() {
@@ -521,6 +587,9 @@ export default function ImpostazioniPage() {
           </p>
           <NotificheSection />
         </div>
+
+        {/* Backup / Export dati */}
+        <BackupSection />
 
         {/* Sincronizzazione */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">

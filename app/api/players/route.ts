@@ -1,10 +1,26 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { ROSA } from "@/lib/players";
 
 export const dynamic = "force-dynamic";
 
+async function getAuthUser() {
+  const cookieStore = cookies();
+  const sb = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
+  );
+  const { data: { user } } = await sb.auth.getUser();
+  return user;
+}
+
 export async function GET() {
+  if (!await getAuthUser()) {
+    return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
+  }
   // Start with the full static roster as base
   const merged: { nome: string; categoria: string; ruolo: string }[] = ROSA.map((g) => ({
     nome: g.nome,
