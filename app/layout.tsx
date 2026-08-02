@@ -49,6 +49,17 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="it">
+      <head>
+        {/* Force iOS to always re-fetch the touch icon (bypass cache) */}
+        <link rel="apple-touch-icon" href="/apple-touch-icon-v2.png" />
+        <script dangerouslySetInnerHTML={{ __html: `
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+              registrations.forEach(function(r) { r.update(); });
+            });
+          }
+        ` }} />
+      </head>
       <body className={inter.className}>{children}</body>
     </html>
   );

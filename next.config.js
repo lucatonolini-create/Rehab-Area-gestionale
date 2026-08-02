@@ -16,7 +16,11 @@ const nextConfig = {
         ],
       },
       {
-        source: "/apple-touch-icon:suffix*",
+        source: "/apple-touch-icon.png",
+        headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
+      },
+      {
+        source: "/apple-touch-icon-v2.png",
         headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
       },
       {
