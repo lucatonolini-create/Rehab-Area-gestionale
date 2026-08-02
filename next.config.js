@@ -24,4 +24,7 @@ module.exports = withPWA({
   aggressiveFrontEndNavCaching: false,
   skipWaiting: true,
   clientsClaim: true,
+  workboxOptions: {
+    exclude: [/apple-touch-icon/, /apple-icon/, /rehab-icon/, /favicon/],
+  },
 })(nextConfig);
