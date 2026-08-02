@@ -8,7 +8,7 @@
   "theme_color": "#C8102E",
   "icons": [
     {
-      "src": "/rehab-icon.png",
+      "src": "/rehab-icon.png?v=2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
