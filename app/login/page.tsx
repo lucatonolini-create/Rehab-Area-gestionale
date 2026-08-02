@@ -4,6 +4,36 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+const RL_KEY = "rehab_login_attempts";
+const MAX_ATTEMPTS = 5;
+const BLOCK_MS = 60_000;
+
+function getAttempts(): { count: number; blockedUntil: number | null } {
+  try {
+    const raw = localStorage.getItem(RL_KEY);
+    if (!raw) return { count: 0, blockedUntil: null };
+    return JSON.parse(raw);
+  } catch { return { count: 0, blockedUntil: null }; }
+}
+
+function recordFailure() {
+  const { count } = getAttempts();
+  const next = count + 1;
+  localStorage.setItem(RL_KEY, JSON.stringify({
+    count: next,
+    blockedUntil: next >= MAX_ATTEMPTS ? Date.now() + BLOCK_MS : null,
+  }));
+  return next;
+}
+
+function checkBlock(): { blocked: boolean; secsLeft: number } {
+  const { blockedUntil } = getAttempts();
+  if (!blockedUntil) return { blocked: false, secsLeft: 0 };
+  const ms = blockedUntil - Date.now();
+  if (ms <= 0) { localStorage.removeItem(RL_KEY); return { blocked: false, secsLeft: 0 }; }
+  return { blocked: true, secsLeft: Math.ceil(ms / 1000) };
+}
+
 type Tab = "login" | "signup" | "reset";
 
 export default function LoginPage() {
@@ -18,21 +48,32 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
 
+    const { blocked, secsLeft } = checkBlock();
+    if (blocked) {
+      setError(`Troppi tentativi falliti. Riprova tra ${secsLeft} secondi.`);
+      return;
+    }
+
+    setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      if (error.message.toLowerCase().includes("email not confirmed")) {
+      const attempts = recordFailure();
+      const { blocked: nowBlocked, secsLeft: secs } = checkBlock();
+      if (nowBlocked) {
+        setError(`Troppi tentativi falliti. Account bloccato per ${secs} secondi.`);
+      } else if (error.message.toLowerCase().includes("email not confirmed")) {
         setError("Email non confermata. Controlla la tua casella di posta e clicca il link di verifica.");
       } else {
-        setError("Email o password non corretti.");
+        setError(`Email o password non corretti. ${MAX_ATTEMPTS - attempts} tentativ${MAX_ATTEMPTS - attempts === 1 ? "o" : "i"} rimanent${MAX_ATTEMPTS - attempts === 1 ? "e" : "i"}.`);
       }
       setLoading(false);
       return;
     }
 
+    localStorage.removeItem(RL_KEY);
     router.push("/");
     router.refresh();
   };
