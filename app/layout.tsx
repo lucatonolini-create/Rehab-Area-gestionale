@@ -30,20 +30,6 @@ export const metadata: Metadata = {
     description: "Gestionale area riabilitazione USC Cremonese",
     images: ["/og-image.png"],
   },
-  openGraph: {
-    title: "Rehab Area",
-    description: "Gestionale area riabilitazione USC Cremonese",
-    siteName: "Rehab Area",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Rehab Area" }],
-    locale: "it_IT",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Rehab Area",
-    description: "Gestionale area riabilitazione USC Cremonese",
-    images: ["/og-image.png"],
-  },
   other: {
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "default",
