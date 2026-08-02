@@ -10,7 +10,6 @@ export const metadata: Metadata = {
   manifest: "/manifest.json?v=3",
   icons: {
     icon: "/favicon.svg",
-    apple: [{ url: "/rehab-icon.png", sizes: "512x512", type: "image/png" }],
   },
   other: {
     "apple-mobile-web-app-capable": "yes",
