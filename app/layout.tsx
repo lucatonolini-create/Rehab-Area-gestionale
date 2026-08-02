@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json?v=3",
   icons: {
     icon: "/favicon.svg?v=2",
-    apple: [{ url: "/apple-touch-icon.png?v=2", sizes: "512x512", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon-v2.png", sizes: "512x512", type: "image/png" }],
   },
   openGraph: {
     title: "Rehab Area",
