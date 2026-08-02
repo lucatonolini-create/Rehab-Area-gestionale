@@ -621,7 +621,8 @@ export async function syncFlush(): Promise<void> {
             // but keep referti_clinici and progresso_manuale (they ARE in the schema).
             const { peso, altezza, plicometrie_medie, data_nascita, altezza_da_seduto, nome_completo, evento, meccanismo, contatto, lato, posizione_infortunio, questionari_kinesiofobia, osiics_codice, osiics_descrizione, osiics_code_id, ...safeRow } = row;
             const { error: e2 } = await supabase.from("atleti").upsert(safeRow);
-            ok = !e2 || isExpectedSyncError(e2.code);
+            if (!e2 || isExpectedSyncError(e2.code)) { ok = true; }
+            else { console.error("[syncFlush] atleti fallback upsert failed", e2.code, e2.message); ok = false; }
           } else {
             ok = isExpectedSyncError(error.code);
           }
@@ -726,10 +727,20 @@ export async function loadAtleti(): Promise<Atleta[]> {
         const localMap = new Map(localAll.map(a => [a.id, a]));
         const atleti = sbResult.data.map(rowToAtleta).map(a => {
           const local = localMap.get(a.id);
+          // Merge refertiClinici: Supabase as base + locally-pending items not yet synced.
+          // If Supabase returns empty (column missing or no data), fall back to local.
+          const sbReferti = a.refertiClinici ?? [];
+          const localReferti = local?.refertiClinici ?? [];
+          let mergedReferti: RefertoClinico[];
+          if (sbReferti.length === 0) {
+            mergedReferti = localReferti;
+          } else {
+            const sbIds = new Set(sbReferti.map(r => r.id));
+            mergedReferti = [...sbReferti, ...localReferti.filter(r => !sbIds.has(r.id))];
+          }
           return {
             ...a,
-            refertiClinici: (a.refertiClinici && a.refertiClinici.length > 0)
-              ? a.refertiClinici : (local?.refertiClinici ?? []),
+            refertiClinici: mergedReferti,
             progressoManuale: a.progressoManuale ?? local?.progressoManuale,
           };
         }).map(a => ({ ...a, progresso: progrEffettivo(a) }));

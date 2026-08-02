@@ -58,6 +58,8 @@ alter table atleti add column if not exists osiics_descrizione   text;
 alter table atleti add column if not exists osiics_code_id       text;
 alter table atleti add column if not exists questionari_kinesiofobia jsonb default '[]'::jsonb;
 alter table atleti add column if not exists referti_clinici      jsonb default '[]'::jsonb;
+alter table atleti add column if not exists storico_infortuni    jsonb default '[]'::jsonb;
+alter table atleti add column if not exists data_nascita         text;
 
 -- ── Programmi ─────────────────────────────────────────────────────────────────
 create table if not exists programmi (
