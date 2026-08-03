@@ -24,6 +24,14 @@ const nextConfig = {
         headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
       },
       {
+        source: "/apple-touch-icon-v3.png",
+        headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
+      },
+      {
+        source: "/favicon.ico",
+        headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
+      },
+      {
         source: "/manifest.json",
         headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
       },
