@@ -1948,7 +1948,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
   const countPerStato = (s: Stato | "Tutti") => {
     if (s === "Tutti") return atleti.length;
-    if (s === "Infortunato") return atleti.filter((a) => a.stato === "Infortunato").reduce((sum, a) => sum + 1 + (a.storicoInfortuni ?? []).filter((i) => i.attivo).length, 0);
+    if (s === "Infortunato") return atleti.filter((a) => a.stato === "Infortunato").length;
     return atleti.filter((a) => a.stato === s).length;
   };
 
