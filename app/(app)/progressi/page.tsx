@@ -570,12 +570,12 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           head = ["Data", "Livello", "Vo2Max", "VAM"];
           dataRows = entries.map((e) => [e.dateFull, e.test.livello || "—", e.test.vo2max || "—", e.test.vam || "—"]);
         } else if (isJurdan) {
-          head = ["Data", "Gin.Dx°", "Anca Sx°", "Δ Dx/Sx", "Gin.Sx°", "Anca Dx°", "Δ Sx/Dx"];
+          head = ["Data", "Gin.Dx°", "Anca Sx°", "Σ Dx/Sx", "Gin.Sx°", "Anca Dx°", "Σ Sx/Dx"];
           dataRows = entries.map((e) => {
             const gDx = parseFloat(e.test.ginocchioDx ?? ""), aSx = parseFloat(e.test.ancaSx ?? "");
             const gSx = parseFloat(e.test.ginocchioSx ?? ""), aDx = parseFloat(e.test.ancaDx ?? "");
-            const d1 = e.test.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? Math.abs(gDx - aSx).toFixed(1) : "—");
-            const d2 = e.test.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? Math.abs(gSx - aDx).toFixed(1) : "—");
+            const d1 = e.test.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? (gDx + aSx).toFixed(1) : "—");
+            const d2 = e.test.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? (gSx + aDx).toFixed(1) : "—");
             return [e.dateFull, e.test.ginocchioDx || "—", e.test.ancaSx || "—", d1, e.test.ginocchioSx || "—", e.test.ancaDx || "—", d2];
           });
         } else if (isCMJLike) {
@@ -1364,10 +1364,10 @@ export default function ProgressiPage() {
                                           {isJurdan && <>
                                             <th className="text-right py-2 px-2 font-semibold">Gin.Dx (°)</th>
                                             <th className="text-right py-2 px-2 font-semibold">Anca Sx (°)</th>
-                                            <th className="text-right py-2 px-2 font-semibold">Δ Dx/Sx</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Σ Dx/Sx</th>
                                             <th className="text-right py-2 px-2 font-semibold">Gin.Sx (°)</th>
                                             <th className="text-right py-2 px-2 font-semibold">Anca Dx (°)</th>
-                                            <th className="text-right py-2 px-2 font-semibold">Δ Sx/Dx</th>
+                                            <th className="text-right py-2 px-2 font-semibold">Σ Sx/Dx</th>
                                           </>}
                                           {!isSprintTempo && !isGaconIFT && !isDropJump && !isSLDropJump && !isJurdan && hasSxDx && <>
                                             <th className="text-right py-2 px-2 font-semibold">Sx</th>
@@ -1414,8 +1414,8 @@ export default function ProgressiPage() {
                                               {isJurdan && (() => {
                                                 const gDx = parseFloat(e.test.ginocchioDx ?? ""), aSx = parseFloat(e.test.ancaSx ?? "");
                                                 const gSx = parseFloat(e.test.ginocchioSx ?? ""), aDx = parseFloat(e.test.ancaDx ?? "");
-                                                const d1 = e.test.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? Math.abs(gDx - aSx).toFixed(1) : "—");
-                                                const d2 = e.test.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? Math.abs(gSx - aDx).toFixed(1) : "—");
+                                                const d1 = e.test.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? (gDx + aSx).toFixed(1) : "—");
+                                                const d2 = e.test.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? (gSx + aDx).toFixed(1) : "—");
                                                 return (<>
                                                   <td className="py-2 px-2 text-right font-mono">{e.test.ginocchioDx || "—"}</td>
                                                   <td className="py-2 px-2 text-right font-mono">{e.test.ancaSx || "—"}</td>
