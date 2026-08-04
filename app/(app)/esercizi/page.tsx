@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Trash2, X, ChevronDown, Edit2, Gauge, Upload, AlertTriangle, Footprints, CalendarX2, Users, BatteryFull, FileText, ShieldPlus, TrendingUp, Dumbbell } from "lucide-react";
+import { Plus, Trash2, X, ChevronDown, Edit2, Gauge, Upload, AlertTriangle, Footprints, CalendarX2, Users, BatteryFull, FileText, FileDown, ShieldPlus, TrendingUp, Dumbbell } from "lucide-react";
 import {
   loadAtleti, loadProgrammi, upsertProgramma, upsertAtleta, deleteProgramma, uid, nd, calcolaProgressoAuto,
   subscribeToAtleti, subscribeToProgrammi,
@@ -648,6 +648,72 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
   doc.save(`USC_Programmi_${fmtFile(dataInizio)}_${fmtFile(dataFine)}.pdf`);
 }
 
+function buildProgrammiCSV(righe: { data: string; atleta: string; categoria: string; programma: string; fase: string; fisio: string; obP: string; esP: string; vasP: string; obC: string; esC: string; vasC: string; rpe: string; tipo: string; noteAssenza: string }[]): string {
+  const q = (v: string) => `"${v.replace(/"/g, '""')}"`;
+  const header = ["Data","Atleta","Categoria","Tipo","Programma","Fase","Fisioterapia","Obiettivi Palestra","Esercizi Palestra","VAS Palestra","Obiettivi Campo","Esercizi Campo","VAS Campo","RPE","Note"];
+  const rows = righe.map(r => [r.data, r.atleta, r.categoria, r.tipo, r.programma, r.fase, r.fisio, r.obP, r.esP, r.vasP, r.obC, r.esC, r.vasC, r.rpe, r.noteAssenza].map(q).join(","));
+  return [header.map(q).join(","), ...rows].join("\r\n");
+}
+
+function rigaProgramma(data: string, atleta: Atleta, prog: Programma) {
+  const tipo = prog.assente ? "Assente" : prog.riposo ? "Riposo" : prog.squadra ? "Squadra" : "Rehab";
+  const noteAssenza = prog.noteAssenza ?? "";
+  if (prog.assente || prog.riposo || prog.squadra) {
+    return { data, atleta: nd(atleta), categoria: atleta.categoria ?? "", tipo, programma: "", fase: "", fisio: "", obP: "", esP: "", vasP: "", obC: "", esC: "", vasC: "", rpe: "", noteAssenza };
+  }
+  const obP = (prog.obiettiviPalestra ?? []).join(" | ");
+  const esercizi = prog.esercizi ?? [];
+  const esP = esercizi.map((e, i) => {
+    let det = "";
+    if (e.serie && (e.reps || e.durata)) det = `${e.serie}x${e.reps || e.durata}${e.reps && e.durata ? ` ${e.durata}` : ""}`;
+    else det = [e.serie, e.reps, e.durata].filter(Boolean).join(" ");
+    const carico = e.carico ? ` (${e.carico})` : "";
+    return `${i+1}. ${det ? `${e.nome} ${det}${carico}` : e.nome}`;
+  }).join(" | ");
+  const vasP = esercizi.map((e, i) => `${i+1}. ${e.vas || "0"}`).join(" | ");
+  const obC = (prog.obiettiviCampo ?? []).join(" | ");
+  const esCampo = prog.esercizicampo ?? [];
+  const esC = esCampo.map((c: any, i: number) => {
+    const parts = [c.tipo, c.serie ? `${c.serie}x` : "", c.durata || ""].filter(Boolean);
+    return `${i+1}. ${parts.join(" ")}`;
+  }).join(" | ");
+  const vasC = esCampo.map((c: any, i: number) => `${i+1}. ${c.vas || "0"}`).join(" | ");
+  const rpe = prog.carico?.rpe ? `${prog.carico.rpe}/10` : "";
+  const fisio = prog.noteFisioterapia?.trim() ?? "";
+  return { data, atleta: nd(atleta), categoria: atleta.categoria ?? "", tipo, programma: prog.nome ?? "", fase: prog.fase ?? "", fisio, obP, esP, vasP, obC, esC, vasC, rpe, noteAssenza };
+}
+
+function esportaCSVGiornaliero(data: string, atleti: Atleta[], tuttiProgrammi: Programma[]) {
+  const programmiGiorno = tuttiProgrammi.filter(p => p.data === data);
+  const righe = atleti.filter(a => a.stato === "Infortunato").flatMap(atleta => {
+    const progs = programmiGiorno.filter(p => p.atletaId === atleta.id);
+    if (progs.length === 0) return [];
+    return progs.map(prog => rigaProgramma(data, atleta, prog));
+  });
+  const csv = buildProgrammiCSV(righe);
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = `USC_Programmi_${data}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function esportaCSVIntervallo(dataInizio: string, dataFine: string, atleti: Atleta[], tuttiProgrammi: Programma[]) {
+  const righe = tuttiProgrammi
+    .filter(p => p.data >= dataInizio && p.data <= dataFine)
+    .sort((a, b) => a.data.localeCompare(b.data))
+    .flatMap(prog => {
+      const atleta = atleti.find(a => a.id === prog.atletaId);
+      if (!atleta) return [];
+      return [rigaProgramma(prog.data, atleta, prog)];
+    });
+  const csv = buildProgrammiCSV(righe);
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const fmtFile = (d: string) => d.replace(/-/g, "");
+  const a = document.createElement("a"); a.href = url; a.download = `USC_Programmi_${fmtFile(dataInizio)}_${fmtFile(dataFine)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
 function parseGpsCsv(text: string): Partial<Carico> {
   const lines = text.trim().split(/\r?\n/);
   if (lines.length < 2) return {};
@@ -698,6 +764,8 @@ export default function EserciziPage() {
   const [dataInizioIntervallo, setDataInizioIntervallo] = useState(() => new Date().toISOString().slice(0, 10));
   const [dataFineIntervallo, setDataFineIntervallo] = useState(() => new Date().toISOString().slice(0, 10));
   const [esportandoIntervallo, setEsportandoIntervallo] = useState(false);
+  const [esportandoCSVGiorno, setEsportandoCSVGiorno] = useState(false);
+  const [esportandoCSVIntervallo, setEsportandoCSVIntervallo] = useState(false);
   const [atletiAggiuntivi, setAtletiAggiuntivi] = useState<string[]>([]);
 
   const atletiOrdinati = useMemo(() => [...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")), [atleti]);
@@ -940,6 +1008,21 @@ export default function EserciziPage() {
             <FileText className="w-4 h-4" />
             {esportandoGiorno ? "Generazione…" : "PDF del giorno"}
           </button>
+          <button
+            disabled={esportandoCSVGiorno}
+            onClick={async () => {
+              setEsportandoCSVGiorno(true);
+              try {
+                const tutti = await loadProgrammi();
+                esportaCSVGiornaliero(dataGiorno, atleti, tutti);
+              } finally {
+                setEsportandoCSVGiorno(false);
+              }
+            }}
+            className="flex items-center gap-1.5 border border-gray-200 text-gray-600 px-3 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50 shrink-0 whitespace-nowrap bg-white shadow-sm">
+            <FileDown className="w-4 h-4" />
+            {esportandoCSVGiorno ? "Generazione…" : "CSV del giorno"}
+          </button>
           <button onClick={apriNuovo}
             className="flex items-center gap-1.5 bg-[#C8102E] text-white px-3 py-2 rounded-xl text-sm font-medium hover:bg-red-800 shrink-0 whitespace-nowrap">
             <Plus className="w-4 h-4" /> Nuovo programma
@@ -982,6 +1065,21 @@ export default function EserciziPage() {
           className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-2 rounded-xl text-sm font-medium hover:bg-red-50 disabled:opacity-50 shrink-0 whitespace-nowrap bg-white shadow-sm">
           <FileText className="w-4 h-4" />
           {esportandoIntervallo ? "Generazione…" : "PDF periodo"}
+        </button>
+        <button
+          disabled={esportandoCSVIntervallo}
+          onClick={async () => {
+            setEsportandoCSVIntervallo(true);
+            try {
+              const tutti = await loadProgrammi();
+              esportaCSVIntervallo(dataInizioIntervallo, dataFineIntervallo, atleti, tutti);
+            } finally {
+              setEsportandoCSVIntervallo(false);
+            }
+          }}
+          className="flex items-center gap-1.5 border border-gray-200 text-gray-600 px-3 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50 shrink-0 whitespace-nowrap bg-white shadow-sm">
+          <FileDown className="w-4 h-4" />
+          {esportandoCSVIntervallo ? "Generazione…" : "CSV periodo"}
         </button>
       </div>
 
