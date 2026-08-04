@@ -1855,8 +1855,8 @@ export default function EserciziPage() {
                               const aSx = parseFloat(t.ancaSx ?? "");
                               const gSx = parseFloat(t.ginocchioSx ?? "");
                               const aDx = parseFloat(t.ancaDx ?? "");
-                              const autoDiff1 = (!isNaN(gDx) && !isNaN(aSx)) ? Math.abs(gDx - aSx).toFixed(1) : "";
-                              const autoDiff2 = (!isNaN(gSx) && !isNaN(aDx)) ? Math.abs(gSx - aDx).toFixed(1) : "";
+                              const autoDiff1 = (!isNaN(gDx) && !isNaN(aSx)) ? (gDx + aSx).toFixed(1) : "";
+                              const autoDiff2 = (!isNaN(gSx) && !isNaN(aDx)) ? (gSx + aDx).toFixed(1) : "";
                               return (
                                 <div className="space-y-3">
                                   {/* Riga 1: Ginocchio Dx + Anca Sx + diff */}
@@ -1872,7 +1872,7 @@ export default function EserciziPage() {
                                         <input value={t.ancaSx ?? ""} onChange={(e) => aggiornaTest(i, "ancaSx", e.target.value)} placeholder="es. 10" className={inp} />
                                       </div>
                                       <div>
-                                        <p className="text-xs text-gray-500 mb-1">Differenza (°)</p>
+                                        <p className="text-xs text-gray-500 mb-1">Cumulativo (°)</p>
                                         <input
                                           value={t.diffGinocchioDxAncaSx !== undefined ? t.diffGinocchioDxAncaSx : autoDiff1}
                                           onChange={(e) => aggiornaTest(i, "diffGinocchioDxAncaSx", e.target.value)}
@@ -1894,7 +1894,7 @@ export default function EserciziPage() {
                                         <input value={t.ancaDx ?? ""} onChange={(e) => aggiornaTest(i, "ancaDx", e.target.value)} placeholder="es. 8" className={inp} />
                                       </div>
                                       <div>
-                                        <p className="text-xs text-gray-500 mb-1">Differenza (°)</p>
+                                        <p className="text-xs text-gray-500 mb-1">Cumulativo (°)</p>
                                         <input
                                           value={t.diffGinocchioSxAncaDx !== undefined ? t.diffGinocchioSxAncaDx : autoDiff2}
                                           onChange={(e) => aggiornaTest(i, "diffGinocchioSxAncaDx", e.target.value)}

@@ -1070,12 +1070,12 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
               head = ["Data", "Livello", "Vo2Max", "VAM"];
               dataRows = entries.map((e) => [e.dateFull, e.test.livello || "—", e.test.vo2max || "—", e.test.vam || "—"]);
             } else if (isJurdan) {
-              head = ["Data", "Gin.Dx°", "Anca Sx°", "Δ Dx/Sx", "Gin.Sx°", "Anca Dx°", "Δ Sx/Dx"];
+              head = ["Data", "Gin.Dx°", "Anca Sx°", "Σ Dx/Sx", "Gin.Sx°", "Anca Dx°", "Σ Sx/Dx"];
               dataRows = entries.map((e) => {
                 const gDx = parseFloat(e.test.ginocchioDx ?? ""), aSx = parseFloat(e.test.ancaSx ?? "");
                 const gSx = parseFloat(e.test.ginocchioSx ?? ""), aDx = parseFloat(e.test.ancaDx ?? "");
-                const d1 = e.test.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? Math.abs(gDx - aSx).toFixed(1) : "—");
-                const d2 = e.test.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? Math.abs(gSx - aDx).toFixed(1) : "—");
+                const d1 = e.test.diffGinocchioDxAncaSx ?? ((!isNaN(gDx) && !isNaN(aSx)) ? (gDx + aSx).toFixed(1) : "—");
+                const d2 = e.test.diffGinocchioSxAncaDx ?? ((!isNaN(gSx) && !isNaN(aDx)) ? (gSx + aDx).toFixed(1) : "—");
                 return [e.dateFull, e.test.ginocchioDx || "—", e.test.ancaSx || "—", d1, e.test.ginocchioSx || "—", e.test.ancaDx || "—", d2];
               });
             } else if (isCMJLike) {
