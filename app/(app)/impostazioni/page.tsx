@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Save, Plus, Trash2, Check, RefreshCw, AlertCircle, Bell, BellOff, Send, Download, X } from "lucide-react";
 import { loadImpostazioni, saveImpostazioni, pushAllLocalToSupabase, loadAtleti, loadProgrammi, type Impostazioni, type GiocatoreRosa } from "@/lib/store";
+import { esportaExcel } from "@/lib/exportExcel";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
 
@@ -77,6 +78,57 @@ function BackupSection() {
       <p className="mt-3 text-xs text-gray-400">
         Per backup automatici abilitare i Point-in-Time Recovery nel pannello Supabase (piano Pro).
       </p>
+    </div>
+  );
+}
+
+function ExcelSection() {
+  const [stato, setStato] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [msg, setMsg] = useState("");
+
+  const esporta = async () => {
+    setStato("loading");
+    setMsg("");
+    try {
+      await esportaExcel();
+      setStato("ok");
+      setMsg("File Excel scaricato con tutti i dati.");
+    } catch (err) {
+      setStato("error");
+      setMsg(`Errore: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    setTimeout(() => setStato("idle"), 6000);
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+      <h2 className="font-bold text-gray-900 mb-1">Esporta Excel</h2>
+      <p className="text-sm text-gray-500 mb-4">
+        Scarica un file .xlsx con tutti i dati: atleti, infortuni, referti, programmi, esercizi, test fisici e carichi.
+        Ogni sezione dell&apos;app diventa un foglio separato.
+      </p>
+      <button
+        onClick={esporta}
+        disabled={stato === "loading"}
+        className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all ${
+          stato === "ok" ? "bg-green-500 text-white" :
+          stato === "error" ? "bg-orange-500 text-white" :
+          "bg-[#2B2B2B] text-white hover:bg-black"
+        }`}
+      >
+        {stato === "loading"
+          ? <><RefreshCw className="w-4 h-4 animate-spin" /> Generazione…</>
+          : stato === "ok"
+          ? <><Check className="w-4 h-4" /> Scaricato!</>
+          : stato === "error"
+          ? <><AlertCircle className="w-4 h-4" /> Errore</>
+          : <><Download className="w-4 h-4" /> Esporta Excel (.xlsx)</>}
+      </button>
+      {msg && (
+        <p className={`mt-3 text-xs font-medium ${stato === "error" ? "text-orange-600" : "text-green-600"}`}>
+          {msg}
+        </p>
+      )}
     </div>
   );
 }
@@ -590,6 +642,9 @@ export default function ImpostazioniPage() {
 
         {/* Backup / Export dati */}
         <BackupSection />
+
+        {/* Esporta Excel */}
+        <ExcelSection />
 
         {/* Sincronizzazione */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
