@@ -170,6 +170,19 @@ export interface QuestionarioKinesiofobia {
   infortunioLabel?: string;
 }
 
+export type TipoReferto = "Ecografia" | "Risonanza Magnetica" | "TAC" | "Radiografia" | "Visita clinica" | "Altro";
+export type EsitoReferto = "Positivo" | "In miglioramento" | "Negativo";
+export const TIPI_REFERTO: TipoReferto[] = ["Altro", "Ecografia", "Radiografia", "Risonanza Magnetica", "TAC", "Visita clinica"];
+export const ESITI_REFERTO: EsitoReferto[] = ["In miglioramento", "Negativo", "Positivo"];
+
+export interface RefertoClinico {
+  id: string;
+  data: string;
+  tipo: TipoReferto;
+  esito: EsitoReferto;
+  descrizione?: string;
+  note?: string;
+}
 
 export interface Atleta {
   id: string;
@@ -190,6 +203,7 @@ export interface Atleta {
   stato: Stato;
   progresso: number;
   progressoManuale?: number;  // se impostato, sovrascrive il calcolo automatico
+  refertiClinici?: RefertoClinico[];
   fisioterapista: string;
   preparatoreAtletico: string;
   telefono: string;
@@ -230,7 +244,7 @@ export const RECOVERY_DAYS: Partial<Record<TipoInfortunio, number>> = {
 };
 
 export function calcolaProgressoAuto(
-  atleta: Pick<Atleta, "stato" | "inizioRehab" | "tipoInfortunio">
+  atleta: Pick<Atleta, "stato" | "inizioRehab" | "tipoInfortunio" | "refertiClinici">
 ): number {
   if (atleta.stato === "Disponibile") return 100;
   if (!atleta.inizioRehab) return 0;
@@ -238,7 +252,12 @@ export function calcolaProgressoAuto(
     (Date.now() - new Date(atleta.inizioRehab + "T12:00").getTime()) / 864e5
   ));
   const expectedDays = (atleta.tipoInfortunio ? RECOVERY_DAYS[atleta.tipoInfortunio] : undefined) ?? 42;
-  const base = Math.min(95, Math.floor((giorni / expectedDays) * 100));
+  let base = Math.min(95, Math.floor((giorni / expectedDays) * 100));
+  const referti = [...(atleta.refertiClinici ?? [])].sort((a, b) => b.data.localeCompare(a.data));
+  if (referti.length > 0) {
+    if (referti[0].esito === "Negativo") base = Math.min(base, 40);
+    else if (referti[0].esito === "In miglioramento") base = Math.min(base, 70);
+  }
   return Math.max(0, base);
 }
 
@@ -459,6 +478,7 @@ function rowToAtleta(r: Record<string, unknown>): Atleta {
     note: (r.note as string) ?? "",
     storicoInfortuni: (r.storico_infortuni as InfortunioStorico[]) ?? [],
     questionariKinesiofobia: (r.questionari_kinesiofobia as QuestionarioKinesiofobia[]) ?? [],
+    refertiClinici: (r.referti_clinici as RefertoClinico[]) ?? [],
     progressoManuale: (r.progresso_manuale !== null && r.progresso_manuale !== undefined)
       ? (r.progresso_manuale as number) : undefined,
     peso: (r.peso as string) ?? "",
@@ -497,6 +517,7 @@ function atletaToRow(a: Atleta): Record<string, unknown> {
     note: a.note,
     storico_infortuni: a.storicoInfortuni ?? [],
     questionari_kinesiofobia: a.questionariKinesiofobia ?? [],
+    referti_clinici: a.refertiClinici ?? [],
     progresso_manuale: a.progressoManuale ?? null,
     peso: a.peso ?? null,
     altezza: a.altezza ?? null,
@@ -601,7 +622,8 @@ export async function syncFlush(): Promise<void> {
           if (!error) {
             ok = true;
           } else if (error.code === "PGRST204" || error.code === "42703") {
-            // Strip columns that may not exist in older DB schemas yet
+            // Strip columns that may not exist in older DB schemas yet,
+            // but keep referti_clinici and progresso_manuale (they ARE in the schema).
             const { peso, altezza, plicometrie_medie, data_nascita, altezza_da_seduto, nome_completo, evento, meccanismo, contatto, lato, posizione_infortunio, questionari_kinesiofobia, osiics_codice, osiics_descrizione, osiics_code_id, ...safeRow } = row;
             const { error: e2 } = await supabase.from("atleti").upsert(safeRow);
             if (!e2 || isExpectedSyncError(e2.code)) { ok = true; }
@@ -655,7 +677,8 @@ export async function pushAllLocalToSupabase(): Promise<{ ok: number; fail: numb
       if (!error) {
         ok++;
       } else if (error.code === "PGRST204" || error.code === "42703") {
-        // Strip columns that may not exist in older DB schemas yet
+        // Strip columns that may not exist in older DB schemas yet,
+        // but keep referti_clinici and progresso_manuale (they ARE in the schema).
         const { peso, altezza, plicometrie_medie, data_nascita, altezza_da_seduto, nome_completo, evento, meccanismo, contatto, lato, posizione_infortunio, questionari_kinesiofobia, osiics_codice, osiics_descrizione, osiics_code_id, ...safeRow } = row;
         const { error: e2 } = await supabase.from("atleti").upsert(safeRow);
         if (!e2 || isExpectedSyncError(e2.code)) ok++;
@@ -703,12 +726,26 @@ export async function loadAtleti(): Promise<Atleta[]> {
     try {
       const sbResult = await supabase.from("atleti").select("*").order("created_at", { ascending: true });
       if (!sbResult.error && sbResult.data) {
+        // Merge with local to preserve IndexedDB-only fields (refertiClinici, progressoManuale)
+        // in case Supabase columns don't exist yet
         const localAll = await db.atleti.toArray();
         const localMap = new Map(localAll.map(a => [a.id, a]));
         const atleti = sbResult.data.map(rowToAtleta).map(a => {
           const local = localMap.get(a.id);
+          // Merge refertiClinici: Supabase as base + locally-pending items not yet synced.
+          // If Supabase returns empty (column missing or no data), fall back to local.
+          const sbReferti = a.refertiClinici ?? [];
+          const localReferti = local?.refertiClinici ?? [];
+          let mergedReferti: RefertoClinico[];
+          if (sbReferti.length === 0) {
+            mergedReferti = localReferti;
+          } else {
+            const sbIds = new Set(sbReferti.map(r => r.id));
+            mergedReferti = [...sbReferti, ...localReferti.filter(r => !sbIds.has(r.id))];
+          }
           return {
             ...a,
+            refertiClinici: mergedReferti,
             progressoManuale: a.progressoManuale ?? local?.progressoManuale,
           };
         }).map(a => ({ ...a, progresso: progrEffettivo(a) }));
@@ -728,6 +765,15 @@ export async function upsertAtleta(a: Atleta): Promise<void> {
   if (isOnline()) syncFlush().catch(() => {});
 }
 
+// Targeted patch of just the referti_clinici column — avoids schema issues with other columns.
+export async function patchRefertiClinici(atletaId: string, referti: RefertoClinico[]): Promise<boolean> {
+  if (!isOnline()) return true; // offline → queue will handle it
+  try {
+    const { error } = await supabase.from("atleti").update({ referti_clinici: referti }).eq("id", atletaId);
+    if (error) { console.error("[patchRefertiClinici]", error.code, error.message); return false; }
+    return true;
+  } catch { return false; }
+}
 
 export async function deleteAtleta(id: string): Promise<void> {
   const db = getDB();

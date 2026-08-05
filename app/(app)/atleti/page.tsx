@@ -6,11 +6,12 @@ import {
   loadAtleti, loadProgrammi, upsertAtleta, upsertProgramma, deleteAtleta, uid, nd,
   subscribeToAtleti, subscribeToProgrammi, subscribeToIntakeInsert,
   CATEGORIE, TIPI_INFORTUNIO, EVENTI_INFORTUNIO, MECCANISMI_INFORTUNIO, CONTATTI_INFORTUNIO,
-  LATI_INFORTUNIO, POSIZIONI_INFORTUNIO,
+  LATI_INFORTUNIO, POSIZIONI_INFORTUNIO, TIPI_REFERTO, ESITI_REFERTO,
   calcolaProgressoAuto,
   loadDettaglioSituazionale, upsertDettaglioSituazionale, formToDettaglio,
+  patchRefertiClinici,
   type Atleta, type Stato, type InfortunioStorico, type Programma, type QuestionarioKinesiofobia,
-  type TestFisiometrico,
+  type TestFisiometrico, type RefertoClinico, type TipoReferto, type EsitoReferto,
   type DettaglioSituazionaleData, type DettaglioSituazionaleForm,
 } from "@/lib/store";
 import AtletaModal from "@/components/AtletaModal";
@@ -528,6 +529,45 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   });
 
   y = (doc as any).lastAutoTable.finalY + 10;
+
+  // ── Referti Clinici ───────────────────────────────────────────────────────
+  const referti = [...(atleta.refertiClinici ?? [])].sort((a, b) => b.data.localeCompare(a.data));
+  if (referti.length > 0) {
+    checkPage(20);
+    y = secTitle("Referti Clinici", y);
+    const esitoColor = (e: string): [number, number, number] => {
+      if (e === "Positivo")        return [200, 16, 46];
+      if (e === "In miglioramento") return [180, 83, 9];
+      return [22, 101, 52]; // Negativo
+    };
+    autoTable(doc, {
+      startY: y,
+      head: [["Data", "Tipo", "Esito", "Note"]],
+      body: referti.map((r) => [
+        new Date(r.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" }),
+        r.tipo,
+        r.esito,
+        r.note ?? "—",
+      ]),
+      headStyles: { fillColor: [55, 65, 81] as [number,number,number], textColor: 255, fontSize: 7.5, halign: "center", valign: "middle" },
+      bodyStyles: { fontSize: 8, cellPadding: 2.5, overflow: "linebreak", halign: "left", valign: "middle" },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      margin: { left: M, right: M, top: HDR + 8 },
+      columnStyles: {
+        0: { cellWidth: 28, halign: "center" },
+        1: { cellWidth: 44 },
+        2: { cellWidth: 36, halign: "center", fontStyle: "bold" },
+        3: { cellWidth: "auto" as any },
+      },
+      didParseCell: (data: any) => {
+        if (data.section === "body" && data.column.index === 2) {
+          const clr = esitoColor(data.cell.raw as string);
+          data.cell.styles.textColor = clr;
+        }
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+  }
 
   // ── Storico infortuni (deduplicato per chiave diagnosi+inizio+fine) ────────
   const storico = (() => {
@@ -1457,6 +1497,10 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const editDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
   const nuovoDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
   const [mostraFondi, setMostraFondi] = useState(false);
+  const [mostraFormReferto, setMostraFormReferto] = useState(false);
+  const [nuovoReferto, setNuovoReferto] = useState({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", descrizione: "", note: "" });
+  const [refertoSaving, setRefertoSaving] = useState(false);
+  const [refertoSalvato, setRefertoSalvato] = useState(false);
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
@@ -1723,6 +1767,42 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     await upsertAtleta(aggiornato);
     setEditDatiConcorrente(null);
     setEditDatiForm({});
+  };
+
+  const salvaReferto = async () => {
+    if (!selected || !nuovoReferto.tipo || !nuovoReferto.esito || refertoSaving) return;
+    setRefertoSaving(true);
+    const referto: RefertoClinico = {
+      id: uid(),
+      data: nuovoReferto.data,
+      tipo: nuovoReferto.tipo as TipoReferto,
+      esito: nuovoReferto.esito as EsitoReferto,
+      descrizione: nuovoReferto.descrizione || undefined,
+      note: nuovoReferto.note || undefined,
+    };
+    const nuoviReferti = [...(selected.refertiClinici ?? []), referto];
+    const aggiornato = { ...selected, refertiClinici: nuoviReferti };
+    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
+    setSelected(aggiornato);
+    // Offline-first save (IndexedDB + sync queue)
+    await upsertAtleta(aggiornato);
+    // Targeted Supabase patch — more reliable than full-row upsert when schema has new columns
+    await patchRefertiClinici(selected.id, nuoviReferti);
+    setRefertoSaving(false);
+    setMostraFormReferto(false);
+    setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", descrizione: "", note: "" });
+    setRefertoSalvato(true);
+    setTimeout(() => setRefertoSalvato(false), 2000);
+  };
+
+  const eliminaReferto = async (id: string) => {
+    if (!selected) return;
+    const nuoviReferti = (selected.refertiClinici ?? []).filter((r) => r.id !== id);
+    const aggiornato = { ...selected, refertiClinici: nuoviReferti };
+    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
+    setSelected(aggiornato);
+    await upsertAtleta(aggiornato);
+    await patchRefertiClinici(selected.id, nuoviReferti);
   };
 
   const chiudiInfortBis = async (id: string) => {
@@ -2588,6 +2668,87 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                   );
                 })()}
 
+                {/* ── Referti clinici ── */}
+                <div className="space-y-3 pt-2 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Referti clinici</p>
+                      {refertoSalvato && (
+                        <span className="text-[10px] text-green-600 font-medium flex items-center gap-0.5">
+                          <CheckCircle2 className="w-3 h-3" /> Salvato
+                        </span>
+                      )}
+                    </div>
+                    <button onClick={() => { setMostraFormReferto(true); setRefertoSalvato(false); }}
+                      className="text-xs font-semibold text-[#C8102E] flex items-center gap-0.5 hover:underline">
+                      <Plus className="w-3.5 h-3.5" /> Aggiungi
+                    </button>
+                  </div>
+
+                  {mostraFormReferto && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2">
+                      <p className="text-xs font-semibold text-gray-600">Nuovo referto</p>
+                      <input type="date" value={nuovoReferto.data} onChange={(e) => setNuovoReferto({ ...nuovoReferto, data: e.target.value })}
+                        className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]" />
+                      <select value={nuovoReferto.tipo} onChange={(e) => setNuovoReferto({ ...nuovoReferto, tipo: e.target.value })}
+                        className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]">
+                        <option value="">Tipo referto *</option>
+                        {TIPI_REFERTO.map((t) => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <select value={nuovoReferto.esito} onChange={(e) => setNuovoReferto({ ...nuovoReferto, esito: e.target.value })}
+                        className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]">
+                        <option value="">Esito *</option>
+                        {ESITI_REFERTO.map((e) => <option key={e} value={e}>{e}</option>)}
+                      </select>
+                      <textarea placeholder="Descrizione / Referto (opzionale)" value={nuovoReferto.descrizione}
+                        onChange={(e) => setNuovoReferto({ ...nuovoReferto, descrizione: e.target.value })}
+                        rows={3}
+                        className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E] resize-none" />
+                      <input placeholder="Note (opzionale)" value={nuovoReferto.note}
+                        onChange={(e) => setNuovoReferto({ ...nuovoReferto, note: e.target.value })}
+                        className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]" />
+                      <div className="flex gap-2 justify-end">
+                        <button onClick={() => { setMostraFormReferto(false); setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", descrizione: "", note: "" }); }}
+                          disabled={refertoSaving}
+                          className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-200 bg-white disabled:opacity-40">Annulla</button>
+                        <button onClick={salvaReferto} disabled={!nuovoReferto.tipo || !nuovoReferto.esito || refertoSaving}
+                          className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg bg-[#C8102E] hover:bg-[#a50d26] disabled:opacity-40 min-w-[64px]">
+                          {refertoSaving ? "Salvataggio…" : "Salva"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {(selected.refertiClinici ?? []).length === 0 && !mostraFormReferto ? (
+                    <p className="text-xs text-gray-400 italic">Nessun referto registrato</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {[...(selected.refertiClinici ?? [])].sort((a, b) => b.data.localeCompare(a.data)).map((r) => {
+                        const ESITO_STYLE: Record<string, string> = {
+                          "Positivo": "bg-red-100 text-red-700",
+                          "In miglioramento": "bg-yellow-100 text-yellow-700",
+                          "Negativo": "bg-green-100 text-green-700",
+                        };
+                        return (
+                          <div key={r.id} className="bg-white border border-gray-100 rounded-xl px-3.5 py-3 flex items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                <span className="text-xs font-semibold text-gray-800">{r.tipo}</span>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ESITO_STYLE[r.esito] ?? "bg-gray-100 text-gray-600"}`}>{r.esito}</span>
+                                <span className="text-[10px] text-gray-400">{new Date(r.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                              </div>
+                              {r.descrizione && <p className="text-xs text-gray-700 mt-1 leading-relaxed whitespace-pre-wrap">{r.descrizione}</p>}
+                              {r.note && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{r.note}</p>}
+                            </div>
+                            <button onClick={() => eliminaReferto(r.id)} className="text-gray-300 hover:text-red-400 transition-colors shrink-0 mt-0.5">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               /* ── Storico infortuni ── */
