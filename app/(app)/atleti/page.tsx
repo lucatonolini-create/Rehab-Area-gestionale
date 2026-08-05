@@ -985,7 +985,6 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         columnStyles: { 0: { cellWidth: 28 }, 1: { cellWidth: 20, fontStyle: "bold" }, 2: { cellWidth: 28, fontStyle: "bold" } },
       });
       y = (doc as any).lastAutoTable.finalY + 6;
-      if (injQRTS.length >= 2) drawChart(injQRTS, sub);
     }
 
     // Programs for this injury
