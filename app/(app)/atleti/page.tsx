@@ -1498,7 +1498,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const nuovoDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
   const [mostraFondi, setMostraFondi] = useState(false);
   const [mostraFormReferto, setMostraFormReferto] = useState(false);
-  const [nuovoReferto, setNuovoReferto] = useState({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" });
+  const [nuovoReferto, setNuovoReferto] = useState({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", descrizione: "", note: "" });
   const [refertoSaving, setRefertoSaving] = useState(false);
   const [refertoSalvato, setRefertoSalvato] = useState(false);
 
@@ -1777,6 +1777,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
       data: nuovoReferto.data,
       tipo: nuovoReferto.tipo as TipoReferto,
       esito: nuovoReferto.esito as EsitoReferto,
+      descrizione: nuovoReferto.descrizione || undefined,
       note: nuovoReferto.note || undefined,
     };
     const nuoviReferti = [...(selected.refertiClinici ?? []), referto];
@@ -1789,7 +1790,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     await patchRefertiClinici(selected.id, nuoviReferti);
     setRefertoSaving(false);
     setMostraFormReferto(false);
-    setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" });
+    setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", descrizione: "", note: "" });
     setRefertoSalvato(true);
     setTimeout(() => setRefertoSalvato(false), 2000);
   };
@@ -2699,11 +2700,15 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                         <option value="">Esito *</option>
                         {ESITI_REFERTO.map((e) => <option key={e} value={e}>{e}</option>)}
                       </select>
+                      <textarea placeholder="Descrizione / Referto (opzionale)" value={nuovoReferto.descrizione}
+                        onChange={(e) => setNuovoReferto({ ...nuovoReferto, descrizione: e.target.value })}
+                        rows={3}
+                        className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E] resize-none" />
                       <input placeholder="Note (opzionale)" value={nuovoReferto.note}
                         onChange={(e) => setNuovoReferto({ ...nuovoReferto, note: e.target.value })}
                         className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]" />
                       <div className="flex gap-2 justify-end">
-                        <button onClick={() => { setMostraFormReferto(false); setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", note: "" }); }}
+                        <button onClick={() => { setMostraFormReferto(false); setNuovoReferto({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", descrizione: "", note: "" }); }}
                           disabled={refertoSaving}
                           className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-200 bg-white disabled:opacity-40">Annulla</button>
                         <button onClick={salvaReferto} disabled={!nuovoReferto.tipo || !nuovoReferto.esito || refertoSaving}
@@ -2732,6 +2737,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ESITO_STYLE[r.esito] ?? "bg-gray-100 text-gray-600"}`}>{r.esito}</span>
                                 <span className="text-[10px] text-gray-400">{new Date(r.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })}</span>
                               </div>
+                              {r.descrizione && <p className="text-xs text-gray-700 mt-1 leading-relaxed whitespace-pre-wrap">{r.descrizione}</p>}
                               {r.note && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{r.note}</p>}
                             </div>
                             <button onClick={() => eliminaReferto(r.id)} className="text-gray-300 hover:text-red-400 transition-colors shrink-0 mt-0.5">
