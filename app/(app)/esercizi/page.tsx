@@ -133,17 +133,18 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
   const M = 14; const W = 297; const H = 210; const HDR = 30;
 
   const addHeader = () => {
-    doc.setFillColor(247, 247, 247); doc.rect(0, 0, W, HDR, "F");
-    doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(0, HDR, W, HDR);
-    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 22, 22);
-    const tx = logoDataUrl ? 30 : M;
-    doc.setTextColor(...red); doc.setFontSize(14); doc.setFont("helvetica", "bold");
-    doc.text("U.S. Cremonese", tx, 15);
-    doc.setFontSize(9); doc.setFont("helvetica", "bolditalic"); doc.setTextColor(...gray);
-    doc.text("Rehab Area – Programmi Giornalieri", tx, 19);
-    doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
-    doc.text(dataConGiorno, tx, 24);
-    doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(175, 175, 175);
+    doc.setFillColor(255, 255, 255); doc.rect(0, 0, W, HDR, "F");
+    doc.setFillColor(...red); doc.rect(0, 0, 3, HDR, "F");
+    doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.3); doc.line(0, HDR, W, HDR);
+    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 7, 4, 22, 22);
+    const tx = logoDataUrl ? 33 : M;
+    doc.setTextColor(...red); doc.setFontSize(13); doc.setFont("helvetica", "bold");
+    doc.text("U.S. Cremonese", tx, 14);
+    doc.setFontSize(8.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...dark);
+    doc.text("Rehab Area – Programmi Giornalieri", tx, 19.5);
+    doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
+    doc.text(dataConGiorno, tx, 24.5);
+    doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
     doc.text("Stagione 2026-2027", W - M, 14, { align: "right" });
   };
 
@@ -214,7 +215,7 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
         const parts = [c.tipo, c.serie ? `${c.serie}×` : "", c.durata || ""].filter(Boolean);
         return `${i + 1}. ${parts.join(" ")}`;
       }).join("\n") || "—";
-      const vasC = (prog.esercizicampo ?? []).map((c: any, i: number) => `${i + 1}. ${c.vas || "0"}`).join("\n") || "—";
+      const vasC = (() => { const items = (prog.esercizicampo ?? []).map((c: any, i: number) => ({ n: i + 1, v: c.vas })).filter(x => x.v && x.v !== "0"); return items.length ? items.map(x => `${x.n}. ${x.v}`).join("\n") : "—"; })();
       const rpe = prog.carico?.rpe ? `${prog.carico.rpe}/10` : "—";
       const esercizi = prog.esercizi ?? [];
 
@@ -231,7 +232,7 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
         const carico = e.carico ? ` (${e.carico})` : "";
         return `${i + 1}. ${det ? `${e.nome} ${det}${carico}` : e.nome}`;
       }).join("\n") || "—";
-      const vasText = esercizi.map((e, i) => `${i + 1}. ${e.vas || "0"}`).join("\n") || "—";
+      const vasText = (() => { const items = esercizi.map((e, i) => ({ n: i + 1, v: e.vas })).filter(x => x.v && x.v !== "0"); return items.length ? items.map(x => `${x.n}. ${x.v}`).join("\n") : "—"; })();
 
       const ca = prog.carico;
       const gps = [
@@ -282,8 +283,8 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
     startY: HDR + 8,
     head: [["Atleta", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS\nPal.", "Obiettivi\nCampo", "Esercizi\nCampo", "VAS\nCampo", "GPS", "RPE"]],
     body,
-    headStyles: { fillColor: [110, 110, 110] as [number,number,number], textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
-    bodyStyles: { fontSize: 7, cellPadding: 2.5, overflow: "linebreak" as const, halign: "left" as const, valign: "top" as const },
+    headStyles: { fillColor: [35, 35, 35] as [number,number,number], textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
+    bodyStyles: { fontSize: 7, cellPadding: 3, overflow: "linebreak" as const, halign: "left" as const, valign: "top" as const },
     rowPageBreak: "avoid",
     margin: { left: M, right: M, top: HDR + 8 },
     columnStyles: {
@@ -310,7 +311,7 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
         data.cell.styles.textColor = [255, 255, 255];
         data.cell.styles.fontStyle = "bold";
         data.cell.styles.fontSize = 7.5;
-        data.cell.styles.cellPadding = { top: 3, bottom: 3, left: 5, right: 2 };
+        data.cell.styles.cellPadding = { top: 3.5, bottom: 3.5, left: 5, right: 2 };
       } else if (absenteRowIndices.has(data.row.index)) {
         data.cell.styles.fillColor = [255, 237, 213];
         data.cell.styles.textColor = [154, 52, 18];
@@ -321,7 +322,7 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
         data.cell.styles.fillColor = [254, 226, 226];
         data.cell.styles.textColor = [153, 27, 27];
       } else if (altRowIndices.has(data.row.index)) {
-        data.cell.styles.fillColor = [243, 244, 246];
+        data.cell.styles.fillColor = [249, 249, 251];
       } else {
         data.cell.styles.fillColor = [255, 255, 255];
       }
@@ -505,7 +506,7 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
           const parts = [c.tipo, c.serie ? `${c.serie}×` : "", c.durata || ""].filter(Boolean);
           return `${i + 1}. ${parts.join(" ")}`;
         }).join("\n") || "—";
-        const vasC = (prog.esercizicampo ?? []).map((c: any, i: number) => `${i + 1}. ${c.vas || "0"}`).join("\n") || "—";
+        const vasC = (() => { const items = (prog.esercizicampo ?? []).map((c: any, i: number) => ({ n: i + 1, v: c.vas })).filter(x => x.v && x.v !== "0"); return items.length ? items.map(x => `${x.n}. ${x.v}`).join("\n") : "—"; })();
         const rpe = prog.carico?.rpe ? `${prog.carico.rpe}/10` : "—";
         const esercizi = prog.esercizi ?? [];
         const esText = esercizi.map((e, i) => {
@@ -513,7 +514,7 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
           const carico = e.carico ? ` (${e.carico})` : "";
           return `${i + 1}. ${sx ? `${e.nome} ${sx}${carico}` : e.nome}`;
         }).join("\n") || "—";
-        const vasText = esercizi.map((e, i) => `${i + 1}. ${e.vas || "0"}`).join("\n") || "—";
+        const vasText = (() => { const items = esercizi.map((e, i) => ({ n: i + 1, v: e.vas })).filter(x => x.v && x.v !== "0"); return items.length ? items.map(x => `${x.n}. ${x.v}`).join("\n") : "—"; })();
         const ca = prog.carico;
         const gps = [
           ca?.distanzaTotale ? `Dist.: ${ca.distanzaTotale}m` : "",
@@ -564,8 +565,8 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
     startY: HDR + 8,
     head: [["Atleta", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS\nPal.", "Obiettivi\nCampo", "Esercizi\nCampo", "VAS\nCampo", "GPS", "RPE"]],
     body,
-    headStyles: { fillColor: [110, 110, 110] as [number,number,number], textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
-    bodyStyles: { fontSize: 7, cellPadding: 2.5, overflow: "linebreak" as const, halign: "left" as const, valign: "top" as const },
+    headStyles: { fillColor: [35, 35, 35] as [number,number,number], textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
+    bodyStyles: { fontSize: 7, cellPadding: 3, overflow: "linebreak" as const, halign: "left" as const, valign: "top" as const },
     rowPageBreak: "avoid",
     margin: { left: M, right: M, top: HDR + 8 },
     columnStyles: {
@@ -596,7 +597,7 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
         data.cell.styles.textColor = [255, 255, 255];
         data.cell.styles.fontStyle = "bold";
         data.cell.styles.fontSize = 7.5;
-        data.cell.styles.cellPadding = { top: 3, bottom: 3, left: 5, right: 2 };
+        data.cell.styles.cellPadding = { top: 3.5, bottom: 3.5, left: 5, right: 2 };
       } else if (absenteRowIndices.has(data.row.index)) {
         data.cell.styles.fillColor = [255, 237, 213];
         data.cell.styles.textColor = [154, 52, 18];
@@ -607,7 +608,7 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
         data.cell.styles.fillColor = [254, 226, 226];
         data.cell.styles.textColor = [153, 27, 27];
       } else if (altRowIndices.has(data.row.index)) {
-        data.cell.styles.fillColor = [243, 244, 246];
+        data.cell.styles.fillColor = [249, 249, 251];
       } else {
         data.cell.styles.fillColor = [255, 255, 255];
       }
