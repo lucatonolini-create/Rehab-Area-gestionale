@@ -614,8 +614,33 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
     },
   });
 
-  // ── Test table ──────────────────────────────────────────────────────────────
+  // ── Test table (raggruppata per data+giocatore con rowSpan) ─────────────────
   if (testRowsIntervallo.length > 0) {
+    // Group consecutive rows by date+athlete key
+    const testGroups: { key: string; rows: typeof testRowsIntervallo }[] = [];
+    for (const r of testRowsIntervallo) {
+      const key = `${r.dataLabel}||${r.nomeAtleta}`;
+      if (testGroups.length === 0 || testGroups[testGroups.length - 1].key !== key)
+        testGroups.push({ key, rows: [] });
+      testGroups[testGroups.length - 1].rows.push(r);
+    }
+    const testBody: any[] = [];
+    for (const g of testGroups) {
+      const n = g.rows.length;
+      g.rows.forEach((r, i) => {
+        if (i === 0) {
+          testBody.push([
+            { content: r.dataLabel, rowSpan: n, styles: { halign: "center" as const, valign: "middle" as const } },
+            { content: r.nomeAtleta, rowSpan: n, styles: { fontStyle: "bold" as const, valign: "middle" as const } },
+            r.nomeTest,
+            r.risultato,
+          ]);
+        } else {
+          testBody.push([r.nomeTest, r.risultato]);
+        }
+      });
+    }
+
     let tY = (doc as any).lastAutoTable.finalY + 8;
     if (tY > H - 40) {
       doc.addPage();
@@ -628,7 +653,7 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
     autoTable(doc, {
       startY: tY,
       head: [["Data", "Giocatore", "Test", "Risultato"]],
-      body: testRowsIntervallo.map((r) => [r.dataLabel, r.nomeAtleta, r.nomeTest, r.risultato]),
+      body: testBody,
       headStyles: { fillColor: dark, textColor: [255, 255, 255] as [number, number, number], fontSize: 7, halign: "center", valign: "middle" },
       bodyStyles: { fontSize: 7, cellPadding: 2, overflow: "linebreak" as const, valign: "middle" as const },
       alternateRowStyles: { fillColor: [249, 249, 249] as [number, number, number] },
