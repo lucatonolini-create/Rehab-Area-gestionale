@@ -345,7 +345,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
             const parts = [c.tipo, c.serie ? `${c.serie}×` : "", c.durata || ""].filter(Boolean);
             return `${i + 1}. ${parts.join(" ")}`;
           }).join("\n") || "—";
-          const vasC = (prog.esercizicampo ?? []).map((c, i) => `${i + 1}. ${c.vas || "0"}`).join("\n") || "—";
+          const vasC = (() => { const items = (prog.esercizicampo ?? []).map((c, i) => ({ n: i + 1, v: (c as any).vas })).filter(x => x.v && x.v !== "0"); return items.length ? items.map(x => `${x.n}. ${x.v}`).join("\n") : "—"; })();
           const esercizi = prog.esercizi ?? [];
 
           const testLines = (prog.tests ?? []).map((t) => {
@@ -401,7 +401,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           ].filter(Boolean).map((s) => `- ${s}`).join("\n") || "—";
 
           const esText = esercizi.map((e, i) => { let det = ""; if (e.serie && (e.reps || e.durata)) { det = `${e.serie}×${e.reps || e.durata}${e.reps && e.durata ? ` ${e.durata}` : ""}`; } else if (!e.serie && !e.reps && e.durata) { det = `×${e.durata}`; } else { det = [e.serie, e.reps, e.durata].filter(Boolean).join(" "); } const carico = e.carico ? ` (${e.carico})` : ""; return `${i + 1}. ${det ? `${e.nome} ${det}${carico}` : e.nome}`; }).join("\n") || "—";
-          const vasText = esercizi.map((e, i) => `${i + 1}. ${e.vas || "0"}`).join("\n") || "—";
+          const vasText = (() => { const items = esercizi.map((e, i) => ({ n: i + 1, v: e.vas })).filter(x => x.v && x.v !== "0"); return items.length ? items.map(x => `${x.n}. ${x.v}`).join("\n") : "—"; })();
           const fisio = prog.noteFisioterapia?.trim() || "—";
           if (isAlt) altRowIndices.add(rowIdx);
           body.push([dataStr, prog.nome ?? "—", prog.fase ?? "—", fisio, obP, esText, vasText, obCampo, esC, gps, vasC, rpe]);
