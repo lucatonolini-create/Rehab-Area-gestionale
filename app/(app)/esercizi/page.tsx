@@ -645,7 +645,7 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
     });
     // Alternating fill colors per group (not per row)
     const GROUP_FILL_EVEN: [number, number, number] = [255, 255, 255];
-    const GROUP_FILL_ODD: [number, number, number] = [235, 244, 255];
+    const GROUP_FILL_ODD: [number, number, number] = [249, 249, 249];
 
     let tY = (doc as any).lastAutoTable.finalY + 8;
     if (tY > H - 40) {
