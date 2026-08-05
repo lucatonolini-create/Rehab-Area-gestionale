@@ -180,6 +180,7 @@ export interface RefertoClinico {
   data: string;
   tipo: TipoReferto;
   esito: EsitoReferto;
+  descrizione?: string;
   note?: string;
 }
 
