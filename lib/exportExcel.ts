@@ -3,7 +3,7 @@ import { loadAtleti, loadProgrammi, calcolaProgressoAuto, nd } from "./store";
 import {
   CATEGORIE, PIEDI, TIPI_INFORTUNIO, EVENTI_INFORTUNIO,
   MECCANISMI_INFORTUNIO, CONTATTI_INFORTUNIO, LATI_INFORTUNIO,
-  POSIZIONI_INFORTUNIO, TIPI_REFERTO, ESITI_REFERTO,
+  POSIZIONI_INFORTUNIO,
   OBIETTIVI_PALESTRA, OBIETTIVI_CAMPO, TIPI_ESERCIZIO_CAMPO,
   TESTS_PREDEFINITI,
 } from "./store";
@@ -75,8 +75,6 @@ function buildListeSheet(wb: ExcelJS.Workbook): void {
     { name: "Contatti",          values: CONTATTI_INFORTUNIO },
     { name: "Lati",              values: LATI_INFORTUNIO },
     { name: "Posizioni",         values: POSIZIONI_INFORTUNIO },
-    { name: "TipiReferto",       values: TIPI_REFERTO },
-    { name: "EsitiReferto",      values: ESITI_REFERTO },
     { name: "ObiettiviPalestra", values: OBIETTIVI_PALESTRA },
     { name: "ObiettiviCampo",    values: OBIETTIVI_CAMPO },
     { name: "TipiEsercizioCampo",values: TIPI_ESERCIZIO_CAMPO },
@@ -310,44 +308,6 @@ function buildInfortuniSheet(wb: ExcelJS.Workbook, atleti: Atleta[]): void {
   dv(ws, `L2:L${MAX}`, "Liste!$I$2:$I$20");
 }
 
-// ─── Referti Clinici sheet ────────────────────────────────────────────────────
-
-function buildRefertiSheet(wb: ExcelJS.Workbook, atleti: Atleta[]): void {
-  const ws = wb.addWorksheet("Referti Clinici", { views: [{ state: "frozen", ySplit: 1 }] });
-  ws.addRow(["Atleta", "Categoria", "Data", "Tipo", "Esito", "Note"]);
-  hdr(ws.getRow(1));
-  cols(ws, [25, 14, 12, 22, 18, 50]);
-  ws.getColumn("C").numFmt = "dd/mm/yyyy";
-
-  let ri = 0;
-  for (const a of atleti) {
-    for (const ref of (a.refertiClinici ?? [])) {
-      const r = ws.addRow([
-        nd(a), a.categoria,
-        ref.data ? new Date(ref.data + "T12:00") : "",
-        ref.tipo, ref.esito, ref.note ?? "",
-      ]);
-      dat(r, ri % 2 === 0);
-      const ec = r.getCell(5);
-      if (ref.esito === "Positivo") {
-        ec.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE8F5E9" } };
-        ec.font = { ...DATA_FONT, color: { argb: "FF2E7D32" } };
-      } else if (ref.esito === "Negativo") {
-        ec.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFDE8E8" } };
-        ec.font = { ...DATA_FONT, color: { argb: "FFC8102E" } };
-      } else {
-        ec.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF8E1" } };
-        ec.font = { ...DATA_FONT, color: { argb: "FFF57F17" } };
-      }
-      ri++;
-    }
-  }
-
-  const MAX = 1000;
-  dv(ws, `D2:D${MAX}`, "Liste!$J$2:$J$8");
-  dv(ws, `E2:E${MAX}`, "Liste!$K$2:$K$4");
-}
-
 // ─── Programmi sheet ─────────────────────────────────────────────────────────
 
 function buildProgrammiSheet(
@@ -388,7 +348,7 @@ function buildProgrammiSheet(
   });
 
   dv(ws, `C2:C1000`, "Liste!$A$2:$A$10");
-  dv(ws, `F2:F1000`, "Liste!$O$2:$O$6");
+  dv(ws, `F2:F1000`, "Liste!$M$2:$M$6");
 }
 
 // ─── Esercizi Palestra sheet ──────────────────────────────────────────────────
@@ -448,7 +408,7 @@ function buildEserciziCampoSheet(
     }
   }
 
-  dv(ws, `E2:E1000`, "Liste!$N$2:$N$12");
+  dv(ws, `E2:E1000`, "Liste!$L$2:$L$12");
 }
 
 // ─── Test Fisici sheet ────────────────────────────────────────────────────────
@@ -491,7 +451,7 @@ function buildTestSheet(
     }
   }
 
-  dv(ws, `D2:D1000`, `Liste!$M$2:$M$${TESTS_PREDEFINITI.length + 1}`);
+  dv(ws, `D2:D1000`, `Liste!$K$2:$K$${TESTS_PREDEFINITI.length + 1}`);
 }
 
 // ─── Carichi sheet ────────────────────────────────────────────────────────────
@@ -553,7 +513,6 @@ export async function esportaExcel(): Promise<void> {
   buildRiepilogoSheet(wb);
   buildAtletiSheet(wb, atleti);
   buildInfortuniSheet(wb, atleti);
-  buildRefertiSheet(wb, atleti);
   buildProgrammiSheet(wb, atleti, programmiAll);
   buildEserciziPalestraSheet(wb, atleti, programmiAll);
   buildEserciziCampoSheet(wb, atleti, programmiAll);
