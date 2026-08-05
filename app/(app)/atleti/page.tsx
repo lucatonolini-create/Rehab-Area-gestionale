@@ -975,7 +975,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         body: [...injQRTS].sort((a, b) => a.data.localeCompare(b.data)).map((q) => [
           new Date(q.data + "T12:00").toLocaleDateString("it-IT"),
           q.tipoTest ?? "—",
-          `${q.punteggio} / ${q.tipoTest === "TSK" ? 40 : 100}`,
+          `${q.punteggio} / ${q.tipoTest === "TSK" ? 40 : 42}`,
           interpretaRTS(q.punteggio),
         ]),
         headStyles: hS(dark),
@@ -2584,7 +2584,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                             </div>
                             <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-2 py-1.5">
                               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide w-10">AFAQ</span>
-                              <input type="number" min={0} max={100} placeholder="0–100"
+                              <input type="number" min={8} max={42} placeholder="8–42"
                                 value={nuovoPunteggioAFAQ} onChange={(e) => setNuovoPunteggioAFAQ(e.target.value)}
                                 className="flex-1 text-xs bg-transparent outline-none" />
                             </div>
@@ -2647,7 +2647,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                         <div key={q.id} className="flex items-center justify-between bg-white border border-gray-100 rounded-xl px-3 py-2">
                                           <div>
                                             {q.tipoTest && <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-2">{q.tipoTest}</span>}
-                                            <span className={`text-sm font-bold ${colore}`}>{q.punteggio}/{q.tipoTest === "TSK" ? 40 : 100}</span>
+                                            <span className={`text-sm font-bold ${colore}`}>{q.punteggio}/{q.tipoTest === "TSK" ? 40 : 42}</span>
                                             <span className="text-xs text-gray-400 ml-2">{new Date(q.data + "T12:00").toLocaleDateString("it-IT")}</span>
                                           </div>
                                           <button onClick={() => eliminaPunteggio(q.id)} className="text-gray-300 hover:text-red-400 transition-colors">
