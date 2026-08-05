@@ -54,6 +54,7 @@ export const OBIETTIVI_CAMPO = [
   "Sprint",
   "SSG",
   "Test",
+  "Tecnica di corsa",
   "Tiri in porta",
   "Torneo 3 squadre",
   "Warm up",
