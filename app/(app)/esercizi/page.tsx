@@ -625,9 +625,12 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
       testGroups[testGroups.length - 1].rows.push(r);
     }
     const testBody: any[] = [];
-    for (const g of testGroups) {
+    // groupForRow[bodyRowIndex] = groupIndex (for alternating colors per player group)
+    const groupForRow: number[] = [];
+    testGroups.forEach((g, gi) => {
       const n = g.rows.length;
       g.rows.forEach((r, i) => {
+        groupForRow.push(gi);
         if (i === 0) {
           testBody.push([
             { content: r.dataLabel, rowSpan: n, styles: { halign: "center" as const, valign: "middle" as const } },
@@ -639,7 +642,10 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
           testBody.push([r.nomeTest, r.risultato]);
         }
       });
-    }
+    });
+    // Alternating fill colors per group (not per row)
+    const GROUP_FILL_EVEN: [number, number, number] = [255, 255, 255];
+    const GROUP_FILL_ODD: [number, number, number] = [235, 244, 255];
 
     let tY = (doc as any).lastAutoTable.finalY + 8;
     if (tY > H - 40) {
@@ -656,13 +662,18 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
       body: testBody,
       headStyles: { fillColor: dark, textColor: [255, 255, 255] as [number, number, number], fontSize: 7, halign: "center", valign: "middle" },
       bodyStyles: { fontSize: 7, cellPadding: 2, overflow: "linebreak" as const, valign: "middle" as const },
-      alternateRowStyles: { fillColor: [249, 249, 249] as [number, number, number] },
       margin: { left: M, right: M, top: HDR + 8 },
       columnStyles: {
         0: { cellWidth: 22, halign: "center" as const },
         1: { cellWidth: 45 },
         2: { cellWidth: 65 },
         3: { cellWidth: "auto" as any },
+      },
+      didParseCell: (data: any) => {
+        if (data.section === "body") {
+          const gi = groupForRow[data.row.index];
+          data.cell.styles.fillColor = gi % 2 === 0 ? GROUP_FILL_EVEN : GROUP_FILL_ODD;
+        }
       },
       didDrawPage: () => { addHeader(); },
     });
