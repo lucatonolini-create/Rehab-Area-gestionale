@@ -86,6 +86,80 @@ function _calcolaDelta(curr: TestFisiometrico, prev: TestFisiometrico | null): n
   return null;
 }
 
+function csvDownload(rows: string[][], filename: string) {
+  const content = rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["﻿" + content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function esportaStoricoCompletoCSV(atleta: Atleta, programmi: Programma[]) {
+  const fmt = (d?: string | null) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT") : "—";
+  const rows: string[][] = [];
+
+  rows.push(["DATI PERSONALI"]);
+  rows.push(["Nome", nd(atleta)]);
+  rows.push(["Categoria", atleta.categoria ?? "—"]);
+  rows.push(["Ruolo", atleta.posizione ?? "—"]);
+  rows.push(["Stato", atleta.stato ?? "—"]);
+  rows.push(["Inizio riabilitazione", fmt(atleta.inizioRehab)]);
+  rows.push(["Fine riabilitazione", fmt(atleta.fineRehab)]);
+  if (atleta.osiicsCodice) rows.push(["Codice OSIICS", `${atleta.osiicsCodice}${atleta.osiicsDescrizione ? ` – ${atleta.osiicsDescrizione}` : ""}`]);
+  if (atleta.note) rows.push(["Note", atleta.note]);
+  rows.push([]);
+
+  const storico = atleta.storicoInfortuni ?? [];
+  if (storico.length > 0) {
+    rows.push(["STORICO INFORTUNI"]);
+    rows.push(["Diagnosi", "Tipo", "Inizio Rehab", "Fine Rehab", "Giorni persi", "Note"]);
+    for (const inf of storico) {
+      const gg = inf.inizioRehab && inf.fineRehab ? String(Math.max(0, Math.round((new Date(inf.fineRehab).getTime() - new Date(inf.inizioRehab).getTime()) / 864e5))) : "—";
+      rows.push([inf.diagnosi ?? "—", inf.tipo ?? "—", fmt(inf.inizioRehab), fmt(inf.fineRehab), gg, inf.note ?? ""]);
+    }
+    rows.push([]);
+  }
+
+  const sessioni = programmi.filter(p => !p.riposo && !p.squadra);
+  if (sessioni.length > 0) {
+    rows.push(["SESSIONI DI LAVORO"]);
+    rows.push(["Data", "Programma", "Fase", "Tipo", "#", "Esercizio/Descrizione", "Serie", "Reps/Durata", "Carico", "RIR", "VAS", "Note"]);
+    for (const prog of sessioni) {
+      const dataProg = prog.data ? fmt(prog.data) : "—";
+      if (prog.assente) {
+        rows.push([dataProg, prog.nome ?? "—", prog.fase ?? "—", "Assente", "", prog.noteAssenza ?? "", "", "", "", "", "", ""]);
+        continue;
+      }
+      (prog.esercizi ?? []).forEach((e, i) => {
+        rows.push([dataProg, prog.nome ?? "—", prog.fase ?? "—", "Palestra", String(i + 1), e.nome, e.serie ?? "—", e.reps || e.durata || "—", e.carico ?? "—", e.rir ?? "—", e.vas ? `${e.vas}/10` : "—", e.note ?? ""]);
+      });
+      (prog.esercizicampo ?? []).forEach((c, i) => {
+        rows.push([dataProg, prog.nome ?? "—", prog.fase ?? "—", "Campo", String(i + 1), (c as any).descrizione ?? (c as any).tipo ?? "—", (c as any).serie ?? "—", (c as any).durata ?? "—", "", "", (c as any).vas ? `${(c as any).vas}/10` : "—", ""]);
+      });
+      (prog.tests ?? []).forEach((t, i) => {
+        const val = [t.risultato, t.risultatoSx ? `Sx ${t.risultatoSx}` : "", t.risultatoDx ? `Dx ${t.risultatoDx}` : ""].filter(Boolean).join(" / ");
+        rows.push([dataProg, prog.nome ?? "—", prog.fase ?? "—", "Test", String(i + 1), t.nome, "", val || "—", "", "", "", t.note ?? ""]);
+      });
+      const ca = prog.carico;
+      if (ca && Object.values(ca).some(v => v)) {
+        rows.push([dataProg, prog.nome ?? "—", prog.fase ?? "—", "Carico", "", `RPE: ${ca.rpe || "—"}`, "", ca.durata || "—", "", "", "", `Dist.: ${ca.distanzaTotale || "—"}m  V.max: ${ca.velocitaMax || "—"}km/h  HSR: ${ca.hsr || "—"}m`]);
+      }
+    }
+    rows.push([]);
+  }
+
+  const questionari = atleta.questionariKinesiofobia ?? [];
+  if (questionari.length > 0) {
+    rows.push(["VALUTAZIONE PSICOLOGICA TSK/AFAQ"]);
+    rows.push(["Data", "Test", "Punteggio", "Max"]);
+    for (const q of [...questionari].sort((a, b) => a.data.localeCompare(b.data))) {
+      rows.push([fmt(q.data), q.tipoTest ?? "—", String(q.punteggio), q.tipoTest === "AFAQ" ? "42" : "40"]);
+    }
+  }
+
+  csvDownload(rows, `${nd(atleta).replace(/ /g, "_")}_storico_completo.csv`);
+}
+
 async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[], dettaglio?: import("@/lib/store").DettaglioSituazionaleData | null) {
   const { default: jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
@@ -1874,6 +1948,12 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     await esportaStoricoCompletoPDF(selected, programmi, det);
   };
 
+  const scaricaCSVStorico = async () => {
+    if (!selected) return;
+    const programmi = await loadProgrammi(selected.id);
+    esportaStoricoCompletoCSV(selected, programmi);
+  };
+
   const salvaQuestionnaire = async (questionari: QuestionarioKinesiofobia[]) => {
     if (!selected) return;
     const aggiornato = { ...selected, questionariKinesiofobia: questionari };
@@ -2820,6 +2900,10 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                     <button onClick={scaricaPDFStorico}
                       className="w-full flex items-center justify-center gap-2 border border-gray-200 text-gray-600 text-xs font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
                       <FileDown className="w-3.5 h-3.5" /> Scarica PDF completo
+                    </button>
+                    <button onClick={scaricaCSVStorico}
+                      className="w-full flex items-center justify-center gap-2 border border-gray-200 text-gray-600 text-xs font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+                      <FileDown className="w-3.5 h-3.5" /> Scarica CSV completo
                     </button>
 
                     {/* Infortuni in corso */}
