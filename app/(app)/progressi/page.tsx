@@ -1318,24 +1318,28 @@ export default function ProgressiPage() {
                               const thBg = testIdx % 2 === 0 ? "bg-[#C8102E]" : "bg-[#4B5563]";
                               return (
                                 <div key={testName} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                                  <h4 className="text-sm font-bold italic text-gray-900 mb-3">{testName}</h4>
-                                  {chartVals.length >= 2 && (
-                                    <div className="mb-3 flex items-center gap-4 min-w-0">
-                                      <div className="flex-1 min-w-0"><Sparkline values={chartVals} invert={isSprintTempo} /></div>
-                                      <div className="text-xs text-gray-400 space-y-1 shrink-0 text-right">
-                                        {(() => {
-                                          const first = chartVals[0], last = chartVals[chartVals.length - 1];
-                                          const pct = first > 0 ? ((last - first) / first) * 100 : null;
-                                          const isGood = pct !== null && Math.abs(pct) >= 10 && (isSprintTempo ? pct < 0 : pct > 0);
-                                          const isBad = pct !== null && Math.abs(pct) >= 10 && (isSprintTempo ? pct > 0 : pct < 0);
-                                          return pct !== null ? (
-                                            <span className={`text-sm font-bold ${isGood ? "text-green-600" : isBad ? "text-red-500" : "text-gray-400"}`}>
+                                  <div className="flex items-start justify-between gap-2 mb-2">
+                                    <h4 className="text-sm font-bold italic text-gray-900">{testName}</h4>
+                                    {chartVals.length >= 2 && (() => {
+                                      const first = chartVals[0], last = chartVals[chartVals.length - 1];
+                                      const pct = first > 0 ? ((last - first) / first) * 100 : null;
+                                      const isGood = pct !== null && Math.abs(pct) >= 10 && (isSprintTempo ? pct < 0 : pct > 0);
+                                      const isBad = pct !== null && Math.abs(pct) >= 10 && (isSprintTempo ? pct > 0 : pct < 0);
+                                      return (
+                                        <div className="text-right shrink-0">
+                                          {pct !== null && (
+                                            <p className={`text-sm font-bold ${isGood ? "text-green-600" : isBad ? "text-red-500" : "text-gray-400"}`}>
                                               {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%
-                                            </span>
-                                          ) : null;
-                                        })()}
-                                        <p className="text-gray-400">{entries.length} rilevazioni</p>
-                                      </div>
+                                            </p>
+                                          )}
+                                          <p className="text-xs text-gray-400">{entries.length} rilevazioni</p>
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+                                  {chartVals.length >= 2 && (
+                                    <div className="mb-3 w-full overflow-hidden">
+                                      <Sparkline values={chartVals} invert={isSprintTempo} />
                                     </div>
                                   )}
                                   <div className="overflow-x-auto">
