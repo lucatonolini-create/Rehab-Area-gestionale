@@ -1067,7 +1067,7 @@ function Sparkline({ values, invert = false }: { values: number[]; invert?: bool
   const line = "M " + pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" L ");
   const area = `${line} L ${(pX + iW).toFixed(1)},${(pY + iH).toFixed(1)} L ${pX},${(pY + iH).toFixed(1)} Z`;
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto overflow-visible" style={{ minWidth: 0 }}>
       <defs>
         <linearGradient id="sk-grad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#C8102E" stopOpacity="0.18" />
@@ -1318,24 +1318,28 @@ export default function ProgressiPage() {
                               const thBg = testIdx % 2 === 0 ? "bg-[#C8102E]" : "bg-[#4B5563]";
                               return (
                                 <div key={testName} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                                  <h4 className="text-sm font-bold italic text-gray-900 mb-3">{testName}</h4>
-                                  {chartVals.length >= 2 && (
-                                    <div className="mb-3 flex items-center gap-4">
-                                      <Sparkline values={chartVals} invert={isSprintTempo} />
-                                      <div className="text-xs text-gray-400 space-y-1">
-                                        {(() => {
-                                          const first = chartVals[0], last = chartVals[chartVals.length - 1];
-                                          const pct = first > 0 ? ((last - first) / first) * 100 : null;
-                                          const isGood = pct !== null && Math.abs(pct) >= 10 && (isSprintTempo ? pct < 0 : pct > 0);
-                                          const isBad = pct !== null && Math.abs(pct) >= 10 && (isSprintTempo ? pct > 0 : pct < 0);
-                                          return pct !== null ? (
-                                            <span className={`text-sm font-bold ${isGood ? "text-green-600" : isBad ? "text-red-500" : "text-gray-400"}`}>
+                                  <div className="flex items-start justify-between gap-2 mb-2">
+                                    <h4 className="text-sm font-bold italic text-gray-900">{testName}</h4>
+                                    {chartVals.length >= 2 && (() => {
+                                      const first = chartVals[0], last = chartVals[chartVals.length - 1];
+                                      const pct = first > 0 ? ((last - first) / first) * 100 : null;
+                                      const isGood = pct !== null && Math.abs(pct) >= 10 && (isSprintTempo ? pct < 0 : pct > 0);
+                                      const isBad = pct !== null && Math.abs(pct) >= 10 && (isSprintTempo ? pct > 0 : pct < 0);
+                                      return (
+                                        <div className="text-right shrink-0">
+                                          {pct !== null && (
+                                            <p className={`text-sm font-bold ${isGood ? "text-green-600" : isBad ? "text-red-500" : "text-gray-400"}`}>
                                               {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%
-                                            </span>
-                                          ) : null;
-                                        })()}
-                                        <p className="text-gray-400">{entries.length} rilevazioni</p>
-                                      </div>
+                                            </p>
+                                          )}
+                                          <p className="text-xs text-gray-400">{entries.length} rilevazioni</p>
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+                                  {chartVals.length >= 2 && (
+                                    <div className="mb-3 w-full overflow-hidden">
+                                      <Sparkline values={chartVals} invert={isSprintTempo} />
                                     </div>
                                   )}
                                   <div className="overflow-x-auto">
