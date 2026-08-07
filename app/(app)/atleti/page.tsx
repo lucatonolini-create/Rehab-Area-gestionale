@@ -701,7 +701,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         (p.infortunioId === "__corrente__" && p.data >= atleta.inizioRehab) ||
         (!p.infortunioId && p.data >= atleta.inizioRehab && !concurrentSessIdsPDF.has(p.id))
       ) && isSessionePDF(p)).length : 0;
-  const totaleStagionePDF = giorniArchivio.reduce((s, g) => s + g, 0) + giorniCorrente;
+  const totaleStagionePDF = programmi.filter(isSessionePDF).length;
 
   y = secTitle("Storico infortuni", y);
 
