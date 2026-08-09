@@ -1469,7 +1469,7 @@ export default function EserciziPage() {
                     }}
                     className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white">
                     <option value="">Seleziona atleta...</option>
-                    {atletiOrdinati.map((a) => <option key={a.id} value={a.id}>{nd(a)} ({a.categoria})</option>)}
+                    {atletiOrdinati.filter((a) => a.stato === "Infortunato").map((a) => <option key={a.id} value={a.id}>{nd(a)} ({a.categoria})</option>)}
                   </select>
                 </div>
                 <div className="shrink-0">
@@ -1486,7 +1486,7 @@ export default function EserciziPage() {
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Applica anche a</label>
                   <div className="mt-2 border border-gray-200 rounded-xl overflow-hidden max-h-36 overflow-y-auto divide-y divide-gray-100">
                     {atletiOrdinati
-                      .filter((a) => a.id !== form.atletaId)
+                      .filter((a) => a.id !== form.atletaId && a.stato === "Infortunato")
                       .map((a) => {
                         const checked = atletiAggiuntivi.includes(a.id);
                         return (
@@ -1502,7 +1502,7 @@ export default function EserciziPage() {
                           </label>
                         );
                       })}
-                    {atletiOrdinati.filter((a) => a.id !== form.atletaId).length === 0 && (
+                    {atletiOrdinati.filter((a) => a.id !== form.atletaId && a.stato === "Infortunato").length === 0 && (
                       <p className="text-sm text-gray-400 text-center py-4">Nessun altro atleta disponibile</p>
                     )}
                   </div>
