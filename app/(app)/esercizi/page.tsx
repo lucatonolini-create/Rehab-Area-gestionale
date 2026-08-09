@@ -586,11 +586,13 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
     didParseCell: (data: any) => {
       if (data.section === "head") return;
       if (dateRowIndices.has(data.row.index)) {
-        data.cell.styles.fillColor = [43, 43, 43];
+        data.cell.styles.fillColor = [28, 28, 28];
         data.cell.styles.textColor = [255, 255, 255];
         data.cell.styles.fontStyle = "bold";
-        data.cell.styles.fontSize = 8;
-        data.cell.styles.cellPadding = { top: 4, bottom: 4, left: 5, right: 2 };
+        data.cell.styles.fontSize = 9.5;
+        data.cell.styles.cellPadding = { top: 6, bottom: 6, left: 8, right: 2 };
+        data.cell.styles.lineWidth = { top: 2.5, bottom: 0, left: 0, right: 0 };
+        data.cell.styles.lineColor = [200, 16, 46];
       } else if (catRowIndices.has(data.row.index)) {
         data.cell.styles.fillColor = [200, 16, 46];
         data.cell.styles.textColor = [255, 255, 255];
