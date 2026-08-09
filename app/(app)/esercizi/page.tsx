@@ -445,21 +445,80 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
 
   addHeader();
 
-  const body: any[] = [];
-  const dateRowIndices = new Set<number>();
-  const catRowIndices = new Set<number>();
-  const absenteRowIndices = new Set<number>();
-  const riposoRowIndices = new Set<number>();
-  const squadraRowIndices = new Set<number>();
-  const altRowIndices = new Set<number>();
   const testRowsIntervallo: { dataLabel: string; nomeAtleta: string; nomeTest: string; risultato: string }[] = [];
   const CATEGORIE_ORD = ["1ª Squadra", "U19", "U17", "U16", "U15", "U14", "Altra squadra", "Provino"];
 
-  for (const data of dateOrdinate) {
+  const tableOpts = (body: any[], catRowIndices: Set<number>, absenteRowIndices: Set<number>, riposoRowIndices: Set<number>, squadraRowIndices: Set<number>, altRowIndices: Set<number>) => ({
+    startY: HDR + 8,
+    head: [["Atleta", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS\nPal.", "Obiettivi\nCampo", "Esercizi\nCampo", "VAS\nCampo", "GPS", "RPE"]],
+    body,
+    headStyles: { fillColor: [110, 110, 110] as [number,number,number], textColor: 255, fontSize: 7, halign: "center" as const, valign: "middle" as const },
+    bodyStyles: { fontSize: 7, cellPadding: 2.5, overflow: "linebreak" as const, halign: "left" as const, valign: "top" as const },
+    rowPageBreak: "avoid" as const,
+    margin: { left: M, right: M, top: HDR + 8 },
+    columnStyles: {
+      0:  { cellWidth: 22, fontStyle: "bold" as const },
+      1:  { cellWidth: 24 },
+      2:  { cellWidth: 18 },
+      3:  { cellWidth: 22 },
+      4:  { cellWidth: 26 },
+      5:  { cellWidth: 32 },
+      6:  { cellWidth: 13, halign: "center" as const },
+      7:  { cellWidth: 26 },
+      8:  { cellWidth: 33 },
+      9:  { cellWidth: 14, halign: "center" as const },
+      10: { cellWidth: 24 },
+      11: { cellWidth: 15, halign: "center" as const },
+    },
+    didDrawPage: () => { addHeader(); },
+    didParseCell: (data: any) => {
+      if (data.section === "head") return;
+      if (data.row.index === 0) {
+        data.cell.styles.fillColor = [255, 255, 255];
+        data.cell.styles.textColor = [200, 16, 46];
+        data.cell.styles.fontStyle = "bold";
+        data.cell.styles.fontSize = 10;
+        data.cell.styles.cellPadding = { top: 5, bottom: 5, left: 8, right: 2 };
+        data.cell.styles.lineWidth = { top: 0, bottom: 1, left: 0, right: 0 };
+        data.cell.styles.lineColor = [200, 16, 46];
+      } else if (catRowIndices.has(data.row.index)) {
+        data.cell.styles.fillColor = [200, 16, 46];
+        data.cell.styles.textColor = [255, 255, 255];
+        data.cell.styles.fontStyle = "bold";
+        data.cell.styles.fontSize = 7.5;
+        data.cell.styles.cellPadding = { top: 3, bottom: 3, left: 5, right: 2 };
+      } else if (absenteRowIndices.has(data.row.index)) {
+        data.cell.styles.fillColor = [255, 237, 213];
+        data.cell.styles.textColor = [154, 52, 18];
+      } else if (riposoRowIndices.has(data.row.index)) {
+        data.cell.styles.fillColor = [219, 234, 254];
+        data.cell.styles.textColor = [30, 64, 175];
+      } else if (squadraRowIndices.has(data.row.index)) {
+        data.cell.styles.fillColor = [254, 226, 226];
+        data.cell.styles.textColor = [153, 27, 27];
+      } else if (altRowIndices.has(data.row.index)) {
+        data.cell.styles.fillColor = [249, 249, 251];
+      } else {
+        data.cell.styles.fillColor = [255, 255, 255];
+      }
+    },
+  });
+
+  for (let dIdx = 0; dIdx < dateOrdinate.length; dIdx++) {
+    const data = dateOrdinate[dIdx];
+    if (dIdx > 0) { doc.addPage(); addHeader(); }
+
+    const body: any[] = [];
+    const catRowIndices = new Set<number>();
+    const absenteRowIndices = new Set<number>();
+    const riposoRowIndices = new Set<number>();
+    const squadraRowIndices = new Set<number>();
+    const altRowIndices = new Set<number>();
+
     const progDelGiorno = perData.get(data) ?? [];
     const dataConGiorno = (() => { const s = new Date(data + "T12:00").toLocaleDateString("it-IT", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" }); return s.charAt(0).toUpperCase() + s.slice(1); })();
     const dataShort = new Date(data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" });
-    dateRowIndices.add(body.length);
+    // Row 0 is always the date header for this day's table
     body.push([{ content: dataConGiorno, colSpan: 12 }]);
 
     const perCategoria = new Map<string, { atleta: Atleta; prog: Programma }[]>();
@@ -559,63 +618,9 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
         dataRowCount++;
       }
     }
-  }
 
-  autoTable(doc, {
-    startY: HDR + 8,
-    head: [["Atleta", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS\nPal.", "Obiettivi\nCampo", "Esercizi\nCampo", "VAS\nCampo", "GPS", "RPE"]],
-    body,
-    headStyles: { fillColor: [35, 35, 35] as [number,number,number], textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
-    bodyStyles: { fontSize: 7, cellPadding: 3, overflow: "linebreak" as const, halign: "left" as const, valign: "top" as const },
-    rowPageBreak: "avoid",
-    margin: { left: M, right: M, top: HDR + 8 },
-    columnStyles: {
-      0:  { cellWidth: 22, fontStyle: "bold" },
-      1:  { cellWidth: 24 },
-      2:  { cellWidth: 18 },
-      3:  { cellWidth: 22 },
-      4:  { cellWidth: 26 },
-      5:  { cellWidth: 32 },
-      6:  { cellWidth: 13, halign: "center" as const },
-      7:  { cellWidth: 26 },
-      8:  { cellWidth: 33 },
-      9:  { cellWidth: 14, halign: "center" as const },
-      10: { cellWidth: 24 },
-      11: { cellWidth: 15, halign: "center" as const },
-    },
-    didDrawPage: () => { addHeader(); },
-    didParseCell: (data: any) => {
-      if (data.section === "head") return;
-      if (dateRowIndices.has(data.row.index)) {
-        data.cell.styles.fillColor = [28, 28, 28];
-        data.cell.styles.textColor = [255, 255, 255];
-        data.cell.styles.fontStyle = "bold";
-        data.cell.styles.fontSize = 9.5;
-        data.cell.styles.cellPadding = { top: 6, bottom: 6, left: 8, right: 2 };
-        data.cell.styles.lineWidth = { top: 2.5, bottom: 0, left: 0, right: 0 };
-        data.cell.styles.lineColor = [200, 16, 46];
-      } else if (catRowIndices.has(data.row.index)) {
-        data.cell.styles.fillColor = [200, 16, 46];
-        data.cell.styles.textColor = [255, 255, 255];
-        data.cell.styles.fontStyle = "bold";
-        data.cell.styles.fontSize = 7.5;
-        data.cell.styles.cellPadding = { top: 3.5, bottom: 3.5, left: 5, right: 2 };
-      } else if (absenteRowIndices.has(data.row.index)) {
-        data.cell.styles.fillColor = [255, 237, 213];
-        data.cell.styles.textColor = [154, 52, 18];
-      } else if (riposoRowIndices.has(data.row.index)) {
-        data.cell.styles.fillColor = [219, 234, 254];
-        data.cell.styles.textColor = [30, 64, 175];
-      } else if (squadraRowIndices.has(data.row.index)) {
-        data.cell.styles.fillColor = [254, 226, 226];
-        data.cell.styles.textColor = [153, 27, 27];
-      } else if (altRowIndices.has(data.row.index)) {
-        data.cell.styles.fillColor = [249, 249, 251];
-      } else {
-        data.cell.styles.fillColor = [255, 255, 255];
-      }
-    },
-  });
+    autoTable(doc, tableOpts(body, catRowIndices, absenteRowIndices, riposoRowIndices, squadraRowIndices, altRowIndices));
+  }
 
   // ── Test table (raggruppata per data+giocatore con rowSpan) ─────────────────
   if (testRowsIntervallo.length > 0) {
