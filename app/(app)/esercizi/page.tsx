@@ -448,8 +448,16 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
   const testRowsIntervallo: { dataLabel: string; nomeAtleta: string; nomeTest: string; risultato: string }[] = [];
   const CATEGORIE_ORD = ["1ª Squadra", "U19", "U17", "U16", "U15", "U14", "Altra squadra", "Provino"];
 
+  const DATE_ROW_H = 12;
+  const drawDateRow = (label: string, y: number) => {
+    doc.setFillColor(255, 255, 255); doc.rect(M, y, W - 2 * M, DATE_ROW_H, "F");
+    doc.setDrawColor(...red); doc.setLineWidth(0.5); doc.line(M, y + DATE_ROW_H, W - M, y + DATE_ROW_H);
+    doc.setTextColor(...red); doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+    doc.text(label, M + 8, y + DATE_ROW_H / 2 + 1.5, { baseline: "middle" as const });
+  };
+
   const tableOpts = (body: any[], catRowIndices: Set<number>, absenteRowIndices: Set<number>, riposoRowIndices: Set<number>, squadraRowIndices: Set<number>, altRowIndices: Set<number>) => ({
-    startY: HDR + 8,
+    startY: HDR + 8 + DATE_ROW_H,
     head: [["Atleta", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS\nPal.", "Obiettivi\nCampo", "Esercizi\nCampo", "VAS\nCampo", "GPS", "RPE"]],
     body,
     headStyles: { fillColor: [110, 110, 110] as [number,number,number], textColor: 255, fontSize: 7, halign: "center" as const, valign: "middle" as const },
@@ -473,15 +481,7 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
     didDrawPage: () => { addHeader(); },
     didParseCell: (data: any) => {
       if (data.section === "head") return;
-      if (data.row.index === 0) {
-        data.cell.styles.fillColor = [255, 255, 255];
-        data.cell.styles.textColor = [200, 16, 46];
-        data.cell.styles.fontStyle = "bold";
-        data.cell.styles.fontSize = 10;
-        data.cell.styles.cellPadding = { top: 5, bottom: 5, left: 8, right: 2 };
-        data.cell.styles.lineWidth = { top: 0, bottom: 1, left: 0, right: 0 };
-        data.cell.styles.lineColor = [200, 16, 46];
-      } else if (catRowIndices.has(data.row.index)) {
+      if (catRowIndices.has(data.row.index)) {
         data.cell.styles.fillColor = [200, 16, 46];
         data.cell.styles.textColor = [255, 255, 255];
         data.cell.styles.fontStyle = "bold";
@@ -518,8 +518,7 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
     const progDelGiorno = perData.get(data) ?? [];
     const dataConGiorno = (() => { const s = new Date(data + "T12:00").toLocaleDateString("it-IT", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" }); return s.charAt(0).toUpperCase() + s.slice(1); })();
     const dataShort = new Date(data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" });
-    // Row 0 is always the date header for this day's table
-    body.push([{ content: dataConGiorno, colSpan: 12 }]);
+    drawDateRow(dataConGiorno, HDR + 8);
 
     const perCategoria = new Map<string, { atleta: Atleta; prog: Programma }[]>();
     for (const prog of progDelGiorno) {
