@@ -26,6 +26,7 @@ import AtletaModal from "@/components/AtletaModal";
 
 const statoColor: Record<Stato, string> = {
   "Infortunato": "bg-orange-100 text-orange-700",
+  "NTL":         "bg-amber-100 text-amber-700",
   "Disponibile": "bg-green-100 text-green-700",
 };
 
@@ -70,28 +71,29 @@ export default function Dashboard() {
   };
 
   const inRecupero = atleti.filter((a) => a.stato === "Infortunato").length;
+  const inNTL      = atleti.filter((a) => a.stato === "NTL").length;
   const guariti    = atleti.filter((a) => a.stato === "Disponibile").length;
 
   const atletiFiltrati = (filtroCategoria === "Tutti"
     ? atleti
     : atleti.filter((a) => a.categoria === filtroCategoria)
   ).slice().sort((a, b) => {
-    const statoOrd = (s: string) => s === "Infortunato" ? 0 : 1;
+    const statoOrd = (s: Stato) => s === "Infortunato" ? 0 : s === "NTL" ? 1 : 2;
     const sd = statoOrd(a.stato) - statoOrd(b.stato);
     if (sd !== 0) return sd;
     return nd(a).localeCompare(nd(b), "it");
   });
 
-  const infortunatiIds = new Set(atleti.filter((a) => a.stato === "Infortunato").map((a) => a.id));
+  const attiviBisognoIds = new Set(atleti.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").map((a) => a.id));
   const programmiReali = programmi.filter((p) => !p.riposo);
-  const programmiAttivi = programmiReali.filter((p) => infortunatiIds.has(p.atletaId)).length;
+  const programmiAttivi = programmiReali.filter((p) => attiviBisognoIds.has(p.atletaId)).length;
 
   const stats = [
     { label: "Atleti Totali",     value: atleti.length,         icon: Users,      color: "bg-[#2B2B2B]", href: "/atleti" },
-    { label: "Infortunati",        value: inRecupero,            icon: Activity,   color: "bg-orange-500", href: "/atleti" },
-    { label: "Disponibili",       value: guariti,                icon: TrendingUp, color: "bg-green-500",  href: "/atleti" },
-    { label: "Programmi Attivi",  value: programmiAttivi,       icon: Dumbbell,  color: "bg-[#C8102E]",  href: "/esercizi" },
-    { label: "Programmi Totali",  value: programmiReali.length, icon: Dumbbell,  color: "bg-[#2B2B2B]",  href: "/esercizi" },
+    { label: "Infortunati (TL)",  value: inRecupero,            icon: Activity,   color: "bg-orange-500", href: "/atleti" },
+    { label: "NTL",               value: inNTL,                 icon: Activity,   color: "bg-amber-500",  href: "/atleti" },
+    { label: "Disponibili",       value: guariti,               icon: TrendingUp, color: "bg-green-500",  href: "/atleti" },
+    { label: "Programmi Attivi",  value: programmiAttivi,       icon: Dumbbell,   color: "bg-[#C8102E]",  href: "/esercizi" },
   ];
 
   return (
@@ -104,7 +106,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stat cards cliccabili */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8" style={{gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))"}}>
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -180,7 +182,7 @@ export default function Dashboard() {
                 className="w-full px-5 py-4 hover:bg-gray-50 transition-colors text-left">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${
-                    atleta.stato === "Disponibile" ? "bg-gray-300" : "bg-[#2B2B2B]"
+                    atleta.stato === "Disponibile" ? "bg-gray-300" : atleta.stato === "NTL" ? "bg-amber-400" : "bg-[#2B2B2B]"
                   }`}>
                     {nd(atleta).trim().split(/\s+/).filter(Boolean).slice(0,2).map((w:string)=>(w[0]??"").toUpperCase()).join("")}
                   </div>

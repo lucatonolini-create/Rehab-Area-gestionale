@@ -64,7 +64,7 @@ function atletaAttivoInMese(a: Atleta, anno: number, mese: number): boolean {
     return true; // still ongoing
   };
   // Infortunio attivo corrente (per Disponibile richiede fineRehab settata, altrimenti usa solo storico)
-  if ((a.stato === "Infortunato" || a.fineRehab) && periodoAttivo(a.inizioRehab, a.fineRehab)) return true;
+  if ((a.stato === "Infortunato" || a.stato === "NTL" || a.fineRehab) && periodoAttivo(a.inizioRehab, a.fineRehab)) return true;
   // Infortuni passati archiviati (atleta guarito): contano nei mesi in cui si è svolta la riabilitazione
   return (a.storicoInfortuni ?? []).some((s) => periodoAttivo(s.inizioRehab, s.fineRehab));
 }
@@ -93,7 +93,7 @@ function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNel
     return true;
   };
   const result: InfortunioNelMese[] = [];
-  if (a.stato === "Infortunato" && inMese(a.inizioRehab, a.fineRehab) && a.infortunio)
+  if ((a.stato === "Infortunato" || a.stato === "NTL") && inMese(a.inizioRehab, a.fineRehab) && a.infortunio)
     result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined, osiicsCodice: a.osiicsCodice });
   (a.storicoInfortuni ?? []).forEach((s) => {
     if (inMese(s.inizioRehab, s.fineRehab))
@@ -550,7 +550,7 @@ async function esportaPDFPanoramica(params: {
   const fmtD = (d?: string) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
 
   const atletiOrdinati = [...params.atleti].sort(
-    (a, b) => a.stato === b.stato ? nd(a).localeCompare(nd(b)) : a.stato === "Infortunato" ? -1 : 1
+    (a, b) => a.stato === b.stato ? nd(a).localeCompare(nd(b)) : a.stato === "Infortunato" ? -1 : a.stato === "NTL" && b.stato !== "Infortunato" ? -1 : 1
   );
 
   const tuttiRows: any[] = [];
@@ -620,7 +620,7 @@ async function esportaPDFPanoramica(params: {
           data.cell.styles.fillColor = ai % 2 !== 0 ? [248, 248, 248] : [255, 255, 255];
           if (data.column.index === 6) {
             const content = typeof data.cell.raw === "object" ? (data.cell.raw as any)?.content : data.cell.raw;
-            data.cell.styles.textColor = content === "Disponibile" ? [34, 139, 34] : red;
+            data.cell.styles.textColor = content === "Disponibile" ? [34, 139, 34] : content === "NTL" ? [180, 120, 0] : red;
             data.cell.styles.fontStyle = "bold";
           }
         }
@@ -1113,7 +1113,7 @@ export default function AnalisiPage() {
     const map: Record<string, number> = {};
     TIPI_INFORTUNIO.forEach((t) => { map[t] = 0; });
     atleti.forEach((a) => {
-      if (a.stato === "Infortunato" && a.tipoInfortunio) map[a.tipoInfortunio] = (map[a.tipoInfortunio] ?? 0) + 1;
+      if ((a.stato === "Infortunato" || a.stato === "NTL") && a.tipoInfortunio) map[a.tipoInfortunio] = (map[a.tipoInfortunio] ?? 0) + 1;
       const seenS = new Set<string>();
       (a.storicoInfortuni ?? []).forEach((s) => {
         const k = `${s.diagnosi}|${s.tipo ?? ""}|${s.inizioRehab ?? ""}|${s.fineRehab ?? ""}`;
@@ -1128,7 +1128,7 @@ export default function AnalisiPage() {
   const perInfortunio = useMemo(() => {
     const map: Record<string, number> = {};
     atleti.forEach((a) => {
-      if (a.stato === "Infortunato" && a.infortunio) map[a.infortunio.trim()] = (map[a.infortunio.trim()] ?? 0) + 1;
+      if ((a.stato === "Infortunato" || a.stato === "NTL") && a.infortunio) map[a.infortunio.trim()] = (map[a.infortunio.trim()] ?? 0) + 1;
       const seenS = new Set<string>();
       (a.storicoInfortuni ?? []).forEach((s) => {
         const k = `${s.diagnosi}|${s.tipo ?? ""}|${s.inizioRehab ?? ""}|${s.fineRehab ?? ""}`;
@@ -1215,10 +1215,11 @@ export default function AnalisiPage() {
       if (!tipoAttivo && !tipoStorico) return false;
     }
     return true;
-  }).sort((a, b) => a.stato === b.stato ? nd(a).localeCompare(nd(b)) : a.stato === "Infortunato" ? -1 : 1);
+  }).sort((a, b) => a.stato === b.stato ? nd(a).localeCompare(nd(b)) : a.stato === "Infortunato" ? -1 : a.stato === "NTL" && b.stato !== "Infortunato" ? -1 : 1);
 
   const statoColor: Record<string, string> = {
     "Infortunato": "bg-orange-100 text-orange-700",
+    "NTL":         "bg-amber-100 text-amber-700",
     "Disponibile": "bg-green-100 text-green-700",
   };
 
@@ -1559,9 +1560,9 @@ export default function AnalisiPage() {
                 </div>
                 <div className="divide-y divide-gray-50">
                   {[...atleti]
-                    .sort((a, b) => a.stato === b.stato ? nd(a).localeCompare(nd(b)) : a.stato === "Infortunato" ? -1 : 1)
+                    .sort((a, b) => a.stato === b.stato ? nd(a).localeCompare(nd(b)) : a.stato === "Infortunato" ? -1 : a.stato === "NTL" && b.stato !== "Infortunato" ? -1 : 1)
                     .flatMap((a) => {
-                      const concorrenti = a.stato === "Infortunato"
+                      const concorrenti = (a.stato === "Infortunato" || a.stato === "NTL")
                         ? (a.storicoInfortuni ?? []).filter((i) => i.attivo === true)
                         : [];
                       const righe = [{ key: a.id, infortunio: a.infortunio, tipo: a.tipoInfortunio }];

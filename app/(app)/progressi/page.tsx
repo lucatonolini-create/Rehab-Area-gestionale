@@ -11,9 +11,10 @@ const CAT_PALETTE = ["#C8102E","#1E40AF","#047857","#B45309","#7C3AED","#0E7490"
 const TIPO_PALETTE = ["#1D4ED8","#DC2626","#D97706","#059669","#7C3AED","#0891B2","#DB2777","#92400E"];
 const hexToRgb = (h: string): [number, number, number] => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
 
-const STATI: Stato[] = ["Infortunato", "Disponibile"];
+const STATI: Stato[] = ["Infortunato", "NTL", "Disponibile"];
 const statoColor: Record<Stato, string> = {
   "Infortunato": "bg-orange-100 text-orange-700",
+  "NTL":         "bg-amber-100 text-amber-700",
   "Disponibile": "bg-green-100 text-green-700",
 };
 
@@ -173,7 +174,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
   doc.setFontSize(8.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
   doc.text(info, M, HDR + 21);
   // badge stato — larghezza dinamica, verde se Disponibile
-  const badgeColor: [number, number, number] = atleta.stato === "Disponibile" ? [34, 139, 34] : red;
+  const badgeColor: [number, number, number] = atleta.stato === "Disponibile" ? [34, 139, 34] : atleta.stato === "NTL" ? [180, 120, 0] : red;
   doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
   const stateTextW = doc.getStringUnitWidth(atleta.stato) * 7.5 / doc.internal.scaleFactor;
   const badgeW = Math.max(stateTextW + 12, 36);
@@ -189,7 +190,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
     : "—";
 
   const tuttiInfortuni: Array<{ id: string; tipo?: string; diagnosi: string; inizio: string; fine?: string; squadraDate?: string; osiicsCodice?: string }> = [];
-  if (atleta.stato === "Infortunato" && (atleta.infortunio || atleta.inizioRehab))
+  if ((atleta.stato === "Infortunato" || atleta.stato === "NTL") && (atleta.infortunio || atleta.inizioRehab))
     tuttiInfortuni.push({ id: "__corrente__", tipo: atleta.tipoInfortunio, diagnosi: atleta.infortunio || "—", inizio: atleta.inizioRehab, fine: atleta.fineRehab, osiicsCodice: atleta.osiicsCodice });
   (atleta.storicoInfortuni ?? []).forEach((s) =>
     tuttiInfortuni.push({ id: s.id, tipo: s.tipo, diagnosi: s.diagnosi, inizio: s.inizioRehab, fine: s.fineRehab, osiicsCodice: s.osiicsCodice })
@@ -484,7 +485,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
           }
         } else {
           if (p.infortunioId === inj.id) return true;
-          if (p.infortunioId === "__corrente__" && p.data && inj.inizio && p.data >= inj.inizio && (!inj.fine || p.data <= inj.fine) && (atleta.stato !== "Infortunato" || !atleta.inizioRehab || p.data < atleta.inizioRehab)) return true;
+          if (p.infortunioId === "__corrente__" && p.data && inj.inizio && p.data >= inj.inizio && (!inj.fine || p.data <= inj.fine) && (atleta.stato !== "Infortunato" && atleta.stato !== "NTL" || !atleta.inizioRehab || p.data < atleta.inizioRehab)) return true;
           if (!p.infortunioId && p.data && inj.inizio && p.data >= inj.inizio && (!inj.fine || p.data <= inj.fine)) return true;
         }
         return false;
