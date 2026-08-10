@@ -94,6 +94,7 @@ export default function Dashboard() {
     { label: "NTL",               value: inNTL,                 icon: Activity,   color: "bg-amber-500",  href: "/atleti" },
     { label: "Disponibili",       value: guariti,               icon: TrendingUp, color: "bg-green-500",  href: "/atleti" },
     { label: "Programmi Attivi",  value: programmiAttivi,       icon: Dumbbell,   color: "bg-[#C8102E]",  href: "/esercizi" },
+    { label: "Programmi Totali",  value: programmiReali.length, icon: Dumbbell,   color: "bg-[#2B2B2B]",  href: "/esercizi" },
   ];
 
   return (
