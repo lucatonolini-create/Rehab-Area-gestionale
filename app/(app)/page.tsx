@@ -89,7 +89,7 @@ export default function Dashboard() {
   const programmiAttivi = programmiReali.filter((p) => attiviBisognoIds.has(p.atletaId)).length;
 
   const stats = [
-    { label: "Atleti Totali",     value: atleti.length,         icon: Users,      color: "bg-[#2B2B2B]", href: "/atleti" },
+    { label: "Atleti Totali",     value: atleti.length,         icon: Users,      color: "bg-gray-400",  href: "/atleti" },
     { label: "Infortunati (TL)",  value: inRecupero,            icon: Activity,   color: "bg-orange-500", href: "/atleti" },
     { label: "NTL",               value: inNTL,                 icon: Activity,   color: "bg-amber-500",  href: "/atleti" },
     { label: "Disponibili",       value: guariti,               icon: TrendingUp, color: "bg-green-500",  href: "/atleti" },
