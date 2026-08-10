@@ -728,7 +728,7 @@ function rigaProgramma(data: string, atleta: Atleta, prog: Programma) {
 
 function esportaCSVGiornaliero(data: string, atleti: Atleta[], tuttiProgrammi: Programma[]) {
   const programmiGiorno = tuttiProgrammi.filter(p => p.data === data);
-  const righe = atleti.filter(a => a.stato === "Infortunato").flatMap(atleta => {
+  const righe = atleti.filter(a => a.stato === "Infortunato" || a.stato === "NTL").flatMap(atleta => {
     const progs = programmiGiorno.filter(p => p.atletaId === atleta.id);
     if (progs.length === 0) return [];
     return progs.map(prog => rigaProgramma(data, atleta, prog));
@@ -1132,7 +1132,7 @@ export default function EserciziPage() {
           <p className="text-gray-400 text-lg font-medium">Nessun atleta ancora</p>
           <p className="text-gray-300 text-sm mt-1">Aggiungi prima un atleta per creare programmi</p>
         </div>
-      ) : atletiOrdinati.filter((a) => a.stato === "Infortunato").length === 0 ? (
+      ) : atletiOrdinati.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").length === 0 ? (
         <div className="text-center py-20">
           <Dumbbell className="w-16 h-16 text-gray-200 mx-auto mb-4" />
           <p className="text-gray-400 text-lg font-medium">Nessun atleta in riabilitazione</p>
@@ -1140,7 +1140,7 @@ export default function EserciziPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {atletiOrdinati.filter((a) => a.stato === "Infortunato").map((atleta) => {
+          {atletiOrdinati.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").map((atleta) => {
             const isOpen = atletaAperto === atleta.id;
             const lista = programmiPerAtleta[atleta.id] ?? [];
             return (
@@ -1476,7 +1476,7 @@ export default function EserciziPage() {
                     }}
                     className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white">
                     <option value="">Seleziona atleta...</option>
-                    {atletiOrdinati.filter((a) => a.stato === "Infortunato").map((a) => <option key={a.id} value={a.id}>{nd(a)} ({a.categoria})</option>)}
+                    {atletiOrdinati.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").map((a) => <option key={a.id} value={a.id}>{nd(a)} ({a.categoria})</option>)}
                   </select>
                 </div>
                 <div className="shrink-0">
@@ -1493,7 +1493,7 @@ export default function EserciziPage() {
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Applica anche a</label>
                   <div className="mt-2 border border-gray-200 rounded-xl overflow-hidden max-h-36 overflow-y-auto divide-y divide-gray-100">
                     {atletiOrdinati
-                      .filter((a) => a.id !== form.atletaId && a.stato === "Infortunato")
+                      .filter((a) => a.id !== form.atletaId && (a.stato === "Infortunato" || a.stato === "NTL"))
                       .map((a) => {
                         const checked = atletiAggiuntivi.includes(a.id);
                         return (
@@ -1509,7 +1509,7 @@ export default function EserciziPage() {
                           </label>
                         );
                       })}
-                    {atletiOrdinati.filter((a) => a.id !== form.atletaId && a.stato === "Infortunato").length === 0 && (
+                    {atletiOrdinati.filter((a) => a.id !== form.atletaId && (a.stato === "Infortunato" || a.stato === "NTL")).length === 0 && (
                       <p className="text-sm text-gray-400 text-center py-4">Nessun altro atleta disponibile</p>
                     )}
                   </div>
@@ -1565,7 +1565,7 @@ export default function EserciziPage() {
                 const atletaSelezionato = atleti.find((a) => a.id === form.atletaId);
                 if (!atletaSelezionato) return null;
                 const opzioniInf = [
-                  ...(atletaSelezionato.stato === "Infortunato" && (atletaSelezionato.infortunio || atletaSelezionato.inizioRehab)
+                  ...((atletaSelezionato.stato === "Infortunato" || atletaSelezionato.stato === "NTL") && (atletaSelezionato.infortunio || atletaSelezionato.inizioRehab)
                     ? [{ id: "__corrente__", label: `In corso: ${atletaSelezionato.infortunio || "—"}` }]
                     : []),
                   ...[...(atletaSelezionato.storicoInfortuni ?? [])].reverse().map((inf) => ({

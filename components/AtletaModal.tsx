@@ -8,7 +8,7 @@ import DettaglioSituazionale, { type DettaglioSituazionaleHandle, type Dettaglio
 import OsiicsCombobox from "@/components/OsiicsCombobox";
 import type { OsiicsCode } from "@/lib/store";
 
-const STATI: Stato[] = ["Infortunato", "Disponibile"];
+const STATI: Stato[] = ["Infortunato", "NTL", "Disponibile"];
 
 const atletaVuoto: Omit<Atleta, "id"> = {
   nome: "", categoria: "" as Categoria,
@@ -210,7 +210,7 @@ export default function AtletaModal({ atletaIniziale, onSalva, onChiudi }: Props
             </Sel>
           </div>
 
-          {form.stato === "Disponibile" && (
+          {(form.stato === "Disponibile" || form.stato === "NTL") && (
             <div>
               <Label>Data fine riabilitazione</Label>
               <Input className="mt-1" type="date" value={form.fineRehab ?? ""} onChange={(e) => f("fineRehab", e.target.value)} />
@@ -282,8 +282,8 @@ export default function AtletaModal({ atletaIniziale, onSalva, onChiudi }: Props
             </div>
           )}
 
-          {/* Dettaglio situazionale FIICCS — sempre disponibile per atleti infortunati */}
-          {form.stato === "Infortunato" && (
+          {/* Dettaglio situazionale FIICCS — per atleti con infortunio attivo (TL e NTL) */}
+          {(form.stato === "Infortunato" || form.stato === "NTL") && (
             <DettaglioSituazionale ref={dettaglioRef} contatto={form.contatto} />
           )}
 

@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, id: esistente.id });
       }
 
-      if (esistente.stato === "Infortunato") {
+      if (esistente.stato === "Infortunato" || esistente.stato === "NTL") {
         // Infortunio concorrente: aggiunge allo storico con attivo:true
         const storicoEsistente: unknown[] = esistente.storico_infortuni ?? [];
         const nuovoConcorrente = {

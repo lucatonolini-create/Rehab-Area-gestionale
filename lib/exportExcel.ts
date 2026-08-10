@@ -239,6 +239,9 @@ function buildAtletiSheet(wb: ExcelJS.Workbook, atleti: Atleta[]): void {
     if (a.stato === "Infortunato") {
       sc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFDE8E8" } };
       sc.font = { ...DATA_FONT, color: { argb: "FFC8102E" }, bold: true };
+    } else if (a.stato === "NTL") {
+      sc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEF3C7" } };
+      sc.font = { ...DATA_FONT, color: { argb: "FFB45309" }, bold: true };
     } else {
       sc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE8F5E9" } };
       sc.font = { ...DATA_FONT, color: { argb: "FF2E7D32" }, bold: true };
@@ -276,7 +279,7 @@ function buildInfortuniSheet(wb: ExcelJS.Workbook, atleti: Atleta[]): void {
 
   let ri = 0;
   for (const a of atleti) {
-    if (a.stato === "Infortunato" && a.infortunio) {
+    if ((a.stato === "Infortunato" || a.stato === "NTL") && a.infortunio) {
       const r = ws.addRow([
         nd(a), a.categoria, a.tipoInfortunio ?? "", a.infortunio,
         a.inizioRehab ? new Date(a.inizioRehab + "T12:00") : "",

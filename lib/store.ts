@@ -1,7 +1,7 @@
 import { supabase } from "./supabase";
 import { getDB } from "./db";
 
-export type Stato = "Infortunato" | "Disponibile";
+export type Stato = "Infortunato" | "NTL" | "Disponibile";
 
 export const CATEGORIE = ["1ª Squadra", "U19", "U17", "U16", "U15", "U14", "Altra squadra", "Provino"] as const;
 export type Categoria = (typeof CATEGORIE)[number];
@@ -158,6 +158,7 @@ export interface InfortunioStorico {
   osiicsDescrizione?: string;
   osiicsCodeId?: string;
   dettaglioSituazionale?: DettaglioSituazionaleForm;
+  tipoGestione?: "TL" | "NTL";
 }
 
 export interface QuestionarioKinesiofobia {
@@ -192,6 +193,7 @@ export interface Atleta {
   posizione: string;
   piedeDominante: Piede;
   tipoInfortunio?: TipoInfortunio;
+  tipoGestioneInfortunio?: "TL" | "NTL";
   evento?: string;
   meccanismo?: string;
   contatto?: string;
@@ -246,7 +248,7 @@ export const RECOVERY_DAYS: Partial<Record<TipoInfortunio, number>> = {
 export function calcolaProgressoAuto(
   atleta: Pick<Atleta, "stato" | "inizioRehab" | "tipoInfortunio" | "refertiClinici">
 ): number {
-  if (atleta.stato === "Disponibile") return 100;
+  if (atleta.stato === "Disponibile" || atleta.stato === "NTL") return 100;
   if (!atleta.inizioRehab) return 0;
   const giorni = Math.max(0, Math.floor(
     (Date.now() - new Date(atleta.inizioRehab + "T12:00").getTime()) / 864e5

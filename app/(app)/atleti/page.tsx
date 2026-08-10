@@ -26,7 +26,7 @@ function getPerfId(rehabId: string): string | null {
 
 async function syncInjury(atleta: Atleta) {
   const perfId = getPerfId(atleta.id);
-  const statoMap: Record<string, string> = { Infortunato: "rehab", Disponibile: "disponibile" };
+  const statoMap: Record<string, string> = { Infortunato: "rehab", NTL: "ntl", Disponibile: "disponibile" };
   const body: Record<string, any> = {
     external_id: atleta.id,
     athlete_name: atleta.nome,
@@ -563,7 +563,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   const info = [atleta.categoria, atleta.posizione, atleta.piedeDominante ? `Piede ${atleta.piedeDominante}` : ""].filter(Boolean).join("  ·  ");
   doc.setFontSize(8.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
   doc.text(info, M, HDR + 21);
-  const badgeColor: [number, number, number] = atleta.stato === "Disponibile" ? [34, 139, 34] : red;
+  const badgeColor: [number, number, number] = atleta.stato === "Disponibile" ? [34, 139, 34] : atleta.stato === "NTL" ? [180, 120, 0] : red;
   doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
   const stateTextW = doc.getStringUnitWidth(atleta.stato) * 7.5 / doc.internal.scaleFactor;
   const badgeW = Math.max(stateTextW + 10, 36);
@@ -670,7 +670,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       if (p.data < inf.inizioRehab) return false;
       if (inf.fineRehab && p.data > inf.fineRehab) return false;
       // Non assegnare sessioni successive all'inizio dell'infortunio corrente
-      if (atleta.stato === "Infortunato" && atleta.inizioRehab && p.data >= atleta.inizioRehab) return false;
+      if ((atleta.stato === "Infortunato" || atleta.stato === "NTL") && atleta.inizioRehab && p.data >= atleta.inizioRehab) return false;
       return true;
     }
     // Nessun ID: match per nome sessione (priorità), poi per data
@@ -696,7 +696,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       programmi.filter((p) => matchesInfPDF(p, { id: inf.id, diagnosi: inf.diagnosi, tipo: inf.tipo, inizioRehab: inf.inizioRehab, fineRehab: inf.fineRehab }) && isSessionePDF(p)).map((p) => p.id)
     )
   );
-  const giorniCorrente = atleta.stato === "Infortunato" && atleta.inizioRehab
+  const giorniCorrente = (atleta.stato === "Infortunato" || atleta.stato === "NTL") && atleta.inizioRehab
     ? programmi.filter((p) => (
         (p.infortunioId === "__corrente__" && p.data >= atleta.inizioRehab) ||
         (!p.infortunioId && p.data >= atleta.inizioRehab && !concurrentSessIdsPDF.has(p.id))
@@ -709,7 +709,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   {
     const concorrentiPDF = (atleta.storicoInfortuni ?? []).filter((i) => i.attivo === true);
     const boxes: [string, string][] = [];
-    if (atleta.stato === "Infortunato") boxes.push(["Infortuni attivi", `${1 + concorrentiPDF.length}`]);
+    if (atleta.stato === "Infortunato" || atleta.stato === "NTL") boxes.push(["Infortuni attivi", `${1 + concorrentiPDF.length}`]);
     boxes.push(["Totale stagione", `${totaleStagionePDF} sess.`]);
     const bw = (W - 2 * M - (boxes.length - 1) * 4) / boxes.length;
     boxes.forEach(([label, val], i) => {
@@ -725,7 +725,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
 
   const storicoBody: any[] = [];
   // Infortunio corrente se in corso
-  if (atleta.stato === "Infortunato" && (atleta.infortunio || atleta.inizioRehab)) {
+  if ((atleta.stato === "Infortunato" || atleta.stato === "NTL") && (atleta.infortunio || atleta.inizioRehab)) {
     const squadraCorr = programmi
       .filter((p) => (p.infortunioId === "__corrente__" || !p.infortunioId) && p.squadra && (!atleta.inizioRehab || !p.data || p.data >= atleta.inizioRehab))
       .sort((a, b) => a.data.localeCompare(b.data))[0];
@@ -810,7 +810,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       note: inf.note,
       dettaglioSituazionale: inf.dettaglioSituazionale,
     })),
-    ...(atleta.stato === "Infortunato" && (atleta.infortunio || atleta.inizioRehab)
+    ...((atleta.stato === "Infortunato" || atleta.stato === "NTL") && (atleta.infortunio || atleta.inizioRehab)
       ? [{ id: "__corrente__", diagnosi: atleta.infortunio || "—", tipo: atleta.tipoInfortunio as string | undefined, inizio: atleta.inizioRehab, fine: null as string | null, attivo: true,
           evento: atleta.evento ?? undefined, meccanismo: atleta.meccanismo ?? undefined, contatto: atleta.contatto ?? undefined,
           lato: atleta.lato ?? undefined, posizione: atleta.posizioneInfortunio ?? undefined,
@@ -836,7 +836,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           if (p.data < inj.inizio) return false;
           if (inj.fine && p.data > inj.fine) return false;
           // Non assegnare sessioni successive all'inizio dell'infortunio corrente
-          if (atleta.stato === "Infortunato" && atleta.inizioRehab && p.data >= atleta.inizioRehab) return false;
+          if ((atleta.stato === "Infortunato" || atleta.stato === "NTL") && atleta.inizioRehab && p.data >= atleta.inizioRehab) return false;
           return true;
         }
         // Nessun ID: match per nome sessione (priorità assoluta)
@@ -1528,12 +1528,14 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
 
 const statoColor: Record<Stato, string> = {
   "Infortunato": "bg-orange-100 text-orange-700",
+  "NTL":         "bg-amber-100 text-amber-700",
   "Disponibile": "bg-green-100 text-green-700",
 };
 
 const FILTRI_STATO: { label: string; value: Stato | "Tutti" }[] = [
   { label: "Tutti", value: "Tutti" },
   { label: "Infortunato", value: "Infortunato" },
+  { label: "NTL", value: "NTL" },
   { label: "Disponibile", value: "Disponibile" },
 ];
 
@@ -1589,7 +1591,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   }, [atleti]);
 
   useEffect(() => {
-    if (!selected || selected.stato !== "Infortunato") { setDettaglioSituazionale(null); return; }
+    if (!selected || (selected.stato !== "Infortunato" && selected.stato !== "NTL")) { setDettaglioSituazionale(null); return; }
     loadDettaglioSituazionale(selected.id).then(setDettaglioSituazionale);
   }, [selected?.id]);
 
@@ -1641,8 +1643,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     try {
       if (editAtleta) {
         let aggiornato: Atleta = { ...dati, id: editAtleta.id };
-        // Se l'atleta passa da Infortunato a Disponibile, archivia l'infortunio corrente
-        if (editAtleta.stato === "Infortunato" && dati.stato === "Disponibile") {
+        // Se l'atleta passa da Infortunato/NTL a Disponibile, archivia l'infortunio corrente
+        if ((editAtleta.stato === "Infortunato" || editAtleta.stato === "NTL") && dati.stato === "Disponibile") {
           const fineRehab = dati.fineRehab ?? new Date().toISOString().slice(0, 10);
           const diagnosi = dati.infortunio || editAtleta.infortunio;
           const inizioRehab = dati.inizioRehab || editAtleta.inizioRehab;
@@ -1895,7 +1897,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const fondiAtleta = async (altro: Atleta) => {
     if (!selected) return;
     const nuoviConcorrenti: InfortunioStorico[] = [];
-    if (altro.stato === "Infortunato" && altro.infortunio) {
+    if ((altro.stato === "Infortunato" || altro.stato === "NTL") && altro.infortunio) {
       nuoviConcorrenti.push({ id: uid(), tipo: altro.tipoInfortunio, diagnosi: altro.infortunio, inizioRehab: altro.inizioRehab || "", fineRehab: "", attivo: true });
     } else if (altro.infortunio) {
       nuoviConcorrenti.push({ id: uid(), tipo: altro.tipoInfortunio, diagnosi: altro.infortunio, inizioRehab: altro.inizioRehab || "", fineRehab: altro.fineRehab || new Date().toISOString().slice(0, 10) });
@@ -1944,7 +1946,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const scaricaPDFStorico = async () => {
     if (!selected) return;
     const programmi = await loadProgrammi(selected.id);
-    const det = selected.stato === "Infortunato" ? (dettaglioSituazionale ?? await loadDettaglioSituazionale(selected.id)) : null;
+    const det = (selected.stato === "Infortunato" || selected.stato === "NTL") ? (dettaglioSituazionale ?? await loadDettaglioSituazionale(selected.id)) : null;
     await esportaStoricoCompletoPDF(selected, programmi, det);
   };
 
@@ -1968,7 +1970,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
     const hasStorico = (atleta.storicoInfortuni ?? []).filter((i) => !i.attivo).length > 0;
 
-    if (atleta.stato === "Infortunato" && hasStorico) {
+    if ((atleta.stato === "Infortunato" || atleta.stato === "NTL") && hasStorico) {
       // Ha infortuni precedenti archiviati: rimuove solo il corrente e torna Disponibile
       if (!confirm(`Annullare l'infortunio corrente di ${nd(atleta)} e ripristinarlo come Disponibile?\n\nGli infortuni precedenti verranno conservati.`)) return;
       const aggiornato: Atleta = {
@@ -1994,7 +1996,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
       await upsertAtleta(aggiornato);
     } else {
       // Nessuno storico archiviato: elimina tutto
-      const msg = atleta.stato === "Infortunato"
+      const msg = (atleta.stato === "Infortunato" || atleta.stato === "NTL")
         ? `Eliminare definitivamente ${nd(atleta)}? Nessun infortunio precedente verrà conservato.`
         : `Eliminare ${nd(atleta)}?`;
       if (!confirm(msg)) return;
@@ -2018,7 +2020,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const perCategoria: Record<string, Atleta[]> = {};
   CATEGORIE.forEach((cat) => {
     const lista = filtered.filter((a) => a.categoria === cat).sort((a, b) => {
-      const statoOrd = (s: string) => s === "Infortunato" ? 0 : 1;
+      const statoOrd = (s: string) => s === "Infortunato" ? 0 : s === "NTL" ? 1 : 2;
       const sd = statoOrd(a.stato) - statoOrd(b.stato);
       if (sd !== 0) return sd;
       return nd(a).localeCompare(nd(b), "it");
@@ -2112,7 +2114,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                         }`}>
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${
-                            atleta.stato === "Disponibile" ? "bg-gray-300" : "bg-[#2B2B2B]"
+                            atleta.stato === "Disponibile" ? "bg-gray-300" : atleta.stato === "NTL" ? "bg-amber-400" : "bg-[#2B2B2B]"
                           }`}>
                             {nd(atleta).trim().split(/\s+/).filter(Boolean).slice(0,2).map((w:string)=>(w[0]??"").toUpperCase()).join("")}
                           </div>
@@ -2169,7 +2171,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
             <div className="text-center">
               <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 ${
-                selected.stato === "Disponibile" ? "bg-gray-400" : "bg-[#2B2B2B]"
+                selected.stato === "Disponibile" ? "bg-gray-400" : selected.stato === "NTL" ? "bg-amber-400" : "bg-[#2B2B2B]"
               }`}>
                 {nd(selected).trim().split(/\s+/).filter(Boolean).slice(0,2).map((w:string)=>(w[0]??"").toUpperCase()).join("")}
               </div>
@@ -2294,7 +2296,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                 )}
 
                 {/* Dettaglio situazionale FIICCS */}
-                {selected.stato === "Infortunato" && (
+                {(selected.stato === "Infortunato" || selected.stato === "NTL") && (
                   <div className="pt-1 border-t border-gray-100">
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Dettaglio situazionale</p>
                     {dettaglioSituazionale ? (
@@ -2585,7 +2587,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                   ] as const;
 
                   const infortuniOpts = [
-                    ...(selected.stato === "Infortunato" && (selected.infortunio || selected.inizioRehab) ? [{
+                    ...((selected.stato === "Infortunato" || selected.stato === "NTL") && (selected.infortunio || selected.inizioRehab) ? [{
                       id: "__corrente__",
                       label: `In corso: ${selected.infortunio || "—"}`,
                     }] : []),
@@ -2851,7 +2853,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                     if (inf.fineRehab && p.data > inf.fineRehab) return false;
                     // Se l'atleta è attualmente infortunato, non assegnare sessioni dopo
                     // l'inizio del nuovo infortunio (appartengono a quello corrente)
-                    if (selected.stato === "Infortunato" && selected.inizioRehab && p.data >= selected.inizioRehab) return false;
+                    if ((selected.stato === "Infortunato" || selected.stato === "NTL") && selected.inizioRehab && p.data >= selected.inizioRehab) return false;
                     return true;
                   }
                   if (!p.data || !inf.inizioRehab) return false;
@@ -2867,7 +2869,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                     .filter((p) => concorrenti.some((inf) => matchInf(p, inf)) && isSessione(p))
                     .map((p) => p.id)
                 );
-                const giorniCorrente = selected.stato === "Infortunato" && selected.inizioRehab
+                const giorniCorrente = (selected.stato === "Infortunato" || selected.stato === "NTL") && selected.inizioRehab
                   ? programmiAtleta.filter((p) => (
                       (p.infortunioId === "__corrente__" && p.data >= selected.inizioRehab) ||
                       (!p.infortunioId && p.data >= selected.inizioRehab && !concurrentSessIds.has(p.id))
@@ -2881,8 +2883,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                 return (
                   <div className="space-y-4 text-sm">
                     {/* Stat tiles */}
-                    <div className={`grid gap-3 ${selected.stato === "Infortunato" ? "grid-cols-2" : "grid-cols-1"}`}>
-                      {selected.stato === "Infortunato" && (
+                    <div className={`grid gap-3 ${(selected.stato === "Infortunato" || selected.stato === "NTL") ? "grid-cols-2" : "grid-cols-1"}`}>
+                      {(selected.stato === "Infortunato" || selected.stato === "NTL") && (
                         <div className="bg-orange-50 border border-orange-100 rounded-2xl p-3 text-center">
                           <p className="text-[10px] text-orange-400 font-semibold uppercase tracking-widest mb-1">Infortuni attivi</p>
                           <p className="text-3xl font-bold text-orange-600 leading-none">{1 + concorrenti.length}</p>
@@ -2907,7 +2909,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                     </button>
 
                     {/* Infortuni in corso */}
-                    {selected.stato === "Infortunato" && (selected.infortunio || selected.inizioRehab) && (
+                    {(selected.stato === "Infortunato" || selected.stato === "NTL") && (selected.infortunio || selected.inizioRehab) && (
                       <div>
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">In corso</p>
                         <div className="space-y-2">
@@ -3221,7 +3223,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       </div>
                     )}
 
-                    {storico.length === 0 && selected.stato === "Infortunato" && !selected.infortunio && !selected.inizioRehab && (
+                    {storico.length === 0 && (selected.stato === "Infortunato" || selected.stato === "NTL") && !selected.infortunio && !selected.inizioRehab && (
                       <div className="text-center py-10">
                         <Clock className="w-10 h-10 text-gray-200 mx-auto mb-2" />
                         <p className="text-gray-400 text-sm">Nessun dato disponibile</p>

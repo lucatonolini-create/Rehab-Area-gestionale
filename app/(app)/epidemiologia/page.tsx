@@ -370,7 +370,7 @@ export default function EpidemiologiaPage() {
 
     // All injuries: current active + archived
     const tuttiInfortuni = atleti.flatMap((a) => [
-      ...(a.stato === "Infortunato" && (a.infortunio || a.tipoInfortunio)
+      ...((a.stato === "Infortunato" || a.stato === "NTL") && (a.infortunio || a.tipoInfortunio)
         ? [{ tipo: a.tipoInfortunio, meccanismo: a.meccanismo, lato: a.lato, contatto: a.contatto, evento: a.evento, categoria: a.categoria, osiics: a.osiicsCodice }]
         : []),
       ...(a.storicoInfortuni ?? []).map((inf) => ({
@@ -382,7 +382,7 @@ export default function EpidemiologiaPage() {
     ]);
 
     const totaleInfortuni = tuttiInfortuni.length;
-    const atletiInfortunatiOra = atleti.filter((a) => a.stato === "Infortunato").length;
+    const atletiInfortunatiOra = atleti.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").length;
 
     const perTipo = distrib(tuttiInfortuni.map((i) => i.tipo));
     const perMeccanismo = distrib(tuttiInfortuni.map((i) => i.meccanismo));
