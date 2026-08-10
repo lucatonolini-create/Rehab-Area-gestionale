@@ -1145,10 +1145,19 @@ export default function AnalisiPage() {
       const d = new Date(stagionAnno, 6 + i, 1);
       const anno = d.getFullYear();
       const mese = d.getMonth();
-      const count = atleti.filter((a) => atletaAttivoInMese(a, anno, mese)).length;
-      return { label: `${MESI[mese]} ${anno !== stagionAnno ? anno : ""}`.trim(), count };
+      const all = atleti.filter((a) => atletaAttivoInMese(a, anno, mese));
+      const countTL = all.filter((a) => a.stato === "Infortunato").length;
+      const countNTL = all.filter((a) => a.stato === "NTL").length;
+      return {
+        label: `${MESI[mese]} ${anno !== stagionAnno ? anno : ""}`.trim(),
+        nomeMese: MESI[mese],
+        annoLabel: anno !== stagionAnno ? String(anno) : "",
+        count: all.length,
+        countTL,
+        countNTL,
+      };
     });
-  }, [atleti]);
+  }, [atleti, stagionAnno]);
 
   const maxTrend = Math.max(...trendMensile.map((t) => t.count), 1);
   const maxCat = Math.max(...perCategoria.map((x) => x.totale), 1);
@@ -1407,33 +1416,73 @@ export default function AnalisiPage() {
           {/* Trend mensile */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <h2 className="font-bold text-gray-900 mb-1">Atleti in riabilitazione – stagione {stagionAnno}/{stagionAnno + 1}</h2>
-            <p className="text-xs text-gray-400 mb-5">Numero di atleti attivi per ogni mese del periodo</p>
+            <p className="text-xs text-gray-400 mb-4">Numero di atleti attivi per ogni mese del periodo</p>
             {atleti.length === 0 ? (
               <p className="text-gray-400 text-sm text-center py-8">Nessun dato disponibile</p>
-            ) : (
-              <div className="overflow-x-auto -mx-2 px-2 pb-1">
-                <div className="flex items-end gap-1.5 pt-4" style={{ minWidth: "420px", height: "140px" }}>
-                  {trendMensile.map(({ label, count }, idx) => {
-                    const [nomeMese, annoLabel] = label.split(" ");
-                    const showAnno = !!annoLabel && (idx === 0 || !trendMensile[idx - 1].label.includes(annoLabel));
-                    const h = maxTrend > 0 ? Math.max((count / maxTrend) * 100, count > 0 ? 8 : 0) : 0;
-                    const isOggi = label.startsWith(MESI[oggi.getMonth()]) && !label.includes(String(oggi.getFullYear() - 1));
-                    return (
-                      <div key={label} className="flex-1 flex flex-col items-center gap-0.5" style={{ minWidth: "28px" }}>
-                        <span className="text-[10px] font-bold text-gray-600">{count > 0 ? count : ""}</span>
-                        <div className="w-full flex items-end justify-center" style={{ height: "72px" }}>
-                          <div className={`w-1/2 rounded-t transition-all duration-500 ${isOggi ? "bg-[#C8102E]" : "bg-gray-200"}`}
-                            style={{ height: `${h}%` }} />
-                        </div>
-                        <span className="text-[9px] text-gray-400 text-center leading-none font-medium">{nomeMese}</span>
-                        {showAnno && <span className="text-[8px] text-gray-300 text-center leading-none">{annoLabel}</span>}
-                        {!showAnno && <span className="text-[8px] leading-none">&nbsp;</span>}
-                      </div>
-                    );
-                  })}
+            ) : (() => {
+              const VW = 600, PAD_L = 24, PAD_R = 8, PAD_T = 20, PAD_B = 36;
+              const chartW = VW - PAD_L - PAD_R;
+              const chartH = 80;
+              const VH = PAD_T + chartH + PAD_B;
+              const xPos = (i: number) => PAD_L + (trendMensile.length > 1 ? (i / (trendMensile.length - 1)) * chartW : chartW / 2);
+              const yPos = (v: number) => PAD_T + chartH - (maxTrend > 0 ? (v / maxTrend) * chartH : 0);
+              const toPoints = (vals: number[]) => vals.map((v, i) => `${xPos(i)},${yPos(v)}`).join(" ");
+              const totalPts = trendMensile.map((t) => t.count);
+              const tlPts = trendMensile.map((t) => t.countTL);
+              const ntlPts = trendMensile.map((t) => t.countNTL);
+              const gridLines = maxTrend <= 4 ? Array.from({ length: maxTrend + 1 }, (_, i) => i)
+                : [0, Math.round(maxTrend / 2), maxTrend];
+              return (
+                <div>
+                  <div className="flex items-center gap-4 mb-3 text-[11px]">
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-5 h-0.5 bg-gray-400 rounded"/><span className="text-gray-500 font-medium">Totale</span></span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-5 h-0.5 bg-[#C8102E] rounded"/><span className="text-gray-500 font-medium">TL</span></span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-5 h-0.5 bg-amber-400 rounded"/><span className="text-gray-500 font-medium">NTL</span></span>
+                  </div>
+                  <div className="overflow-x-auto -mx-2 px-2">
+                    <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" style={{ minWidth: "380px", display: "block" }}>
+                      {/* grid lines */}
+                      {gridLines.map((v) => (
+                        <g key={v}>
+                          <line x1={PAD_L} y1={yPos(v)} x2={VW - PAD_R} y2={yPos(v)} stroke="#F3F4F6" strokeWidth="1" />
+                          <text x={PAD_L - 4} y={yPos(v) + 3.5} textAnchor="end" fontSize="8" fill="#9CA3AF">{v}</text>
+                        </g>
+                      ))}
+                      {/* x-axis tick marks */}
+                      {trendMensile.map((t, i) => (
+                        <line key={i} x1={xPos(i)} y1={PAD_T + chartH} x2={xPos(i)} y2={PAD_T + chartH + 4} stroke="#E5E7EB" strokeWidth="1" />
+                      ))}
+                      {/* total line */}
+                      <polyline points={toPoints(totalPts)} fill="none" stroke="#9CA3AF" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+                      {/* TL line */}
+                      <polyline points={toPoints(tlPts)} fill="none" stroke="#C8102E" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+                      {/* NTL line */}
+                      <polyline points={toPoints(ntlPts)} fill="none" stroke="#F59E0B" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+                      {/* dots + value labels on total line */}
+                      {trendMensile.map((t, i) => (
+                        <g key={i}>
+                          {t.count > 0 && (
+                            <text x={xPos(i)} y={yPos(t.count) - 5} textAnchor="middle" fontSize="8" fontWeight="600" fill="#6B7280">{t.count}</text>
+                          )}
+                          <circle cx={xPos(i)} cy={yPos(t.count)} r="2.5" fill="white" stroke="#9CA3AF" strokeWidth="1.5" />
+                          {t.countTL > 0 && <circle cx={xPos(i)} cy={yPos(t.countTL)} r="2" fill="white" stroke="#C8102E" strokeWidth="1.5" />}
+                          {t.countNTL > 0 && <circle cx={xPos(i)} cy={yPos(t.countNTL)} r="2" fill="white" stroke="#F59E0B" strokeWidth="1.5" />}
+                        </g>
+                      ))}
+                      {/* month labels */}
+                      {trendMensile.map((t, i) => (
+                        <g key={`lbl-${i}`}>
+                          <text x={xPos(i)} y={PAD_T + chartH + 14} textAnchor="middle" fontSize="8.5" fill="#9CA3AF" fontWeight="500">{t.nomeMese}</text>
+                          {t.annoLabel && (i === 0 || !trendMensile[i - 1].annoLabel) && (
+                            <text x={xPos(i)} y={PAD_T + chartH + 25} textAnchor="middle" fontSize="7.5" fill="#D1D5DB">{t.annoLabel}</text>
+                          )}
+                        </g>
+                      ))}
+                    </svg>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* Distribuzione mensile per categoria e tipologia */}
