@@ -1281,11 +1281,11 @@ export default function EserciziPage() {
                                 const isCMJInline  = t.nome === "CMJ – Counter Movement Jump" || t.nome === "CMJ braccia libere" || t.nome === "Squat Jump";
                                 const isBroadJumpInline = t.nome === "Broad Jump";
                                 const isQSLSInline = t.nome === "QSLS";
-                                const asim = isSLDropJump
-                                  ? calcolaAsimmetria(t.rsiSx ?? "", t.rsiDx ?? "")
+                                const asim = isQSLSInline ? null
+                                  : isSLDropJump ? calcolaAsimmetria(t.rsiSx ?? "", t.rsiDx ?? "")
                                   : calcolaAsimmetria(t.risultatoSx, t.risultatoDx);
-                                const sup = isSLDropJump
-                                  ? superioreTest(t.rsiSx ?? "", t.rsiDx ?? "")
+                                const sup = isQSLSInline ? null
+                                  : isSLDropJump ? superioreTest(t.rsiSx ?? "", t.rsiDx ?? "")
                                   : superioreTest(t.risultatoSx, t.risultatoDx);
                                 const prevTest = trovaPrecedenteTest(lista, prog.id, t.nome);
                                 const delta = isQSLSInline ? null : calcolaDelta(t, prevTest);
