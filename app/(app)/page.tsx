@@ -107,19 +107,21 @@ export default function Dashboard() {
       </div>
 
       {/* Stat cards cliccabili */}
-      <div className="grid gap-3 mb-8" style={{gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))"}}>
+      <div className="grid gap-4 mb-8" style={{gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))"}}>
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
             <Link key={stat.label} href={stat.href}
-              className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide leading-tight">{stat.label}</p>
-                <div className={`${stat.color} w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
-                  <Icon className="w-3 h-3 text-white" />
+              className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-[#C8102E]/30 transition-all group">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] text-gray-500 font-medium leading-tight">{stat.label}</p>
+                  <p className="text-4xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                </div>
+                <div className={`${stat.color} p-1.5 rounded-lg group-hover:scale-110 transition-transform flex-shrink-0`}>
+                  <Icon className="w-3.5 h-3.5 text-white" />
                 </div>
               </div>
-              <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
             </Link>
           );
         })}
