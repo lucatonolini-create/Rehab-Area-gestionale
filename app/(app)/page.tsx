@@ -118,8 +118,8 @@ export default function Dashboard() {
                   <p className="text-xs text-gray-500 font-medium">{stat.label}</p>
                   <p className="text-4xl font-bold text-gray-900 mt-1">{stat.value}</p>
                 </div>
-                <div className={`${stat.color} p-2.5 rounded-xl group-hover:scale-110 transition-transform`}>
-                  <Icon className="w-5 h-5 text-white" />
+                <div className={`${stat.color} p-1.5 rounded-lg group-hover:scale-110 transition-transform`}>
+                  <Icon className="w-3.5 h-3.5 text-white" />
                 </div>
               </div>
             </Link>
