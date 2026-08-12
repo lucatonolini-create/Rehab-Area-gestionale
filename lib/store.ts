@@ -46,6 +46,7 @@ export const OBIETTIVI_CAMPO = [
   "Mobilità",
   "Neuromuscolare",
   "Partita",
+  "Parziale Squadra",
   "Pliometria",
   "Rapidità",
   "Rondo",
