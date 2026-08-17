@@ -136,7 +136,7 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
     doc.setFillColor(247, 247, 247);
     doc.rect(0, 0, W, HDR, "F");
     doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(0, HDR, W, HDR);
-    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 22, 22);
+    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 15, 15);
     const tx = logoDataUrl ? 30 : M;
     doc.setTextColor(...red); doc.setFontSize(14); doc.setFont("helvetica", "bold");
     doc.text("U.S. Cremonese", tx, 15);
@@ -743,7 +743,7 @@ async function esportaPDFReportMensile(
   const addHeader = () => {
     doc.setFillColor(247, 247, 247); doc.rect(0, 0, W, HDR, "F");
     doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(0, HDR, W, HDR);
-    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 22, 22);
+    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 15, 15);
     const tx = logoDataUrl ? 30 : M;
     doc.setTextColor(...red); doc.setFontSize(14); doc.setFont("helvetica", "bold");
     doc.text("U.S. Cremonese", tx, 15);
