@@ -174,7 +174,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
   const addHeader = (subtitle?: string) => {
     doc.setFillColor(247, 247, 247); doc.rect(0, 0, W, HDR, "F");
     doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(0, HDR, W, HDR);
-    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 15, 15);
+    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 10, 10);
     const tx = logoDataUrl ? 30 : M;
     doc.setTextColor(...red); doc.setFontSize(14); doc.setFont("helvetica", "bold");
     doc.text("U.S. Cremonese", tx, 15);
