@@ -136,7 +136,7 @@ async function esportaPDFGiornaliero(data: string, atleti: Atleta[], tuttiProgra
     doc.setFillColor(255, 255, 255); doc.rect(0, 0, W, HDR, "F");
     doc.setFillColor(...red); doc.rect(0, 0, 3, HDR, "F");
     doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.3); doc.line(0, HDR, W, HDR);
-    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 7, 4, 15, 15);
+    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 7, 4, 10, 10);
     const tx = logoDataUrl ? 33 : M;
     doc.setTextColor(...red); doc.setFontSize(13); doc.setFont("helvetica", "bold");
     doc.text("U.S. Cremonese", tx, 14);
@@ -420,7 +420,7 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
   const addHeader = () => {
     doc.setFillColor(247, 247, 247); doc.rect(0, 0, W, HDR, "F");
     doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(0, HDR, W, HDR);
-    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 15, 15);
+    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 10, 10);
     const tx = logoDataUrl ? 30 : M;
     doc.setTextColor(...red); doc.setFontSize(14); doc.setFont("helvetica", "bold");
     doc.text("U.S. Cremonese", tx, 15);
