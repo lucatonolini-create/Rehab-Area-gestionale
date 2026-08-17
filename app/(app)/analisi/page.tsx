@@ -263,8 +263,8 @@ async function esportaPDFPanoramica(params: {
   const addHeader = () => {
     doc.setFillColor(247, 247, 247); doc.rect(0, 0, W, HDR, "F");
     doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(0, HDR, W, HDR);
-    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 10, 10);
-    const tx = logoDataUrl ? 30 : M;
+    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 10, 10, 10);
+    const tx = logoDataUrl ? 18 : M;
     doc.setTextColor(...red); doc.setFontSize(14); doc.setFont("helvetica", "bold");
     doc.text("U.S. Cremonese", tx, 15);
     doc.setFontSize(9); doc.setFont("helvetica", "bolditalic"); doc.setTextColor(...gray);
@@ -665,8 +665,8 @@ async function esportaPDFReport(
   const addHeader = () => {
     doc.setFillColor(247, 247, 247); doc.rect(0, 0, W, HDR, "F");
     doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(0, HDR, W, HDR);
-    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 4, 10, 10);
-    const tx = logoDataUrl ? 30 : M;
+    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 10, 10, 10);
+    const tx = logoDataUrl ? 18 : M;
     doc.setTextColor(...red); doc.setFontSize(14); doc.setFont("helvetica", "bold");
     doc.text("U.S. Cremonese", tx, 15);
     doc.setFontSize(9); doc.setFont("helvetica", "bolditalic"); doc.setTextColor(...gray);
