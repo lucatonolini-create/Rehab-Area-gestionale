@@ -616,12 +616,12 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     };
     autoTable(doc, {
       startY: y,
-      head: [["Data", "Tipo", "Esito", "Descrizione / Note"]],
+      head: [["Data", "Tipo", "Esito", "Note"]],
       body: referti.map((r) => [
         new Date(r.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" }),
         r.tipo,
         r.esito,
-        [r.descrizione, r.note].filter(Boolean).join("\n") || "—",
+        r.note ?? "—",
       ]),
       headStyles: { fillColor: [55, 65, 81] as [number,number,number], textColor: 255, fontSize: 7.5, halign: "center", valign: "middle" },
       bodyStyles: { fontSize: 8, cellPadding: 2.5, overflow: "linebreak", halign: "left", valign: "middle" },
