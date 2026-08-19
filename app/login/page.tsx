@@ -313,6 +313,9 @@ export default function LoginPage() {
         <p className="text-center text-xs text-gray-400 mt-6">
           Accesso riservato allo staff medico
         </p>
+        <p className="text-center text-[9px] text-gray-300 mt-2 break-all">
+          db: {process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(8, 35) ?? "non impostato"}
+        </p>
       </div>
     </div>
   );
