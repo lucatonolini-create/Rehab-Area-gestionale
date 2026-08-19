@@ -48,6 +48,7 @@ export default function CartellaClinaca({ refertiClinici = [], onVaiADati }: Pro
                   {new Date(r.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })}
                 </span>
               </div>
+              {r.descrizione && <p className="text-xs text-gray-700 mt-1 leading-relaxed whitespace-pre-wrap">{r.descrizione}</p>}
               {r.note && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{r.note}</p>}
             </div>
           </div>
