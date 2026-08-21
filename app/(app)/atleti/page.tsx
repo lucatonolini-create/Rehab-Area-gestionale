@@ -1041,7 +1041,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
 
     // RTS evaluations for this injury
     if (injQRTS.length > 0) {
-      checkPage(20, sub);
+      doc.addPage(); addHeader(sub); y = HDR + 8;
       y = secTitle("Valutazione psicologica – TSK / AFAQ", y);
       autoTable(doc, {
         startY: y,
@@ -1063,7 +1063,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
 
     // Programs for this injury
     if (injProgs.length > 0) {
-      checkPage(20, sub);
+      doc.addPage(); addHeader(sub); y = HDR + 8;
       y = secTitle(`Sessioni di lavoro — ${injProgs.filter(isSessionePDF).length} sessioni`, y);
       renderWeeklyTable(injProgs, sub);
 
@@ -1105,7 +1105,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           }
         }
         if (testsByName.size > 0) {
-          checkPage(20, sub);
+          doc.addPage(); addHeader(sub); y = HDR + 8;
           y = secTitle("Test", y);
 
           type TEntry = { dateLabel: string; dateFull: string; sessione: string; test: TestFisiometrico; val: string };
@@ -1291,7 +1291,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         s.acc !== null || s.dec !== null || s.sprint !== null || s.potenza !== null
       );
       if (hasCarico) {
-        checkPage(20, sub);
+        doc.addPage(); addHeader(sub); y = HDR + 8;
         y = secTitle("Analisi Carico e Performance", y);
 
         type MetricCol = { label: string; unit: string; dec: number; w: number; get: (s: CaricoSession) => number | null };
