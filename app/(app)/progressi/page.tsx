@@ -616,10 +616,21 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
             } else { trendRow.push("—"); }
           }
         }
-        const avgRowIdx = dataRows.length;
-        const trendRowIdx = hasTrend ? dataRows.length + 1 : -1;
-        const body: string[][] = [...dataRows, avgRow, ...(hasTrend ? [trendRow] : [])];
-        return { head, body, color, asimCol, avgRowIdx, trendRowIdx };
+        const noteRowIndices = new Set<number>();
+        const body: any[] = [];
+        dataRows.forEach((row, i) => {
+          body.push(row);
+          const noteText = entries[i]?.test.note?.trim();
+          if (noteText) {
+            noteRowIndices.add(body.length);
+            body.push([{ content: noteText, colSpan: head.length }]);
+          }
+        });
+        const avgRowIdx = body.length;
+        const trendRowIdx = hasTrend ? body.length + 1 : -1;
+        body.push(avgRow);
+        if (hasTrend) body.push(trendRow);
+        return { head, body, color, asimCol, avgRowIdx, trendRowIdx, noteRowIndices };
       };
 
       const testEntries = Object.entries(testsByName);
@@ -650,7 +661,10 @@ async function esportaPDF(atleta: Atleta, programmi: Programma[]) {
             didParseCell: (data: any) => {
               if (data.section !== "body") return;
               const ri = data.row.index;
-              if (ri === td.avgRowIdx) {
+              if (td.noteRowIndices.has(ri)) {
+                data.cell.styles.fillColor = [255, 255, 255]; data.cell.styles.fontStyle = "italic";
+                data.cell.styles.textColor = [130, 130, 130]; data.cell.styles.fontSize = 5.5;
+              } else if (ri === td.avgRowIdx) {
                 data.cell.styles.fillColor = [229, 231, 235]; data.cell.styles.fontStyle = "bold";
               } else if (ri === td.trendRowIdx) {
                 data.cell.styles.fillColor = [255, 255, 255]; data.cell.styles.fontStyle = "bold";
