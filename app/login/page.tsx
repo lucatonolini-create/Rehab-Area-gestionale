@@ -83,7 +83,7 @@ export default function LoginPage() {
       } else if (error.message.toLowerCase().includes("email not confirmed")) {
         setError("Email non confermata. Controlla la tua casella di posta e clicca il link di verifica.");
       } else {
-        setError(`Email o password non corretti. ${MAX_ATTEMPTS - attempts} tentativ${MAX_ATTEMPTS - attempts === 1 ? "o" : "i"} rimanent${MAX_ATTEMPTS - attempts === 1 ? "e" : "i"}.`);
+        setError(`Errore: ${error.message} [${error.status ?? "no-status"}] — tentativi: ${MAX_ATTEMPTS - attempts}/${MAX_ATTEMPTS}`);
       }
       setLoading(false);
       return;
