@@ -23,7 +23,16 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const result = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000)),
+    ]);
+    user = (result as Awaited<ReturnType<typeof supabase.auth.getUser>>).data.user;
+  } catch {
+    user = null;
+  }
 
   const isPublicPage = request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/intake") ||
