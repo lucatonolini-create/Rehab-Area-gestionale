@@ -25,11 +25,8 @@ export async function middleware(request: NextRequest) {
 
   let user = null;
   try {
-    const result = await Promise.race([
-      supabase.auth.getUser(),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000)),
-    ]);
-    user = (result as Awaited<ReturnType<typeof supabase.auth.getUser>>).data.user;
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
   } catch {
     user = null;
   }
