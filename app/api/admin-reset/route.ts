@@ -31,9 +31,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "list failed", details: listData }, { status: 500 });
   }
 
-  const user = listData.users?.[0];
+  const user = listData.users?.find((u: { email?: string }) => u.email?.toLowerCase() === email.toLowerCase());
   if (!user) {
-    return NextResponse.json({ error: "user not found", data: listData }, { status: 404 });
+    return NextResponse.json({ error: "user not found", emails: listData.users?.map((u: { email?: string }) => u.email) }, { status: 404 });
   }
 
   // Update password via admin API
