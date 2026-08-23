@@ -36,6 +36,12 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/auth");
 
   if (!user && !isPublicPage) {
+    const code = request.nextUrl.searchParams.get("code");
+    if (code) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/reset";
+      return NextResponse.redirect(url);
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
