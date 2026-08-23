@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -34,6 +34,10 @@ function checkBlock(): { blocked: boolean; secsLeft: number } {
   return { blocked: true, secsLeft: Math.ceil(ms / 1000) };
 }
 
+function clearBlock() {
+  try { localStorage.removeItem(RL_KEY); } catch { /* ignore */ }
+}
+
 type Tab = "login" | "signup" | "reset";
 
 export default function LoginPage() {
@@ -45,6 +49,18 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [blockSecs, setBlockSecs] = useState(0);
+
+  useEffect(() => {
+    const tick = () => {
+      const { blocked, secsLeft } = checkBlock();
+      setBlockSecs(blocked ? secsLeft : 0);
+      if (!blocked) setError(prev => prev?.startsWith("Troppi") ? null : prev);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +68,7 @@ export default function LoginPage() {
 
     const { blocked, secsLeft } = checkBlock();
     if (blocked) {
-      setError(`Troppi tentativi falliti. Riprova tra ${secsLeft} secondi.`);
+      setBlockSecs(secsLeft);
       return;
     }
 
@@ -63,7 +79,7 @@ export default function LoginPage() {
       const attempts = recordFailure();
       const { blocked: nowBlocked, secsLeft: secs } = checkBlock();
       if (nowBlocked) {
-        setError(`Troppi tentativi falliti. Account bloccato per ${secs} secondi.`);
+        setBlockSecs(secs);
       } else if (error.message.toLowerCase().includes("email not confirmed")) {
         setError("Email non confermata. Controlla la tua casella di posta e clicca il link di verifica.");
       } else {
@@ -222,7 +238,13 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                {error && (
+                {blockSecs > 0 && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 text-sm text-orange-700">
+                    Troppi tentativi falliti. Riprova tra <strong>{blockSecs}</strong> secondi.
+                  </div>
+                )}
+
+                {error && blockSecs === 0 && (
                   <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
                     {error}
                   </div>
@@ -236,12 +258,14 @@ export default function LoginPage() {
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || blockSecs > 0}
                   className="w-full bg-[#C8102E] text-white py-3 rounded-xl text-sm font-semibold hover:bg-red-800 disabled:opacity-50 transition-colors"
                 >
-                  {loading
-                    ? (tab === "login" ? "Accesso in corso…" : "Registrazione in corso…")
-                    : (tab === "login" ? "Accedi" : "Crea account")}
+                  {blockSecs > 0
+                    ? `Attendi ${blockSecs}s…`
+                    : loading
+                      ? (tab === "login" ? "Accesso in corso…" : "Registrazione in corso…")
+                      : (tab === "login" ? "Accedi" : "Crea account")}
                 </button>
 
                 {tab === "login" && (
@@ -312,9 +336,6 @@ export default function LoginPage() {
 
         <p className="text-center text-xs text-gray-400 mt-6">
           Accesso riservato allo staff medico
-        </p>
-        <p className="text-center text-[9px] text-gray-300 mt-2 break-all">
-          db: {process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(8, 35) ?? "non impostato"}
         </p>
       </div>
     </div>
