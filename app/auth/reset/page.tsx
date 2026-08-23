@@ -44,7 +44,14 @@ function ResetPasswordContent() {
         }
       });
     } else {
-      setError("Link non valido. Richiedi un nuovo reset dalla pagina di accesso.");
+      // Nessun codice nell'URL — controlla se c'è già una sessione attiva
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setReady(true);
+        } else {
+          setError("Link non valido. Richiedi un nuovo reset dalla pagina di accesso.");
+        }
+      });
     }
   }, [searchParams]);
 
