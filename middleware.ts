@@ -33,7 +33,8 @@ export async function middleware(request: NextRequest) {
 
   const isPublicPage = request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/intake") ||
-    request.nextUrl.pathname.startsWith("/auth");
+    request.nextUrl.pathname.startsWith("/auth") ||
+    request.nextUrl.pathname.startsWith("/admin-reset");
 
   if (!user && !isPublicPage) {
     const code = request.nextUrl.searchParams.get("code");
