@@ -29,6 +29,7 @@ export const OBIETTIVI_PALESTRA = [
   "Pliometria intensiva",
   "Potenza",
   "Test",
+  "Training del passo",
   "Upper body",
 ] as const;
 
