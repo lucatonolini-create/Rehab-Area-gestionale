@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Save, Plus, Trash2, Check, RefreshCw, AlertCircle, Bell, BellOff, Send, Download, X } from "lucide-react";
-import { loadImpostazioni, saveImpostazioni, pushAllLocalToSupabase, loadAtleti, loadProgrammi, type Impostazioni, type GiocatoreRosa } from "@/lib/store";
+import { loadImpostazioni, saveImpostazioni, pushAllLocalToSupabase, loadAtleti, upsertAtleta, loadProgrammi, type Impostazioni, type GiocatoreRosa } from "@/lib/store";
 import { esportaExcel } from "@/lib/exportExcel";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
@@ -393,9 +393,11 @@ const RUOLI_ROSA = ["Attaccante", "Centrocampista", "Difensore", "Portiere"];
 function RosaSection({
   rosa,
   onChange,
+  onRenameAtleta,
 }: {
   rosa: GiocatoreRosa[];
   onChange: (r: GiocatoreRosa[]) => Promise<void> | void;
+  onRenameAtleta?: (oldNome: string, newNome: string) => Promise<void>;
 }) {
   const vuotoForm: GiocatoreRosa = { nome: "", categoria: "", ruolo: "" };
   const [selectedNome, setSelectedNome] = useState("");
@@ -422,6 +424,9 @@ function RosaSection({
     }
     try {
       await onChange(nuovaRosa);
+      if (selectedNome && nome !== selectedNome && onRenameAtleta) {
+        await onRenameAtleta(selectedNome, nome);
+      }
       setStato("ok");
     } catch {
       setStato("error");
@@ -627,6 +632,16 @@ export default function ImpostazioniPage() {
               const nuovoForm = { ...formRef.current, rosa: r };
               setForm(nuovoForm);
               await saveImpostazioni(nuovoForm);
+            }}
+            onRenameAtleta={async (oldNome, newNome) => {
+              const atleti = await loadAtleti();
+              const match = atleti.find(
+                (a) => (a.nome ?? "").toLowerCase() === oldNome.toLowerCase() ||
+                        (a.nomeCompleto ?? "").toLowerCase() === oldNome.toLowerCase()
+              );
+              if (match) {
+                await upsertAtleta({ ...match, nome: newNome, nomeCompleto: undefined });
+              }
             }}
           />
         </div>
