@@ -632,6 +632,19 @@ export default function ImpostazioniPage() {
               const nuovoForm = { ...formRef.current, rosa: r };
               setForm(nuovoForm);
               await saveImpostazioni(nuovoForm);
+              // Riconcilia nomi atleti con la rosa (gestisce anche modifiche pre-fix)
+              try {
+                const atletiCorrente = await loadAtleti();
+                for (const g of r) {
+                  const match = atletiCorrente.find(
+                    (a) => (a.nome ?? "").toLowerCase() === g.nome.toLowerCase() ||
+                            (a.nomeCompleto ?? "").toLowerCase() === g.nome.toLowerCase()
+                  );
+                  if (match && (match.nome !== g.nome || match.nomeCompleto)) {
+                    await upsertAtleta({ ...match, nome: g.nome, nomeCompleto: undefined });
+                  }
+                }
+              } catch {}
             }}
             onRenameAtleta={async (oldNome, newNome) => {
               const atleti = await loadAtleti();
