@@ -878,8 +878,9 @@ async function esportaPDFReportMensile(
       doc.text(title, M, sy, { align: "left" }); sy += 2;
       doc.setFillColor(248, 248, 248); doc.setDrawColor(220, 220, 220); doc.setLineWidth(0.3);
       doc.rect(M, sy, cWr, cHr, "FD");
-      const tickStep = Math.max(1, Math.ceil(maxRVal / 4));
-      const chartMax = tickStep * Math.ceil(maxRVal / tickStep);
+      const localMax = Math.max(...trendR.map((t) => keys.reduce((s, k) => s + getC(t, k), 0)), 1);
+      const tickStep = Math.max(1, Math.ceil(localMax / 4));
+      const chartMax = tickStep * Math.ceil(localMax / tickStep);
       for (let v = tickStep; v <= chartMax; v += tickStep) {
         const ly = sy + cHr - (v / chartMax) * cHr;
         doc.setDrawColor(220, 220, 220); doc.setLineWidth(0.2); doc.line(M, ly, M + cWr, ly);
