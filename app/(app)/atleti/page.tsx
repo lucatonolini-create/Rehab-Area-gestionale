@@ -654,7 +654,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     });
   })();
   // Giorni persi = numero di sessioni inserite per quell'infortunio (non giorni di calendario)
-  const isSessionePDF = (p: Programma) => !p.riposo && !p.assente && !p.squadra;
+  const isSessionePDF = (p: Programma) => !p.riposo && !p.squadra;
   // Controlla se le parole del nome sessione compaiono nella diagnosi/tipo dell'infortunio
   const nomeMatchInj = (nome: string, diagnosi: string, tipo?: string) => {
     const words = (nome ?? "").toLowerCase().split(/\s+/).filter(w => w.length >= 2);
@@ -2857,7 +2857,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                 });
                 const concorrenti = storico.filter((inf) => inf.attivo === true);
                 const precedenti = storico.filter((inf) => !inf.attivo);
-                const isSessione = (p: Programma) => !p.riposo && !p.assente && !p.squadra;
+                const isSessione = (p: Programma) => !p.riposo && !p.squadra;
                 const matchInf = (p: Programma, inf: InfortunioStorico) => {
                   if (p.infortunioId && p.infortunioId !== "__corrente__") return p.infortunioId === inf.id;
                   if (p.infortunioId === "__corrente__") {
