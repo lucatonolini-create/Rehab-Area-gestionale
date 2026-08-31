@@ -1007,7 +1007,7 @@ async function esportaPDFReportMensile(
 }
 
 type PageTab = "progressi" | "report";
-type TipoReport = "mensile" | "trimestrale" | "semestrale" | "annuale" | "stagione";
+type TipoReport = "mensile" | "bimestrale" | "trimestrale" | "semestrale" | "annuale" | "stagione";
 
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 
@@ -1142,7 +1142,7 @@ export default function ProgressiPage() {
     const first = mesiPeriodo[0];
     const last = mesiPeriodo[mesiPeriodo.length - 1];
     const annoLbl = first.anno === last.anno ? `${first.anno}` : `${first.anno}–${last.anno}`;
-    const tipoLbl = tipoReport === "trimestrale" ? "Trimestre" : tipoReport === "semestrale" ? "Semestre" : tipoReport === "annuale" ? "Anno" : "Stagione";
+    const tipoLbl = tipoReport === "bimestrale" ? "Bimestre" : tipoReport === "trimestrale" ? "Trimestre" : tipoReport === "semestrale" ? "Semestre" : tipoReport === "annuale" ? "Anno" : "Stagione";
     return `${tipoLbl} ${MESI[first.mese]}–${MESI[last.mese]} ${annoLbl}`;
   })();
 
@@ -1484,12 +1484,12 @@ export default function ProgressiPage() {
             </div>
             {/* Tipo report */}
             <div className="flex flex-wrap gap-2 mb-4">
-              {(["mensile", "trimestrale", "semestrale", "annuale", "stagione"] as TipoReport[]).map((t) => (
+              {(["mensile", "bimestrale", "trimestrale", "semestrale", "annuale", "stagione"] as TipoReport[]).map((t) => (
                 <button key={t} onClick={() => setTipoReport(t)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
                     tipoReport === t ? "bg-[#C8102E] text-white border-[#C8102E]" : "border-gray-200 text-gray-600 hover:bg-gray-50"
                   }`}>
-                  {t === "mensile" ? "Mensile" : t === "trimestrale" ? "Trimestrale" : t === "semestrale" ? "Semestrale" : t === "annuale" ? "Annuale" : "Fine stagione"}
+                  {t === "mensile" ? "Mensile" : t === "bimestrale" ? "Bimestrale" : t === "trimestrale" ? "Trimestrale" : t === "semestrale" ? "Semestrale" : t === "annuale" ? "Annuale" : "Fine stagione"}
                 </button>
               ))}
             </div>
