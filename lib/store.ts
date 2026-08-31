@@ -1224,24 +1224,31 @@ export function formToDettaglio(id: string, atletaId: string, f: DettaglioSituaz
 export async function loadDettaglioSituazionale(atletaId: string): Promise<DettaglioSituazionaleData | null> {
   if (!isOnline()) return null;
   try {
-    const { data, error } = await supabase
+    const { data: rows, error } = await supabase
       .from("dettaglio_situazionale")
       .select("*")
       .eq("atleta_id", atletaId)
-      .maybeSingle();
-    if (error || !data) return null;
-    return rowToDettaglio(data as Record<string, unknown>);
+      .limit(1);
+    if (error || !rows?.length) return null;
+    return rowToDettaglio(rows[0] as Record<string, unknown>);
   } catch { return null; }
 }
 
 export async function upsertDettaglioSituazionale(d: DettaglioSituazionaleData): Promise<void> {
   if (!isOnline()) return;
   try {
-    const { data: existing } = await supabase
+    const { data: rows } = await supabase
       .from("dettaglio_situazionale")
       .select("id")
       .eq("atleta_id", d.atletaId)
-      .maybeSingle();
+      .order("id")
+      .limit(10);
+    const existing = rows?.[0] ?? null;
+    // Rimuovi eventuali duplicati (bug legacy)
+    if (rows && rows.length > 1) {
+      const idsToDelete = rows.slice(1).map((r: { id: string }) => r.id);
+      await supabase.from("dettaglio_situazionale").delete().in("id", idsToDelete);
+    }
     const toSave = existing ? { ...d, id: existing.id } : d;
     await supabase.from("dettaglio_situazionale").upsert(dettaglioToRow(toSave));
   } catch {}

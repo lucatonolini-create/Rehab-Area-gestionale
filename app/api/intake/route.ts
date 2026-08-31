@@ -78,11 +78,17 @@ async function salvaDettaglio(supabase: ReturnType<typeof createClient<any>>, at
     det.modalita_insorgenza || det.attivita_fisica || det.tipo_seduta || det.azione_con_palla
   );
   if (!hasData) return;
-  const { data: existing } = await supabase
+  const { data: existingRows } = await supabase
     .from("dettaglio_situazionale")
     .select("id")
     .eq("atleta_id", atletaId)
-    .maybeSingle();
+    .order("id")
+    .limit(10);
+  const existing = existingRows?.[0] ?? null;
+  // Rimuovi duplicati legacy
+  if (existingRows && existingRows.length > 1) {
+    await supabase.from("dettaglio_situazionale").delete().in("id", existingRows.slice(1).map((r) => r.id));
+  }
   const detRow = {
     id: (existing?.id as string | null) ?? crypto.randomUUID(),
     atleta_id: atletaId,
