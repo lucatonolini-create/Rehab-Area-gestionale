@@ -8,7 +8,7 @@ import {
   CATEGORIE, TIPI_INFORTUNIO, EVENTI_INFORTUNIO, MECCANISMI_INFORTUNIO, CONTATTI_INFORTUNIO,
   LATI_INFORTUNIO, POSIZIONI_INFORTUNIO, TIPI_REFERTO, ESITI_REFERTO,
   calcolaProgressoAuto,
-  loadDettaglioSituazionale, upsertDettaglioSituazionale, formToDettaglio,
+  loadDettaglioSituazionale, upsertDettaglioSituazionale, formToDettaglio, dettaglioToForm,
   patchRefertiClinici,
   type Atleta, type Stato, type InfortunioStorico, type Programma, type QuestionarioKinesiofobia,
   type TestFisiometrico, type RefertoClinico, type TipoReferto, type EsitoReferto,
@@ -1585,6 +1585,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [editDatiForm, setEditDatiForm] = useState<Partial<InfortunioStorico>>({});
   const editDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
   const nuovoDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
+  const inlineDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
+  const [editDettaglioAperto, setEditDettaglioAperto] = useState(false);
   const [mostraFondi, setMostraFondi] = useState(false);
   const [mostraFormReferto, setMostraFormReferto] = useState(false);
   const [nuovoReferto, setNuovoReferto] = useState({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", descrizione: "", note: "" });
@@ -1605,6 +1607,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   }, [atleti]);
 
   useEffect(() => {
+    setEditDettaglioAperto(false);
     if (!selected || (selected.stato !== "Infortunato" && selected.stato !== "NTL")) { setDettaglioSituazionale(null); return; }
     loadDettaglioSituazionale(selected.id).then(setDettaglioSituazionale);
   }, [selected?.id]);
@@ -2312,26 +2315,90 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                 {/* Dettaglio situazionale FIICCS */}
                 {(selected.stato === "Infortunato" || selected.stato === "NTL") && (
                   <div className="pt-1 border-t border-gray-100">
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Dettaglio situazionale</p>
-                    {dettaglioSituazionale ? (
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Dettaglio situazionale</p>
+                      <button
+                        onClick={() => setEditDettaglioAperto((v) => !v)}
+                        className="text-xs font-semibold text-[#C8102E] hover:underline flex items-center gap-0.5"
+                      >
+                        <Pencil className="w-3 h-3" />
+                        {dettaglioSituazionale ? "Modifica" : "Aggiungi"}
+                      </button>
+                    </div>
+
+                    {editDettaglioAperto && (
+                      <div className="mb-3 space-y-2">
+                        <DettaglioSituazionale
+                          ref={inlineDettaglioRef}
+                          contatto={selected.contatto}
+                          initialValues={dettaglioSituazionale ? dettaglioToForm(dettaglioSituazionale) : undefined}
+                        />
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={async () => {
+                              if (!selected) return;
+                              const vals = inlineDettaglioRef.current?.getValues();
+                              if (vals) {
+                                const det = formToDettaglio(dettaglioSituazionale?.id ?? uid(), selected.id, vals);
+                                await upsertDettaglioSituazionale(det);
+                                setDettaglioSituazionale(det);
+                              }
+                              setEditDettaglioAperto(false);
+                            }}
+                            className="flex-1 bg-[#C8102E] text-white text-xs font-semibold py-2 rounded-xl hover:bg-red-800"
+                          >
+                            Salva dettaglio
+                          </button>
+                          <button
+                            onClick={() => setEditDettaglioAperto(false)}
+                            className="px-4 text-xs font-semibold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50"
+                          >
+                            Annulla
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {!editDettaglioAperto && dettaglioSituazionale && (
                       <div className="space-y-2">
                         {[
-                          dettaglioSituazionale.fonteInformazione?.length && ["Fonte", dettaglioSituazionale.fonteInformazione.join(", ")],
+                          dettaglioSituazionale.fonteInformazione?.length && ["Fonte", dettaglioSituazionale.fonteInformazione.join(", ") + (dettaglioSituazionale.fonteInformazioneAltro ? ` — ${dettaglioSituazionale.fonteInformazioneAltro}` : "")],
                           dettaglioSituazionale.giorniReferto != null && ["Giorni a referto", String(dettaglioSituazionale.giorniReferto)],
                           dettaglioSituazionale.modalitaInsorgenza && ["Insorgenza", dettaglioSituazionale.modalitaInsorgenza + (dettaglioSituazionale.modalitaInsorgenzaAltro ? ` — ${dettaglioSituazionale.modalitaInsorgenzaAltro}` : "")],
                           dettaglioSituazionale.attivitaFisica && ["Attività fisica", dettaglioSituazionale.attivitaFisica],
                           dettaglioSituazionale.tipoCorsa && ["Tipo corsa", dettaglioSituazionale.tipoCorsa],
                           dettaglioSituazionale.corsaGradi && ["Gradi cambio dir.", dettaglioSituazionale.corsaGradi],
+                          dettaglioSituazionale.corsaGambaCoinvolta && ["Gamba coinvolta", dettaglioSituazionale.corsaGambaCoinvolta],
                           dettaglioSituazionale.saltoFase && ["Fase salto", dettaglioSituazionale.saltoFase],
+                          dettaglioSituazionale.saltoAtterraggioDove && ["Atterraggio dove", dettaglioSituazionale.saltoAtterraggioDove],
+                          dettaglioSituazionale.saltoGambaAtterraggio && ["Gamba atterraggio", dettaglioSituazionale.saltoGambaAtterraggio],
+                          dettaglioSituazionale.cadutaDettagli && ["Caduta", dettaglioSituazionale.cadutaDettagli],
                           dettaglioSituazionale.contattoDettaglio && ["Tipo contatto", dettaglioSituazionale.contattoDettaglio],
+                          dettaglioSituazionale.situazioneDuello && ["Duello", dettaglioSituazionale.situazioneDuello],
                           dettaglioSituazionale.direzioneContrasto && ["Direzione contrasto", dettaglioSituazionale.direzioneContrasto],
-                          dettaglioSituazionale.attivitaConPalla && ["Azione con palla", dettaglioSituazionale.attivitaConPalla],
+                          dettaglioSituazionale.collisioneCon && ["Collisione con", dettaglioSituazionale.collisioneCon],
+                          dettaglioSituazionale.duelloAereo != null && ["Duello aereo", dettaglioSituazionale.duelloAereo ? "Sì" : "No"],
+                          dettaglioSituazionale.azioneConPalla && ["Azione con palla", "Sì"],
+                          dettaglioSituazionale.situazioneGiocoPalla && ["Situazione gioco", dettaglioSituazionale.situazioneGiocoPalla],
+                          dettaglioSituazionale.attivitaConPalla && ["Attività con palla", dettaglioSituazionale.attivitaConPalla],
+                          dettaglioSituazionale.calcioAzione && ["Azione calcio", dettaglioSituazionale.calcioAzione],
+                          dettaglioSituazionale.calcioIntensita && ["Intensità calcio", dettaglioSituazionale.calcioIntensita],
                           dettaglioSituazionale.calcioTipo && ["Tipo calcio", dettaglioSituazionale.calcioTipo],
+                          dettaglioSituazionale.calcioFase && ["Fase calcio", dettaglioSituazionale.calcioFase],
+                          dettaglioSituazionale.dribblingTipo && ["Dribbling", dettaglioSituazionale.dribblingTipo],
+                          dettaglioSituazionale.pallaAltezza && ["Altezza palla", dettaglioSituazionale.pallaAltezza],
+                          dettaglioSituazionale.controlloPallaCon && ["Controllo con", dettaglioSituazionale.controlloPallaCon],
+                          dettaglioSituazionale.gambaInfortunataPalla && ["Gamba infort. a contatto", dettaglioSituazionale.gambaInfortunataPalla],
                           dettaglioSituazionale.tipoSeduta && ["Tipo seduta", dettaglioSituazionale.tipoSeduta + (dettaglioSituazionale.tipoEsercitazione ? ` — ${dettaglioSituazionale.tipoEsercitazione}` : "")],
+                          dettaglioSituazionale.partitaSede && ["Sede partita", dettaglioSituazionale.partitaSede],
                           dettaglioSituazionale.partitaCompetizione && ["Competizione", dettaglioSituazionale.partitaCompetizione],
+                          dettaglioSituazionale.partitaPunteggio && ["Punteggio", dettaglioSituazionale.partitaPunteggio],
                           dettaglioSituazionale.faseGioco && ["Fase di gioco", dettaglioSituazionale.faseGioco],
-                          dettaglioSituazionale.minutoInfortunio != null && ["Minuto", `${dettaglioSituazionale.minutoInfortunio}'`],
+                          dettaglioSituazionale.sottoFaseGioco && ["Sotto-fase", dettaglioSituazionale.sottoFaseGioco],
                           dettaglioSituazionale.terrenoGioco && ["Terreno", dettaglioSituazionale.terrenoGioco],
+                          dettaglioSituazionale.decisioneArbitrale && ["Decisione arbitrale", dettaglioSituazionale.decisioneArbitrale],
+                          dettaglioSituazionale.minutoInfortunio != null && ["Minuto infortunio", `${dettaglioSituazionale.minutoInfortunio}'`],
+                          dettaglioSituazionale.minutiGiocatiPrima != null && ["Minuti giocati prima", `${dettaglioSituazionale.minutiGiocatiPrima}'`],
                         ].filter((item): item is [string, string] => Array.isArray(item)).map(([label, value]) => (
                           <div key={label as string} className="bg-blue-50 rounded-xl p-3">
                             <p className="text-xs text-blue-400">{label as string}</p>
@@ -2339,7 +2406,9 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                           </div>
                         ))}
                       </div>
-                    ) : (
+                    )}
+
+                    {!editDettaglioAperto && !dettaglioSituazionale && (
                       <p className="text-xs text-gray-400 italic py-2">Nessun dettaglio situazionale inserito</p>
                     )}
                   </div>

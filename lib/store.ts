@@ -1221,6 +1221,52 @@ export function formToDettaglio(id: string, atletaId: string, f: DettaglioSituaz
   };
 }
 
+export function dettaglioToForm(d: DettaglioSituazionaleData): Partial<DettaglioSituazionaleForm> {
+  const s = (v: string | undefined) => v ?? "";
+  return {
+    fonte_informazione: d.fonteInformazione ?? [],
+    fonte_informazione_altro: s(d.fonteInformazioneAltro),
+    giorni_referto: d.giorniReferto != null ? String(d.giorniReferto) : "",
+    modalita_insorgenza: s(d.modalitaInsorgenza),
+    modalita_insorgenza_altro: s(d.modalitaInsorgenzaAltro),
+    contatto_dettaglio: s(d.contattoDettaglio),
+    situazione_duello: s(d.situazioneDuello),
+    direzione_contrasto: s(d.direzioneContrasto),
+    collisione_con: s(d.collisioneCon),
+    duello_aereo: d.duelloAereo === true ? "si" : d.duelloAereo === false ? "no" : "",
+    attivita_fisica: s(d.attivitaFisica),
+    tipo_corsa: s(d.tipoCorsa),
+    corsa_gradi: s(d.corsaGradi),
+    corsa_gamba_coinvolta: s(d.corsaGambaCoinvolta),
+    salto_fase: s(d.saltoFase),
+    salto_atterraggio_dove: s(d.saltoAtterraggioDove),
+    salto_gamba_atterraggio: s(d.saltoGambaAtterraggio),
+    caduta_dettagli: s(d.cadutaDettagli),
+    azione_con_palla: d.azioneConPalla ?? false,
+    situazione_gioco_palla: s(d.situazioneGiocoPalla),
+    attivita_con_palla: s(d.attivitaConPalla),
+    calcio_azione: s(d.calcioAzione),
+    calcio_intensita: s(d.calcioIntensita),
+    calcio_tipo: s(d.calcioTipo),
+    calcio_fase: s(d.calcioFase),
+    dribbling_tipo: s(d.dribblingTipo),
+    palla_altezza: s(d.pallaAltezza),
+    controllo_palla_con: s(d.controlloPallaCon),
+    gamba_infortunata_palla: s(d.gambaInfortunataPalla),
+    tipo_seduta: s(d.tipoSeduta),
+    tipo_esercitazione: s(d.tipoEsercitazione),
+    partita_sede: s(d.partitaSede),
+    partita_competizione: s(d.partitaCompetizione),
+    partita_punteggio: s(d.partitaPunteggio),
+    fase_gioco: s(d.faseGioco),
+    sotto_fase_gioco: s(d.sottoFaseGioco),
+    terreno_gioco: s(d.terrenoGioco),
+    decisione_arbitrale: s(d.decisioneArbitrale),
+    minuto_infortunio: d.minutoInfortunio != null ? String(d.minutoInfortunio) : "",
+    minuti_giocati_prima: d.minutiGiocatiPrima != null ? String(d.minutiGiocatiPrima) : "",
+  };
+}
+
 export async function loadDettaglioSituazionale(atletaId: string): Promise<DettaglioSituazionaleData | null> {
   if (!isOnline()) return null;
   try {
