@@ -1580,6 +1580,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [copiatoLink, setCopiatoLink] = useState<1 | 2 | null>(null);
   const [dettaglioSituazionale, setDettaglioSituazionale] = useState<DettaglioSituazionaleData | null>(null);
   const [tuttiDettagli, setTuttiDettagli] = useState<Record<string, DettaglioSituazionaleData>>({});
+  const [dbTableReady, setDbTableReady] = useState<boolean | null>(null);
+  const [sqlCopiato, setSqlCopiato] = useState(false);
   const [mostraFormInfortBis, setMostraFormInfortBis] = useState(false);
   const [nuovoInfortBis, setNuovoInfortBis] = useState({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "", osiicsCodice: "", osiicsDescrizione: "", osiicsCodeId: "" });
   const [editDatiConcorrente, setEditDatiConcorrente] = useState<string | null>(null);
@@ -1596,11 +1598,26 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
-    loadAllDettagliSituazionali().then((all) => {
-      const map: Record<string, DettaglioSituazionaleData> = {};
-      all.forEach((d) => { map[d.atletaId] = d; });
-      setTuttiDettagli(map);
-    });
+    fetch("/api/migrate-dettaglio")
+      .then((r) => r.json())
+      .then((res) => {
+        setDbTableReady(!!res.tableExists);
+        if (res.tableExists) {
+          loadAllDettagliSituazionali().then((all) => {
+            const map: Record<string, DettaglioSituazionaleData> = {};
+            all.forEach((d) => { map[d.atletaId] = d; });
+            setTuttiDettagli(map);
+          });
+        }
+      })
+      .catch(() => {
+        setDbTableReady(null);
+        loadAllDettagliSituazionali().then((all) => {
+          const map: Record<string, DettaglioSituazionaleData> = {};
+          all.forEach((d) => { map[d.atletaId] = d; });
+          setTuttiDettagli(map);
+        });
+      });
     const unsubAtleti = subscribeToAtleti(() => loadAtleti().then(setAtleti));
     const unsubIntake = subscribeToIntakeInsert(() => loadAtleti().then(setAtleti));
     return () => { unsubAtleti(); unsubIntake(); };
@@ -2417,7 +2434,53 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       </div>
                     )}
 
-                    {!editDettaglioAperto && !dettaglioSituazionale && (
+                    {!editDettaglioAperto && !dettaglioSituazionale && dbTableReady === false && (
+                      <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 space-y-2">
+                        <p className="text-xs font-bold text-amber-700">Tabella DB mancante</p>
+                        <p className="text-xs text-amber-700">La tabella <code className="bg-amber-100 px-1 rounded">dettaglio_situazionale</code> non esiste ancora nel database Supabase. Devi crearla una volta sola con il seguente SQL.</p>
+                        <p className="text-xs text-amber-600 font-semibold">1. Vai su <a href="https://supabase.com/dashboard" target="_blank" rel="noreferrer" className="underline">supabase.com/dashboard</a> → SQL Editor</p>
+                        <p className="text-xs text-amber-600 font-semibold">2. Copia e incolla questo SQL, poi clicca Run:</p>
+                        <pre className="text-[10px] bg-white border border-amber-200 rounded p-2 overflow-x-auto text-gray-700 leading-tight">{`create table if not exists dettaglio_situazionale (
+  id text primary key,
+  atleta_id text references atleti(id) on delete cascade,
+  fonte_informazione text[], fonte_informazione_altro text,
+  giorni_referto integer, modalita_insorgenza text,
+  modalita_insorgenza_altro text, contatto_dettaglio text,
+  situazione_duello text, direzione_contrasto text,
+  collisione_con text, duello_aereo boolean,
+  attivita_fisica text, tipo_corsa text, corsa_gradi text,
+  corsa_gamba_coinvolta text, salto_fase text,
+  salto_atterraggio_dove text, salto_gamba_atterraggio text,
+  caduta_dettagli text, azione_con_palla boolean,
+  situazione_gioco_palla text, attivita_con_palla text,
+  calcio_azione text, calcio_intensita text, calcio_tipo text,
+  calcio_fase text, dribbling_tipo text, palla_altezza text,
+  controllo_palla_con text, gamba_infortunata_palla text,
+  tipo_seduta text, tipo_esercitazione text, partita_sede text,
+  partita_competizione text, partita_punteggio text,
+  fase_gioco text, sotto_fase_gioco text, terreno_gioco text,
+  decisione_arbitrale text, minuto_infortunio integer,
+  minuti_giocati_prima integer, created_at timestamptz default now()
+);
+alter table dettaglio_situazionale enable row level security;
+create policy "Solo autenticati dettaglio_situazionale"
+  on dettaglio_situazionale for all
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);`}</pre>
+                        <button
+                          onClick={() => {
+                            const sql = `create table if not exists dettaglio_situazionale (\n  id text primary key,\n  atleta_id text references atleti(id) on delete cascade,\n  fonte_informazione text[], fonte_informazione_altro text,\n  giorni_referto integer, modalita_insorgenza text,\n  modalita_insorgenza_altro text, contatto_dettaglio text,\n  situazione_duello text, direzione_contrasto text,\n  collisione_con text, duello_aereo boolean,\n  attivita_fisica text, tipo_corsa text, corsa_gradi text,\n  corsa_gamba_coinvolta text, salto_fase text,\n  salto_atterraggio_dove text, salto_gamba_atterraggio text,\n  caduta_dettagli text, azione_con_palla boolean,\n  situazione_gioco_palla text, attivita_con_palla text,\n  calcio_azione text, calcio_intensita text, calcio_tipo text,\n  calcio_fase text, dribbling_tipo text, palla_altezza text,\n  controllo_palla_con text, gamba_infortunata_palla text,\n  tipo_seduta text, tipo_esercitazione text, partita_sede text,\n  partita_competizione text, partita_punteggio text,\n  fase_gioco text, sotto_fase_gioco text, terreno_gioco text,\n  decisione_arbitrale text, minuto_infortunio integer,\n  minuti_giocati_prima integer, created_at timestamptz default now()\n);\nalter table dettaglio_situazionale enable row level security;\ncreate policy "Solo autenticati dettaglio_situazionale"\n  on dettaglio_situazionale for all\n  using (auth.uid() is not null)\n  with check (auth.uid() is not null);`;
+                            navigator.clipboard.writeText(sql).then(() => { setSqlCopiato(true); setTimeout(() => setSqlCopiato(false), 2000); });
+                          }}
+                          className="w-full text-xs font-semibold py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 flex items-center justify-center gap-1"
+                        >
+                          {sqlCopiato ? <><Check className="w-3 h-3" /> Copiato!</> : <><Copy className="w-3 h-3" /> Copia SQL</>}
+                        </button>
+                        <p className="text-xs text-amber-500 text-center">Dopo aver eseguito lo SQL, ricarica la pagina</p>
+                      </div>
+                    )}
+
+                    {!editDettaglioAperto && !dettaglioSituazionale && dbTableReady !== false && (
                       <p className="text-xs text-gray-400 italic py-2">Nessun dettaglio situazionale inserito</p>
                     )}
                   </div>

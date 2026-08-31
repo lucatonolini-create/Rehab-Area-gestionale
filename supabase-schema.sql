@@ -90,15 +90,64 @@ alter table impostazioni add column if not exists rosa jsonb default '[]'::jsonb
 
 insert into impostazioni (id) values (1) on conflict do nothing;
 
+-- ── Dettaglio Situazionale (FIICCS) ──────────────────────────────────────────
+create table if not exists dettaglio_situazionale (
+  id                        text primary key,
+  atleta_id                 text references atleti(id) on delete cascade,
+  fonte_informazione        text[],
+  fonte_informazione_altro  text,
+  giorni_referto            integer,
+  modalita_insorgenza       text,
+  modalita_insorgenza_altro text,
+  contatto_dettaglio        text,
+  situazione_duello         text,
+  direzione_contrasto       text,
+  collisione_con            text,
+  duello_aereo              boolean,
+  attivita_fisica           text,
+  tipo_corsa                text,
+  corsa_gradi               text,
+  corsa_gamba_coinvolta     text,
+  salto_fase                text,
+  salto_atterraggio_dove    text,
+  salto_gamba_atterraggio   text,
+  caduta_dettagli           text,
+  azione_con_palla          boolean,
+  situazione_gioco_palla    text,
+  attivita_con_palla        text,
+  calcio_azione             text,
+  calcio_intensita          text,
+  calcio_tipo               text,
+  calcio_fase               text,
+  dribbling_tipo            text,
+  palla_altezza             text,
+  controllo_palla_con       text,
+  gamba_infortunata_palla   text,
+  tipo_seduta               text,
+  tipo_esercitazione        text,
+  partita_sede              text,
+  partita_competizione      text,
+  partita_punteggio         text,
+  fase_gioco                text,
+  sotto_fase_gioco          text,
+  terreno_gioco             text,
+  decisione_arbitrale       text,
+  minuto_infortunio         integer,
+  minuti_giocati_prima      integer,
+  created_at                timestamptz default now()
+);
+
 -- ── Row Level Security (solo utenti autenticati) ─────────────────────────────
 alter table atleti enable row level security;
 alter table programmi enable row level security;
 alter table impostazioni enable row level security;
+alter table dettaglio_situazionale enable row level security;
 
 -- Rimuovi le vecchie policy permissive prima di creare le nuove
-drop policy if exists "Accesso completo atleti"       on atleti;
-drop policy if exists "Accesso completo programmi"    on programmi;
-drop policy if exists "Accesso completo impostazioni" on impostazioni;
+drop policy if exists "Accesso completo atleti"                    on atleti;
+drop policy if exists "Accesso completo programmi"                 on programmi;
+drop policy if exists "Accesso completo impostazioni"              on impostazioni;
+drop policy if exists "Solo autenticati dettaglio_situazionale"    on dettaglio_situazionale;
 
 -- Solo utenti autenticati possono leggere/scrivere i dati
 create policy "Solo autenticati atleti"
@@ -113,5 +162,10 @@ create policy "Solo autenticati programmi"
 
 create policy "Solo autenticati impostazioni"
   on impostazioni for all
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
+
+create policy "Solo autenticati dettaglio_situazionale"
+  on dettaglio_situazionale for all
   using (auth.uid() is not null)
   with check (auth.uid() is not null);
