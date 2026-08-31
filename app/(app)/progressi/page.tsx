@@ -1014,7 +1014,7 @@ const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","
 function atletaAttivoInMese(a: Atleta, anno: number, mese: number): boolean {
   const meseStart = new Date(anno, mese, 1);
   if (meseStart > new Date()) return false;
-  const meseEnd = new Date(anno, mese + 1, 0);
+  const meseEnd = new Date(anno, mese + 1, 0, 23, 59, 59);
   const periodoAttivo = (inizioStr?: string, fineStr?: string): boolean => {
     if (!inizioStr) return false;
     const inizio = new Date(inizioStr + "T12:00");
