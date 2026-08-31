@@ -71,6 +71,55 @@ async function notificaEBroadcast(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function salvaDettaglio(supabase: ReturnType<typeof createClient<any>>, atletaId: string, det: Record<string, unknown>) {
+  const hasData = !!(
+    (det.fonte_informazione as unknown[] | undefined)?.length || det.giorni_referto ||
+    det.modalita_insorgenza || det.attivita_fisica || det.tipo_seduta || det.azione_con_palla
+  );
+  if (!hasData) return;
+  const { data: existing } = await supabase
+    .from("dettaglio_situazionale")
+    .select("id")
+    .eq("atleta_id", atletaId)
+    .maybeSingle();
+  const detRow = {
+    id: (existing?.id as string | null) ?? crypto.randomUUID(),
+    atleta_id: atletaId,
+    fonte_informazione: (det.fonte_informazione as string[] | undefined)?.length ? det.fonte_informazione : null,
+    fonte_informazione_altro: det.fonte_informazione_altro || null,
+    giorni_referto: det.giorni_referto ? parseInt(det.giorni_referto as string) || null : null,
+    modalita_insorgenza: det.modalita_insorgenza || null,
+    modalita_insorgenza_altro: det.modalita_insorgenza_altro || null,
+    contatto_dettaglio: det.contatto_dettaglio || null,
+    situazione_duello: det.situazione_duello || null,
+    direzione_contrasto: det.direzione_contrasto || null,
+    collisione_con: det.collisione_con || null,
+    duello_aereo: det.duello_aereo || null,
+    attivita_fisica: det.attivita_fisica || null,
+    tipo_corsa: det.tipo_corsa || null,
+    corsa_gradi: det.corsa_gradi || null,
+    corsa_gamba_coinvolta: det.corsa_gamba_coinvolta || null,
+    salto_fase: det.salto_fase || null,
+    salto_atterraggio_dove: det.salto_atterraggio_dove || null,
+    salto_gamba_atterraggio: det.salto_gamba_atterraggio || null,
+    caduta_dettagli: det.caduta_dettagli || null,
+    azione_con_palla: !!det.azione_con_palla,
+    situazione_gioco_palla: det.situazione_gioco_palla || null,
+    attivita_con_palla: det.attivita_con_palla || null,
+    tipo_seduta: det.tipo_seduta || null,
+    tipo_esercitazione: det.tipo_esercitazione || null,
+    partita_sede: det.partita_sede || null,
+    partita_competizione: det.partita_competizione || null,
+    partita_punteggio: det.partita_punteggio || null,
+    fase_gioco: det.fase_gioco || null,
+    sotto_fase_gioco: det.sotto_fase_gioco || null,
+    terreno_gioco: det.terreno_gioco || null,
+    decisione_arbitrale: det.decisione_arbitrale || null,
+  };
+  await supabase.from("dettaglio_situazionale").upsert(detRow);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -148,6 +197,9 @@ export async function POST(req: NextRequest) {
           console.error("[intake PATCH disponibile]", error);
           return NextResponse.json({ error: error.message }, { status: 500 });
         }
+        if (body.dettaglio && typeof body.dettaglio === "object") {
+          await salvaDettaglio(supabase, esistente.id, body.dettaglio as Record<string, unknown>);
+        }
         await notificaEBroadcast(supabase, nomeNorm, body.categoria, esistente.id);
         return NextResponse.json({ ok: true, id: esistente.id });
       }
@@ -175,6 +227,9 @@ export async function POST(req: NextRequest) {
         if (error) {
           console.error("[intake PATCH concorrente]", error);
           return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+        if (body.dettaglio && typeof body.dettaglio === "object") {
+          await salvaDettaglio(supabase, esistente.id, body.dettaglio as Record<string, unknown>);
         }
         await notificaEBroadcast(supabase, nomeNorm, body.categoria, esistente.id);
         return NextResponse.json({ ok: true, id: esistente.id });

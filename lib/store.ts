@@ -1237,7 +1237,13 @@ export async function loadDettaglioSituazionale(atletaId: string): Promise<Detta
 export async function upsertDettaglioSituazionale(d: DettaglioSituazionaleData): Promise<void> {
   if (!isOnline()) return;
   try {
-    await supabase.from("dettaglio_situazionale").upsert(dettaglioToRow(d));
+    const { data: existing } = await supabase
+      .from("dettaglio_situazionale")
+      .select("id")
+      .eq("atleta_id", d.atletaId)
+      .maybeSingle();
+    const toSave = existing ? { ...d, id: existing.id } : d;
+    await supabase.from("dettaglio_situazionale").upsert(dettaglioToRow(toSave));
   } catch {}
 }
 
