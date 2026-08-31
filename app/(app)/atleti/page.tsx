@@ -8,7 +8,7 @@ import {
   CATEGORIE, TIPI_INFORTUNIO, EVENTI_INFORTUNIO, MECCANISMI_INFORTUNIO, CONTATTI_INFORTUNIO,
   LATI_INFORTUNIO, POSIZIONI_INFORTUNIO, TIPI_REFERTO, ESITI_REFERTO,
   calcolaProgressoAuto,
-  loadDettaglioSituazionale, upsertDettaglioSituazionale, formToDettaglio, dettaglioToForm,
+  loadDettaglioSituazionale, loadAllDettagliSituazionali, upsertDettaglioSituazionale, formToDettaglio, dettaglioToForm,
   patchRefertiClinici,
   type Atleta, type Stato, type InfortunioStorico, type Programma, type QuestionarioKinesiofobia,
   type TestFisiometrico, type RefertoClinico, type TipoReferto, type EsitoReferto,
@@ -1579,6 +1579,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [nuovoInfRTS, setNuovoInfRTS] = useState("__corrente__");
   const [copiatoLink, setCopiatoLink] = useState<1 | 2 | null>(null);
   const [dettaglioSituazionale, setDettaglioSituazionale] = useState<DettaglioSituazionaleData | null>(null);
+  const [tuttiDettagli, setTuttiDettagli] = useState<Record<string, DettaglioSituazionaleData>>({});
   const [mostraFormInfortBis, setMostraFormInfortBis] = useState(false);
   const [nuovoInfortBis, setNuovoInfortBis] = useState({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "", osiicsCodice: "", osiicsDescrizione: "", osiicsCodeId: "" });
   const [editDatiConcorrente, setEditDatiConcorrente] = useState<string | null>(null);
@@ -1595,6 +1596,11 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
+    loadAllDettagliSituazionali().then((all) => {
+      const map: Record<string, DettaglioSituazionaleData> = {};
+      all.forEach((d) => { map[d.atletaId] = d; });
+      setTuttiDettagli(map);
+    });
     const unsubAtleti = subscribeToAtleti(() => loadAtleti().then(setAtleti));
     const unsubIntake = subscribeToIntakeInsert(() => loadAtleti().then(setAtleti));
     return () => { unsubAtleti(); unsubIntake(); };
@@ -1609,8 +1615,10 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   useEffect(() => {
     setEditDettaglioAperto(false);
     if (!selected || (selected.stato !== "Infortunato" && selected.stato !== "NTL")) { setDettaglioSituazionale(null); return; }
+    const cached = tuttiDettagli[selected.id];
+    if (cached) { setDettaglioSituazionale(cached); return; }
     loadDettaglioSituazionale(selected.id).then(setDettaglioSituazionale);
-  }, [selected?.id]);
+  }, [selected?.id, tuttiDettagli]);
 
   useEffect(() => {
     if (!selected) { setProgrammiAtleta([]); return; }
@@ -2342,6 +2350,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                 const det = formToDettaglio(dettaglioSituazionale?.id ?? uid(), selected.id, vals);
                                 await upsertDettaglioSituazionale(det);
                                 setDettaglioSituazionale(det);
+                                setTuttiDettagli((prev) => ({ ...prev, [selected.id]: det }));
                               }
                               setEditDettaglioAperto(false);
                             }}
