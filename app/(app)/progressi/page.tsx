@@ -875,7 +875,7 @@ async function esportaPDFReportMensile(
     ): number => {
       const cHr = 38; const cWr = W - M * 2; const slot = cWr / trendR.length;
       doc.setFontSize(6); doc.setFont("helvetica", "bold"); doc.setTextColor(...dark);
-      doc.text(title, M + cWr / 2, sy, { align: "center" }); sy += 2;
+      doc.text(title, M, sy, { align: "left" }); sy += 2;
       doc.setFillColor(248, 248, 248); doc.setDrawColor(220, 220, 220); doc.setLineWidth(0.3);
       doc.rect(M, sy, cWr, cHr, "FD");
       const tickStep = Math.max(1, Math.ceil(maxRVal / 4));
