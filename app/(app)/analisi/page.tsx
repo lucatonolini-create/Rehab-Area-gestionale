@@ -957,17 +957,17 @@ async function esportaPDFReport(
     };
 
     const drawLegR = (items: string[], colorMap: Record<string, [number, number, number]>, sy: number): number => {
-      let lx = M; let ly = sy;
-      items.forEach((k) => {
-        if (lx + 36 > W - M) { lx = M; ly += 5; }
+      doc.setFontSize(5.5); doc.setFont("helvetica", "normal");
+      const colW = (W - M * 2) / 2;
+      items.forEach((k, i) => {
+        const col = i % 2; const row = Math.floor(i / 2);
+        const lx = M + col * colW; const ly = sy + row * 5.5;
         doc.setFillColor(...(colorMap[k] ?? [180, 180, 180] as [number, number, number]));
         doc.rect(lx, ly - 2.5, 3, 3, "F");
-        doc.setFontSize(5); doc.setFont("helvetica", "normal"); doc.setTextColor(...dark);
-        const lbl = k.length > 20 ? k.slice(0, 19) + "…" : k;
-        doc.text(lbl, lx + 4.5, ly + 0.3);
-        lx += Math.min(lbl.length * 1.7 + 9, 44);
+        doc.setTextColor(...dark);
+        doc.text(k, lx + 4.5, ly + 0.3);
       });
-      return ly + 7;
+      return sy + Math.ceil(items.length / 2) * 5.5 + 4;
     };
 
     if (catR.length > 0 || tipiR.length > 0) {
