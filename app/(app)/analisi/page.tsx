@@ -651,6 +651,7 @@ async function esportaPDFReport(
   atleti?: Atleta[],
   mesiP?: { anno: number; mese: number }[],
   periodoLbl?: string,
+  programmi?: Programma[],
 ) {
   const { default: jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
@@ -1043,6 +1044,86 @@ async function esportaPDFReport(
     },
   });
 
+  // ── Programmi giornalieri per atleta ─────────────────────────────────────
+  if (programmi && programmi.length > 0) {
+    // Determina range date del periodo
+    const dateInPeriodo = new Set(
+      (mesiP ?? [{ anno, mese }]).map(({ anno: a, mese: m }) => {
+        const d = new Date(a, m, 1);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      })
+    );
+    const progInPeriodo = (atletaId: string) =>
+      programmi
+        .filter((p) => {
+          if (p.atletaId !== atletaId) return false;
+          if (!p.data) return false;
+          const ym = p.data.slice(0, 7);
+          return dateInPeriodo.has(ym);
+        })
+        .sort((a, b) => a.data.localeCompare(b.data));
+
+    const atletiConProg = [...atletiMese]
+      .sort((a, b) => nd(a).localeCompare(nd(b), "it"))
+      .filter((a) => progInPeriodo(a.id).length > 0);
+
+    if (atletiConProg.length > 0) {
+      doc.addPage(); addHeader(); y = HDR + 12;
+      y = secTitle("Programmi giornalieri", y);
+
+      for (const atleta of atletiConProg) {
+        const progs = progInPeriodo(atleta.id);
+        const body: any[] = progs.map((p) => {
+          const obP = p.obiettiviPalestra?.length ? p.obiettiviPalestra.join(", ") : "—";
+          const obC = p.obiettiviCampo?.length ? p.obiettiviCampo.join(", ") : "—";
+          const esText = (p.esercizi ?? []).map((e, i) => {
+            const det = [e.serie ? `${e.serie}×` : "", e.reps || e.durata || ""].filter(Boolean).join("");
+            return `${i + 1}. ${e.nome}${det ? ` ${det}` : ""}`;
+          }).join("\n") || "—";
+          const rpe = p.carico?.rpe ? `${p.carico.rpe}/10` : "—";
+          const fisio = p.noteFisioterapia?.trim() || "—";
+          const dataLabel = p.data
+            ? new Date(p.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" })
+            : "—";
+          const tipoRow = p.assente ? "ASSENTE" : p.riposo ? "RIPOSO" : p.squadra ? "RITORNO SQUADRA" : null;
+          return tipoRow
+            ? [dataLabel, p.nome ?? "—", p.fase ?? "—", { content: tipoRow, colSpan: 5, styles: { halign: "center" as const, fontStyle: "bold" as const } }]
+            : [dataLabel, p.nome ?? "—", p.fase ?? "—", obP, esText, fisio, obC, rpe];
+        });
+
+        if (y + 20 > H - 18) { doc.addPage(); addHeader(); y = HDR + 12; }
+
+        // Intestazione atleta
+        doc.setFillColor(43, 43, 43); doc.rect(M, y, W - M * 2, 7, "F");
+        doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(255, 255, 255);
+        doc.text(`${nd(atleta).toUpperCase()}  ·  ${atleta.categoria}  ·  ${progs.length} sessioni`, M + 4, y + 4.5);
+        y += 9;
+
+        autoTable(doc, {
+          startY: y,
+          head: [["Data", "Nome", "Fase", "Ob. Palestra", "Esercizi", "Note fisio", "Ob. Campo", "RPE"]],
+          body,
+          headStyles: { fillColor: red, textColor: 255, fontSize: 6, halign: "center", valign: "middle", cellPadding: 1.5 },
+          bodyStyles: { fontSize: 6, cellPadding: 1.5, overflow: "linebreak", halign: "left", valign: "middle" },
+          alternateRowStyles: { fillColor: [248, 248, 248] },
+          margin: { left: M, right: M, top: HDR + 8 },
+          columnStyles: {
+            0: { cellWidth: 16 },
+            1: { cellWidth: 22 },
+            2: { cellWidth: 14 },
+            3: { cellWidth: 40 },
+            4: { cellWidth: 54 },
+            5: { cellWidth: 44 },
+            6: { cellWidth: 54 },
+            7: { cellWidth: 12, halign: "center" as const },
+          },
+          didDrawPage: () => { addHeader(); },
+        });
+        y = (doc as any).lastAutoTable.finalY + 8;
+      }
+    }
+  }
+
   addFooter();
   doc.save(`USC_Report_${nomeP.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`);
 }
@@ -1242,7 +1323,7 @@ export default function AnalisiPage() {
         else await esportaPDFPanoramica(params);
       } else {
         if (tipo === "excel") esportaCSVReport(atletiMese, reportMese, reportAnno, filtroCat, filtroTipoInf !== "Tutti" ? filtroTipoInf : "", mesiPeriodo, periodoLabel);
-        else await esportaPDFReport(atletiMese, reportMese, reportAnno, filtroCat, filtroTipoInf !== "Tutti" ? filtroTipoInf : "", atleti, mesiPeriodo, periodoLabel);
+        else await esportaPDFReport(atletiMese, reportMese, reportAnno, filtroCat, filtroTipoInf !== "Tutti" ? filtroTipoInf : "", atleti, mesiPeriodo, periodoLabel, programmi);
       }
     } finally {
       setEsportando(null);
