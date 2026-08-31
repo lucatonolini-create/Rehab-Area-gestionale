@@ -84,7 +84,7 @@ function infortunitNelPeriodo(a: Atleta, mesi: { anno: number; mese: number }[])
 
 function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNelMese[] {
   const meseStart = new Date(anno, mese, 1);
-  const meseEnd = new Date(anno, mese + 1, 0);
+  const meseEnd = new Date(anno, mese + 1, 0, 23, 59, 59);
   const inMese = (inizioStr?: string, fineStr?: string): boolean => {
     if (!inizioStr) return false;
     const inizio = new Date(inizioStr + "T12:00");
