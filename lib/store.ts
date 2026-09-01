@@ -1281,8 +1281,8 @@ export async function loadDettaglioSituazionale(atletaId: string): Promise<Detta
   } catch (e) { console.error("[dettaglio] loadDettaglioSituazionale exception:", e); return null; }
 }
 
-export async function upsertDettaglioSituazionale(d: DettaglioSituazionaleData): Promise<void> {
-  if (!isOnline()) return;
+export async function upsertDettaglioSituazionale(d: DettaglioSituazionaleData): Promise<{ ok: boolean; error?: string }> {
+  if (!isOnline()) return { ok: false, error: "Offline" };
   try {
     const { data: rows, error: selErr } = await supabase
       .from("dettaglio_situazionale")
@@ -1290,7 +1290,7 @@ export async function upsertDettaglioSituazionale(d: DettaglioSituazionaleData):
       .eq("atleta_id", d.atletaId)
       .order("id")
       .limit(10);
-    if (selErr) { console.error("[dettaglio] upsert select error:", selErr); return; }
+    if (selErr) { console.error("[dettaglio] upsert select error:", selErr); return { ok: false, error: selErr.message }; }
     const existing = rows?.[0] ?? null;
     // Rimuovi eventuali duplicati (bug legacy)
     if (rows && rows.length > 1) {
@@ -1299,8 +1299,9 @@ export async function upsertDettaglioSituazionale(d: DettaglioSituazionaleData):
     }
     const toSave = existing ? { ...d, id: existing.id } : d;
     const { error: upsErr } = await supabase.from("dettaglio_situazionale").upsert(dettaglioToRow(toSave));
-    if (upsErr) console.error("[dettaglio] upsert error:", upsErr);
-  } catch (e) { console.error("[dettaglio] upsertDettaglioSituazionale exception:", e); }
+    if (upsErr) { console.error("[dettaglio] upsert error:", upsErr); return { ok: false, error: upsErr.message }; }
+    return { ok: true };
+  } catch (e) { console.error("[dettaglio] upsertDettaglioSituazionale exception:", e); return { ok: false, error: String(e) }; }
 }
 
 export async function loadAllDettagliSituazionali(): Promise<DettaglioSituazionaleData[]> {

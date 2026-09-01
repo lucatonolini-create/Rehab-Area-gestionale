@@ -1590,6 +1590,9 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const nuovoDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
   const inlineDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
   const [editDettaglioAperto, setEditDettaglioAperto] = useState(false);
+  const [salvandoDettaglio, setSalvandoDettaglio] = useState(false);
+  const [dettaglioSalvatoOk, setDettaglioSalvatoOk] = useState(false);
+  const [dettaglioErrMsg, setDettaglioErrMsg] = useState<string | null>(null);
   const [mostraFondi, setMostraFondi] = useState(false);
   const [mostraFormReferto, setMostraFormReferto] = useState(false);
   const [nuovoReferto, setNuovoReferto] = useState({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", descrizione: "", note: "" });
@@ -2358,29 +2361,59 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                           contatto={selected.contatto}
                           initialValues={dettaglioSituazionale ? dettaglioToForm(dettaglioSituazionale) : undefined}
                         />
-                        <div className="flex gap-2 pt-1">
-                          <button
-                            onClick={async () => {
-                              if (!selected) return;
-                              const vals = inlineDettaglioRef.current?.getValues();
-                              if (vals) {
-                                const det = formToDettaglio(dettaglioSituazionale?.id ?? uid(), selected.id, vals);
-                                await upsertDettaglioSituazionale(det);
-                                setDettaglioSituazionale(det);
-                                setTuttiDettagli((prev) => ({ ...prev, [selected.id]: det }));
-                              }
-                              setEditDettaglioAperto(false);
-                            }}
-                            className="flex-1 bg-[#C8102E] text-white text-xs font-semibold py-2 rounded-xl hover:bg-red-800"
-                          >
-                            Salva dettaglio
-                          </button>
-                          <button
-                            onClick={() => setEditDettaglioAperto(false)}
-                            className="px-4 text-xs font-semibold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50"
-                          >
-                            Annulla
-                          </button>
+                        <div className="space-y-2 pt-1">
+                          {dettaglioErrMsg && (
+                            <p className="text-xs text-red-600 font-semibold bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                              ⚠️ Errore nel salvataggio: {dettaglioErrMsg}
+                            </p>
+                          )}
+                          {dettaglioSalvatoOk && (
+                            <p className="text-xs text-green-700 font-semibold bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                              ✓ Salvato con successo!
+                            </p>
+                          )}
+                          <div className="flex gap-2">
+                            <button
+                              disabled={salvandoDettaglio}
+                              onClick={async () => {
+                                if (!selected) return;
+                                setSalvandoDettaglio(true);
+                                setDettaglioErrMsg(null);
+                                setDettaglioSalvatoOk(false);
+                                try {
+                                  const vals = inlineDettaglioRef.current?.getValues();
+                                  if (!vals) {
+                                    setDettaglioErrMsg("Impossibile leggere i dati del form");
+                                    return;
+                                  }
+                                  const det = formToDettaglio(dettaglioSituazionale?.id ?? uid(), selected.id, vals);
+                                  const res = await upsertDettaglioSituazionale(det);
+                                  if (!res.ok) {
+                                    setDettaglioErrMsg(res.error ?? "Errore sconosciuto");
+                                    return;
+                                  }
+                                  setDettaglioSituazionale(det);
+                                  setTuttiDettagli((prev) => ({ ...prev, [selected.id]: det }));
+                                  setDettaglioSalvatoOk(true);
+                                  setTimeout(() => {
+                                    setEditDettaglioAperto(false);
+                                    setDettaglioSalvatoOk(false);
+                                  }, 1200);
+                                } finally {
+                                  setSalvandoDettaglio(false);
+                                }
+                              }}
+                              className="flex-1 bg-[#C8102E] text-white text-xs font-semibold py-2 rounded-xl hover:bg-red-800 disabled:opacity-60"
+                            >
+                              {salvandoDettaglio ? "Salvataggio…" : "Salva dettaglio"}
+                            </button>
+                            <button
+                              onClick={() => { setEditDettaglioAperto(false); setDettaglioErrMsg(null); setDettaglioSalvatoOk(false); }}
+                              className="px-4 text-xs font-semibold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50"
+                            >
+                              Annulla
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
