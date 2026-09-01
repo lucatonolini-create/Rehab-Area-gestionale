@@ -1823,9 +1823,10 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
           await upsertAtleta(aggiornato);
           syncInjury(aggiornato);
           if (dettaglio) {
-            const det = formToDettaglio(uid(), esistente.id, dettaglio);
+            const det = formToDettaglio(dettaglioSituazionale?.id ?? uid(), esistente.id, dettaglio);
             await upsertDettaglioSituazionale(det);
             setDettaglioSituazionale(det);
+            setTuttiDettagli((prev) => ({ ...prev, [esistente.id]: det }));
           }
         } else {
           const nuovo = { ...dati, id: atletaId };
@@ -3473,6 +3474,7 @@ create policy "Solo autenticati dettaglio_situazionale"
       {mostraForm && (
         <AtletaModal
           atletaIniziale={editAtleta}
+          initialDettaglio={editAtleta && dettaglioSituazionale ? dettaglioToForm(dettaglioSituazionale) : undefined}
           onSalva={onSalvaAtleta}
           onChiudi={() => setMostraForm(false)}
         />

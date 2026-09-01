@@ -38,6 +38,7 @@ function calcolaPHV(peso: number, altezza: number, altezzaDaSeduto: number, data
 
 interface Props {
   atletaIniziale?: Atleta;
+  initialDettaglio?: Partial<DettaglioSituazionaleForm>;
   onSalva: (dati: Omit<Atleta, "id">, atletaId: string, dettaglio?: DettaglioSituazionaleForm) => void;
   onChiudi: () => void;
 }
@@ -68,7 +69,7 @@ function Label({ children }: { children: string }) {
   return <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{children}</label>;
 }
 
-export default function AtletaModal({ atletaIniziale, onSalva, onChiudi }: Props) {
+export default function AtletaModal({ atletaIniziale, initialDettaglio, onSalva, onChiudi }: Props) {
   const isModifica = !!atletaIniziale;
   const [form, setForm] = useState<Omit<Atleta, "id">>(
     atletaIniziale ? (({ id, ...rest }) => rest)(atletaIniziale) : atletaVuoto
@@ -284,7 +285,7 @@ export default function AtletaModal({ atletaIniziale, onSalva, onChiudi }: Props
 
           {/* Dettaglio situazionale FIICCS — per atleti con infortunio attivo (TL e NTL) */}
           {(form.stato === "Infortunato" || form.stato === "NTL") && (
-            <DettaglioSituazionale ref={dettaglioRef} contatto={form.contatto} />
+            <DettaglioSituazionale ref={dettaglioRef} contatto={form.contatto} initialValues={initialDettaglio} />
           )}
 
         </div>
@@ -296,7 +297,7 @@ export default function AtletaModal({ atletaIniziale, onSalva, onChiudi }: Props
           </button>
           <button onClick={() => {
               if (!isModifica && !form.nome.trim()) return;
-              const det = dettaglioRef.current?.hasData() ? dettaglioRef.current.getValues() : undefined;
+              const det = (dettaglioRef.current?.hasData() || !!initialDettaglio) ? dettaglioRef.current?.getValues() : undefined;
               onSalva(form, atletaId, det);
             }} disabled={!isModifica && !form.nome.trim()}
             className="flex-1 bg-[#C8102E] text-white py-3 rounded-xl text-sm font-medium hover:bg-red-800 disabled:opacity-40">
