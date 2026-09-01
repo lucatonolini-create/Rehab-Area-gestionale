@@ -2389,14 +2389,14 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                         />
                         <div className="space-y-2 pt-1">
                           {dettaglioErrMsg && (
-                            <p className="text-xs text-red-600 font-semibold bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                              ⚠️ Errore nel salvataggio: {dettaglioErrMsg}
-                            </p>
+                            <div className="bg-red-600 text-white font-bold rounded-xl px-4 py-3 text-sm text-center">
+                              ⚠️ Errore: {dettaglioErrMsg}
+                            </div>
                           )}
                           {dettaglioSalvatoOk && (
-                            <p className="text-xs text-green-700 font-semibold bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                              ✓ Salvato con successo!
-                            </p>
+                            <div className="bg-green-600 text-white font-bold rounded-xl px-4 py-3 text-sm text-center">
+                              ✓ Dettaglio salvato!
+                            </div>
                           )}
                           <div className="flex gap-2">
                             <button
@@ -2417,8 +2417,10 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                   }
                                   const det = formToDettaglio(dettaglioSituazionale?.id ?? uid(), selected.id, vals);
                                   const res = await upsertDettaglioSituazionale(det);
+                                  console.log("[salva-dettaglio] risposta API:", res);
                                   if (!res.ok) {
                                     const msg = res.error ?? "Errore sconosciuto";
+                                    console.error("[salva-dettaglio] errore:", msg);
                                     setDettaglioErrMsg(msg);
                                     showToast("Errore: " + msg, "err");
                                     return;
@@ -2430,7 +2432,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                     setTuttiDettagli((prev) => ({ ...prev, [selected.id]: det }));
                                     setEditDettaglioAperto(false);
                                     setDettaglioSalvatoOk(false);
-                                  }, 1500);
+                                  }, 5000);
                                 } finally {
                                   setSalvandoDettaglio(false);
                                 }
