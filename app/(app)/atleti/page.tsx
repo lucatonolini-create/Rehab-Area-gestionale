@@ -1593,6 +1593,11 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [salvandoDettaglio, setSalvandoDettaglio] = useState(false);
   const [dettaglioSalvatoOk, setDettaglioSalvatoOk] = useState(false);
   const [dettaglioErrMsg, setDettaglioErrMsg] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<{ text: string; tipo: "ok" | "err" } | null>(null);
+  const showToast = (text: string, tipo: "ok" | "err") => {
+    setToastMsg({ text, tipo });
+    setTimeout(() => setToastMsg(null), 4000);
+  };
   const [mostraFondi, setMostraFondi] = useState(false);
   const [mostraFormReferto, setMostraFormReferto] = useState(false);
   const [nuovoReferto, setNuovoReferto] = useState({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", descrizione: "", note: "" });
@@ -2086,6 +2091,18 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
   return (
     <div className="flex h-full">
+      {/* Toast globale */}
+      {toastMsg && (
+        <div
+          className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold flex items-center gap-2 transition-all ${
+            toastMsg.tipo === "ok"
+              ? "bg-green-600 text-white"
+              : "bg-red-600 text-white"
+          }`}
+        >
+          {toastMsg.tipo === "ok" ? "✓" : "⚠️"} {toastMsg.text}
+        </div>
+      )}
       {/* Lista */}
       <div className="flex-1 p-6 overflow-y-auto">
         <div className="mb-6 flex items-center justify-between">
@@ -2380,6 +2397,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                           <div className="flex gap-2">
                             <button
                               disabled={salvandoDettaglio}
+                              type="button"
                               onClick={async () => {
                                 if (!selected) return;
                                 setSalvandoDettaglio(true);
@@ -2388,19 +2406,22 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                 try {
                                   const vals = inlineDettaglioRef.current?.getValues();
                                   if (!vals) {
-                                    setDettaglioErrMsg("Impossibile leggere i dati del form");
+                                    const msg = "Impossibile leggere i dati del form";
+                                    setDettaglioErrMsg(msg);
+                                    showToast(msg, "err");
                                     return;
                                   }
                                   const det = formToDettaglio(dettaglioSituazionale?.id ?? uid(), selected.id, vals);
                                   const res = await upsertDettaglioSituazionale(det);
                                   if (!res.ok) {
-                                    setDettaglioErrMsg(res.error ?? "Errore sconosciuto");
+                                    const msg = res.error ?? "Errore sconosciuto";
+                                    setDettaglioErrMsg(msg);
+                                    showToast("Errore: " + msg, "err");
                                     return;
                                   }
-                                  // Aggiorna stato locale senza toccare tuttiDettagli
-                                  // (evita di triggherare l'useEffect che chiude il form)
                                   setDettaglioSituazionale(det);
                                   setDettaglioSalvatoOk(true);
+                                  showToast("Dettaglio salvato!", "ok");
                                   setTimeout(() => {
                                     setTuttiDettagli((prev) => ({ ...prev, [selected.id]: det }));
                                     setEditDettaglioAperto(false);
