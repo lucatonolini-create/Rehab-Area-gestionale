@@ -135,8 +135,7 @@ const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
           )}
         </button>
 
-        {aperto && (
-          <div className="border-t border-gray-100 px-5 pb-5 space-y-6">
+        <div className={`border-t border-gray-100 px-5 pb-5 space-y-6${aperto ? "" : " hidden"}`}>
 
             {/* ── A. Raccolta dati ────────────────────────────────────── */}
             <div className="pt-4 space-y-4">
@@ -632,7 +631,6 @@ const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
               </div>
 
           </div>
-        )}
       </div>
     );
   }
