@@ -60,6 +60,7 @@ alter table atleti add column if not exists questionari_kinesiofobia jsonb defau
 alter table atleti add column if not exists referti_clinici      jsonb default '[]'::jsonb;
 alter table atleti add column if not exists storico_infortuni    jsonb default '[]'::jsonb;
 alter table atleti add column if not exists data_nascita         text;
+alter table atleti add column if not exists dettaglio_situazionale jsonb;
 
 -- ── Programmi ─────────────────────────────────────────────────────────────────
 create table if not exists programmi (

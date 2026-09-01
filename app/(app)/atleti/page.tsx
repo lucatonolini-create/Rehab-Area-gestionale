@@ -9,7 +9,6 @@ import {
   CATEGORIE, TIPI_INFORTUNIO, EVENTI_INFORTUNIO, MECCANISMI_INFORTUNIO, CONTATTI_INFORTUNIO,
   LATI_INFORTUNIO, POSIZIONI_INFORTUNIO, TIPI_REFERTO, ESITI_REFERTO,
   calcolaProgressoAuto,
-  loadDettaglioSituazionale, loadAllDettagliSituazionali, upsertDettaglioSituazionale, formToDettaglio, dettaglioToForm,
   patchRefertiClinici,
   type Atleta, type Stato, type InfortunioStorico, type Programma, type QuestionarioKinesiofobia,
   type TestFisiometrico, type RefertoClinico, type TipoReferto, type EsitoReferto,
@@ -1579,9 +1578,6 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [nuovoPunteggioAFAQ, setNuovoPunteggioAFAQ] = useState("");
   const [nuovoInfRTS, setNuovoInfRTS] = useState("__corrente__");
   const [copiatoLink, setCopiatoLink] = useState<1 | 2 | null>(null);
-  const [dettaglioSituazionale, setDettaglioSituazionale] = useState<DettaglioSituazionaleData | null>(null);
-  const [tuttiDettagli, setTuttiDettagli] = useState<Record<string, DettaglioSituazionaleData>>({});
-  const [dbTableReady, setDbTableReady] = useState<boolean | null>(null);
   const [sqlCopiato, setSqlCopiato] = useState(false);
   const [mostraFormInfortBis, setMostraFormInfortBis] = useState(false);
   const [nuovoInfortBis, setNuovoInfortBis] = useState({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "", osiicsCodice: "", osiicsDescrizione: "", osiicsCodeId: "" });
@@ -1607,26 +1603,6 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
-    fetch("/api/migrate-dettaglio")
-      .then((r) => r.json())
-      .then((res) => {
-        setDbTableReady(!!res.tableExists);
-        if (res.tableExists) {
-          loadAllDettagliSituazionali().then((all) => {
-            const map: Record<string, DettaglioSituazionaleData> = {};
-            all.forEach((d) => { map[d.atletaId] = d; });
-            setTuttiDettagli(map);
-          });
-        }
-      })
-      .catch(() => {
-        setDbTableReady(null);
-        loadAllDettagliSituazionali().then((all) => {
-          const map: Record<string, DettaglioSituazionaleData> = {};
-          all.forEach((d) => { map[d.atletaId] = d; });
-          setTuttiDettagli(map);
-        });
-      });
     const unsubAtleti = subscribeToAtleti(() => loadAtleti().then(setAtleti));
     const unsubIntake = subscribeToIntakeInsert(() => loadAtleti().then(setAtleti));
     return () => { unsubAtleti(); unsubIntake(); };
@@ -1638,16 +1614,12 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     if (updated && updated !== selected) setSelected(updated);
   }, [atleti]);
 
-  // Quando cambia atleta: chiudi form e carica dettaglio dal cache o DB
+  // Quando cambia atleta: chiudi form
   useEffect(() => {
     setEditDettaglioAperto(false);
     setSalvandoDettaglio(false);
     setDettaglioErrMsg(null);
     setDettaglioSalvatoOk(false);
-    if (!selected || (selected.stato !== "Infortunato" && selected.stato !== "NTL")) { setDettaglioSituazionale(null); return; }
-    const cached = tuttiDettagli[selected.id];
-    if (cached) { setDettaglioSituazionale(cached); return; }
-    loadDettaglioSituazionale(selected.id).then(setDettaglioSituazionale);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
 
@@ -1747,6 +1719,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
             }
           }
         }
+        if (dettaglio) aggiornato = { ...aggiornato, dettaglioSituazionale: dettaglio };
         setAtleti((prev) => prev.map((a) => a.id === editAtleta.id ? aggiornato : a));
         setSelected(aggiornato);
         await upsertAtleta(aggiornato);
@@ -1818,26 +1791,16 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
             };
           }
 
+          if (dettaglio) aggiornato = { ...aggiornato, dettaglioSituazionale: dettaglio };
           setAtleti((prev) => prev.map((a) => a.id === esistente.id ? aggiornato : a));
           setSelected(aggiornato);
           await upsertAtleta(aggiornato);
           syncInjury(aggiornato);
-          if (dettaglio) {
-            const det = formToDettaglio(dettaglioSituazionale?.id ?? uid(), esistente.id, dettaglio);
-            await upsertDettaglioSituazionale(det);
-            setDettaglioSituazionale(det);
-            setTuttiDettagli((prev) => ({ ...prev, [esistente.id]: det }));
-          }
         } else {
-          const nuovo = { ...dati, id: atletaId };
+          const nuovo = { ...dati, id: atletaId, ...(dettaglio ? { dettaglioSituazionale: dettaglio } : {}) };
           setAtleti((prev) => [...prev, nuovo]);
           await upsertAtleta(nuovo);
           syncInjury(nuovo);
-          if (dettaglio) {
-            const det = formToDettaglio(uid(), atletaId, dettaglio);
-            await upsertDettaglioSituazionale(det);
-            setDettaglioSituazionale(det);
-          }
         }
       }
       setMostraForm(false);
@@ -2003,8 +1966,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const scaricaPDFStorico = async () => {
     if (!selected) return;
     const programmi = await loadProgrammi(selected.id);
-    const det = (selected.stato === "Infortunato" || selected.stato === "NTL") ? (dettaglioSituazionale ?? await loadDettaglioSituazionale(selected.id)) : null;
-    await esportaStoricoCompletoPDF(selected, programmi, det);
+    await esportaStoricoCompletoPDF(selected, programmi, null);
   };
 
   const scaricaCSVStorico = async () => {
@@ -2373,11 +2335,11 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Dettaglio situazionale</p>
                       <button
                         type="button"
-                        onClick={() => { setEditDettaglioAperto((v) => !v); showToast("Form aperto v4 — pronto", "ok"); }}
+                        onClick={() => setEditDettaglioAperto((v) => !v)}
                         className="text-xs font-semibold text-[#C8102E] hover:underline flex items-center gap-0.5"
                       >
                         <Pencil className="w-3 h-3" />
-                        {dettaglioSituazionale ? "Modifica" : "Aggiungi"}
+                        {selected.dettaglioSituazionale ? "Modifica" : "Aggiungi"}
                       </button>
                     </div>
 
@@ -2386,7 +2348,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                         <DettaglioSituazionale
                           ref={inlineDettaglioRef}
                           contatto={selected.contatto}
-                          initialValues={dettaglioSituazionale ? dettaglioToForm(dettaglioSituazionale) : undefined}
+                          initialValues={selected.dettaglioSituazionale}
                         />
                         <div className="space-y-2 pt-1">
                           {dettaglioErrMsg && (
@@ -2416,24 +2378,16 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                     showToast(msg, "err");
                                     return;
                                   }
-                                  const det = formToDettaglio(dettaglioSituazionale?.id ?? uid(), selected.id, vals);
-                                  const res = await upsertDettaglioSituazionale(det);
-                                  console.log("[salva-dettaglio] risposta API:", res);
-                                  if (!res.ok) {
-                                    const msg = res.error ?? "Errore sconosciuto";
-                                    console.error("[salva-dettaglio] errore:", msg);
-                                    setDettaglioErrMsg(msg);
-                                    showToast("Errore: " + msg, "err");
-                                    return;
-                                  }
-                                  setDettaglioSituazionale(det);
+                                  const aggiornato = { ...selected, dettaglioSituazionale: vals };
+                                  setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
+                                  setSelected(aggiornato);
+                                  await upsertAtleta(aggiornato);
                                   setDettaglioSalvatoOk(true);
                                   showToast("Dettaglio salvato!", "ok");
                                   setTimeout(() => {
-                                    setTuttiDettagli((prev) => ({ ...prev, [selected.id]: det }));
                                     setEditDettaglioAperto(false);
                                     setDettaglioSalvatoOk(false);
-                                  }, 5000);
+                                  }, 3000);
                                 } finally {
                                   setSalvandoDettaglio(false);
                                 }
@@ -2453,112 +2407,59 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       </div>
                     )}
 
-                    {!editDettaglioAperto && dettaglioSituazionale && (
-                      <div className="space-y-2">
-                        {[
-                          dettaglioSituazionale.fonteInformazione?.length && ["Fonte", dettaglioSituazionale.fonteInformazione.join(", ") + (dettaglioSituazionale.fonteInformazioneAltro ? ` — ${dettaglioSituazionale.fonteInformazioneAltro}` : "")],
-                          dettaglioSituazionale.giorniReferto != null && ["Giorni a referto", String(dettaglioSituazionale.giorniReferto)],
-                          dettaglioSituazionale.modalitaInsorgenza && ["Insorgenza", dettaglioSituazionale.modalitaInsorgenza + (dettaglioSituazionale.modalitaInsorgenzaAltro ? ` — ${dettaglioSituazionale.modalitaInsorgenzaAltro}` : "")],
-                          dettaglioSituazionale.attivitaFisica && ["Attività fisica", dettaglioSituazionale.attivitaFisica],
-                          dettaglioSituazionale.tipoCorsa && ["Tipo corsa", dettaglioSituazionale.tipoCorsa],
-                          dettaglioSituazionale.corsaGradi && ["Gradi cambio dir.", dettaglioSituazionale.corsaGradi],
-                          dettaglioSituazionale.corsaGambaCoinvolta && ["Gamba coinvolta", dettaglioSituazionale.corsaGambaCoinvolta],
-                          dettaglioSituazionale.saltoFase && ["Fase salto", dettaglioSituazionale.saltoFase],
-                          dettaglioSituazionale.saltoAtterraggioDove && ["Atterraggio dove", dettaglioSituazionale.saltoAtterraggioDove],
-                          dettaglioSituazionale.saltoGambaAtterraggio && ["Gamba atterraggio", dettaglioSituazionale.saltoGambaAtterraggio],
-                          dettaglioSituazionale.cadutaDettagli && ["Caduta", dettaglioSituazionale.cadutaDettagli],
-                          dettaglioSituazionale.contattoDettaglio && ["Tipo contatto", dettaglioSituazionale.contattoDettaglio],
-                          dettaglioSituazionale.situazioneDuello && ["Duello", dettaglioSituazionale.situazioneDuello],
-                          dettaglioSituazionale.direzioneContrasto && ["Direzione contrasto", dettaglioSituazionale.direzioneContrasto],
-                          dettaglioSituazionale.collisioneCon && ["Collisione con", dettaglioSituazionale.collisioneCon],
-                          dettaglioSituazionale.duelloAereo != null && ["Duello aereo", dettaglioSituazionale.duelloAereo ? "Sì" : "No"],
-                          dettaglioSituazionale.azioneConPalla && ["Azione con palla", "Sì"],
-                          dettaglioSituazionale.situazioneGiocoPalla && ["Situazione gioco", dettaglioSituazionale.situazioneGiocoPalla],
-                          dettaglioSituazionale.attivitaConPalla && ["Attività con palla", dettaglioSituazionale.attivitaConPalla],
-                          dettaglioSituazionale.calcioAzione && ["Azione calcio", dettaglioSituazionale.calcioAzione],
-                          dettaglioSituazionale.calcioIntensita && ["Intensità calcio", dettaglioSituazionale.calcioIntensita],
-                          dettaglioSituazionale.calcioTipo && ["Tipo calcio", dettaglioSituazionale.calcioTipo],
-                          dettaglioSituazionale.calcioFase && ["Fase calcio", dettaglioSituazionale.calcioFase],
-                          dettaglioSituazionale.dribblingTipo && ["Dribbling", dettaglioSituazionale.dribblingTipo],
-                          dettaglioSituazionale.pallaAltezza && ["Altezza palla", dettaglioSituazionale.pallaAltezza],
-                          dettaglioSituazionale.controlloPallaCon && ["Controllo con", dettaglioSituazionale.controlloPallaCon],
-                          dettaglioSituazionale.gambaInfortunataPalla && ["Gamba infort. a contatto", dettaglioSituazionale.gambaInfortunataPalla],
-                          dettaglioSituazionale.tipoSeduta && ["Tipo seduta", dettaglioSituazionale.tipoSeduta + (dettaglioSituazionale.tipoEsercitazione ? ` — ${dettaglioSituazionale.tipoEsercitazione}` : "")],
-                          dettaglioSituazionale.partitaSede && ["Sede partita", dettaglioSituazionale.partitaSede],
-                          dettaglioSituazionale.partitaCompetizione && ["Competizione", dettaglioSituazionale.partitaCompetizione],
-                          dettaglioSituazionale.partitaPunteggio && ["Punteggio", dettaglioSituazionale.partitaPunteggio],
-                          dettaglioSituazionale.faseGioco && ["Fase di gioco", dettaglioSituazionale.faseGioco],
-                          dettaglioSituazionale.sottoFaseGioco && ["Sotto-fase", dettaglioSituazionale.sottoFaseGioco],
-                          dettaglioSituazionale.terrenoGioco && ["Terreno", dettaglioSituazionale.terrenoGioco],
-                          dettaglioSituazionale.decisioneArbitrale && ["Decisione arbitrale", dettaglioSituazionale.decisioneArbitrale],
-                          dettaglioSituazionale.minutoInfortunio != null && ["Minuto infortunio", `${dettaglioSituazionale.minutoInfortunio}'`],
-                          dettaglioSituazionale.minutiGiocatiPrima != null && ["Minuti giocati prima", `${dettaglioSituazionale.minutiGiocatiPrima}'`],
-                        ].filter((item): item is [string, string] => Array.isArray(item)).map(([label, value]) => (
-                          <div key={label as string} className="bg-blue-50 rounded-xl p-3">
-                            <p className="text-xs text-blue-400">{label as string}</p>
-                            <p className="font-medium text-blue-900 text-sm">{value as string}</p>
-                          </div>
-                        ))}
-                        {/* Fallback: record esiste ma tutti i campi sono vuoti */}
-                        {[
-                          dettaglioSituazionale.fonteInformazione,
-                          dettaglioSituazionale.modalitaInsorgenza,
-                          dettaglioSituazionale.attivitaFisica,
-                          dettaglioSituazionale.tipoSeduta,
-                          dettaglioSituazionale.giorniReferto,
-                        ].every((v) => !v) && (
-                          <p className="text-xs text-gray-400 italic py-1">Dettaglio inserito — campi principali non compilati</p>
-                        )}
-                      </div>
-                    )}
+                    {!editDettaglioAperto && selected.dettaglioSituazionale && (() => {
+                      const d = selected.dettaglioSituazionale!;
+                      return (
+                        <div className="space-y-2">
+                          {[
+                            d.fonte_informazione?.length && ["Fonte", d.fonte_informazione.join(", ") + (d.fonte_informazione_altro ? ` — ${d.fonte_informazione_altro}` : "")],
+                            d.giorni_referto && ["Giorni a referto", String(d.giorni_referto)],
+                            d.modalita_insorgenza && ["Insorgenza", d.modalita_insorgenza + (d.modalita_insorgenza_altro ? ` — ${d.modalita_insorgenza_altro}` : "")],
+                            d.attivita_fisica && ["Attività fisica", d.attivita_fisica],
+                            d.tipo_corsa && ["Tipo corsa", d.tipo_corsa],
+                            d.corsa_gradi && ["Gradi cambio dir.", d.corsa_gradi],
+                            d.corsa_gamba_coinvolta && ["Gamba coinvolta", d.corsa_gamba_coinvolta],
+                            d.salto_fase && ["Fase salto", d.salto_fase],
+                            d.salto_atterraggio_dove && ["Atterraggio dove", d.salto_atterraggio_dove],
+                            d.salto_gamba_atterraggio && ["Gamba atterraggio", d.salto_gamba_atterraggio],
+                            d.caduta_dettagli && ["Caduta", d.caduta_dettagli],
+                            d.contatto_dettaglio && ["Tipo contatto", d.contatto_dettaglio],
+                            d.situazione_duello && ["Duello", d.situazione_duello],
+                            d.direzione_contrasto && ["Direzione contrasto", d.direzione_contrasto],
+                            d.collisione_con && ["Collisione con", d.collisione_con],
+                            d.duello_aereo && ["Duello aereo", d.duello_aereo === "si" ? "Sì" : "No"],
+                            d.azione_con_palla && ["Azione con palla", "Sì"],
+                            d.situazione_gioco_palla && ["Situazione gioco", d.situazione_gioco_palla],
+                            d.attivita_con_palla && ["Attività con palla", d.attivita_con_palla],
+                            d.calcio_azione && ["Azione calcio", d.calcio_azione],
+                            d.calcio_intensita && ["Intensità calcio", d.calcio_intensita],
+                            d.calcio_tipo && ["Tipo calcio", d.calcio_tipo],
+                            d.calcio_fase && ["Fase calcio", d.calcio_fase],
+                            d.dribbling_tipo && ["Dribbling", d.dribbling_tipo],
+                            d.palla_altezza && ["Altezza palla", d.palla_altezza],
+                            d.controllo_palla_con && ["Controllo con", d.controllo_palla_con],
+                            d.gamba_infortunata_palla && ["Gamba infort. a contatto", d.gamba_infortunata_palla],
+                            d.tipo_seduta && ["Tipo seduta", d.tipo_seduta + (d.tipo_esercitazione ? ` — ${d.tipo_esercitazione}` : "")],
+                            d.partita_sede && ["Sede partita", d.partita_sede],
+                            d.partita_competizione && ["Competizione", d.partita_competizione],
+                            d.partita_punteggio && ["Punteggio", d.partita_punteggio],
+                            d.fase_gioco && ["Fase di gioco", d.fase_gioco],
+                            d.sotto_fase_gioco && ["Sotto-fase", d.sotto_fase_gioco],
+                            d.terreno_gioco && ["Terreno", d.terreno_gioco],
+                            d.decisione_arbitrale && ["Decisione arbitrale", d.decisione_arbitrale],
+                            d.minuto_infortunio && ["Minuto infortunio", `${d.minuto_infortunio}'`],
+                            d.minuti_giocati_prima && ["Minuti giocati prima", `${d.minuti_giocati_prima}'`],
+                          ].filter((item): item is [string, string] => Array.isArray(item)).map(([label, value]) => (
+                            <div key={label as string} className="bg-blue-50 rounded-xl p-3">
+                              <p className="text-xs text-blue-400">{label as string}</p>
+                              <p className="font-medium text-blue-900 text-sm">{value as string}</p>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
 
-                    {!editDettaglioAperto && !dettaglioSituazionale && dbTableReady === false && (
-                      <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 space-y-2">
-                        <p className="text-xs font-bold text-amber-700">Tabella DB mancante</p>
-                        <p className="text-xs text-amber-700">La tabella <code className="bg-amber-100 px-1 rounded">dettaglio_situazionale</code> non esiste ancora nel database Supabase. Devi crearla una volta sola con il seguente SQL.</p>
-                        <p className="text-xs text-amber-600 font-semibold">1. Vai su <a href="https://supabase.com/dashboard" target="_blank" rel="noreferrer" className="underline">supabase.com/dashboard</a> → SQL Editor</p>
-                        <p className="text-xs text-amber-600 font-semibold">2. Copia e incolla questo SQL, poi clicca Run:</p>
-                        <pre className="text-[10px] bg-white border border-amber-200 rounded p-2 overflow-x-auto text-gray-700 leading-tight">{`create table if not exists dettaglio_situazionale (
-  id text primary key,
-  atleta_id text references atleti(id) on delete cascade,
-  fonte_informazione text[], fonte_informazione_altro text,
-  giorni_referto integer, modalita_insorgenza text,
-  modalita_insorgenza_altro text, contatto_dettaglio text,
-  situazione_duello text, direzione_contrasto text,
-  collisione_con text, duello_aereo boolean,
-  attivita_fisica text, tipo_corsa text, corsa_gradi text,
-  corsa_gamba_coinvolta text, salto_fase text,
-  salto_atterraggio_dove text, salto_gamba_atterraggio text,
-  caduta_dettagli text, azione_con_palla boolean,
-  situazione_gioco_palla text, attivita_con_palla text,
-  calcio_azione text, calcio_intensita text, calcio_tipo text,
-  calcio_fase text, dribbling_tipo text, palla_altezza text,
-  controllo_palla_con text, gamba_infortunata_palla text,
-  tipo_seduta text, tipo_esercitazione text, partita_sede text,
-  partita_competizione text, partita_punteggio text,
-  fase_gioco text, sotto_fase_gioco text, terreno_gioco text,
-  decisione_arbitrale text, minuto_infortunio integer,
-  minuti_giocati_prima integer, created_at timestamptz default now()
-);
-alter table dettaglio_situazionale enable row level security;
-create policy "Solo autenticati dettaglio_situazionale"
-  on dettaglio_situazionale for all
-  using (auth.uid() is not null)
-  with check (auth.uid() is not null);`}</pre>
-                        <button
-                          onClick={() => {
-                            const sql = `create table if not exists dettaglio_situazionale (\n  id text primary key,\n  atleta_id text references atleti(id) on delete cascade,\n  fonte_informazione text[], fonte_informazione_altro text,\n  giorni_referto integer, modalita_insorgenza text,\n  modalita_insorgenza_altro text, contatto_dettaglio text,\n  situazione_duello text, direzione_contrasto text,\n  collisione_con text, duello_aereo boolean,\n  attivita_fisica text, tipo_corsa text, corsa_gradi text,\n  corsa_gamba_coinvolta text, salto_fase text,\n  salto_atterraggio_dove text, salto_gamba_atterraggio text,\n  caduta_dettagli text, azione_con_palla boolean,\n  situazione_gioco_palla text, attivita_con_palla text,\n  calcio_azione text, calcio_intensita text, calcio_tipo text,\n  calcio_fase text, dribbling_tipo text, palla_altezza text,\n  controllo_palla_con text, gamba_infortunata_palla text,\n  tipo_seduta text, tipo_esercitazione text, partita_sede text,\n  partita_competizione text, partita_punteggio text,\n  fase_gioco text, sotto_fase_gioco text, terreno_gioco text,\n  decisione_arbitrale text, minuto_infortunio integer,\n  minuti_giocati_prima integer, created_at timestamptz default now()\n);\nalter table dettaglio_situazionale enable row level security;\ncreate policy "Solo autenticati dettaglio_situazionale"\n  on dettaglio_situazionale for all\n  using (auth.uid() is not null)\n  with check (auth.uid() is not null);`;
-                            navigator.clipboard.writeText(sql).then(() => { setSqlCopiato(true); setTimeout(() => setSqlCopiato(false), 2000); });
-                          }}
-                          className="w-full text-xs font-semibold py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 flex items-center justify-center gap-1"
-                        >
-                          {sqlCopiato ? <><Check className="w-3 h-3" /> Copiato!</> : <><Copy className="w-3 h-3" /> Copia SQL</>}
-                        </button>
-                        <p className="text-xs text-amber-500 text-center">Dopo aver eseguito lo SQL, ricarica la pagina</p>
-                      </div>
-                    )}
-
-                    {!editDettaglioAperto && !dettaglioSituazionale && dbTableReady !== false && (
+                    {!editDettaglioAperto && !selected.dettaglioSituazionale && (
                       <p className="text-xs text-gray-400 italic py-2">Nessun dettaglio situazionale inserito</p>
                     )}
                   </div>
@@ -3474,7 +3375,7 @@ create policy "Solo autenticati dettaglio_situazionale"
       {mostraForm && (
         <AtletaModal
           atletaIniziale={editAtleta}
-          initialDettaglio={editAtleta && dettaglioSituazionale ? dettaglioToForm(dettaglioSituazionale) : undefined}
+          initialDettaglio={editAtleta?.dettaglioSituazionale}
           onSalva={onSalvaAtleta}
           onChiudi={() => setMostraForm(false)}
         />

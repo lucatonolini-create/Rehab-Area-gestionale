@@ -494,6 +494,7 @@ function rowToAtleta(r: Record<string, unknown>): Atleta {
     osiicsCodice: (r.osiics_codice as string) ?? undefined,
     osiicsDescrizione: (r.osiics_descrizione as string) ?? undefined,
     osiicsCodeId: (r.osiics_code_id as string) ?? undefined,
+    dettaglioSituazionale: (r.dettaglio_situazionale as DettaglioSituazionaleForm) ?? undefined,
   };
 }
 
@@ -533,6 +534,7 @@ function atletaToRow(a: Atleta): Record<string, unknown> {
     osiics_codice: a.osiicsCodice ?? null,
     osiics_descrizione: a.osiicsDescrizione ?? null,
     osiics_code_id: a.osiicsCodeId ?? null,
+    dettaglio_situazionale: a.dettaglioSituazionale ?? null,
   };
 }
 
