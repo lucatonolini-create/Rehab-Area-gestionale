@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Plus, Search, User, ChevronRight, Phone, Mail, Trash2, AlertTriangle, CheckCircle2, Clock, Pencil, RotateCcw, FileDown, X, ExternalLink, Copy, Check } from "lucide-react";
 import {
   loadAtleti, loadProgrammi, upsertAtleta, upsertProgramma, deleteAtleta, uid, nd,
@@ -2091,17 +2092,19 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
   return (
     <div className="flex h-full">
-      {/* Toast globale */}
-      {toastMsg && (
+      {/* Toast globale – portal diretto su document.body per evitare problemi iOS Safari */}
+      {toastMsg && typeof document !== "undefined" && createPortal(
         <div
-          className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold flex items-center gap-2 transition-all ${
+          style={{ position: "fixed", bottom: "2rem", left: "50%", transform: "translateX(-50%)", zIndex: 99999, pointerEvents: "none" }}
+          className={`px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold flex items-center gap-2 ${
             toastMsg.tipo === "ok"
               ? "bg-green-600 text-white"
               : "bg-red-600 text-white"
           }`}
         >
           {toastMsg.tipo === "ok" ? "✓" : "⚠️"} {toastMsg.text}
-        </div>
+        </div>,
+        document.body
       )}
       {/* Lista */}
       <div className="flex-1 p-6 overflow-y-auto">
@@ -2369,7 +2372,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Dettaglio situazionale</p>
                       <button
                         type="button"
-                        onClick={() => { setEditDettaglioAperto((v) => !v); showToast("Form aperto v3 — pronto per salvare", "ok"); }}
+                        onClick={() => { setEditDettaglioAperto((v) => !v); showToast("Form aperto v4 — pronto", "ok"); }}
                         className="text-xs font-semibold text-[#C8102E] hover:underline flex items-center gap-0.5"
                       >
                         <Pencil className="w-3 h-3" />
