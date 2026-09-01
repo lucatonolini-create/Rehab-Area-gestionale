@@ -68,8 +68,10 @@ const cls = {
   lbl: "text-xs font-semibold text-gray-500 uppercase tracking-wide",
 };
 
-const Sel = (props: React.SelectHTMLAttributes<HTMLSelectElement> & { children: React.ReactNode }) => (
-  <select {...props} className={`${cls.sel} ${props.className ?? ""}`} />
+const Sel = forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement> & { children?: React.ReactNode }>(
+  (props, ref) => (
+    <select ref={ref} {...props} className={`${cls.sel} ${props.className ?? ""}`} />
+  )
 );
 
 const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
