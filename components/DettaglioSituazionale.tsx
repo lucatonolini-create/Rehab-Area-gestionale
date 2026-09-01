@@ -74,7 +74,7 @@ const Sel = (props: React.SelectHTMLAttributes<HTMLSelectElement> & { children: 
 
 const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
   ({ contatto, initialValues }, ref) => {
-    const [aperto, setAperto] = useState(false);
+    const [aperto, setAperto] = useState(true);
     const { register, watch, getValues, reset } = useForm<DettaglioSituazionaleForm>({
       defaultValues: initialValues ? { ...DEFAULT_VALUES, ...initialValues } : DEFAULT_VALUES,
     });
@@ -124,9 +124,9 @@ const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
           <div className="flex items-center gap-2.5">
             <ClipboardList className="w-4 h-4 text-gray-400" />
             <span className="text-sm font-semibold text-gray-700">
-              Aggiungi dettaglio situazionale
+              Dettaglio situazionale
             </span>
-            <span className="text-xs text-gray-400 italic">(opzionale — modello FIICCS)</span>
+            <span className="text-xs text-gray-400 italic">(modello FIICCS)</span>
           </div>
           {aperto ? (
             <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" />
