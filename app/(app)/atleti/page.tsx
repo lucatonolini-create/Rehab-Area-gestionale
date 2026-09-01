@@ -815,7 +815,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           evento: atleta.evento ?? undefined, meccanismo: atleta.meccanismo ?? undefined, contatto: atleta.contatto ?? undefined,
           lato: atleta.lato ?? undefined, posizione: atleta.posizioneInfortunio ?? undefined,
           osiicsCodice: atleta.osiicsCodice ?? undefined, osiicsDescrizione: atleta.osiicsDescrizione ?? undefined,
-          note: atleta.note || undefined }]
+          note: atleta.note || undefined, dettaglioSituazionale: atleta.dettaglioSituazionale }]
       : []),
   ].sort((a, b) => (a.inizio || "").localeCompare(b.inizio || ""));
 
@@ -951,7 +951,8 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         d.calcio_fase ? ["Fase calcio", d.calcio_fase] : null,
         d.dribbling_tipo ? ["Tipo dribbling", d.dribbling_tipo] : null,
         d.palla_altezza ? ["Altezza palla", d.palla_altezza] : null,
-        d.tipo_seduta ? ["Tipo seduta", d.tipo_seduta + (d.tipo_esercitazione ? ` — ${d.tipo_esercitazione}` : "")] : null,
+        d.tipo_seduta ? ["Tipo seduta", d.tipo_seduta] : null,
+        d.tipo_esercitazione ? ["Tipo esercitazione", d.tipo_esercitazione] : null,
         d.partita_sede ? ["Sede partita", d.partita_sede] : null,
         d.partita_competizione ? ["Competizione", d.partita_competizione] : null,
         d.partita_punteggio ? ["Punteggio", d.partita_punteggio] : null,
