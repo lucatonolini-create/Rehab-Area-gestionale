@@ -208,8 +208,8 @@ const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
             </div>
 
             {/* ── B. Dettaglio contatto ───────────────────────────────── */}
-            {mostraSezioneB && (
-              <div className="pt-2 border-t border-gray-100 space-y-4">
+            {/* hidden invece di smontare: così react-hook-form mantiene i valori registrati */}
+            <div className={`pt-2 border-t border-gray-100 space-y-4${mostraSezioneB ? "" : " hidden"}`}>
                 <p className={cls.sec}>B — Dettaglio del contatto</p>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -263,7 +263,6 @@ const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
                   </Sel>
                 </div>
               </div>
-            )}
 
             {/* ── C. Attività fisica ──────────────────────────────────── */}
             <div className="pt-2 border-t border-gray-100 space-y-4">
@@ -566,8 +565,8 @@ const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
             </div>
 
             {/* ── F. Informazioni contestuali ──────────────────────────── */}
-            {mostraSezioneF && (
-              <div className="pt-2 border-t border-gray-100 space-y-4">
+            {/* hidden invece di smontare: così react-hook-form mantiene i valori registrati */}
+            <div className={`pt-2 border-t border-gray-100 space-y-4${mostraSezioneF ? "" : " hidden"}`}>
                 <p className={cls.sec}>F — Informazioni contestuali</p>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -631,7 +630,6 @@ const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
                   </div>
                 </div>
               </div>
-            )}
 
           </div>
         )}
