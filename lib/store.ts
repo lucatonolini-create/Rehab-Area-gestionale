@@ -1284,23 +1284,16 @@ export async function loadDettaglioSituazionale(atletaId: string): Promise<Detta
 export async function upsertDettaglioSituazionale(d: DettaglioSituazionaleData): Promise<{ ok: boolean; error?: string }> {
   if (!isOnline()) return { ok: false, error: "Offline" };
   try {
-    const { data: rows, error: selErr } = await supabase
-      .from("dettaglio_situazionale")
-      .select("id")
-      .eq("atleta_id", d.atletaId)
-      .order("id")
-      .limit(10);
-    if (selErr) { console.error("[dettaglio] upsert select error:", selErr); return { ok: false, error: selErr.message }; }
-    const existing = rows?.[0] ?? null;
-    // Rimuovi eventuali duplicati (bug legacy)
-    if (rows && rows.length > 1) {
-      const idsToDelete = rows.slice(1).map((r: { id: string }) => r.id);
-      await supabase.from("dettaglio_situazionale").delete().in("id", idsToDelete);
-    }
-    const toSave = existing ? { ...d, id: existing.id } : d;
-    const { error: upsErr } = await supabase.from("dettaglio_situazionale").upsert(dettaglioToRow(toSave));
-    if (upsErr) { console.error("[dettaglio] upsert error:", upsErr); return { ok: false, error: upsErr.message }; }
-    return { ok: true };
+    // Usa l'API route server-side per bypassare i problemi di RLS con il client browser
+    const row = dettaglioToRow(d);
+    const res = await fetch("/api/salva-dettaglio", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(row),
+    });
+    const json = await res.json() as { ok: boolean; error?: string };
+    if (!json.ok) console.error("[dettaglio] upsert error:", json.error);
+    return json;
   } catch (e) { console.error("[dettaglio] upsertDettaglioSituazionale exception:", e); return { ok: false, error: String(e) }; }
 }
 
