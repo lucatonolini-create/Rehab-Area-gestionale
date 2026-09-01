@@ -2368,7 +2368,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Dettaglio situazionale</p>
                       <button
-                        onClick={() => setEditDettaglioAperto((v) => !v)}
+                        type="button"
+                        onClick={() => { setEditDettaglioAperto((v) => !v); showToast("Form aperto v3 — pronto per salvare", "ok"); }}
                         className="text-xs font-semibold text-[#C8102E] hover:underline flex items-center gap-0.5"
                       >
                         <Pencil className="w-3 h-3" />
