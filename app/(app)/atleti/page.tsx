@@ -1632,13 +1632,18 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     if (updated && updated !== selected) setSelected(updated);
   }, [atleti]);
 
+  // Quando cambia atleta: chiudi form e carica dettaglio dal cache o DB
   useEffect(() => {
     setEditDettaglioAperto(false);
+    setSalvandoDettaglio(false);
+    setDettaglioErrMsg(null);
+    setDettaglioSalvatoOk(false);
     if (!selected || (selected.stato !== "Infortunato" && selected.stato !== "NTL")) { setDettaglioSituazionale(null); return; }
     const cached = tuttiDettagli[selected.id];
     if (cached) { setDettaglioSituazionale(cached); return; }
     loadDettaglioSituazionale(selected.id).then(setDettaglioSituazionale);
-  }, [selected?.id, tuttiDettagli]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.id]);
 
   useEffect(() => {
     if (!selected) { setProgrammiAtleta([]); return; }
@@ -2392,13 +2397,15 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                     setDettaglioErrMsg(res.error ?? "Errore sconosciuto");
                                     return;
                                   }
+                                  // Aggiorna stato locale senza toccare tuttiDettagli
+                                  // (evita di triggherare l'useEffect che chiude il form)
                                   setDettaglioSituazionale(det);
-                                  setTuttiDettagli((prev) => ({ ...prev, [selected.id]: det }));
                                   setDettaglioSalvatoOk(true);
                                   setTimeout(() => {
+                                    setTuttiDettagli((prev) => ({ ...prev, [selected.id]: det }));
                                     setEditDettaglioAperto(false);
                                     setDettaglioSalvatoOk(false);
-                                  }, 1200);
+                                  }, 1500);
                                 } finally {
                                   setSalvandoDettaglio(false);
                                 }
@@ -2464,6 +2471,16 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                             <p className="font-medium text-blue-900 text-sm">{value as string}</p>
                           </div>
                         ))}
+                        {/* Fallback: record esiste ma tutti i campi sono vuoti */}
+                        {[
+                          dettaglioSituazionale.fonteInformazione,
+                          dettaglioSituazionale.modalitaInsorgenza,
+                          dettaglioSituazionale.attivitaFisica,
+                          dettaglioSituazionale.tipoSeduta,
+                          dettaglioSituazionale.giorniReferto,
+                        ].every((v) => !v) && (
+                          <p className="text-xs text-gray-400 italic py-1">Dettaglio inserito — campi principali non compilati</p>
+                        )}
                       </div>
                     )}
 
