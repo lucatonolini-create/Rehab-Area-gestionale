@@ -225,6 +225,8 @@ export interface Atleta {
   osiicsCodice?: string;
   osiicsDescrizione?: string;
   osiicsCodeId?: string;
+  // Dettaglio situazionale FIICCS
+  dettaglioSituazionale?: DettaglioSituazionaleForm;
 }
 
 // Tempi di recupero standard per tipo di infortunio (in giorni)
