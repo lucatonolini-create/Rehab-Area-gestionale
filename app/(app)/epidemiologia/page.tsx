@@ -417,7 +417,12 @@ export default function EpidemiologiaPage() {
     const conPalla = dettagli.filter((d) => d.azioneConPalla === true).length;
     const senzaPalla = dettagli.filter((d) => d.azioneConPalla === false).length;
 
-    return { totaleInfortuni, atletiInfortunatiOra, perTipo, perMeccanismo, perLato, perCategoria, perSeduta, perAttivita, perInsorgenza, perTerreno, perFaseGioco, minutoMedio, conPalla, senzaPalla, fiiccsCount: dettagli.length, perOsiicsCodice, perOsiicsCategoria, osiicsCount: codiciFull.length };
+    // Contesto partita (solo schede con tipo_seduta = "Partita")
+    const detPartita = dettagli.filter((d) => d.tipoSeduta === "Partita");
+    const perSede = distrib(detPartita.map((d) => d.partitaSede));
+    const perTempo = distrib(detPartita.map((d) => d.tempoPartita));
+
+    return { totaleInfortuni, atletiInfortunatiOra, perTipo, perMeccanismo, perLato, perCategoria, perSeduta, perAttivita, perInsorgenza, perTerreno, perFaseGioco, minutoMedio, conPalla, senzaPalla, fiiccsCount: dettagli.length, perOsiicsCodice, perOsiicsCategoria, osiicsCount: codiciFull.length, perSede, perTempo, inPartitiCount: detPartita.length };
   }, [atleti, dettagli]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -857,6 +862,52 @@ export default function EpidemiologiaPage() {
               </div>
             )}
 
+            {/* Contesto Partita (FIICCS) */}
+            {infStats.inPartitiCount > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Contesto Partita (FIICCS)</h3>
+                <p className="text-xs text-gray-400 mb-4">{infStats.inPartitiCount} infortuni in partita</p>
+
+                {/* Casa / Trasferta */}
+                {infStats.perSede.length > 0 && (
+                  <>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Sede</p>
+                    <div className="space-y-2 mb-4">
+                      {infStats.perSede.map(([label, n]) => (
+                        <BarraH key={label} label={label} value={n} max={infStats.perSede[0][1]}
+                          color={label === "Casa" ? "#059669" : "#C8102E"} extra={`${n}`} />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Terreno */}
+                {infStats.perTerreno.length > 0 && (
+                  <>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Terreno di gioco</p>
+                    <div className="space-y-2 mb-4">
+                      {infStats.perTerreno.map(([label, n]) => (
+                        <BarraH key={label} label={label} value={n} max={infStats.perTerreno[0][1]} color="#7C3AED" extra={`${n}`} />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Primo / Secondo tempo */}
+                {infStats.perTempo.length > 0 && (
+                  <>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tempo della partita</p>
+                    <div className="space-y-2">
+                      {infStats.perTempo.map(([label, n]) => (
+                        <BarraH key={label} label={label} value={n} max={infStats.perTempo[0][1]}
+                          color={label === "Primo tempo" ? "#2563EB" : label === "Secondo tempo" ? "#D97706" : "#6B7280"} extra={`${n}`} />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* Attività fisica (FIICCS) */}
             {infStats.perAttivita.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
@@ -881,17 +932,6 @@ export default function EpidemiologiaPage() {
               </div>
             )}
 
-            {/* Terreno di gioco (FIICCS) */}
-            {infStats.perTerreno.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Terreno di Gioco (FIICCS)</h3>
-                <div className="space-y-3">
-                  {infStats.perTerreno.map(([label, n]) => (
-                    <BarraH key={label} label={label} value={n} max={infStats.perTerreno[0][1]} color="#059669" extra={`${n}`} />
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Fase di gioco (FIICCS) */}
             {infStats.perFaseGioco.length > 0 && (
