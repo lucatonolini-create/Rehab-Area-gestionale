@@ -524,14 +524,23 @@ const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
               </div>
 
               {tipoSeduta === "Allenamento" && (
-                <div>
-                  <label className={cls.lbl}>Tipo di esercitazione</label>
-                  <Sel className="mt-1" {...register("tipo_esercitazione")}>
-                    <option value="">—</option>
-                    {["Riscaldamento", "Tecnica bassa intensità", "Tecnica media intensità", "Tecnica alta intensità", "Tattica", "Partitella (SSG)", "Palla inattiva", "Condizionamento senza palla", "Palestra", "Altro"].map((v) => (
-                      <option key={v}>{v}</option>
-                    ))}
-                  </Sel>
+                <div className="space-y-3">
+                  <div>
+                    <label className={cls.lbl}>Tipo di esercitazione</label>
+                    <Sel className="mt-1" {...register("tipo_esercitazione")}>
+                      <option value="">—</option>
+                      {["Riscaldamento", "Tecnica bassa intensità", "Tecnica media intensità", "Tecnica alta intensità", "Tattica", "Partitella (SSG)", "Palla inattiva", "Condizionamento senza palla", "Palestra", "Altro"].map((v) => (
+                        <option key={v}>{v}</option>
+                      ))}
+                    </Sel>
+                  </div>
+                  <div>
+                    <label className={cls.lbl}>Terreno di gioco</label>
+                    <Sel className="mt-1" {...register("terreno_gioco")}>
+                      <option value="">—</option>
+                      {["Erba naturale", "Erba artificiale", "Sabbia", "Altro"].map((v) => <option key={v}>{v}</option>)}
+                    </Sel>
+                  </div>
                 </div>
               )}
 
