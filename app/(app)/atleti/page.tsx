@@ -826,6 +826,15 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     return null;
   };
 
+  // Se il giocatore è Disponibile e ha dettaglioSituazionale salvato sull'atleta,
+  // usarlo come fallback per l'infortunio storico più recente che ne è privo.
+  const dettaglioFallback = atleta.dettaglioSituazionale;
+  const storicoOrdinato = [...storico].sort((a, b) => (b.inizioRehab || "").localeCompare(a.inizioRehab || ""));
+  const idxFallback = dettaglioFallback && atleta.stato === "Disponibile"
+    ? storicoOrdinato.findIndex((i) => !i.dettaglioSituazionale)
+    : -1;
+  const idFallback = idxFallback >= 0 ? storicoOrdinato[idxFallback].id : null;
+
   const allInjuries: {
     id: string; diagnosi: string; tipo?: string; inizio: string; fine: string | null; attivo: boolean;
     evento?: string; meccanismo?: string; contatto?: string; lato?: string; posizione?: string;
@@ -847,7 +856,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       osiicsCodice: inf.osiicsCodice,
       osiicsDescrizione: inf.osiicsDescrizione,
       note: inf.note,
-      dettaglioSituazionale: inf.dettaglioSituazionale,
+      dettaglioSituazionale: inf.dettaglioSituazionale ?? (inf.id === idFallback ? dettaglioFallback : undefined),
     })),
     ...((atleta.stato === "Infortunato" || atleta.stato === "NTL") && (atleta.infortunio || atleta.inizioRehab)
       ? [{ id: "__corrente__", diagnosi: atleta.infortunio || "—", tipo: atleta.tipoInfortunio as string | undefined, inizio: atleta.inizioRehab, fine: null as string | null, attivo: true,
