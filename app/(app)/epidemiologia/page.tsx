@@ -406,23 +406,55 @@ export default function EpidemiologiaPage() {
     };
     const perOsiicsCategoria = distrib(codiciFull.map((c) => OSIICS_CATEGORIE[c[0]?.toUpperCase()] ?? `Altro (${c[0]?.toUpperCase() ?? "?"})`));
 
-    // FIICCS-specific
-    const perSeduta = distrib(dettagli.map((d) => d.tipoSeduta));
-    const perAttivita = distrib(dettagli.map((d) => d.attivitaFisica));
-    const perInsorgenza = distrib(dettagli.map((d) => d.modalitaInsorgenza));
-    const perTerreno = distrib(dettagli.map((d) => d.terrenoGioco));
-    const perFaseGioco = distrib(dettagli.map((d) => d.faseGioco));
-    const minutiValori = dettagli.map((d) => d.minutoInfortunio).filter((v): v is number => v != null);
+    // FIICCS — fonti combinate: tabella separata + JSONB su atleti (infortunio corrente e storico)
+    type FiiccsLike = {
+      tipoSeduta?: string; attivitaFisica?: string; modalitaInsorgenza?: string;
+      terrenoGioco?: string; faseGioco?: string; minutoInfortunio?: number;
+      azioneConPalla?: boolean; partitaSede?: string; tempoPartita?: string;
+    };
+    const fromForm = (f: import("@/lib/store").DettaglioSituazionaleForm | undefined | null): FiiccsLike | null => {
+      if (!f) return null;
+      const hasData = Object.values(f).some(v => v && (Array.isArray(v) ? v.length > 0 : v !== "" && v !== false));
+      if (!hasData) return null;
+      return {
+        tipoSeduta: f.tipo_seduta || undefined,
+        attivitaFisica: f.attivita_fisica || undefined,
+        modalitaInsorgenza: f.modalita_insorgenza || undefined,
+        terrenoGioco: f.terreno_gioco || undefined,
+        faseGioco: f.fase_gioco || undefined,
+        minutoInfortunio: f.minuto_infortunio ? Number(f.minuto_infortunio) : undefined,
+        azioneConPalla: f.azione_con_palla === true ? true : f.azione_con_palla === false ? false : undefined,
+        partitaSede: f.partita_sede || undefined,
+        tempoPartita: f.tempo_partita || undefined,
+      };
+    };
+    const tuttiDettagli: FiiccsLike[] = [
+      ...dettagli,
+      ...atleti.flatMap((a) => {
+        const fonti: (FiiccsLike | null)[] = [fromForm(a.dettaglioSituazionale)];
+        for (const inf of a.storicoInfortuni ?? []) {
+          fonti.push(fromForm(inf.dettaglioSituazionale as import("@/lib/store").DettaglioSituazionaleForm | undefined));
+        }
+        return fonti.filter((f): f is FiiccsLike => f !== null);
+      }),
+    ];
+
+    const perSeduta = distrib(tuttiDettagli.map((d) => d.tipoSeduta));
+    const perAttivita = distrib(tuttiDettagli.map((d) => d.attivitaFisica));
+    const perInsorgenza = distrib(tuttiDettagli.map((d) => d.modalitaInsorgenza));
+    const perTerreno = distrib(tuttiDettagli.map((d) => d.terrenoGioco));
+    const perFaseGioco = distrib(tuttiDettagli.map((d) => d.faseGioco));
+    const minutiValori = tuttiDettagli.map((d) => d.minutoInfortunio).filter((v): v is number => v != null);
     const minutoMedio = minutiValori.length > 0 ? Math.round(minutiValori.reduce((a, b) => a + b, 0) / minutiValori.length) : null;
-    const conPalla = dettagli.filter((d) => d.azioneConPalla === true).length;
-    const senzaPalla = dettagli.filter((d) => d.azioneConPalla === false).length;
+    const conPalla = tuttiDettagli.filter((d) => d.azioneConPalla === true).length;
+    const senzaPalla = tuttiDettagli.filter((d) => d.azioneConPalla === false).length;
 
     // Contesto partita (solo schede con tipo_seduta = "Partita")
-    const detPartita = dettagli.filter((d) => d.tipoSeduta === "Partita");
+    const detPartita = tuttiDettagli.filter((d) => d.tipoSeduta === "Partita");
     const perSede = distrib(detPartita.map((d) => d.partitaSede));
     const perTempo = distrib(detPartita.map((d) => d.tempoPartita));
 
-    return { totaleInfortuni, atletiInfortunatiOra, perTipo, perMeccanismo, perLato, perCategoria, perSeduta, perAttivita, perInsorgenza, perTerreno, perFaseGioco, minutoMedio, conPalla, senzaPalla, fiiccsCount: dettagli.length, perOsiicsCodice, perOsiicsCategoria, osiicsCount: codiciFull.length, perSede, perTempo, inPartitiCount: detPartita.length };
+    return { totaleInfortuni, atletiInfortunatiOra, perTipo, perMeccanismo, perLato, perCategoria, perSeduta, perAttivita, perInsorgenza, perTerreno, perFaseGioco, minutoMedio, conPalla, senzaPalla, fiiccsCount: tuttiDettagli.length, perOsiicsCodice, perOsiicsCategoria, osiicsCount: codiciFull.length, perSede, perTempo, inPartitiCount: detPartita.length };
   }, [atleti, dettagli]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
