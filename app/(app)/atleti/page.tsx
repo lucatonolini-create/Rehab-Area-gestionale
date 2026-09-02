@@ -972,10 +972,10 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           theme: "striped",
           styles: { fontSize: 8, cellPadding: 2.5, overflow: "linebreak", halign: "left", valign: "middle" },
           columnStyles: {
-            0: { cellWidth: 70, fontStyle: "bold", textColor: [30, 64, 175] as [number, number, number] },
+            0: { cellWidth: 70, fontStyle: "bold", textColor: dark },
             1: { textColor: dark },
           },
-          alternateRowStyles: { fillColor: [239, 246, 255] as [number, number, number] },
+          alternateRowStyles: { fillColor: [250, 250, 250] as [number, number, number] },
           margin: { left: M, right: M, top: HDR + 8 },
         });
         y = (doc as any).lastAutoTable.finalY + 6;
@@ -1031,10 +1031,10 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
           theme: "striped",
           styles: { fontSize: 8, cellPadding: 2.5, overflow: "linebreak", halign: "left", valign: "middle" },
           columnStyles: {
-            0: { cellWidth: 70, fontStyle: "bold", textColor: [30, 64, 175] as [number, number, number] },
+            0: { cellWidth: 70, fontStyle: "bold", textColor: dark },
             1: { textColor: dark },
           },
-          alternateRowStyles: { fillColor: [239, 246, 255] as [number, number, number] },
+          alternateRowStyles: { fillColor: [250, 250, 250] as [number, number, number] },
           margin: { left: M, right: M, top: HDR + 8 },
         });
         y = (doc as any).lastAutoTable.finalY + 6;
