@@ -114,6 +114,11 @@ const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
     // Visibilità sezione F
     const mostraSezioneF =
       tipoSeduta === "Partita" ||
+      tipoSeduta === "Allenamento" ||
+      tipoEsercitazione === "Tattica" ||
+      tipoEsercitazione === "Partitella (SSG)";
+    const isContestoPartita =
+      tipoSeduta === "Partita" ||
       tipoEsercitazione === "Tattica" ||
       tipoEsercitazione === "Partitella (SSG)";
 
@@ -524,23 +529,14 @@ const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
               </div>
 
               {tipoSeduta === "Allenamento" && (
-                <div className="space-y-3">
-                  <div>
-                    <label className={cls.lbl}>Tipo di esercitazione</label>
-                    <Sel className="mt-1" {...register("tipo_esercitazione")}>
-                      <option value="">—</option>
-                      {["Riscaldamento", "Tecnica bassa intensità", "Tecnica media intensità", "Tecnica alta intensità", "Tattica", "Partitella (SSG)", "Palla inattiva", "Condizionamento senza palla", "Palestra", "Altro"].map((v) => (
-                        <option key={v}>{v}</option>
-                      ))}
-                    </Sel>
-                  </div>
-                  <div>
-                    <label className={cls.lbl}>Terreno di gioco</label>
-                    <Sel className="mt-1" {...register("terreno_gioco")}>
-                      <option value="">—</option>
-                      {["Erba naturale", "Erba artificiale", "Sabbia", "Altro"].map((v) => <option key={v}>{v}</option>)}
-                    </Sel>
-                  </div>
+                <div>
+                  <label className={cls.lbl}>Tipo di esercitazione</label>
+                  <Sel className="mt-1" {...register("tipo_esercitazione")}>
+                    <option value="">—</option>
+                    {["Riscaldamento", "Tecnica bassa intensità", "Tecnica media intensità", "Tecnica alta intensità", "Tattica", "Partitella (SSG)", "Palla inattiva", "Condizionamento senza palla", "Palestra", "Altro"].map((v) => (
+                      <option key={v}>{v}</option>
+                    ))}
+                  </Sel>
                 </div>
               )}
 
@@ -580,75 +576,81 @@ const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
             <div className={`pt-2 border-t border-gray-100 space-y-4${mostraSezioneF ? "" : " hidden"}`}>
                 <p className={cls.sec}>F — Informazioni contestuali</p>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={cls.lbl}>Fase di gioco</label>
-                    <Sel className="mt-1" {...register("fase_gioco")}>
-                      <option value="">—</option>
-                      {["Offensiva", "Difensiva", "Non chiara"].map((v) => <option key={v}>{v}</option>)}
-                    </Sel>
-                  </div>
-                  <div>
-                    <label className={cls.lbl}>Terreno di gioco</label>
-                    <Sel className="mt-1" {...register("terreno_gioco")}>
-                      <option value="">—</option>
-                      {["Erba naturale", "Erba artificiale", "Sabbia", "Altro"].map((v) => <option key={v}>{v}</option>)}
-                    </Sel>
-                  </div>
-                </div>
-
+                {/* Terreno di gioco: visibile sia per allenamento che per partita */}
                 <div>
-                  <label className={cls.lbl}>Sotto-fase di gioco</label>
-                  <Sel className="mt-1" {...register("sotto_fase_gioco")}>
+                  <label className={cls.lbl}>Terreno di gioco</label>
+                  <Sel className="mt-1" {...register("terreno_gioco")}>
                     <option value="">—</option>
-                    {["Calcio d'inizio", "Calcio d'angolo", "Punizione", "Rimessa laterale", "Rigore", "Rinvio del portiere", "Costruzione del gioco", "Fase offensiva", "Fase conclusiva", "Pressione alta", "Pressione media", "Pressione leggera", "Altro"].map((v) => (
-                      <option key={v}>{v}</option>
-                    ))}
+                    {["Erba naturale", "Erba artificiale", "Sabbia", "Altro"].map((v) => <option key={v}>{v}</option>)}
                   </Sel>
                 </div>
 
-                <div>
-                  <label className={cls.lbl}>Decisione arbitrale</label>
-                  <Sel className="mt-1" {...register("decisione_arbitrale")}>
-                    <option value="">—</option>
-                    {["Punizione a favore", "Punizione contro", "Ammonizione al giocatore infortunato", "Ammonizione all'avversario", "Espulsione del giocatore infortunato", "Espulsione dell'avversario", "Nessun fallo"].map((v) => (
-                      <option key={v}>{v}</option>
-                    ))}
-                  </Sel>
-                </div>
+                {/* Campi specifici per partita / tattica / partitella */}
+                {isContestoPartita && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className={cls.lbl}>Fase di gioco</label>
+                        <Sel className="mt-1" {...register("fase_gioco")}>
+                          <option value="">—</option>
+                          {["Offensiva", "Difensiva", "Non chiara"].map((v) => <option key={v}>{v}</option>)}
+                        </Sel>
+                      </div>
+                      <div>
+                        <label className={cls.lbl}>Sotto-fase di gioco</label>
+                        <Sel className="mt-1" {...register("sotto_fase_gioco")}>
+                          <option value="">—</option>
+                          {["Calcio d'inizio", "Calcio d'angolo", "Punizione", "Rimessa laterale", "Rigore", "Rinvio del portiere", "Costruzione del gioco", "Fase offensiva", "Fase conclusiva", "Pressione alta", "Pressione media", "Pressione leggera", "Altro"].map((v) => (
+                            <option key={v}>{v}</option>
+                          ))}
+                        </Sel>
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className={cls.lbl}>Minuto dell'infortunio</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={120}
-                      {...register("minuto_infortunio")}
-                      placeholder="Es. 34"
-                      className={`${cls.inp} mt-1`}
-                    />
-                  </div>
-                  <div>
-                    <label className={cls.lbl}>Minuti giocati prima</label>
-                    <input
-                      type="number"
-                      min={0}
-                      {...register("minuti_giocati_prima")}
-                      placeholder="Es. 34"
-                      className={`${cls.inp} mt-1`}
-                    />
-                  </div>
-                  <div>
-                    <label className={cls.lbl}>Tempo della partita</label>
-                    <Sel {...register("tempo_partita")} className="mt-1">
-                      <option value="">—</option>
-                      <option>Primo tempo</option>
-                      <option>Secondo tempo</option>
-                      <option>Supplementari</option>
-                    </Sel>
-                  </div>
-                </div>
+                    <div>
+                      <label className={cls.lbl}>Decisione arbitrale</label>
+                      <Sel className="mt-1" {...register("decisione_arbitrale")}>
+                        <option value="">—</option>
+                        {["Punizione a favore", "Punizione contro", "Ammonizione al giocatore infortunato", "Ammonizione all'avversario", "Espulsione del giocatore infortunato", "Espulsione dell'avversario", "Nessun fallo"].map((v) => (
+                          <option key={v}>{v}</option>
+                        ))}
+                      </Sel>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className={cls.lbl}>Minuto dell'infortunio</label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={120}
+                          {...register("minuto_infortunio")}
+                          placeholder="Es. 34"
+                          className={`${cls.inp} mt-1`}
+                        />
+                      </div>
+                      <div>
+                        <label className={cls.lbl}>Minuti giocati prima</label>
+                        <input
+                          type="number"
+                          min={0}
+                          {...register("minuti_giocati_prima")}
+                          placeholder="Es. 34"
+                          className={`${cls.inp} mt-1`}
+                        />
+                      </div>
+                      <div>
+                        <label className={cls.lbl}>Tempo della partita</label>
+                        <Sel {...register("tempo_partita")} className="mt-1">
+                          <option value="">—</option>
+                          <option>Primo tempo</option>
+                          <option>Secondo tempo</option>
+                          <option>Supplementari</option>
+                        </Sel>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
           </div>
