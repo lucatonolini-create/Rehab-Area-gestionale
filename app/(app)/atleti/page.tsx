@@ -1726,6 +1726,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
               inizioRehab: inizioRehab || "",
               fineRehab,
               note: dati.note || editAtleta.note || undefined,
+              dettaglioSituazionale: editAtleta.dettaglioSituazionale ?? dati.dettaglioSituazionale,
             };
             // Also close any concurrent injuries that were open at the same time
             const storicoChiuso = (editAtleta.storicoInfortuni ?? []).map((s) =>
@@ -1747,6 +1748,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
               osiicsCodice: undefined,
               osiicsDescrizione: undefined,
               osiicsCodeId: undefined,
+              dettaglioSituazionale: undefined,
             };
             // Rimappa le sessioni orfane __corrente__ al nuovo id storico
             const remappati = programmiAtleta
