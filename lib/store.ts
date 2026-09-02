@@ -1033,6 +1033,7 @@ export interface DettaglioSituazionaleData {
   decisioneArbitrale?: string;
   minutoInfortunio?: number;
   minutiGiocatiPrima?: number;
+  tempoPartita?: string;
 }
 
 // Form values type (used by react-hook-form in the component)
@@ -1077,6 +1078,7 @@ export interface DettaglioSituazionaleForm {
   decisione_arbitrale: string;
   minuto_infortunio: string;
   minuti_giocati_prima: string;
+  tempo_partita: string;
 }
 
 function rowToDettaglio(r: Record<string, unknown>): DettaglioSituazionaleData {
@@ -1126,6 +1128,7 @@ function rowToDettaglio(r: Record<string, unknown>): DettaglioSituazionaleData {
     decisioneArbitrale: n("decisione_arbitrale"),
     minutoInfortunio: ni("minuto_infortunio"),
     minutiGiocatiPrima: ni("minuti_giocati_prima"),
+    tempoPartita: n("tempo_partita"),
   };
 }
 
@@ -1173,6 +1176,7 @@ function dettaglioToRow(d: DettaglioSituazionaleData): Record<string, unknown> {
     decisione_arbitrale: d.decisioneArbitrale ?? null,
     minuto_infortunio: d.minutoInfortunio ?? null,
     minuti_giocati_prima: d.minutiGiocatiPrima ?? null,
+    tempo_partita: d.tempoPartita ?? null,
   };
 }
 
@@ -1222,6 +1226,7 @@ export function formToDettaglio(id: string, atletaId: string, f: DettaglioSituaz
     decisioneArbitrale: s(f.decisione_arbitrale),
     minutoInfortunio: si(f.minuto_infortunio),
     minutiGiocatiPrima: si(f.minuti_giocati_prima),
+    tempoPartita: s(f.tempo_partita),
   };
 }
 
@@ -1268,6 +1273,7 @@ export function dettaglioToForm(d: DettaglioSituazionaleData): Partial<Dettaglio
     decisione_arbitrale: s(d.decisioneArbitrale),
     minuto_infortunio: d.minutoInfortunio != null ? String(d.minutoInfortunio) : "",
     minuti_giocati_prima: d.minutiGiocatiPrima != null ? String(d.minutiGiocatiPrima) : "",
+    tempo_partita: s(d.tempoPartita),
   };
 }
 

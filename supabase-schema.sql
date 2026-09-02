@@ -135,6 +135,7 @@ create table if not exists dettaglio_situazionale (
   decisione_arbitrale       text,
   minuto_infortunio         integer,
   minuti_giocati_prima      integer,
+  tempo_partita             text,
   created_at                timestamptz default now()
 );
 

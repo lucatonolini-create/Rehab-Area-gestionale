@@ -59,6 +59,7 @@ const DEFAULT_VALUES: DettaglioSituazionaleForm = {
   decisione_arbitrale: "",
   minuto_infortunio: "",
   minuti_giocati_prima: "",
+  tempo_partita: "",
 };
 
 const cls = {
@@ -607,7 +608,7 @@ const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
                   </Sel>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className={cls.lbl}>Minuto dell'infortunio</label>
                     <input
@@ -628,6 +629,15 @@ const DettaglioSituazionale = forwardRef<DettaglioSituazionaleHandle, Props>(
                       placeholder="Es. 34"
                       className={`${cls.inp} mt-1`}
                     />
+                  </div>
+                  <div>
+                    <label className={cls.lbl}>Tempo della partita</label>
+                    <Sel {...register("tempo_partita")} className="mt-1">
+                      <option value="">—</option>
+                      <option>Primo tempo</option>
+                      <option>Secondo tempo</option>
+                      <option>Supplementari</option>
+                    </Sel>
                   </div>
                 </div>
               </div>

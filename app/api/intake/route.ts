@@ -334,6 +334,7 @@ export async function POST(req: NextRequest) {
           decisione_arbitrale: det.decisione_arbitrale || null,
           minuto_infortunio: det.minuto_infortunio ? parseInt(det.minuto_infortunio) || null : null,
           minuti_giocati_prima: det.minuti_giocati_prima ? parseInt(det.minuti_giocati_prima) || null : null,
+          tempo_partita: det.tempo_partita || null,
         };
         await supabase.from("dettaglio_situazionale").insert(detRow);
       }

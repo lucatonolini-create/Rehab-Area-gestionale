@@ -961,6 +961,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         d.decisione_arbitrale ? ["Decisione arbitrale", d.decisione_arbitrale] : null,
         d.minuto_infortunio ? ["Minuto infortunio", `${d.minuto_infortunio}'`] : null,
         d.minuti_giocati_prima ? ["Minuti giocati prima", `${d.minuti_giocati_prima}'`] : null,
+        d.tempo_partita ? ["Tempo della partita", d.tempo_partita] : null,
       ] as ([string, string] | null)[]).filter((r): r is [string, string] => r !== null);
       if (detRows.length > 0) {
         checkPage(20, sub);
@@ -2451,6 +2452,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                             d.decisione_arbitrale && ["Decisione arbitrale", d.decisione_arbitrale],
                             d.minuto_infortunio && ["Minuto infortunio", `${d.minuto_infortunio}'`],
                             d.minuti_giocati_prima && ["Minuti giocati prima", `${d.minuti_giocati_prima}'`],
+                            d.tempo_partita && ["Tempo della partita", d.tempo_partita],
                           ].filter((item): item is [string, string] => Array.isArray(item)).map(([label, value]) => (
                             <div key={label as string} className="bg-blue-50 rounded-xl p-3">
                               <p className="text-xs text-blue-400">{label as string}</p>
@@ -2618,6 +2620,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                             d.partita_competizione ? ["Competizione", d.partita_competizione] : null,
                             d.fase_gioco ? ["Fase di gioco", d.fase_gioco] : null,
                             d.minuto_infortunio ? ["Minuto", `${d.minuto_infortunio}'`] : null,
+                            d.tempo_partita ? ["Tempo", d.tempo_partita] : null,
                             d.terreno_gioco ? ["Terreno", d.terreno_gioco] : null,
                           ] as ([string, string] | null)[]).filter((r): r is [string, string] => r !== null);
                           if (!righe.length) return null;

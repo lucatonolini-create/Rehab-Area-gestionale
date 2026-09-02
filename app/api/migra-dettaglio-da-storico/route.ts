@@ -115,6 +115,7 @@ export async function GET(req: NextRequest) {
       decisione_arbitrale: formData.decisione_arbitrale ?? null,
       minuto_infortunio: formData.minuto_infortunio ? parseInt(String(formData.minuto_infortunio)) || null : null,
       minuti_giocati_prima: formData.minuti_giocati_prima ? parseInt(String(formData.minuti_giocati_prima)) || null : null,
+      tempo_partita: (formData as Record<string, unknown>).tempo_partita as string | null ?? null,
     };
 
     if (!dry) {
