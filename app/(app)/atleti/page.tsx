@@ -148,6 +148,45 @@ function esportaStoricoCompletoCSV(atleta: Atleta, programmi: Programma[]) {
     rows.push([]);
   }
 
+  // FIICCS — dettaglio situazionale
+  const fiiccsBlocks: { label: string; d: import("@/lib/store").DettaglioSituazionaleForm }[] = [];
+  if (atleta.dettaglioSituazionale && Object.values(atleta.dettaglioSituazionale).some(v => v && (Array.isArray(v) ? v.length > 0 : v !== ""))) {
+    fiiccsBlocks.push({ label: atleta.infortunio ?? "Infortunio corrente", d: atleta.dettaglioSituazionale });
+  }
+  for (const inf of storico) {
+    if (inf.dettaglioSituazionale && Object.values(inf.dettaglioSituazionale).some(v => v && (Array.isArray(v) ? v.length > 0 : v !== ""))) {
+      fiiccsBlocks.push({ label: inf.diagnosi ?? "Infortunio storico", d: inf.dettaglioSituazionale as import("@/lib/store").DettaglioSituazionaleForm });
+    }
+  }
+  if (fiiccsBlocks.length > 0) {
+    rows.push(["DETTAGLIO SITUAZIONALE (FIICCS)"]);
+    for (const { label, d } of fiiccsBlocks) {
+      rows.push([label]);
+      const fi: [string, string | undefined][] = [
+        ["Fonte informazione", d.fonte_informazione?.length ? d.fonte_informazione.join(", ") + (d.fonte_informazione_altro ? ` — ${d.fonte_informazione_altro}` : "") : undefined],
+        ["Giorni a referto", d.giorni_referto || undefined],
+        ["Modalità insorgenza", d.modalita_insorgenza ? d.modalita_insorgenza + (d.modalita_insorgenza_altro ? ` — ${d.modalita_insorgenza_altro}` : "") : undefined],
+        ["Attività fisica", d.attivita_fisica || undefined],
+        ["Tipo corsa", d.tipo_corsa || undefined],
+        ["Gamba coinvolta", d.corsa_gamba_coinvolta || undefined],
+        ["Tipo seduta", d.tipo_seduta || undefined],
+        ["Tipo esercitazione", d.tipo_esercitazione || undefined],
+        ["Sede partita", d.partita_sede || undefined],
+        ["Competizione", d.partita_competizione || undefined],
+        ["Punteggio", d.partita_punteggio || undefined],
+        ["Terreno di gioco", d.terreno_gioco || undefined],
+        ["Fase di gioco", d.fase_gioco ? d.fase_gioco + (d.sotto_fase_gioco ? ` — ${d.sotto_fase_gioco}` : "") : undefined],
+        ["Decisione arbitrale", d.decisione_arbitrale || undefined],
+        ["Minuto infortunio", d.minuto_infortunio ? `${d.minuto_infortunio}'` : undefined],
+        ["Minuti giocati prima", d.minuti_giocati_prima ? `${d.minuti_giocati_prima}'` : undefined],
+        ["Tempo della partita", d.tempo_partita || undefined],
+        ["Azione con palla", d.azione_con_palla === true ? "Sì" : d.azione_con_palla === false ? "No" : undefined],
+      ];
+      for (const [k, v] of fi) if (v) rows.push(["", k, v]);
+      rows.push([]);
+    }
+  }
+
   const questionari = atleta.questionariKinesiofobia ?? [];
   if (questionari.length > 0) {
     rows.push(["VALUTAZIONE PSICOLOGICA TSK/AFAQ"]);
