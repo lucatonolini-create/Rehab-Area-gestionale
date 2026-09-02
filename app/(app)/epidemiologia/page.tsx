@@ -453,8 +453,13 @@ export default function EpidemiologiaPage() {
     const detPartita = tuttiDettagli.filter((d) => d.tipoSeduta === "Partita");
     const perSede = distrib(detPartita.map((d) => d.partitaSede));
     const perTempo = distrib(detPartita.map((d) => d.tempoPartita));
+    const perTerrenoPartita = distrib(detPartita.map((d) => d.terrenoGioco));
 
-    return { totaleInfortuni, atletiInfortunatiOra, perTipo, perMeccanismo, perLato, perCategoria, perSeduta, perAttivita, perInsorgenza, perTerreno, perFaseGioco, minutoMedio, conPalla, senzaPalla, fiiccsCount: tuttiDettagli.length, perOsiicsCodice, perOsiicsCategoria, osiicsCount: codiciFull.length, perSede, perTempo, inPartitiCount: detPartita.length };
+    // Contesto allenamento
+    const detAllenamento = tuttiDettagli.filter((d) => d.tipoSeduta === "Allenamento");
+    const perTerrenoAllenamento = distrib(detAllenamento.map((d) => d.terrenoGioco));
+
+    return { totaleInfortuni, atletiInfortunatiOra, perTipo, perMeccanismo, perLato, perCategoria, perSeduta, perAttivita, perInsorgenza, perTerreno, perFaseGioco, minutoMedio, conPalla, senzaPalla, fiiccsCount: tuttiDettagli.length, perOsiicsCodice, perOsiicsCategoria, osiicsCount: codiciFull.length, perSede, perTempo, inPartitiCount: detPartita.length, perTerrenoPartita, perTerrenoAllenamento, inAllenamentoCount: detAllenamento.length };
   }, [atleti, dettagli]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -908,13 +913,27 @@ export default function EpidemiologiaPage() {
               </div>
             )}
 
-            {/* Terreno di gioco */}
-            {infStats.perTerreno.length > 0 && (
+            {/* Terreno di gioco — Partita */}
+            {infStats.perTerrenoPartita.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Terreno di Gioco (FIICCS)</h3>
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Terreno di Gioco — Partita (FIICCS)</h3>
+                <p className="text-xs text-gray-400 mb-4">{infStats.inPartitiCount} infortuni in partita</p>
                 <div className="space-y-3">
-                  {infStats.perTerreno.map(([label, n]) => (
-                    <BarraH key={label} label={label} value={n} max={infStats.perTerreno[0][1]} color="#059669" extra={`${n}`} />
+                  {infStats.perTerrenoPartita.map(([label, n]) => (
+                    <BarraH key={label} label={label} value={n} max={infStats.perTerrenoPartita[0][1]} color="#059669" extra={`${n}`} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Terreno di gioco — Allenamento */}
+            {infStats.perTerrenoAllenamento.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Terreno di Gioco — Allenamento (FIICCS)</h3>
+                <p className="text-xs text-gray-400 mb-4">{infStats.inAllenamentoCount} infortuni in allenamento</p>
+                <div className="space-y-3">
+                  {infStats.perTerrenoAllenamento.map(([label, n]) => (
+                    <BarraH key={label} label={label} value={n} max={infStats.perTerrenoAllenamento[0][1]} color="#059669" extra={`${n}`} />
                   ))}
                 </div>
               </div>
