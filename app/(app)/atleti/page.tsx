@@ -1627,6 +1627,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const editDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
   const nuovoDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
   const inlineDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
+  const storicoDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
   const [editDettaglioAperto, setEditDettaglioAperto] = useState(false);
   const [salvandoDettaglio, setSalvandoDettaglio] = useState(false);
   const [dettaglioSalvatoOk, setDettaglioSalvatoOk] = useState(false);
@@ -1854,8 +1855,12 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
   const salvaEditStorico = async () => {
     if (!selected || !editStorico || !editStoricoForm) return;
+    const detValues = storicoDettaglioRef.current?.getValues();
+    const formToSave: InfortunioStorico = detValues
+      ? { ...editStoricoForm, dettaglioSituazionale: detValues }
+      : editStoricoForm;
     const nuovoStorico = (selected.storicoInfortuni ?? []).map((inf, i) =>
-      i === editStorico.idx ? editStoricoForm : inf
+      i === editStorico.idx ? formToSave : inf
     );
     const aggiornato = { ...selected, storicoInfortuni: nuovoStorico };
     setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
@@ -3169,6 +3174,10 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                       <input className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
                                         value={editStoricoForm.note ?? ""}
                                         onChange={(e) => setEditStoricoForm({ ...editStoricoForm, note: e.target.value || undefined })} />
+                                    </div>
+                                    <div className="pt-1">
+                                      <p className="text-xs font-semibold text-gray-500 mb-1">Dettaglio situazionale</p>
+                                      <DettaglioSituazionale ref={storicoDettaglioRef} initialValues={editStoricoForm.dettaglioSituazionale} />
                                     </div>
                                     <div className="flex gap-2 pt-1">
                                       <button onClick={salvaEditStorico}
