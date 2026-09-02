@@ -894,49 +894,43 @@ export default function EpidemiologiaPage() {
               </div>
             )}
 
-            {/* Contesto Partita (FIICCS) */}
-            {infStats.inPartitiCount > 0 && (
+            {/* Sede partita — Casa / Trasferta */}
+            {infStats.perSede.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Contesto Partita (FIICCS)</h3>
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Sede Partita (FIICCS)</h3>
                 <p className="text-xs text-gray-400 mb-4">{infStats.inPartitiCount} infortuni in partita</p>
+                <div className="space-y-3">
+                  {infStats.perSede.map(([label, n]) => (
+                    <BarraH key={label} label={label} value={n} max={infStats.perSede[0][1]}
+                      color={label === "Casa" ? "#059669" : "#C8102E"} extra={`${n}`} />
+                  ))}
+                </div>
+              </div>
+            )}
 
-                {/* Casa / Trasferta */}
-                {infStats.perSede.length > 0 && (
-                  <>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Sede</p>
-                    <div className="space-y-2 mb-4">
-                      {infStats.perSede.map(([label, n]) => (
-                        <BarraH key={label} label={label} value={n} max={infStats.perSede[0][1]}
-                          color={label === "Casa" ? "#059669" : "#C8102E"} extra={`${n}`} />
-                      ))}
-                    </div>
-                  </>
-                )}
+            {/* Terreno di gioco */}
+            {infStats.perTerreno.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Terreno di Gioco (FIICCS)</h3>
+                <div className="space-y-3">
+                  {infStats.perTerreno.map(([label, n]) => (
+                    <BarraH key={label} label={label} value={n} max={infStats.perTerreno[0][1]} color="#059669" extra={`${n}`} />
+                  ))}
+                </div>
+              </div>
+            )}
 
-                {/* Terreno */}
-                {infStats.perTerreno.length > 0 && (
-                  <>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Terreno di gioco</p>
-                    <div className="space-y-2 mb-4">
-                      {infStats.perTerreno.map(([label, n]) => (
-                        <BarraH key={label} label={label} value={n} max={infStats.perTerreno[0][1]} color="#7C3AED" extra={`${n}`} />
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                {/* Primo / Secondo tempo */}
-                {infStats.perTempo.length > 0 && (
-                  <>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tempo della partita</p>
-                    <div className="space-y-2">
-                      {infStats.perTempo.map(([label, n]) => (
-                        <BarraH key={label} label={label} value={n} max={infStats.perTempo[0][1]}
-                          color={label === "Primo tempo" ? "#2563EB" : label === "Secondo tempo" ? "#D97706" : "#6B7280"} extra={`${n}`} />
-                      ))}
-                    </div>
-                  </>
-                )}
+            {/* Tempo della partita — 1° / 2° tempo */}
+            {infStats.perTempo.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Tempo della Partita (FIICCS)</h3>
+                <p className="text-xs text-gray-400 mb-4">{infStats.inPartitiCount} infortuni in partita</p>
+                <div className="space-y-3">
+                  {infStats.perTempo.map(([label, n]) => (
+                    <BarraH key={label} label={label} value={n} max={infStats.perTempo[0][1]}
+                      color={label === "Primo tempo" ? "#2563EB" : label === "Secondo tempo" ? "#D97706" : "#6B7280"} extra={`${n}`} />
+                  ))}
+                </div>
               </div>
             )}
 
