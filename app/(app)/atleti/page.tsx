@@ -3042,6 +3042,9 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                 const matchInf = (p: Programma, inf: InfortunioStorico) => {
                   if (p.infortunioId && p.infortunioId !== "__corrente__") return p.infortunioId === inf.id;
                   if (p.infortunioId === "__corrente__") {
+                    // Le sessioni __corrente__ appartengono all'infortunio principale:
+                    // non assegnarle agli infortuni concorrenti (attivo: true)
+                    if (inf.attivo) return false;
                     // Sessione orfana: mappa per data sull'infortunio archiviato
                     if (!p.data || !inf.inizioRehab) return false;
                     if (p.data < inf.inizioRehab) return false;
@@ -3070,9 +3073,10 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       (!p.infortunioId && p.data >= selected.inizioRehab && !concurrentSessIds.has(p.id))
                     ) && isSessione(p)).length
                   : 0;
-                // Conta solo le sessioni attribuite a un infortunio (evita sessioni orfane fuori periodo)
+                // Conta solo le sessioni degli infortuni principali (non concorrenti):
+                // i concorrenti si svolgono in contemporanea → le sessioni sono già incluse nel principale
                 const allInjurySessionIds = new Set(
-                  storico.flatMap((inf) =>
+                  storico.filter((inf) => !inf.attivo).flatMap((inf) =>
                     programmiAtleta.filter((p) => matchInf(p, inf) && isSessione(p)).map((p) => p.id)
                   )
                 );
