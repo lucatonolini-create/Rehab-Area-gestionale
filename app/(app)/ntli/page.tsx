@@ -93,6 +93,78 @@ function VasInput({ value, onChange, disabled }: { value: number | null | undefi
   );
 }
 
+// ── Player combobox (tutti gli atleti + testo libero) ───────────────────────
+function PlayerComboboxNtli({ value, atleti, onChange }: {
+  value: { id: string; nome: string };
+  atleti: Atleta[];
+  onChange: (id: string, nome: string) => void;
+}) {
+  const [query, setQuery] = useState(value.nome);
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const sorted = [...atleti].sort((a, b) => a.nome.localeCompare(b.nome));
+  const filtered = query.length === 0
+    ? sorted
+    : sorted.filter((a) => a.nome.toLowerCase().includes(query.toLowerCase()));
+
+  // Sync when external value changes
+  useEffect(() => { setQuery(value.nome); }, [value.nome]);
+
+  const select = (id: string, nome: string) => {
+    onChange(id, nome);
+    setQuery(nome);
+    setOpen(false);
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      setOpen(false);
+      // If free-text name not matching any athlete, use it as-is
+      if (query && !atleti.find((a) => a.nome === query)) {
+        onChange("", query);
+      }
+    }, 150);
+  };
+
+  return (
+    <div className="relative">
+      <input
+        ref={inputRef}
+        type="text"
+        value={query}
+        onChange={(e) => { setQuery(e.target.value); setOpen(true); if (!e.target.value) onChange("", ""); }}
+        onFocus={() => setOpen(true)}
+        onBlur={handleBlur}
+        placeholder="Cerca o digita nome giocatore..."
+        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]"
+      />
+      {open && (
+        <div className="absolute z-50 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto mt-1">
+          {filtered.length === 0 && query.length > 0 && (
+            <div
+              className="px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer"
+              onMouseDown={() => select("", query)}
+            >
+              Usa "<strong>{query}</strong>" come nome libero
+            </div>
+          )}
+          {filtered.map((a) => (
+            <div
+              key={a.id}
+              onMouseDown={() => select(a.id, a.nome)}
+              className="px-4 py-2.5 text-sm hover:bg-gray-50 cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-0"
+            >
+              <span>{a.nome}</span>
+              <span className="text-xs text-gray-400">{a.stato}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── OSIICS Autocomplete ──────────────────────────────────────────────────────
 function OsiicsField({ value, description, onChange }: {
   value: string; description: string;
@@ -270,14 +342,13 @@ function NtliForm({
         <div className="p-6 space-y-4">
           <div>
             <Lbl>Giocatore *</Lbl>
-            <Sel className="mt-1" value={form.athleteId} onChange={(e) => {
-              const a = atleti.find((x) => x.id === e.target.value);
-              f("athleteId", e.target.value);
-              f("athleteName", a?.nome ?? "");
-            }}>
-              <option value="">— Seleziona atleta —</option>
-              {atleti.map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
-            </Sel>
+            <div className="mt-1">
+              <PlayerComboboxNtli
+                value={{ id: form.athleteId, nome: form.athleteName }}
+                atleti={atleti}
+                onChange={(id, nome) => { f("athleteId", id); f("athleteName", nome); }}
+              />
+            </div>
           </div>
           <div>
             <Lbl>Data insorgenza *</Lbl>
@@ -328,7 +399,7 @@ function NtliForm({
             Annulla
           </button>
           <button
-            disabled={!form.athleteId || !form.painLocation || saving}
+            disabled={!form.athleteName.trim() || !form.painLocation || saving}
             onClick={async () => { setSaving(true); await onSave(form); setSaving(false); }}
             className="flex-1 bg-[#C8102E] text-white py-3 rounded-xl text-sm font-medium hover:bg-red-800 disabled:opacity-40">
             {saving ? "Salvataggio..." : initial ? "Salva modifiche" : "Crea NTLI"}
