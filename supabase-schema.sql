@@ -171,3 +171,44 @@ create policy "Solo autenticati dettaglio_situazionale"
   on dettaglio_situazionale for all
   using (auth.uid() is not null)
   with check (auth.uid() is not null);
+
+-- ── NTLI – Non-Time-Loss Injuries ────────────────────────────────────────────
+create table if not exists ntli (
+  id                   text primary key,
+  athlete_id           text references atleti(id) on delete cascade,
+  athlete_name         text not null,
+  onset_date           text not null,
+  end_date             text,
+  osiics_code          text,
+  osiics_description   text,
+  pain_location        text not null,
+  body_side            text not null,
+  clinical_diagnosis   text,
+  status               text not null default 'Attivo',
+  notes                text,
+  created_at           timestamptz default now(),
+  updated_at           timestamptz default now()
+);
+
+create table if not exists ntli_daily (
+  id                    text primary key,
+  ntli_id               text references ntli(id) on delete cascade,
+  athlete_id            text references atleti(id) on delete cascade,
+  date                  text not null,
+  vas_start_training    numeric,
+  vas_end_training      numeric,
+  training_modification text not null default 'Nessuna modifica',
+  note                  text,
+  created_at            timestamptz default now(),
+  updated_at            timestamptz default now(),
+  unique (ntli_id, date)
+);
+
+alter table ntli enable row level security;
+alter table ntli_daily enable row level security;
+
+create policy "Solo autenticati ntli"
+  on ntli for all using (auth.uid() is not null) with check (auth.uid() is not null);
+
+create policy "Solo autenticati ntli_daily"
+  on ntli_daily for all using (auth.uid() is not null) with check (auth.uid() is not null);

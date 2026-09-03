@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Users, TrendingUp, Dumbbell, Settings, Menu, X, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity,
+  LayoutDashboard, Users, TrendingUp, Dumbbell, Settings, Menu, X, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity, ShieldAlert,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
@@ -32,6 +32,7 @@ const navItems = [
   { href: "/analisi",        label: "Analisi",        icon: BarChart2   },
   { href: "/performance",   label: "Performance",   icon: Activity    },
   { href: "/epidemiologia", label: "Epidemiologia", icon: HeartPulse  },
+  { href: "/ntli",          label: "NTLI",           icon: ShieldAlert },
   { href: "/segnalazioni", label: "Link",           icon: Link2      },
   { href: "/impostazioni", label: "Impostazioni", icon: Settings },
 ];
