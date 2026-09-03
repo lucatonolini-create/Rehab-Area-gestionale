@@ -651,17 +651,20 @@ export default function NtliPage() {
         {tab === "dashboard" && (
           <div className="space-y-6">
             {/* KPI */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
               {[
-                { label: "NTLI attivi", value: activeNtli.length, color: "text-blue-600" },
-                { label: "Da compilare oggi", value: toCompileToday.length, color: "text-yellow-600" },
-                { label: "Compilati oggi", value: compiledToday.size, color: "text-green-600" },
-                { label: "VAS fine ≥5", value: highVasToday.length, color: "text-red-600" },
-                { label: "In peggioramento", value: peggiorati.length, color: "text-red-800" },
+                { label: "NTLI attivi",     short: "Attivi",        value: activeNtli.length,       color: "text-blue-600"  },
+                { label: "Da compilare",    short: "Da compilare",  value: toCompileToday.length,   color: "text-yellow-600"},
+                { label: "Compilati oggi",  short: "Compilati",     value: compiledToday.size,      color: "text-green-600" },
+                { label: "VAS fine ≥5",     short: "VAS ≥5",        value: highVasToday.length,     color: "text-red-600"   },
+                { label: "In peggioramento",short: "Peggioram.",    value: peggiorati.length,       color: "text-red-800"   },
               ].map((k) => (
-                <div key={k.label} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                  <p className={`text-3xl font-bold ${k.color}`}>{k.value}</p>
-                  <p className="text-xs text-gray-500 mt-1">{k.label}</p>
+                <div key={k.label} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-3 md:p-5">
+                  <p className={`text-2xl md:text-3xl font-bold ${k.color}`}>{k.value}</p>
+                  <p className="text-xs text-gray-500 mt-1 leading-tight">
+                    <span className="md:hidden">{k.short}</span>
+                    <span className="hidden md:inline">{k.label}</span>
+                  </p>
                 </div>
               ))}
             </div>
