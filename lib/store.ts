@@ -1356,3 +1356,150 @@ export async function searchOsiicsCodes(query: string): Promise<OsiicsCode[]> {
     return (data as Record<string, unknown>[]).map(rowToOsiicsCode);
   } catch (e) { console.error("[searchOsiicsCodes] exception", e); return []; }
 }
+
+// ─── NTLI ────────────────────────────────────────────────────────────────────
+
+export type NtliStato = "Attivo" | "In miglioramento" | "Stabile" | "Peggiorato" | "Risolto" | "Chiuso";
+export const NTLI_STATI: NtliStato[] = ["Attivo", "In miglioramento", "Stabile", "Peggiorato", "Risolto", "Chiuso"];
+
+export type TrainingModification = "Nessuna modifica" | "Modifica volume" | "Modifica intensità" | "Cambio esercizio" | "Palestra" | "Nessun allenamento";
+export const TRAINING_MODIFICATIONS: TrainingModification[] = ["Nessuna modifica", "Modifica volume", "Modifica intensità", "Cambio esercizio", "Palestra", "Nessun allenamento"];
+
+export interface NtliRecord {
+  id: string;
+  athleteId: string;
+  athleteName: string;
+  onsetDate: string;
+  endDate?: string;
+  osiicsCode?: string;
+  osiicsDescription?: string;
+  painLocation: string;
+  bodySide: string;
+  clinicalDiagnosis?: string;
+  status: NtliStato;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NtliDaily {
+  id: string;
+  ntliId: string;
+  athleteId: string;
+  date: string;
+  vasStart?: number | null;
+  vasEnd?: number | null;
+  trainingModification: TrainingModification;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function ntliSbClient() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { createBrowserClient } = require("@supabase/ssr");
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
+
+function ntliRowToRecord(r: Record<string, unknown>): NtliRecord {
+  return {
+    id: r.id as string,
+    athleteId: r.athlete_id as string,
+    athleteName: r.athlete_name as string,
+    onsetDate: r.onset_date as string,
+    endDate: (r.end_date as string) || undefined,
+    osiicsCode: (r.osiics_code as string) || undefined,
+    osiicsDescription: (r.osiics_description as string) || undefined,
+    painLocation: r.pain_location as string,
+    bodySide: r.body_side as string,
+    clinicalDiagnosis: (r.clinical_diagnosis as string) || undefined,
+    status: r.status as NtliStato,
+    notes: (r.notes as string) || undefined,
+    createdAt: r.created_at as string,
+    updatedAt: r.updated_at as string,
+  };
+}
+
+function ntliDailyRowToRecord(r: Record<string, unknown>): NtliDaily {
+  return {
+    id: r.id as string,
+    ntliId: r.ntli_id as string,
+    athleteId: r.athlete_id as string,
+    date: r.date as string,
+    vasStart: r.vas_start_training as number | null,
+    vasEnd: r.vas_end_training as number | null,
+    trainingModification: r.training_modification as TrainingModification,
+    note: (r.note as string) || undefined,
+    createdAt: r.created_at as string,
+    updatedAt: r.updated_at as string,
+  };
+}
+
+export async function loadNtli(): Promise<NtliRecord[]> {
+  const sb = ntliSbClient();
+  const { data, error } = await sb.from("ntli").select("*").order("onset_date", { ascending: false });
+  if (error) { console.error("loadNtli:", error); return []; }
+  return (data ?? []).map(ntliRowToRecord);
+}
+
+export async function upsertNtli(n: NtliRecord): Promise<void> {
+  const sb = ntliSbClient();
+  const row = {
+    id: n.id,
+    athlete_id: n.athleteId,
+    athlete_name: n.athleteName,
+    onset_date: n.onsetDate,
+    end_date: n.endDate ?? null,
+    osiics_code: n.osiicsCode ?? null,
+    osiics_description: n.osiicsDescription ?? null,
+    pain_location: n.painLocation,
+    body_side: n.bodySide,
+    clinical_diagnosis: n.clinicalDiagnosis ?? null,
+    status: n.status,
+    notes: n.notes ?? null,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await sb.from("ntli").upsert(row);
+  if (error) throw error;
+}
+
+export async function deleteNtli(id: string): Promise<void> {
+  const sb = ntliSbClient();
+  const { error } = await sb.from("ntli").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function loadNtliDaily(ntliId?: string): Promise<NtliDaily[]> {
+  const sb = ntliSbClient();
+  let q = sb.from("ntli_daily").select("*").order("date", { ascending: true });
+  if (ntliId) q = q.eq("ntli_id", ntliId);
+  const { data, error } = await q;
+  if (error) { console.error("loadNtliDaily:", error); return []; }
+  return (data ?? []).map(ntliDailyRowToRecord);
+}
+
+export async function upsertNtliDaily(d: NtliDaily): Promise<void> {
+  const sb = ntliSbClient();
+  const row = {
+    id: d.id,
+    ntli_id: d.ntliId,
+    athlete_id: d.athleteId,
+    date: d.date,
+    vas_start_training: d.vasStart ?? null,
+    vas_end_training: d.vasEnd ?? null,
+    training_modification: d.trainingModification,
+    note: d.note ?? null,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await sb.from("ntli_daily").upsert(row, { onConflict: "ntli_id,date" });
+  if (error) throw error;
+}
+
+export async function deleteNtliDaily(id: string): Promise<void> {
+  const sb = ntliSbClient();
+  const { error } = await sb.from("ntli_daily").delete().eq("id", id);
+  if (error) throw error;
+}

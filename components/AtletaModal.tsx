@@ -77,6 +77,9 @@ export default function AtletaModal({ atletaIniziale, initialDettaglio, onSalva,
   const f = <K extends keyof typeof form>(k: K, v: typeof form[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
 
+  // Tipologia infortunio per il form (TL o NTLI)
+  const [tipoGestione, setTipoGestione] = useState<"TL" | "NTLI">("TL");
+
   // ID pre-generato per poter salvare il dettaglio con la FK corretta
   const [atletaId] = useState(() => atletaIniziale?.id ?? uid());
   const dettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
@@ -92,6 +95,35 @@ export default function AtletaModal({ atletaIniziale, initialDettaglio, onSalva,
         </div>
 
         <div className="p-6 space-y-4">
+          {/* Tipologia infortunio — solo in creazione */}
+          {!isModifica && (
+            <div>
+              <Label>Tipologia infortunio</Label>
+              <div className="mt-2 flex gap-2">
+                {(["TL", "NTLI"] as const).map((t) => (
+                  <button key={t} type="button" onClick={() => setTipoGestione(t)}
+                    className={`flex-1 py-2 px-3 rounded-xl border text-sm font-medium transition-colors ${
+                      tipoGestione === t ? "bg-[#C8102E] text-white border-[#C8102E]" : "border-gray-200 text-gray-600 hover:border-gray-400"
+                    }`}>
+                    {t === "TL" ? "Time Loss Injury (TL)" : "NTLI – Non-Time-Loss Injury"}
+                  </button>
+                ))}
+              </div>
+              {tipoGestione === "NTLI" && (
+                <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <span className="text-sm text-amber-800">
+                    Per creare un NTLI usa la sezione dedicata →{" "}
+                    <a href="/ntli" onClick={onChiudi} className="font-semibold underline text-amber-900 hover:text-[#C8102E]">
+                      Vai a NTLI
+                    </a>
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Mostra il resto del form solo se TL (o in modifica) */}
+          {(isModifica || tipoGestione === "TL") && (<>
           <div>
             <Label>Cognome e Nome *</Label>
             <PlayerCombobox
@@ -288,6 +320,8 @@ export default function AtletaModal({ atletaIniziale, initialDettaglio, onSalva,
             <DettaglioSituazionale ref={dettaglioRef} contatto={form.contatto} initialValues={initialDettaglio} />
           )}
 
+          </>) } {/* end TL-only section */}
+
         </div>
 
         <div className="flex gap-3 p-6 border-t border-gray-100 sticky bottom-0 bg-white">
@@ -295,6 +329,7 @@ export default function AtletaModal({ atletaIniziale, initialDettaglio, onSalva,
             className="flex-1 border border-gray-200 text-gray-600 py-3 rounded-xl text-sm font-medium hover:bg-gray-50">
             Annulla
           </button>
+          {(isModifica || tipoGestione === "TL") && (
           <button onClick={() => {
               if (!isModifica && !form.nome.trim()) return;
               const det = (dettaglioRef.current?.hasData() || !!initialDettaglio) ? dettaglioRef.current?.getValues() : undefined;
@@ -303,6 +338,7 @@ export default function AtletaModal({ atletaIniziale, initialDettaglio, onSalva,
             className="flex-1 bg-[#C8102E] text-white py-3 rounded-xl text-sm font-medium hover:bg-red-800 disabled:opacity-40">
             {isModifica ? "Salva modifiche" : "Aggiungi atleta"}
           </button>
+          )}
         </div>
       </div>
     </div>
