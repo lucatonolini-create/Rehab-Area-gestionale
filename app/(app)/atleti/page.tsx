@@ -3070,7 +3070,22 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       (!p.infortunioId && p.data >= selected.inizioRehab && !concurrentSessIds.has(p.id))
                     ) && isSessione(p)).length
                   : 0;
-                const totaleStagione = programmiAtleta.filter(isSessione).length;
+                // Conta solo le sessioni attribuite a un infortunio (evita sessioni orfane fuori periodo)
+                const allInjurySessionIds = new Set(
+                  storico.flatMap((inf) =>
+                    programmiAtleta.filter((p) => matchInf(p, inf) && isSessione(p)).map((p) => p.id)
+                  )
+                );
+                // Aggiunge le sessioni dell'infortunio corrente (se attivo)
+                if (selected.stato === "Infortunato" || selected.stato === "NTL") {
+                  programmiAtleta
+                    .filter((p) => (
+                      (p.infortunioId === "__corrente__" && p.data >= (selected.inizioRehab ?? "")) ||
+                      (!p.infortunioId && p.data >= (selected.inizioRehab ?? "") && !concurrentSessIds.has(p.id))
+                    ) && isSessione(p))
+                    .forEach((p) => allInjurySessionIds.add(p.id));
+                }
+                const totaleStagione = allInjurySessionIds.size;
 
                 const fmtData = (d: string) =>
                   d ? new Date(d + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
