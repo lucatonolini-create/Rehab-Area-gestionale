@@ -633,18 +633,21 @@ export default function NtliPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-white border border-gray-100 rounded-2xl p-1 mb-6 no-print shadow-sm">
-          {([
-            ["dashboard", "Dashboard"],
-            ["monitoraggio", "Monitoraggio giornaliero"],
-            ["riepilogo", "Riepilogo settimanale"],
-            ["gestione", "Gestione NTLI"],
-          ] as const).map(([key, label]) => (
-            <button key={key} onClick={() => setTab(key)}
-              className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-colors ${tab === key ? "bg-[#C8102E] text-white" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"}`}>
-              {label}
-            </button>
-          ))}
+        <div className="overflow-x-auto mb-6 no-print -mx-4 px-4">
+          <div className="flex gap-1 bg-white border border-gray-100 rounded-2xl p-1 shadow-sm min-w-max">
+            {([
+              ["dashboard",    "Dashboard",    "Dashboard"],
+              ["monitoraggio", "Monitoraggio", "Monitoraggio giornaliero"],
+              ["riepilogo",    "Riepilogo",    "Riepilogo settimanale"],
+              ["gestione",     "Gestione",     "Gestione NTLI"],
+            ] as const).map(([key, short, full]) => (
+              <button key={key} onClick={() => setTab(key)}
+                className={`py-2 px-4 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${tab === key ? "bg-[#C8102E] text-white" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"}`}>
+                <span className="md:hidden">{short}</span>
+                <span className="hidden md:inline">{full}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Tab Dashboard ─────────────────────────────────────────────── */}
