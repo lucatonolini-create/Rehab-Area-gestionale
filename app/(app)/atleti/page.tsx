@@ -3079,10 +3079,18 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       (!p.infortunioId && p.data >= selected.inizioRehab && !concurrentSessIds.has(p.id))
                     ) && isSessione(p)).length
                   : 0;
-                // Conta solo le sessioni degli infortuni principali (non concorrenti):
-                // i concorrenti si svolgono in contemporanea → le sessioni sono già incluse nel principale
+                // Un infortunio è "subordinato" (era concorrente) se il suo periodo è interamente
+                // contenuto nel periodo di un altro infortunio più lungo (iniziato prima e finito dopo).
+                const isSubordinato = (inf: InfortunioStorico) =>
+                  storico.some(
+                    (other) =>
+                      other.id !== inf.id &&
+                      other.inizioRehab <= inf.inizioRehab &&
+                      ((!other.fineRehab) || (inf.fineRehab && other.fineRehab >= inf.fineRehab))
+                  );
+                // Conta solo le sessioni degli infortuni principali (non subordinati/concorrenti)
                 const allInjurySessionIds = new Set(
-                  storico.filter((inf) => !inf.attivo).flatMap((inf) =>
+                  storico.filter((inf) => !isSubordinato(inf)).flatMap((inf) =>
                     programmiAtleta.filter((p) => matchInf(p, inf) && isSessione(p)).map((p) => p.id)
                   )
                 );
