@@ -683,22 +683,22 @@ export default function NtliPage() {
                   {activeNtli.map((n) => {
                     const lastRec = dailyAll.filter((d) => d.ntliId === n.id).sort((a, b) => b.date.localeCompare(a.date))[0];
                     return (
-                      <div key={n.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">{n.athleteName}</p>
-                            <p className="text-xs text-gray-500">{n.painLocation} · {n.bodySide}</p>
+                      <div key={n.id} className="p-3 rounded-xl border border-gray-100 hover:bg-gray-50">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 leading-tight">{n.athleteName}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">{n.painLocation} · {n.bodySide}</p>
                           </div>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${statusColor[n.status]}`}>{n.status}</span>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2">
                           {lastRec?.vasEnd != null && (
                             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${vasBadge(lastRec.vasEnd)}`}>
                               VAS {lastRec.vasEnd}
                             </span>
                           )}
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor[n.status]}`}>{n.status}</span>
                           <button onClick={() => setTab("monitoraggio")}
-                            className="text-xs text-[#C8102E] border border-[#C8102E] px-2 py-1 rounded-lg hover:bg-red-50">
+                            className="ml-auto text-xs text-[#C8102E] border border-[#C8102E] px-3 py-1 rounded-lg hover:bg-red-50">
                             Vai al monitoraggio
                           </button>
                         </div>
