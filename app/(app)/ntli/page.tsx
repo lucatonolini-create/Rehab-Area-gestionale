@@ -743,7 +743,7 @@ export default function NtliPage() {
                   const row = getMonRow(ntli.id);
                   const existing = dailyAll.find((d) => d.ntliId === ntli.id && d.date === monDate);
                   const isCompilato = !!existing && !monEdits[ntli.id];
-                  const noAllenamento = (row.trainingModification ?? "Nessuna modifica") === "Nessun allenamento";
+                  const noAllenamento = (row.trainingModification ?? "").split(",").map(s => s.trim()).includes("Nessun allenamento");
 
                   return (
                     <div key={ntli.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
@@ -758,21 +758,40 @@ export default function NtliPage() {
                       </div>
 
                       <div className="space-y-4">
-                        {/* Modifica allenamento */}
+                        {/* Modifica allenamento — multi-select */}
                         <div>
                           <Lbl>Modifica allenamento</Lbl>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {TRAINING_MODIFICATIONS.map((m) => (
-                              <button key={m} type="button"
-                                onClick={() => setMonRow(ntli.id, { trainingModification: m as TrainingModification })}
-                                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                                  (row.trainingModification ?? "Nessuna modifica") === m
-                                    ? "bg-[#C8102E] text-white border-[#C8102E]"
-                                    : "border-gray-200 text-gray-600 hover:border-gray-400"
-                                }`}>
-                                {m}
-                              </button>
-                            ))}
+                            {TRAINING_MODIFICATIONS.map((m) => {
+                              const current = row.trainingModification ?? "Nessuna modifica";
+                              const selected = current.split(",").map(s => s.trim());
+                              const active = selected.includes(m);
+                              const toggle = () => {
+                                let next: string[];
+                                if (m === "Nessuna modifica" || m === "Nessun allenamento") {
+                                  // esclusivi: se già attivo deseleziona, altrimenti sostituisce tutto
+                                  next = active ? [] : [m];
+                                } else {
+                                  // rimuovi i valori esclusivi e aggiungi/rimuovi questo
+                                  const base = selected.filter(s => s !== "Nessuna modifica" && s !== "Nessun allenamento");
+                                  next = active ? base.filter(s => s !== m) : [...base, m];
+                                }
+                                setMonRow(ntli.id, {
+                                  trainingModification: (next.length ? next.join(", ") : "Nessuna modifica") as TrainingModification,
+                                });
+                              };
+                              return (
+                                <button key={m} type="button"
+                                  onClick={toggle}
+                                  className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                                    active
+                                      ? "bg-[#C8102E] text-white border-[#C8102E]"
+                                      : "border-gray-200 text-gray-600 hover:border-gray-400"
+                                  }`}>
+                                  {m}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
 
