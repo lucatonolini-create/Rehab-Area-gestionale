@@ -499,7 +499,8 @@ export default function NtliPage() {
       setMonEdits({});
       setMonMsg("Monitoraggio salvato correttamente.");
     } catch (e) {
-      setMonMsg("Errore nel salvataggio: " + String(e));
+      const msg = (e as any)?.message ?? String(e);
+      setMonMsg("Errore nel salvataggio: " + msg);
     }
     setMonSaving(false);
   }

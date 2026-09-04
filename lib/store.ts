@@ -1495,7 +1495,7 @@ export async function upsertNtliDaily(d: NtliDaily): Promise<void> {
     updated_at: new Date().toISOString(),
   };
   const { error } = await sb.from("ntli_daily").upsert(row, { onConflict: "ntli_id,date" });
-  if (error) throw error;
+  if (error) throw new Error(error.message ?? JSON.stringify(error));
 }
 
 export async function deleteNtliDaily(id: string): Promise<void> {
