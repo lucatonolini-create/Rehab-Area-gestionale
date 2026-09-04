@@ -727,9 +727,11 @@ export default function NtliPage() {
                 <select value={monAtleta} onChange={(e) => setMonAtleta(e.target.value)}
                   className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white">
                   <option value="">Tutti</option>
-                  {atleti.filter((a) => activeNtli.some((n) => n.athleteId === a.id)).map((a) => (
-                    <option key={a.id} value={a.id}>{a.nome}</option>
-                  ))}
+                  {[...new Map(activeNtli.map((n) => [n.athleteId, n.athleteName])).entries()]
+                    .sort((a, b) => a[1].localeCompare(b[1], "it"))
+                    .map(([id, nome]) => (
+                      <option key={id} value={id}>{nome}</option>
+                    ))}
                 </select>
               </div>
             </div>
