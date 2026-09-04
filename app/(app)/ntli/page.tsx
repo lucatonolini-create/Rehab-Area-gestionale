@@ -584,7 +584,7 @@ export default function NtliPage() {
     };
   }
 
-  const monNtli = activeNtli.filter((n) => !monAtleta || n.athleteId === monAtleta);
+  const monNtli = activeNtli.filter((n) => !monAtleta || n.athleteName === monAtleta);
 
   const riepilogoNtli = ntliList.filter((n) => {
     const hasData = weekDaily.some((d) => d.ntliId === n.id);
@@ -727,10 +727,10 @@ export default function NtliPage() {
                 <select value={monAtleta} onChange={(e) => setMonAtleta(e.target.value)}
                   className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white">
                   <option value="">Tutti</option>
-                  {Array.from(new Map(activeNtli.map((n) => [n.athleteId, n.athleteName])).entries())
-                    .sort((a, b) => a[1].localeCompare(b[1], "it"))
-                    .map(([id, nome]) => (
-                      <option key={id} value={id}>{nome}</option>
+                  {Array.from(new Set(activeNtli.map((n) => n.athleteName)))
+                    .sort((a, b) => a.localeCompare(b, "it"))
+                    .map((nome) => (
+                      <option key={nome} value={nome}>{nome}</option>
                     ))}
                 </select>
               </div>
