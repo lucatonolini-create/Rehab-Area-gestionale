@@ -1707,9 +1707,9 @@ export default function AnalisiPage() {
                 <h2 className="font-bold text-gray-900">Lista completa atleti</h2>
                 <p className="text-xs text-gray-400 mt-0.5">Tutti gli atleti in gestione, inclusi i guariti</p>
               </div>
-              <span className="text-sm font-bold text-[#C8102E]">{atleti.length} atleti</span>
+              <span className="text-sm font-bold text-[#C8102E]">{tuttiAtleti.length} atleti</span>
             </div>
-            {atleti.length === 0 ? (
+            {tuttiAtleti.length === 0 ? (
               <div className="py-12 text-center">
                 <Users className="w-10 h-10 text-gray-200 mx-auto mb-2" />
                 <p className="text-gray-400 text-sm">Nessun atleta ancora</p>
@@ -1722,7 +1722,7 @@ export default function AnalisiPage() {
                   <span className="text-center">Stato</span>
                 </div>
                 <div className="divide-y divide-gray-50">
-                  {[...atleti]
+                  {[...tuttiAtleti]
                     .sort((a, b) => a.stato === b.stato ? nd(a).localeCompare(nd(b)) : a.stato === "Infortunato" ? -1 : a.stato === "NTL" && b.stato !== "Infortunato" ? -1 : 1)
                     .flatMap((a) => {
                       const concorrenti = (a.stato === "Infortunato" || a.stato === "NTL")
