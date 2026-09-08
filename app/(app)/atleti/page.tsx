@@ -6,14 +6,16 @@ import { Plus, Search, User, ChevronRight, Phone, Mail, Trash2, AlertTriangle, C
 import {
   loadAtleti, loadProgrammi, upsertAtleta, upsertProgramma, deleteAtleta, uid, nd,
   subscribeToAtleti, subscribeToProgrammi, subscribeToIntakeInsert,
+  loadNtli,
   CATEGORIE, TIPI_INFORTUNIO, EVENTI_INFORTUNIO, MECCANISMI_INFORTUNIO, CONTATTI_INFORTUNIO,
   LATI_INFORTUNIO, POSIZIONI_INFORTUNIO, TIPI_REFERTO, ESITI_REFERTO,
   calcolaProgressoAuto,
   patchRefertiClinici,
   type Atleta, type Stato, type InfortunioStorico, type Programma, type QuestionarioKinesiofobia,
   type TestFisiometrico, type RefertoClinico, type TipoReferto, type EsitoReferto,
-  type DettaglioSituazionaleData, type DettaglioSituazionaleForm,
+  type DettaglioSituazionaleData, type DettaglioSituazionaleForm, type NtliRecord,
 } from "@/lib/store";
+import { ROSA } from "@/lib/players";
 import AtletaModal from "@/components/AtletaModal";
 import OsiicsCombobox from "@/components/OsiicsCombobox";
 import DettaglioSituazionale, { type DettaglioSituazionaleHandle } from "@/components/DettaglioSituazionale";
@@ -1613,6 +1615,7 @@ function giorniPersi(inizio: string, fine: string): number {
 
 export default function AtletiPage() {
   const [atleti, setAtleti] = useState<Atleta[]>([]);
+  const [ntliList, setNtliList] = useState<NtliRecord[]>([]);
   const [search, setSearch] = useState("");
   const [filtroStato, setFiltroStato] = useState<Stato | "Tutti">("Tutti");
   const [selected, setSelected] = useState<Atleta | null>(null);
@@ -1654,6 +1657,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
+    loadNtli().then(setNtliList);
     const unsubAtleti = subscribeToAtleti(() => loadAtleti().then(setAtleti));
     const unsubIntake = subscribeToIntakeInsert(() => loadAtleti().then(setAtleti));
     return () => { unsubAtleti(); unsubIntake(); };
@@ -2082,7 +2086,32 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     }
   };
 
-  const filtered = atleti.filter((a) => {
+  const ntliVirtual: Atleta[] = ntliList
+    .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
+    .filter((n) => !atleti.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
+    .map((n) => {
+      const rosa = ROSA.find((r) => r.nome.toLowerCase() === n.athleteName.toLowerCase());
+      return {
+        id: `__ntli__${n.id}`,
+        nome: n.athleteName,
+        categoria: (rosa?.categoria ?? "1ª Squadra") as (typeof CATEGORIE)[number],
+        posizione: rosa?.ruolo ?? "",
+        piedeDominante: "Destro" as any,
+        infortunio: [n.painLocation, n.bodySide].filter(Boolean).join(" · "),
+        inizioRehab: n.onsetDate ?? "",
+        stato: "NTL" as Stato,
+        progresso: 0,
+        fisioterapista: "",
+        preparatoreAtletico: "",
+        telefono: "",
+        email: "",
+        note: "",
+      };
+    });
+
+  const tuttiAtleti = [...atleti, ...ntliVirtual];
+
+  const filtered = tuttiAtleti.filter((a) => {
     const matchSearch =
       nd(a).toLowerCase().includes(search.toLowerCase()) ||
       a.nome.toLowerCase().includes(search.toLowerCase()) ||
@@ -2105,9 +2134,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   });
 
   const countPerStato = (s: Stato | "Tutti") => {
-    if (s === "Tutti") return atleti.length;
-    if (s === "Infortunato") return atleti.filter((a) => a.stato === "Infortunato").length;
-    return atleti.filter((a) => a.stato === s).length;
+    if (s === "Tutti") return tuttiAtleti.length;
+    return tuttiAtleti.filter((a) => a.stato === s).length;
   };
 
   return (
@@ -2131,7 +2159,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Atleti</h1>
-            <p className="text-gray-500 mt-1">{atleti.length} atleti nel programma</p>
+            <p className="text-gray-500 mt-1">{tuttiAtleti.length} atleti nel programma</p>
           </div>
           <button onClick={apriNuovo}
             className="flex items-center gap-2 bg-[#C8102E] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-red-800">
@@ -2196,11 +2224,12 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       { infortunio: atleta.infortunio, tipo: atleta.tipoInfortunio, cardKey: atleta.id },
                       ...concorrenti.map(inf => ({ infortunio: inf.diagnosi, tipo: inf.tipo, cardKey: `${atleta.id}-${inf.id}` })),
                     ];
+                    const isNtliVirtual = atleta.id.startsWith("__ntli__");
                     return cards.map(({ infortunio, tipo, cardKey }) => (
                       <div key={cardKey} className="group flex items-center gap-2">
-                      <button onClick={() => { setSelected(atleta); setTab("dati"); }}
+                      <button onClick={() => { if (!isNtliVirtual) { setSelected(atleta); setTab("dati"); } }}
                         className={`flex-1 min-w-0 bg-white rounded-xl p-4 border text-left transition-all hover:shadow-md ${
-                          selected?.id === atleta.id ? "border-[#C8102E] shadow-md" : "border-gray-100"
+                          isNtliVirtual ? "cursor-default border-amber-100" : selected?.id === atleta.id ? "border-[#C8102E] shadow-md" : "border-gray-100"
                         }`}>
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${
@@ -2225,12 +2254,14 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                           </div>
                         </div>
                       </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); elimina(atleta.id); }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500"
-                        title="Elimina atleta">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {!isNtliVirtual && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); elimina(atleta.id); }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500"
+                          title="Elimina atleta">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                       </div>
                     ));
                   })}

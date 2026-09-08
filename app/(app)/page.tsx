@@ -22,6 +22,7 @@ import {
   loadNtli,
   CATEGORIE, type Atleta, type Programma, type Stato, type NtliRecord,
 } from "@/lib/store";
+import { ROSA } from "@/lib/players";
 import Link from "next/link";
 import AtletaModal from "@/components/AtletaModal";
 
@@ -73,13 +74,38 @@ export default function Dashboard() {
     setMostraModifica(false);
   };
 
+  const ntliVirtual: Atleta[] = ntliList
+    .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
+    .filter((n) => !atleti.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
+    .map((n) => {
+      const rosa = ROSA.find((r) => r.nome.toLowerCase() === n.athleteName.toLowerCase());
+      return {
+        id: `__ntli__${n.id}`,
+        nome: n.athleteName,
+        categoria: (rosa?.categoria ?? "1ª Squadra") as (typeof CATEGORIE)[number],
+        posizione: rosa?.ruolo ?? "",
+        piedeDominante: "Destro" as Atleta["piedeDominante"],
+        infortunio: [n.painLocation, n.bodySide].filter(Boolean).join(" · "),
+        inizioRehab: n.onsetDate ?? "",
+        stato: "NTL" as Stato,
+        progresso: 0,
+        fisioterapista: "",
+        preparatoreAtletico: "",
+        telefono: "",
+        email: "",
+        note: "",
+      };
+    });
+
+  const tuttiAtleti = [...atleti, ...ntliVirtual];
+
   const inRecupero = atleti.filter((a) => a.stato === "Infortunato").length;
   const inNTL      = ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso").length;
   const guariti    = atleti.filter((a) => a.stato === "Disponibile").length;
 
   const atletiFiltrati = (filtroCategoria === "Tutti"
-    ? atleti
-    : atleti.filter((a) => a.categoria === filtroCategoria)
+    ? tuttiAtleti
+    : tuttiAtleti.filter((a) => a.categoria === filtroCategoria)
   ).slice().sort((a, b) => {
     const statoOrd = (s: Stato) => s === "Infortunato" ? 0 : s === "NTL" ? 1 : 2;
     const sd = statoOrd(a.stato) - statoOrd(b.stato);
@@ -92,7 +118,7 @@ export default function Dashboard() {
   const programmiAttivi = programmiReali.filter((p) => attiviBisognoIds.has(p.atletaId)).length;
 
   const stats = [
-    { label: "Atleti Totali",     value: atleti.length,         icon: Users,      color: "bg-gray-400",  href: "/atleti" },
+    { label: "Atleti Totali",     value: tuttiAtleti.length,    icon: Users,      color: "bg-gray-400",  href: "/atleti" },
     { label: "Infortunati (TL)",  value: inRecupero,            icon: Activity,   color: "bg-orange-500", href: "/atleti" },
     { label: "NTL",               value: inNTL,                 icon: Activity,   color: "bg-amber-500",  href: "/atleti" },
     { label: "Disponibili",       value: guariti,               icon: TrendingUp, color: "bg-green-500",  href: "/atleti" },
@@ -135,7 +161,7 @@ export default function Dashboard() {
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Filtra per categoria</h2>
         <div className="flex flex-wrap gap-2">
           {["Tutti", ...CATEGORIE].map((cat) => {
-            const count = cat === "Tutti" ? atleti.length : atleti.filter((a) => a.categoria === cat).length;
+            const count = cat === "Tutti" ? tuttiAtleti.length : tuttiAtleti.filter((a) => a.categoria === cat).length;
             if (count === 0 && cat !== "Tutti") return null;
             return (
               <button key={cat} onClick={() => setFiltroCategoria(cat)}
@@ -159,7 +185,7 @@ export default function Dashboard() {
         <div className="p-5 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-base font-semibold text-gray-900">
             {filtroCategoria === "Tutti" ? "Tutti gli atleti" : `Categoria ${filtroCategoria}`}
-            <span className="ml-2 text-xs text-gray-400 font-normal">{atletiFiltrati.length} atleti</span>
+            <span className="ml-2 text-xs text-gray-400 font-normal">{atletiFiltrati.length} atlet{atletiFiltrati.length === 1 ? "a" : "i"}</span>
           </h2>
           <Link href="/atleti" className="text-xs text-[#C8102E] font-medium hover:underline flex items-center gap-1">
             Gestisci <ChevronRight className="w-3.5 h-3.5" />
@@ -169,11 +195,11 @@ export default function Dashboard() {
         {atletiFiltrati.length === 0 ? (
           <div className="p-12 text-center">
             <p className="text-gray-400 text-sm">
-              {atleti.length === 0
+              {tuttiAtleti.length === 0
                 ? "Nessun atleta ancora. Vai su Atleti per aggiungerne uno."
                 : "Nessun atleta in questa categoria."}
             </p>
-            {atleti.length === 0 && (
+            {tuttiAtleti.length === 0 && (
               <Link href="/atleti" className="text-[#C8102E] text-sm font-medium mt-2 inline-block hover:underline">
                 + Aggiungi atleta
               </Link>
@@ -182,8 +208,8 @@ export default function Dashboard() {
         ) : (
           <div className="divide-y divide-gray-50">
             {atletiFiltrati.map((atleta) => (
-              <button key={atleta.id} onClick={() => setAtletaSelezionato(atleta)}
-                className="w-full px-5 py-4 hover:bg-gray-50 transition-colors text-left">
+              <button key={atleta.id} onClick={() => { if (!atleta.id.startsWith("__ntli__")) setAtletaSelezionato(atleta); }}
+                className={`w-full px-5 py-4 transition-colors text-left ${atleta.id.startsWith("__ntli__") ? "cursor-default" : "hover:bg-gray-50"}`}>
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${
                     atleta.stato === "Disponibile" ? "bg-gray-300" : atleta.stato === "NTL" ? "bg-amber-400" : "bg-[#2B2B2B]"
