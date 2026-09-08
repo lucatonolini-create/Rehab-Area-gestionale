@@ -4,11 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Activity, FileText, Upload, Trash2, Users, TrendingUp, Clock, X, AlertTriangle } from "lucide-react";
 import {
   loadEpiMonthly, upsertEpiMonthly, deleteEpiMonthly,
-  loadAtleti, loadAllDettagliSituazionali,
+  loadAtleti, loadAllDettagliSituazionali, loadNtli,
   CATEGORIE, TIPI_INFORTUNIO,
   type Categoria, type EpiMonthlyRecord, type EpiMonthlyEntry,
-  type Atleta, type DettaglioSituazionaleData,
+  type Atleta, type NtliRecord, type DettaglioSituazionaleData,
 } from "@/lib/store";
+import { ROSA } from "@/lib/players";
 
 const MESI_FULL = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const MESI = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
@@ -271,6 +272,7 @@ export default function EpidemiologiaPage() {
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [atleti, setAtleti] = useState<Atleta[]>([]);
+  const [ntliList, setNtliList] = useState<NtliRecord[]>([]);
   const [dettagli, setDettagli] = useState<DettaglioSituazionaleData[]>([]);
 
   // Upload modal state
@@ -292,8 +294,37 @@ export default function EpidemiologiaPage() {
   useEffect(() => {
     loadEpiMonthly().then(r => { setRecords(r); setLoading(false); });
     loadAtleti().then(setAtleti);
+    loadNtli().then(setNtliList);
     loadAllDettagliSituazionali().then(setDettagli);
   }, []);
+
+  const activeNtliNames = new Set(
+    ntliList
+      .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
+      .map((n) => n.athleteName.toLowerCase().trim())
+  );
+  const ntliVirtual: Atleta[] = ntliList
+    .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
+    .filter((n) => !atleti.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
+    .map((n) => {
+      const rosa = ROSA.find((r) => r.nome.toLowerCase() === n.athleteName.toLowerCase());
+      return {
+        id: `__ntli__${n.id}`,
+        nome: n.athleteName,
+        categoria: (rosa?.categoria ?? "1ª Squadra") as (typeof CATEGORIE)[number],
+        posizione: rosa?.ruolo ?? "",
+        piedeDominante: "Destro" as any,
+        infortunio: [n.painLocation, n.bodySide].filter(Boolean).join(" · "),
+        inizioRehab: n.onsetDate ?? "",
+        stato: "NTL" as any,
+        progresso: 0, fisioterapista: "", preparatoreAtletico: "",
+        telefono: "", email: "", note: "",
+      };
+    });
+  const atletiConNtli = atleti.map((a) =>
+    activeNtliNames.has(a.nome.toLowerCase().trim()) ? { ...a, stato: "NTL" as any } : a
+  );
+  const tuttiAtleti = [...atletiConNtli, ...ntliVirtual];
 
   const filtered = useMemo(() => records.filter(r => {
     if (filtroCat !== "Tutte" && r.categoria !== filtroCat) return false;
@@ -369,7 +400,7 @@ export default function EpidemiologiaPage() {
     }
 
     // All injuries: current active + archived
-    const tuttiInfortuni = atleti.flatMap((a) => [
+    const tuttiInfortuni = tuttiAtleti.flatMap((a) => [
       ...((a.stato === "Infortunato" || a.stato === "NTL") && (a.infortunio || a.tipoInfortunio)
         ? [{ tipo: a.tipoInfortunio, meccanismo: a.meccanismo, lato: a.lato, contatto: a.contatto, evento: a.evento, categoria: a.categoria, osiics: a.osiicsCodice }]
         : []),
@@ -382,7 +413,7 @@ export default function EpidemiologiaPage() {
     ]);
 
     const totaleInfortuni = tuttiInfortuni.length;
-    const atletiInfortunatiOra = atleti.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").length;
+    const atletiInfortunatiOra = tuttiAtleti.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").length;
 
     const perTipo = distrib(tuttiInfortuni.map((i) => i.tipo));
     const perMeccanismo = distrib(tuttiInfortuni.map((i) => i.meccanismo));
@@ -390,7 +421,7 @@ export default function EpidemiologiaPage() {
     const perCategoria = distrib(tuttiInfortuni.map((i) => i.categoria));
 
     // OSIICS-specific
-    const codiciFull = atleti.filter((a) => a.osiicsCodice).map((a) => a.osiicsCodice!);
+    const codiciFull = tuttiAtleti.filter((a) => a.osiicsCodice).map((a) => a.osiicsCodice!);
     const perOsiicsCodice = distrib(codiciFull);
     const OSIICS_CATEGORIE: Record<string, string> = {
       M: "Muscolo/Tendine",
@@ -430,7 +461,7 @@ export default function EpidemiologiaPage() {
     };
     const tuttiDettagli: FiiccsLike[] = [
       ...dettagli,
-      ...atleti.flatMap((a) => {
+      ...tuttiAtleti.flatMap((a) => {
         const fonti: (FiiccsLike | null)[] = [fromForm(a.dettaglioSituazionale)];
         for (const inf of a.storicoInfortuni ?? []) {
           fonti.push(fromForm(inf.dettaglioSituazionale as import("@/lib/store").DettaglioSituazionaleForm | undefined));
@@ -460,7 +491,7 @@ export default function EpidemiologiaPage() {
     const perTerrenoAllenamento = distrib(detAllenamento.map((d) => d.terrenoGioco));
 
     return { totaleInfortuni, atletiInfortunatiOra, perTipo, perMeccanismo, perLato, perCategoria, perSeduta, perAttivita, perInsorgenza, perTerreno, perFaseGioco, minutoMedio, conPalla, senzaPalla, fiiccsCount: tuttiDettagli.length, perOsiicsCodice, perOsiicsCategoria, osiicsCount: codiciFull.length, perSede, perTempo, inPartitiCount: detPartita.length, perTerrenoPartita, perTerrenoAllenamento, inAllenamentoCount: detAllenamento.length };
-  }, [atleti, dettagli]);
+  }, [tuttiAtleti, dettagli]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
