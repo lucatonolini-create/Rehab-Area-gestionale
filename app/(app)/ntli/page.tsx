@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { Plus, X, Printer, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Plus, X, Printer, ChevronLeft, ChevronRight, Search, Download, FileText } from "lucide-react";
 import {
   loadNtli, upsertNtli, deleteNtli,
   loadNtliDaily, upsertNtliDaily,
@@ -399,6 +399,151 @@ function ChiudiModal({ ntli, onChiudi, onCancel }: {
   );
 }
 
+// ── Export helpers ────────────────────────────────────────────────────────────
+function csvDownloadNtli(rows: string[][], filename: string) {
+  const content = rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["﻿" + content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function esportaCSVNtli(ntliList: NtliRecord[]) {
+  const oggi = new Date().toLocaleDateString("it-IT");
+  const fmt = (d?: string) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT") : "—";
+  const rows: string[][] = [];
+  rows.push([`U.S. CREMONESE – REHAB AREA – NTLI – ${oggi}`]);
+  rows.push([]);
+  rows.push(["Atleta", "Sede dolore", "Lato", "Diagnosi clinica", "Cod. OSIICS", "Data insorgenza", "Data chiusura", "Stato", "Note"]);
+  ntliList.forEach((n) => {
+    rows.push([
+      n.athleteName,
+      n.painLocation ?? "—",
+      n.bodySide ?? "—",
+      n.clinicalDiagnosis ?? "—",
+      n.osiicsCode ? `${n.osiicsCode}${n.osiicsDescription ? ` – ${n.osiicsDescription}` : ""}` : "—",
+      fmt(n.onsetDate),
+      n.endDate ? fmt(n.endDate) : "—",
+      n.status,
+      n.notes ?? "",
+    ]);
+  });
+  csvDownloadNtli(rows, `USC_NTLI_${oggi.replace(/\//g, "-")}.csv`);
+}
+
+async function esportaPDFNtli(ntliList: NtliRecord[]) {
+  const { default: jsPDF } = await import("jspdf");
+  const { default: autoTable } = await import("jspdf-autotable");
+  const doc = new jsPDF({ orientation: "landscape" });
+  const red: [number, number, number] = [200, 16, 46];
+  const dark: [number, number, number] = [43, 43, 43];
+  const gray: [number, number, number] = [130, 130, 130];
+  const M = 14; const W = 297; const H = 210; const HDR = 28;
+  const oggi = new Date().toLocaleDateString("it-IT");
+  const fmt = (d?: string) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT") : "—";
+
+  let logoDataUrl: string | null = null;
+  try {
+    const resp = await fetch("/logo.png");
+    if (resp.ok) {
+      const blob = await resp.blob();
+      logoDataUrl = await new Promise<string>((res, rej) => { const rd = new FileReader(); rd.onloadend = () => res(rd.result as string); rd.onerror = rej; rd.readAsDataURL(blob); });
+    }
+  } catch {}
+
+  const addHeader = () => {
+    doc.setFillColor(247, 247, 247); doc.rect(0, 0, W, HDR, "F");
+    doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(0, HDR, W, HDR);
+    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 8, 10, 10);
+    const tx = logoDataUrl ? 18 : M;
+    doc.setTextColor(...red); doc.setFontSize(13); doc.setFont("helvetica", "bold");
+    doc.text("U.S. Cremonese", tx, 14);
+    doc.setFontSize(8.5); doc.setFont("helvetica", "bolditalic"); doc.setTextColor(...gray);
+    doc.text("NTLI — Non-Time-Loss Injuries", tx, 19);
+    doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(175, 175, 175);
+    doc.text(`Esportato il ${oggi}`, W - M, 14, { align: "right" });
+    doc.text("Stagione 2026-2027", W - M, 19, { align: "right" });
+  };
+
+  addHeader();
+
+  const actives = ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso");
+  const closed = ntliList.filter((n) => n.status === "Risolto" || n.status === "Chiuso");
+
+  const makeBody = (list: NtliRecord[]) =>
+    list.map((n) => [
+      n.athleteName,
+      n.painLocation ?? "—",
+      n.bodySide ?? "—",
+      n.clinicalDiagnosis ?? "—",
+      n.osiicsCode ?? "—",
+      fmt(n.onsetDate),
+      n.endDate ? fmt(n.endDate) : "—",
+      n.status,
+    ]);
+
+  const tableOpts = (startY: number) => ({
+    startY,
+    head: [["Atleta", "Sede dolore", "Lato", "Diagnosi clinica", "OSIICS", "Insorgenza", "Chiusura", "Stato"]],
+    headStyles: { fillColor: red as [number, number, number], textColor: 255 as any, fontSize: 7, halign: "center" as const, cellPadding: 2 },
+    bodyStyles: { fontSize: 7, cellPadding: 2, overflow: "linebreak" as const },
+    alternateRowStyles: { fillColor: [248, 248, 248] as [number, number, number] },
+    margin: { left: M, right: M, top: HDR + 8 },
+    columnStyles: {
+      0: { cellWidth: 35 },
+      1: { cellWidth: 30 },
+      2: { cellWidth: 25 },
+      3: { cellWidth: 55 },
+      4: { cellWidth: 18 },
+      5: { cellWidth: 20 },
+      6: { cellWidth: 20 },
+      7: { cellWidth: 22 },
+    },
+    didDrawPage: () => { addHeader(); },
+  });
+
+  // Section title helper
+  const secTitle = (text: string, y: number) => {
+    doc.setFillColor(245, 245, 245); doc.rect(M, y - 3, W - M * 2, 7, "F");
+    doc.setFillColor(...red); doc.rect(M, y - 3, 2.5, 7, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...dark);
+    doc.text(text.toUpperCase(), M + 5, y + 1.5);
+    return y + 10;
+  };
+
+  let y = HDR + 8;
+  y = secTitle(`NTLI Attivi (${actives.length})`, y);
+  if (actives.length > 0) {
+    autoTable(doc, { ...tableOpts(y), body: makeBody(actives) });
+    y = (doc as any).lastAutoTable.finalY + 10;
+  } else {
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...gray);
+    doc.text("Nessun NTLI attivo.", M, y + 4);
+    y += 12;
+  }
+
+  if (y + 20 > H - 14) { doc.addPage(); addHeader(); y = HDR + 8; }
+  y = secTitle(`NTLI Chiusi / Risolti (${closed.length})`, y);
+  if (closed.length > 0) {
+    autoTable(doc, { ...tableOpts(y), body: makeBody(closed) });
+  } else {
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...gray);
+    doc.text("Nessun NTLI chiuso.", M, y + 4);
+  }
+
+  // Footer
+  const tot = doc.getNumberOfPages();
+  for (let i = 1; i <= tot; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(210, 210, 210); doc.setLineWidth(0.3); doc.line(M, H - 12, W - M, H - 12);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(...gray);
+    doc.text("U.S. Cremonese · Rehab Area", M, H - 7);
+    doc.text(`Pagina ${i} di ${tot}`, W - M, H - 7, { align: "right" });
+  }
+
+  doc.save(`USC_NTLI_${oggi.replace(/\//g, "-")}.pdf`);
+}
+
 // ── Main Page ────────────────────────────────────────────────────────────────
 export default function NtliPage() {
   const [ntliList, setNtliList] = useState<NtliRecord[]>([]);
@@ -419,6 +564,9 @@ export default function NtliPage() {
 
   // Riepilogo
   const [week, setWeek] = useState(currentIsoWeek());
+
+  // Export
+  const [esportando, setEsportando] = useState<"csv" | "pdf" | null>(null);
 
   // Gestione
   const [gestFiltro, setGestFiltro] = useState<NtliStato | "Tutti">("Tutti");
@@ -627,10 +775,26 @@ export default function NtliPage() {
             <h1 className="text-2xl font-bold text-gray-900">NTLI — Non-Time-Loss Injuries</h1>
             <p className="text-sm text-gray-500 mt-0.5">Monitoraggio infortuni senza perdita di tempo</p>
           </div>
-          <button onClick={() => { setEditNtli(undefined); setShowForm(true); }}
-            className="flex items-center gap-2 bg-[#C8102E] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-red-800">
-            <Plus className="w-4 h-4" /> Nuovo NTLI
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setEsportando("csv"); try { esportaCSVNtli(ntliList); } finally { setEsportando(null); } }}
+              disabled={!!esportando || ntliList.length === 0}
+              className="flex items-center gap-1.5 border border-green-300 text-green-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
+              <Download className="w-3.5 h-3.5" />
+              {esportando === "csv" ? "..." : "CSV"}
+            </button>
+            <button
+              onClick={async () => { setEsportando("pdf"); try { await esportaPDFNtli(ntliList); } finally { setEsportando(null); } }}
+              disabled={!!esportando || ntliList.length === 0}
+              className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
+              <FileText className="w-3.5 h-3.5" />
+              {esportando === "pdf" ? "..." : "PDF"}
+            </button>
+            <button onClick={() => { setEditNtli(undefined); setShowForm(true); }}
+              className="flex items-center gap-2 bg-[#C8102E] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-red-800">
+              <Plus className="w-4 h-4" /> Nuovo NTLI
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}

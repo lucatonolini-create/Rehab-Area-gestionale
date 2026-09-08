@@ -1622,7 +1622,7 @@ export default function ProgressiPage() {
                   {esportandoReport === "excel" ? "..." : "CSV"}
                 </button>
                 <button
-                  onClick={async () => { setEsportandoReport("pdf"); try { await esportaPDFReportMensile(atletiMese, reportMese, reportAnno, filtroCat, filtroInf, atleti, mesiPeriodo, periodoLabel); } finally { setEsportandoReport(null); } }}
+                  onClick={async () => { setEsportandoReport("pdf"); try { await esportaPDFReportMensile(atletiMese, reportMese, reportAnno, filtroCat, filtroInf, tuttiAtleti, mesiPeriodo, periodoLabel); } finally { setEsportandoReport(null); } }}
                   disabled={!!esportandoReport || atletiMese.length === 0}
                   className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-50 disabled:opacity-50">
                   <FileText className="w-3.5 h-3.5" />
