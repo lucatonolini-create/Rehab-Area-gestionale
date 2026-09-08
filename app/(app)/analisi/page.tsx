@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { BarChart2, Users, Activity, TrendingUp, Calendar, Download, FileText } from "lucide-react";
-import { loadAtleti, loadProgrammi, nd, CATEGORIE, TIPI_INFORTUNIO, type Atleta, type Programma } from "@/lib/store";
+import { loadAtleti, loadProgrammi, loadNtli, nd, CATEGORIE, TIPI_INFORTUNIO, type Atleta, type Programma, type NtliRecord } from "@/lib/store";
+import { ROSA } from "@/lib/players";
 
 const MESI = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
 const MESI_LUNGHI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
@@ -1133,6 +1134,7 @@ async function esportaPDFReport(
 // ─── Componente principale ─────────────────────────────────────────────────────
 export default function AnalisiPage() {
   const [atleti, setAtleti] = useState<Atleta[]>([]);
+  const [ntliList, setNtliList] = useState<NtliRecord[]>([]);
   const [programmi, setProgrammi] = useState<Programma[]>([]);
   const [tab, setTab] = useState<AnalisiTab>("overview");
   const [esportando, setEsportando] = useState<string | null>(null);
@@ -1148,6 +1150,7 @@ export default function AnalisiPage() {
   const [stagioneMeseFine, setStagioneMeseFine] = useState(5);
 
   useEffect(() => {
+    loadNtli().then(setNtliList);
     loadAtleti().then(async (atletiData) => {
       setAtleti(atletiData);
       const all = (await Promise.all(atletiData.map((a) => loadProgrammi(a.id)))).flat();
@@ -1155,8 +1158,36 @@ export default function AnalisiPage() {
     });
   }, []);
 
-  const attivi = atleti.filter((a) => a.stato !== "Disponibile");
-  const guariti = atleti.filter((a) => a.stato === "Disponibile");
+  const activeNtliNames = new Set(
+    ntliList
+      .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
+      .map((n) => n.athleteName.toLowerCase().trim())
+  );
+  const ntliVirtual: Atleta[] = ntliList
+    .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
+    .filter((n) => !atleti.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
+    .map((n) => {
+      const rosa = ROSA.find((r) => r.nome.toLowerCase() === n.athleteName.toLowerCase());
+      return {
+        id: `__ntli__${n.id}`,
+        nome: n.athleteName,
+        categoria: (rosa?.categoria ?? "1ª Squadra") as (typeof CATEGORIE)[number],
+        posizione: rosa?.ruolo ?? "",
+        piedeDominante: "Destro" as any,
+        infortunio: [n.painLocation, n.bodySide].filter(Boolean).join(" · "),
+        inizioRehab: n.onsetDate ?? "",
+        stato: "NTL" as any,
+        progresso: 0, fisioterapista: "", preparatoreAtletico: "",
+        telefono: "", email: "", note: "",
+      };
+    });
+  const atletiConNtli = atleti.map((a) =>
+    activeNtliNames.has(a.nome.toLowerCase().trim()) ? { ...a, stato: "NTL" as any } : a
+  );
+  const tuttiAtleti = [...atletiConNtli, ...ntliVirtual];
+
+  const attivi = tuttiAtleti.filter((a) => a.stato !== "Disponibile");
+  const guariti = tuttiAtleti.filter((a) => a.stato === "Disponibile");
   const programmiReali = programmi.filter((p) => !p.riposo);
 
   const mesiPeriodo: { anno: number; mese: number }[] = (() => {
@@ -1187,15 +1218,15 @@ export default function AnalisiPage() {
   const perCategoria = useMemo(() => {
     return CATEGORIE.map((cat) => ({
       cat,
-      totale: atleti.filter((a) => a.categoria === cat).length,
-      attivi: atleti.filter((a) => a.categoria === cat && a.stato !== "Disponibile").length,
+      totale: tuttiAtleti.filter((a) => a.categoria === cat).length,
+      attivi: tuttiAtleti.filter((a) => a.categoria === cat && a.stato !== "Disponibile").length,
     })).filter((x) => x.totale > 0);
-  }, [atleti]);
+  }, [tuttiAtleti]);
 
   const perTipoInfortunio = useMemo(() => {
     const map: Record<string, number> = {};
     TIPI_INFORTUNIO.forEach((t) => { map[t] = 0; });
-    atleti.forEach((a) => {
+    tuttiAtleti.forEach((a) => {
       if ((a.stato === "Infortunato" || a.stato === "NTL") && a.tipoInfortunio) map[a.tipoInfortunio] = (map[a.tipoInfortunio] ?? 0) + 1;
       const seenS = new Set<string>();
       (a.storicoInfortuni ?? []).forEach((s) => {
@@ -1206,11 +1237,11 @@ export default function AnalisiPage() {
       });
     });
     return Object.entries(map).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1]).map(([nome, count]) => ({ nome, count }));
-  }, [atleti]);
+  }, [tuttiAtleti]);
 
   const perInfortunio = useMemo(() => {
     const map: Record<string, number> = {};
-    atleti.forEach((a) => {
+    tuttiAtleti.forEach((a) => {
       if ((a.stato === "Infortunato" || a.stato === "NTL") && a.infortunio) map[a.infortunio.trim()] = (map[a.infortunio.trim()] ?? 0) + 1;
       const seenS = new Set<string>();
       (a.storicoInfortuni ?? []).forEach((s) => {
@@ -1221,14 +1252,14 @@ export default function AnalisiPage() {
       });
     });
     return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([nome, count]) => ({ nome, count }));
-  }, [atleti]);
+  }, [tuttiAtleti]);
 
   const trendMensile = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => {
       const d = new Date(stagionAnno, 6 + i, 1);
       const anno = d.getFullYear();
       const mese = d.getMonth();
-      const all = atleti.filter((a) => atletaAttivoInMese(a, anno, mese));
+      const all = tuttiAtleti.filter((a) => atletaAttivoInMese(a, anno, mese));
       const countTL = all.filter((a) => a.stato === "Infortunato").length;
       const countNTL = all.filter((a) => a.stato === "NTL").length;
       return {
@@ -1240,7 +1271,7 @@ export default function AnalisiPage() {
         countNTL,
       };
     });
-  }, [atleti, stagionAnno]);
+  }, [tuttiAtleti, stagionAnno]);
 
   const maxTrend = Math.max(...trendMensile.map((t) => t.count), 1);
   const maxCat = Math.max(...perCategoria.map((x) => x.totale), 1);
@@ -1277,7 +1308,7 @@ export default function AnalisiPage() {
       const d = new Date(stagionAnno, 6 + i, 1);
       const anno = d.getFullYear(); const mese = d.getMonth();
       const label = MESI[mese] + (anno !== stagionAnno ? ` ${anno}` : "");
-      const attv = atleti.filter((a) => atletaAttivoInMese(a, anno, mese));
+      const attv = tuttiAtleti.filter((a) => atletaAttivoInMese(a, anno, mese));
       const perCat: Record<string, number> = {};
       const perTipo: Record<string, number> = {};
       attv.forEach((a) => {
@@ -1295,10 +1326,10 @@ export default function AnalisiPage() {
     tipiPresenti.forEach((tipo, i) => { tipoColorMap[tipo] = TIPO_PALETTE[i % TIPO_PALETTE.length]; });
     const maxVal = Math.max(...months.map((t) => t.total), 1);
     return { months, catPresenti, tipiPresenti, catColorMap, tipoColorMap, maxVal };
-  }, [atleti]);
+  }, [tuttiAtleti]);
 
   const anni = Array.from({ length: 5 }, (_, i) => oggi.getFullYear() - 2 + i);
-  const atletiMese = atleti.filter((a) => {
+  const atletiMese = tuttiAtleti.filter((a) => {
     if (!mesiPeriodo.some(({ anno, mese }) => atletaAttivoInMese(a, anno, mese))) return false;
     if (filtroCat !== "Tutte" && a.categoria !== filtroCat) return false;
     if (filtroTipoInf !== "Tutti") {
@@ -1320,12 +1351,12 @@ export default function AnalisiPage() {
     setEsportando(key);
     try {
       if (tab === "overview") {
-        const params = { atleti, programmi: programmiReali, perCategoria, perTipoInfortunio, perInfortunio, trendMensile };
+        const params = { atleti: tuttiAtleti, programmi: programmiReali, perCategoria, perTipoInfortunio, perInfortunio, trendMensile };
         if (tipo === "excel") esportaCSVPanoramica(params);
         else await esportaPDFPanoramica(params);
       } else {
         if (tipo === "excel") esportaCSVReport(atletiMese, reportMese, reportAnno, filtroCat, filtroTipoInf !== "Tutti" ? filtroTipoInf : "", mesiPeriodo, periodoLabel);
-        else await esportaPDFReport(atletiMese, reportMese, reportAnno, filtroCat, filtroTipoInf !== "Tutti" ? filtroTipoInf : "", atleti, mesiPeriodo, periodoLabel, programmi);
+        else await esportaPDFReport(atletiMese, reportMese, reportAnno, filtroCat, filtroTipoInf !== "Tutti" ? filtroTipoInf : "", tuttiAtleti, mesiPeriodo, periodoLabel, programmi);
       }
     } finally {
       setEsportando(null);
