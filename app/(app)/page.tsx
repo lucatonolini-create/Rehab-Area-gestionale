@@ -74,6 +74,12 @@ export default function Dashboard() {
     setMostraModifica(false);
   };
 
+  const activeNtliNames = new Set(
+    ntliList
+      .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
+      .map((n) => n.athleteName.toLowerCase().trim())
+  );
+
   const ntliVirtual: Atleta[] = ntliList
     .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
     .filter((n) => !atleti.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
@@ -97,11 +103,15 @@ export default function Dashboard() {
       };
     });
 
-  const tuttiAtleti = [...atleti, ...ntliVirtual];
+  const atletiConNtli = atleti.map((a) =>
+    activeNtliNames.has(a.nome.toLowerCase().trim()) ? { ...a, stato: "NTL" as Stato } : a
+  );
 
-  const inRecupero = atleti.filter((a) => a.stato === "Infortunato").length;
+  const tuttiAtleti = [...atletiConNtli, ...ntliVirtual];
+
+  const inRecupero = atletiConNtli.filter((a) => a.stato === "Infortunato").length;
   const inNTL      = ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso").length;
-  const guariti    = atleti.filter((a) => a.stato === "Disponibile").length;
+  const guariti    = atletiConNtli.filter((a) => a.stato === "Disponibile").length;
 
   const atletiFiltrati = (filtroCategoria === "Tutti"
     ? tuttiAtleti

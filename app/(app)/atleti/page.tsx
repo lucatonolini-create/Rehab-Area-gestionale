@@ -2086,6 +2086,12 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     }
   };
 
+  const activeNtliNames = new Set(
+    ntliList
+      .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
+      .map((n) => n.athleteName.toLowerCase().trim())
+  );
+
   const ntliVirtual: Atleta[] = ntliList
     .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
     .filter((n) => !atleti.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
@@ -2109,7 +2115,11 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
       };
     });
 
-  const tuttiAtleti = [...atleti, ...ntliVirtual];
+  const atletiConNtli = atleti.map((a) =>
+    activeNtliNames.has(a.nome.toLowerCase().trim()) ? { ...a, stato: "NTL" as Stato } : a
+  );
+
+  const tuttiAtleti = [...atletiConNtli, ...ntliVirtual];
 
   const filtered = tuttiAtleti.filter((a) => {
     const matchSearch =
