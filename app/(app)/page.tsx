@@ -19,7 +19,8 @@ function AppLogo({ className }: { className?: string }) {
 import {
   loadAtleti, loadProgrammi, upsertAtleta, nd,
   subscribeToAtleti, subscribeToProgrammi,
-  CATEGORIE, type Atleta, type Programma, type Stato,
+  loadNtli,
+  CATEGORIE, type Atleta, type Programma, type Stato, type NtliRecord,
 } from "@/lib/store";
 import Link from "next/link";
 import AtletaModal from "@/components/AtletaModal";
@@ -34,6 +35,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [atleti, setAtleti] = useState<Atleta[]>([]);
   const [programmi, setProgrammi] = useState<Programma[]>([]);
+  const [ntliList, setNtliList] = useState<NtliRecord[]>([]);
   const [filtroCategoria, setFiltroCategoria] = useState<string>("Tutti");
   const [atletaSelezionato, setAtletaSelezionato] = useState<Atleta | null>(null);
   const [mostraModifica, setMostraModifica] = useState(false);
@@ -48,6 +50,7 @@ export default function Dashboard() {
       } else {
         setProgrammi([]);
       }
+      loadNtli().then(setNtliList);
     };
     reload();
     const unsubAtleti = subscribeToAtleti(reload);
@@ -71,7 +74,7 @@ export default function Dashboard() {
   };
 
   const inRecupero = atleti.filter((a) => a.stato === "Infortunato").length;
-  const inNTL      = atleti.filter((a) => a.stato === "NTL").length;
+  const inNTL      = ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso").length;
   const guariti    = atleti.filter((a) => a.stato === "Disponibile").length;
 
   const atletiFiltrati = (filtroCategoria === "Tutti"
