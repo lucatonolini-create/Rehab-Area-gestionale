@@ -2,9 +2,10 @@
 import { useEffect, useState } from "react";
 import { TrendingUp, Download, FileText, Calendar, Filter, ChevronDown, FlaskConical } from "lucide-react";
 import {
-  loadAtleti, loadProgrammi, upsertAtleta, uid, nd,
-  CATEGORIE, type Atleta, type Stato, type Programma, type InfortunioStorico, type TestFisiometrico,
+  loadAtleti, loadProgrammi, upsertAtleta, uid, nd, loadNtli,
+  CATEGORIE, type Atleta, type Stato, type Programma, type InfortunioStorico, type TestFisiometrico, type NtliRecord,
 } from "@/lib/store";
+import { ROSA } from "@/lib/players";
 
 const MESI_BREVI = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
 const CAT_PALETTE = ["#C8102E","#1E40AF","#047857","#B45309","#7C3AED","#0E7490","#BE185D","#374151"];
@@ -1103,6 +1104,7 @@ function Sparkline({ values, invert = false }: { values: number[]; invert?: bool
 export default function ProgressiPage() {
   const [atleti, setAtleti] = useState<Atleta[]>([]);
   const [programmi, setProgrammi] = useState<Programma[]>([]);
+  const [ntliList, setNtliList] = useState<NtliRecord[]>([]);
   const [esportando, setEsportando] = useState<string | null>(null);
   const [expandedTestsId, setExpandedTestsId] = useState<string | null>(null);
   const [esportandoReport, setEsportandoReport] = useState<"excel" | "pdf" | null>(null);
@@ -1120,7 +1122,43 @@ export default function ProgressiPage() {
   useEffect(() => {
     loadAtleti().then(setAtleti);
     loadProgrammi().then(setProgrammi);
+    loadNtli().then(setNtliList);
   }, []);
+
+  const activeNtliNames = new Set(
+    ntliList
+      .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
+      .map((n) => n.athleteName.toLowerCase().trim())
+  );
+
+  const ntliVirtual: Atleta[] = ntliList
+    .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
+    .filter((n) => !atleti.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
+    .map((n) => {
+      const rosa = ROSA.find((r) => r.nome.toLowerCase() === n.athleteName.toLowerCase());
+      return {
+        id: `__ntli__${n.id}`,
+        nome: n.athleteName,
+        categoria: (rosa?.categoria ?? "1ª Squadra") as (typeof CATEGORIE)[number],
+        posizione: rosa?.ruolo ?? "",
+        piedeDominante: "Destro" as Atleta["piedeDominante"],
+        infortunio: [n.painLocation, n.bodySide].filter(Boolean).join(" · "),
+        inizioRehab: n.onsetDate ?? "",
+        stato: "NTL" as Stato,
+        progresso: 0,
+        fisioterapista: "",
+        preparatoreAtletico: "",
+        telefono: "",
+        email: "",
+        note: "",
+      };
+    });
+
+  const atletiConNtli = atleti.map((a) =>
+    activeNtliNames.has(a.nome.toLowerCase().trim()) ? { ...a, stato: "NTL" as Stato } : a
+  );
+
+  const tuttiAtleti = [...atletiConNtli, ...ntliVirtual];
 
   const mesiPeriodo: { anno: number; mese: number }[] = (() => {
     if (tipoReport === "mensile") return [{ anno: reportAnno, mese: reportMese }];
@@ -1193,7 +1231,7 @@ export default function ProgressiPage() {
   };
 
   // Report periodo
-  const atletiMese = atleti.filter((a) => {
+  const atletiMese = tuttiAtleti.filter((a) => {
     if (!mesiPeriodo.some(({ anno, mese }) => atletaAttivoInMese(a, anno, mese))) return false;
     if (filtroCat !== "Tutte" && a.categoria !== filtroCat) return false;
     if (filtroInf) {
@@ -1229,62 +1267,81 @@ export default function ProgressiPage() {
       </div>
 
       {pageTab === "progressi" ? (
-        atleti.length === 0 ? (
+        tuttiAtleti.length === 0 ? (
           <div className="text-center py-20">
             <TrendingUp className="w-16 h-16 text-gray-200 mx-auto mb-4" />
             <p className="text-gray-400 text-lg font-medium">Nessun atleta ancora</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {[...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")).map((atleta) => {
+            {[...tuttiAtleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")).map((atleta) => {
+              const isNtliVirtual = atleta.id.startsWith("__ntli__");
               const nProg = programmi.filter((p) => p.atletaId === atleta.id && !p.riposo).length;
               return (
-                <div key={atleta.id} className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                <div key={atleta.id} className={`bg-white rounded-2xl border p-6 shadow-sm ${isNtliVirtual ? "border-amber-100" : "border-gray-100"}`}>
                   <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
                     <div className="flex items-center gap-4 min-w-0">
-                      <div className="w-12 h-12 bg-[#2B2B2B] rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0 ${isNtliVirtual ? "bg-amber-400" : "bg-[#2B2B2B]"}`}>
                         {nd(atleta).trim().split(/\s+/).filter(Boolean).slice(0,2).map((w:string)=>(w[0]??"").toUpperCase()).join("")}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="font-bold text-gray-900 truncate">{nd(atleta)}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-gray-900 truncate">{nd(atleta)}</h3>
+                          {isNtliVirtual && (
+                            <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 shrink-0">NTL</span>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-500 truncate">
                           {atleta.categoria}{atleta.posizione ? ` · ${atleta.posizione}` : ""}
                           {nProg > 0 ? ` · ${nProg} programm${nProg === 1 ? "a" : "i"}` : ""}
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-2 shrink-0">
-                      <button onClick={() => handleExport(atleta, "excel")} disabled={!!esportando}
-                        className="flex items-center gap-1.5 border border-green-300 text-green-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-green-50 disabled:opacity-50">
-                        <Download className="w-3.5 h-3.5" />
-                        {esportando === atleta.id + "excel" ? "..." : "CSV"}
-                      </button>
-                      <button onClick={() => handleExport(atleta, "pdf")} disabled={!!esportando}
-                        className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-50 disabled:opacity-50">
-                        <FileText className="w-3.5 h-3.5" />
-                        {esportando === atleta.id + "pdf" ? "..." : "PDF"}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Stato</label>
-                    <div className="flex flex-wrap gap-2">
-                      {STATI.map((s) => (
-                        <button key={s} onClick={() => aggiorna(atleta.id, "stato", s)}
-                          className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
-                            atleta.stato === s ? statoColor[s] + " ring-2 ring-offset-1 ring-current" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                          }`}>
-                          {s}
+                    {!isNtliVirtual && (
+                      <div className="flex gap-2 shrink-0">
+                        <button onClick={() => handleExport(atleta, "excel")} disabled={!!esportando}
+                          className="flex items-center gap-1.5 border border-green-300 text-green-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-green-50 disabled:opacity-50">
+                          <Download className="w-3.5 h-3.5" />
+                          {esportando === atleta.id + "excel" ? "..." : "CSV"}
                         </button>
-                      ))}
-                    </div>
-                    {atleta.stato === "Disponibile" && atleta.fineRehab && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        Fine riab.: {new Date(atleta.fineRehab + "T12:00").toLocaleDateString("it-IT")}
-                      </p>
+                        <button onClick={() => handleExport(atleta, "pdf")} disabled={!!esportando}
+                          className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-50 disabled:opacity-50">
+                          <FileText className="w-3.5 h-3.5" />
+                          {esportando === atleta.id + "pdf" ? "..." : "PDF"}
+                        </button>
+                      </div>
                     )}
                   </div>
+
+                  {isNtliVirtual ? (
+                    <div className="mb-4">
+                      <span className="text-xs px-3 py-1.5 rounded-full font-medium bg-amber-100 text-amber-700">NTL</span>
+                      {atleta.inizioRehab && (
+                        <span className="text-xs text-gray-400 ml-2">
+                          dal {new Date(atleta.inizioRehab + "T12:00").toLocaleDateString("it-IT")}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mb-4">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Stato</label>
+                      <div className="flex flex-wrap gap-2">
+                        {STATI.map((s) => (
+                          <button key={s} onClick={() => aggiorna(atleta.id, "stato", s)}
+                            className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+                              atleta.stato === s ? statoColor[s] + " ring-2 ring-offset-1 ring-current" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                            }`}>
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                      {atleta.stato === "Disponibile" && atleta.fineRehab && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          Fine riab.: {new Date(atleta.fineRehab + "T12:00").toLocaleDateString("it-IT")}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {atleta.infortunio && (
                     <p className="text-xs text-gray-400 mt-3">{atleta.infortunio}</p>
