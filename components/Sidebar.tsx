@@ -94,11 +94,10 @@ export default function Sidebar() {
       <aside
         style={{
           background: (mobileAperta || !collapsed)
-            ? "rgba(190, 190, 190, 0.30)"
+            ? "linear-gradient(to right, rgba(185,185,185,0.55) 0%, rgba(185,185,185,0.20) 60%, transparent 100%)"
             : SIDEBAR,
-          backdropFilter: (mobileAperta || !collapsed) ? "blur(24px) saturate(1.4)" : "none",
-          WebkitBackdropFilter: (mobileAperta || !collapsed) ? "blur(24px) saturate(1.4)" : "none",
-          borderRight: (mobileAperta || !collapsed) ? "1px solid rgba(255,255,255,0.35)" : "none",
+          backdropFilter: (mobileAperta || !collapsed) ? "blur(20px) saturate(1.3)" : "none",
+          WebkitBackdropFilter: (mobileAperta || !collapsed) ? "blur(20px) saturate(1.3)" : "none",
         }}
         className={`
           flex flex-col text-gray-800 shrink-0
