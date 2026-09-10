@@ -11,3 +11,15 @@
 html, body {
   @apply bg-white text-gray-900;
 }
+
+/* Slight font reduction for main content area (sidebar and exports excluded) */
+main { font-size: 0.95rem; }
+main .text-xs   { font-size: 0.71rem; }
+main .text-sm   { font-size: 0.83rem; }
+main .text-base { font-size: 0.95rem; }
+main .text-lg   { font-size: 1.07rem; }
+main .text-xl   { font-size: 1.19rem; }
+main .text-2xl  { font-size: 1.43rem; }
+main .text-3xl  { font-size: 1.78rem; }
+main .text-4xl  { font-size: 2.14rem; }
+main .text-5xl  { font-size: 2.85rem; }
