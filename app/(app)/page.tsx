@@ -158,7 +158,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stat cards — icona + numero libero, senza card container */}
-      <div className="grid gap-6 mb-8 pb-6 border-b border-gray-100" style={{gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))"}}>
+      <div className="grid grid-cols-3 gap-6 mb-8 pb-6 border-b border-gray-100">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -183,9 +183,9 @@ export default function Dashboard() {
             if (count === 0 && cat !== "Tutti") return null;
             return (
               <button key={cat} onClick={() => setFiltroCategoria(cat)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   filtroCategoria === cat
-                    ? "bg-[#C8102E] text-white shadow-sm"
+                    ? "bg-[#C8102E] text-white"
                     : "bg-white text-gray-600 border border-gray-200 hover:border-[#C8102E] hover:text-[#C8102E]"
                 }`}>
                 {cat}
