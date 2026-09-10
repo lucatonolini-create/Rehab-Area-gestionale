@@ -37,8 +37,9 @@ const navItems = [
   { href: "/impostazioni", label: "Impostazioni", icon: Settings },
 ];
 
-const RED  = "#C8102E";
-const DARK = "#2B2B2B";
+const RED     = "#C8102E";
+const DARK    = "#2B2B2B";
+const SIDEBAR = "#B8B8B8";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -91,9 +92,9 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        style={{ backgroundColor: DARK }}
+        style={{ backgroundColor: SIDEBAR }}
         className={`
-          flex flex-col shadow-2xl text-white shrink-0
+          flex flex-col text-gray-800 shrink-0
           transition-all duration-300 ease-in-out
           fixed left-0 z-40
           md:static md:translate-x-0
@@ -103,30 +104,30 @@ export default function Sidebar() {
         `}
       >
         {/* Header */}
-        <div className={`border-b border-white/10 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}>
+        <div className={`border-b border-black/10 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}>
           {!collapsed && (
             <div className="flex items-center gap-3">
               <AppLogo className="w-10 h-10 rounded-xl shrink-0" />
               <div>
-                <h1 className="font-bold text-sm text-white leading-tight">Rehab Area</h1>
+                <h1 className="font-bold text-sm text-gray-900 leading-tight">Rehab Area</h1>
               </div>
             </div>
           )}
 
           {/* Chiudi su mobile */}
           {mobileAperta && !collapsed && (
-            <button onClick={() => setMobileAperta(false)} className="md:hidden text-white/60 hover:text-white">
+            <button onClick={() => setMobileAperta(false)} className="md:hidden text-gray-500 hover:text-gray-900">
               <X className="w-5 h-5" />
             </button>
           )}
 
           {/* Toggle collapse su desktop */}
           {collapsed ? (
-            <button onClick={() => setCollapsed(false)} className="hidden md:flex text-white/60 hover:text-white" title="Espandi menu">
+            <button onClick={() => setCollapsed(false)} className="hidden md:flex text-gray-500 hover:text-gray-900" title="Espandi menu">
               <Menu className="w-5 h-5" />
             </button>
           ) : (
-            <button onClick={() => setCollapsed(true)} className="hidden md:flex text-white/60 hover:text-white ml-2" title="Nascondi menu">
+            <button onClick={() => setCollapsed(true)} className="hidden md:flex text-gray-500 hover:text-gray-900 ml-2" title="Nascondi menu">
               <ChevronLeft className="w-5 h-5" />
             </button>
           )}
@@ -140,14 +141,16 @@ export default function Sidebar() {
             return (
               <Link key={href} href={href}
                 title={collapsed ? label : undefined}
-                className={`flex items-center rounded-xl transition-all duration-150 text-sm font-medium ${
+                className={`flex items-center rounded-xl transition-all duration-150 text-sm font-medium relative ${
                   collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
-                } ${isActive ? "text-white" : "text-white/65 hover:text-white hover:bg-white/10"}`}
-                style={isActive ? { backgroundColor: RED } : {}}>
+                } ${isActive ? "text-[#C8102E] bg-[#C8102E]/10" : "text-gray-600 hover:text-gray-900 hover:bg-black/5"}`}>
+                {isActive && !collapsed && (
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#C8102E] rounded-r" />
+                )}
                 <div className="relative shrink-0">
                   <Icon className="w-5 h-5" />
                   {showBadge && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-[#C8102E] rounded-full text-white text-[9px] font-bold flex items-center justify-center px-0.5 border border-[#2B2B2B]">
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-[#C8102E] rounded-full text-white text-[9px] font-bold flex items-center justify-center px-0.5 border border-[#B8B8B8]">
                       {intakeBadge > 9 ? "9+" : intakeBadge}
                     </span>
                   )}
@@ -164,9 +167,9 @@ export default function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className={`border-t border-white/10 shrink-0 ${collapsed ? "p-2 flex justify-center" : "p-4"}`}>
+        <div className={`border-t border-black/10 shrink-0 ${collapsed ? "p-2 flex justify-center" : "p-4"}`}>
           {collapsed ? (
-            <button onClick={handleLogout} title="Esci" className="text-white/40 hover:text-white transition-colors p-1">
+            <button onClick={handleLogout} title="Esci" className="text-gray-500 hover:text-gray-900 transition-colors p-1">
               <LogOut className="w-4 h-4" />
             </button>
           ) : (
@@ -176,10 +179,10 @@ export default function Sidebar() {
                 {userEmail ? userEmail[0].toUpperCase() : "S"}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{userEmail ?? "Staff Medico"}</p>
-                <p className="text-white/40 text-xs">Rehab Area</p>
+                <p className="text-sm font-medium text-gray-900 truncate">{userEmail ?? "Staff Medico"}</p>
+                <p className="text-gray-500 text-xs">Rehab Area</p>
               </div>
-              <button onClick={handleLogout} title="Esci" className="text-white/40 hover:text-white transition-colors shrink-0">
+              <button onClick={handleLogout} title="Esci" className="text-gray-500 hover:text-gray-900 transition-colors shrink-0">
                 <LogOut className="w-4 h-4" />
               </button>
             </div>

@@ -32,6 +32,18 @@ const statoColor: Record<Stato, string> = {
   "Disponibile": "bg-green-100 text-green-700",
 };
 
+const statoDot: Record<Stato, string> = {
+  "Infortunato": "bg-orange-400",
+  "NTL":         "bg-amber-400",
+  "Disponibile": "bg-green-400",
+};
+
+const statoText: Record<Stato, string> = {
+  "Infortunato": "text-orange-600",
+  "NTL":         "text-amber-600",
+  "Disponibile": "text-green-600",
+};
+
 export default function Dashboard() {
   const router = useRouter();
   const [atleti, setAtleti] = useState<Atleta[]>([]);
@@ -145,22 +157,18 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Stat cards cliccabili */}
-      <div className="grid gap-4 mb-8" style={{gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))"}}>
+      {/* Stat cards — icona + numero libero, senza card container */}
+      <div className="grid gap-6 mb-8 pb-6 border-b border-gray-100" style={{gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))"}}>
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
             <Link key={stat.label} href={stat.href}
-              className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-[#C8102E]/30 transition-all group">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] text-gray-500 font-medium leading-tight">{stat.label}</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                </div>
-                <div className={`${stat.color} p-1.5 rounded-lg group-hover:scale-110 transition-transform flex-shrink-0`}>
-                  <Icon className="w-3.5 h-3.5 text-white" />
-                </div>
+              className="flex flex-col group">
+              <div className={`${stat.color} p-1.5 rounded-lg w-fit mb-2.5 group-hover:scale-110 transition-transform`}>
+                <Icon className="w-3.5 h-3.5 text-white" />
               </div>
+              <p className="text-4xl font-bold text-gray-900">{stat.value}</p>
+              <p className="text-[9px] text-gray-400 font-semibold mt-1 uppercase tracking-widest leading-tight">{stat.label}</p>
             </Link>
           );
         })}
@@ -191,8 +199,8 @@ export default function Dashboard() {
       </div>
 
       {/* Lista atleti */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+      <div>
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold text-gray-900">
             {filtroCategoria === "Tutti" ? "Tutti gli atleti" : `Categoria ${filtroCategoria}`}
             <span className="ml-2 text-xs text-gray-400 font-normal">{atletiFiltrati.length} atlet{atletiFiltrati.length === 1 ? "a" : "i"}</span>
@@ -203,7 +211,7 @@ export default function Dashboard() {
         </div>
 
         {atletiFiltrati.length === 0 ? (
-          <div className="p-12 text-center">
+          <div className="py-12 text-center">
             <p className="text-gray-400 text-sm">
               {tuttiAtleti.length === 0
                 ? "Nessun atleta ancora. Vai su Atleti per aggiungerne uno."
@@ -216,10 +224,10 @@ export default function Dashboard() {
             )}
           </div>
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div>
             {atletiFiltrati.map((atleta) => (
               <button key={atleta.id} onClick={() => { if (!atleta.id.startsWith("__ntli__")) setAtletaSelezionato(atleta); }}
-                className={`w-full px-5 py-4 transition-colors text-left ${atleta.id.startsWith("__ntli__") ? "cursor-default" : "hover:bg-gray-50"}`}>
+                className={`w-full px-4 py-3.5 transition-colors text-left border-b border-gray-50 ${atleta.id.startsWith("__ntli__") ? "cursor-default" : "hover:bg-gray-50"}`}>
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${
                     atleta.stato === "Disponibile" ? "bg-gray-300" : atleta.stato === "NTL" ? "bg-amber-400" : "bg-[#2B2B2B]"
@@ -229,9 +237,10 @@ export default function Dashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <p className={`text-sm font-semibold truncate ${atleta.stato === "Disponibile" ? "text-gray-500" : "text-gray-900"}`}>{nd(atleta)}</p>
-                      <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${statoColor[atleta.stato]}`}>
-                        {atleta.stato}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`w-2 h-2 rounded-full ${statoDot[atleta.stato]}`} />
+                        <span className={`text-xs font-medium ${statoText[atleta.stato]}`}>{atleta.stato}</span>
+                      </div>
                     </div>
                     {atleta.infortunio && (
                       <p className="text-xs text-gray-500 truncate font-medium">{atleta.infortunio}</p>
