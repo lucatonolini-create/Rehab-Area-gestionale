@@ -112,7 +112,7 @@ export default function Sidebar() {
           fixed left-0 z-40
           md:static md:translate-x-0
           top-0 bottom-0
-          ${mobileAperta ? "translate-x-0 w-64" : "-translate-x-full w-64"}
+          ${mobileAperta ? "translate-x-0 w-full" : "-translate-x-full w-64"}
           ${collapsed ? "md:w-16" : "md:w-64"}
         `}
       >
