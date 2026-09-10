@@ -95,9 +95,9 @@ export default function Sidebar() {
         style={{
           background: (mobileAperta || !collapsed)
             ? "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)"
-            : SIDEBAR,
-          backdropFilter: (mobileAperta || !collapsed) ? "blur(20px) saturate(1.3)" : "none",
-          WebkitBackdropFilter: (mobileAperta || !collapsed) ? "blur(20px) saturate(1.3)" : "none",
+            : "rgba(150,150,150,0.75)",
+          backdropFilter: "blur(20px) saturate(1.3)",
+          WebkitBackdropFilter: "blur(20px) saturate(1.3)",
         }}
         className={`
           flex flex-col text-gray-800 shrink-0
