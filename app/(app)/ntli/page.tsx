@@ -1160,6 +1160,7 @@ export default function NtliPage() {
                 <tbody>
                   {ntliList
                     .filter((n) => gestFiltro === "Tutti" || n.status === gestFiltro)
+                    .sort((a, b) => a.athleteName.localeCompare(b.athleteName, "it"))
                     .map((n) => (
                       <tr key={n.id} className="border-b border-gray-50 hover:bg-gray-50">
                         <td className="px-4 py-3 font-medium">{n.athleteName}</td>
