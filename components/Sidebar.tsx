@@ -77,7 +77,7 @@ export default function Sidebar() {
     <>
       {/* Overlay mobile */}
       {mobileAperta && (
-        <div className="fixed inset-0 bg-black/70 z-30 md:hidden"
+        <div className="fixed inset-0 bg-black/40 z-30 md:hidden"
           onClick={() => setMobileAperta(false)} />
       )}
 
@@ -93,9 +93,11 @@ export default function Sidebar() {
       {/* Sidebar */}
       <aside
         style={{
-          background: "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)",
-          backdropFilter: "blur(20px) saturate(1.3)",
-          WebkitBackdropFilter: "blur(20px) saturate(1.3)",
+          background: mobileAperta
+            ? "rgba(180,180,180,0.25)"
+            : "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)",
+          backdropFilter: "blur(28px) saturate(1.6)",
+          WebkitBackdropFilter: "blur(28px) saturate(1.6)",
         }}
         className={`
           flex flex-col text-gray-800 shrink-0
