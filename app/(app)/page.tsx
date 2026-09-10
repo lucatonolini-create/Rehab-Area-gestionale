@@ -159,7 +159,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stat cards — icona + numero libero, senza card container */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-6 mb-8 pb-6 border-b border-gray-100">
+      <div className="grid grid-cols-3 gap-x-4 gap-y-6 mb-8 pb-6 border-b border-gray-100">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
