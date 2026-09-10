@@ -92,7 +92,11 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        style={{ backgroundColor: SIDEBAR }}
+        style={{
+          background: (mobileAperta || !collapsed)
+            ? "linear-gradient(to right, #B8B8B8 0%, #e0e0e0 45%, #f4f4f4 75%, #ffffff 100%)"
+            : SIDEBAR,
+        }}
         className={`
           flex flex-col text-gray-800 shrink-0
           transition-all duration-300 ease-in-out
