@@ -31,5 +31,3 @@ main .shadow-md,
 main .shadow-lg,
 main .shadow-xl,
 main .shadow-2xl  { box-shadow: none; }
-main .rounded-xl  { border-radius: 4px; }
-main .rounded-2xl { border-radius: 6px; }
