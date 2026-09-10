@@ -77,7 +77,8 @@ export default function Sidebar() {
     <>
       {/* Overlay mobile */}
       {mobileAperta && (
-        <div className="fixed inset-0 bg-black/40 z-30 md:hidden"
+        <div className="fixed inset-0 bg-black/30 z-30 md:hidden"
+          style={{ backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
           onClick={() => setMobileAperta(false)} />
       )}
 
