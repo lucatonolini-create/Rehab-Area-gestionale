@@ -93,7 +93,9 @@ export default function Sidebar() {
       {/* Sidebar */}
       <aside
         style={{
-          background: "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)",
+          background: mobileAperta
+            ? "rgba(140,140,140,0.90)"
+            : "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)",
           backdropFilter: "blur(20px) saturate(1.3)",
           WebkitBackdropFilter: "blur(20px) saturate(1.3)",
         }}
