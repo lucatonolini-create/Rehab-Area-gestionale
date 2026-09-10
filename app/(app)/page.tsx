@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Activity, TrendingUp, Dumbbell, ChevronRight, X } from "lucide-react";
+import { Users, Activity, TrendingUp, Dumbbell, ChevronRight, X, ShieldAlert } from "lucide-react";
 
 function AppLogo({ className }: { className?: string }) {
   return (
@@ -140,12 +140,13 @@ export default function Dashboard() {
   const programmiAttivi = programmiReali.filter((p) => attiviBisognoIds.has(p.atletaId)).length;
 
   const stats = [
-    { label: "Atleti Totali",     value: tuttiAtleti.length,    icon: Users,      color: "bg-gray-400",  href: "/atleti" },
-    { label: "Infortunati (TL)",  value: inRecupero,            icon: Activity,   color: "bg-orange-500", href: "/atleti" },
-    { label: "NTL",               value: inNTL,                 icon: Activity,   color: "bg-amber-500",  href: "/atleti" },
-    { label: "Disponibili",       value: guariti,               icon: TrendingUp, color: "bg-green-500",  href: "/atleti" },
-    { label: "Programmi Attivi",  value: programmiAttivi,       icon: Dumbbell,   color: "bg-[#C8102E]",  href: "/esercizi" },
-    { label: "Programmi Totali",  value: programmiReali.length, icon: Dumbbell,   color: "bg-[#2B2B2B]",  href: "/esercizi" },
+    { label: "Atleti Totali",     value: tuttiAtleti.length,    icon: Users,       color: "bg-gray-400",   href: "/atleti" },
+    { label: "Infortunati (TL)",  value: inRecupero,            icon: Activity,    color: "bg-orange-500", href: "/atleti" },
+    { label: "NTL",               value: inNTL,                 icon: Activity,    color: "bg-amber-500",  href: "/atleti" },
+    { label: "Disponibili",       value: guariti,               icon: TrendingUp,  color: "bg-green-500",  href: "/atleti" },
+    { label: "Programmi Attivi",  value: programmiAttivi,       icon: Dumbbell,    color: "bg-[#C8102E]",  href: "/esercizi" },
+    { label: "Programmi Totali",  value: programmiReali.length, icon: Dumbbell,    color: "bg-[#2B2B2B]",  href: "/esercizi" },
+    { label: "NTLI",              value: ntliList.length,       icon: ShieldAlert, color: "bg-[#C8102E]",  href: "/ntli" },
   ];
 
   return (
@@ -158,7 +159,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stat cards — icona + numero libero, senza card container */}
-      <div className="grid grid-cols-3 gap-6 mb-8 pb-6 border-b border-gray-100">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-6 mb-8 pb-6 border-b border-gray-100">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
