@@ -1391,6 +1391,7 @@ export interface NtliDaily {
   vasEnd?: number | null;
   trainingModification: TrainingModification;
   note?: string;
+  esercizi?: Esercizio[];
   createdAt: string;
   updatedAt: string;
 }
@@ -1433,6 +1434,7 @@ function ntliDailyRowToRecord(r: Record<string, unknown>): NtliDaily {
     vasEnd: r.vas_end_training as number | null,
     trainingModification: r.training_modification as TrainingModification,
     note: (r.note as string) || undefined,
+    esercizi: Array.isArray(r.esercizi_palestra) ? (r.esercizi_palestra as Esercizio[]) : [],
     createdAt: r.created_at as string,
     updatedAt: r.updated_at as string,
   };
@@ -1492,6 +1494,7 @@ export async function upsertNtliDaily(d: NtliDaily): Promise<void> {
     vas_end_training: d.vasEnd ?? null,
     training_modification: d.trainingModification,
     note: d.note ?? null,
+    esercizi_palestra: d.esercizi?.length ? d.esercizi : null,
     updated_at: new Date().toISOString(),
   };
   const { error } = await sb.from("ntli_daily").upsert(row, { onConflict: "ntli_id,date" });

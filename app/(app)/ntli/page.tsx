@@ -8,7 +8,7 @@ import {
   loadNtliDaily, upsertNtliDaily,
   loadAtleti,
   searchOsiicsCodes,
-  type NtliRecord, type NtliDaily, type NtliStato, type TrainingModification, type Atleta, type OsiicsCode,
+  type NtliRecord, type NtliDaily, type NtliStato, type TrainingModification, type Atleta, type OsiicsCode, type Esercizio,
   NTLI_STATI, TRAINING_MODIFICATIONS,
 } from "@/lib/store";
 import PlayerCombobox from "@/components/PlayerCombobox";
@@ -223,6 +223,58 @@ function VasChart({ days, dailyMap }: { days: string[]; dailyMap: Map<string, Nt
   );
 }
 
+// ── Gym Exercises Editor ─────────────────────────────────────────────────────
+function GymExercisesEditor({ esercizi, onChange }: { esercizi: Esercizio[]; onChange: (e: Esercizio[]) => void }) {
+  const newEx = (): Esercizio => ({ nome: "", serie: "", reps: "", durata: "", carico: "", rir: "", vas: "", note: "" });
+  const update = (i: number, field: keyof Esercizio, val: string) =>
+    onChange(esercizi.map((e, j) => j === i ? { ...e, [field]: val } : e));
+  return (
+    <div className="mt-3 border-2 border-dashed border-[#C8102E]/30 rounded-xl p-4 bg-red-50/30">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold text-[#C8102E] uppercase tracking-wide">Esercizi palestra</p>
+        <button type="button" onClick={() => onChange([...esercizi, newEx()])}
+          className="flex items-center gap-1 text-xs text-[#C8102E] border border-[#C8102E] px-2 py-1 rounded-lg hover:bg-red-50">
+          <Plus className="w-3 h-3" /> Aggiungi
+        </button>
+      </div>
+      {esercizi.length === 0 ? (
+        <p className="text-xs text-gray-400 text-center py-3">Nessun esercizio. Clicca &ldquo;Aggiungi&rdquo; per iniziare.</p>
+      ) : (
+        <div className="space-y-3">
+          {esercizi.map((ex, i) => (
+            <div key={i} className="p-3 bg-white rounded-xl border border-gray-100 space-y-2">
+              <div className="flex items-center gap-2">
+                <input type="text" placeholder="Nome esercizio" value={ex.nome}
+                  onChange={(e) => update(i, "nome", e.target.value)}
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
+                <button type="button" onClick={() => onChange(esercizi.filter((_, j) => j !== i))}
+                  className="text-gray-400 hover:text-red-500 p-1 shrink-0">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                {(["serie", "reps", "durata", "carico", "rir", "vas"] as const).map((field) => (
+                  <div key={field}>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1">
+                      {field === "durata" ? "Durata" : field === "carico" ? "Carico" : field.toUpperCase()}
+                    </p>
+                    <input type="text" placeholder="—" value={ex[field] ?? ""}
+                      onChange={(e) => update(i, field, e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
+                  </div>
+                ))}
+              </div>
+              <input type="text" placeholder="Note esercizio" value={ex.note ?? ""}
+                onChange={(e) => update(i, "note", e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── NTLI Form (modale) ───────────────────────────────────────────────────────
 interface NtliFormData {
   athleteId: string;
@@ -408,7 +460,7 @@ function csvDownloadNtli(rows: string[][], filename: string) {
   URL.revokeObjectURL(url);
 }
 
-function esportaCSVNtli(ntliList: NtliRecord[]) {
+function esportaCSVNtli(ntliList: NtliRecord[], dailyAll: NtliDaily[]) {
   const oggi = new Date().toLocaleDateString("it-IT");
   const fmt = (d?: string) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT") : "—";
   const rows: string[][] = [];
@@ -428,10 +480,40 @@ function esportaCSVNtli(ntliList: NtliRecord[]) {
       n.notes ?? "",
     ]);
   });
+
+  // Palestra sessions
+  const palestraRecs = dailyAll.filter((d) => {
+    const mods = (d.trainingModification ?? "").split(",").map(s => s.trim());
+    return mods.includes("Palestra") && d.esercizi && d.esercizi.length > 0;
+  });
+  if (palestraRecs.length > 0) {
+    rows.push([]);
+    rows.push([`SESSIONI PALESTRA (${palestraRecs.length} sessioni con esercizi)`]);
+    rows.push(["Data", "Atleta", "Esercizio", "Serie", "Reps", "Durata", "Carico", "RIR", "VAS", "Note esercizio"]);
+    palestraRecs.forEach((d) => {
+      const ntli = ntliList.find((n) => n.id === d.ntliId);
+      const athleteName = ntli?.athleteName ?? "—";
+      (d.esercizi ?? []).forEach((ex) => {
+        rows.push([
+          fmt(d.date),
+          athleteName,
+          ex.nome ?? "—",
+          ex.serie ?? "—",
+          ex.reps ?? "—",
+          ex.durata ?? "—",
+          ex.carico ?? "—",
+          ex.rir ?? "—",
+          ex.vas ?? "—",
+          ex.note ?? "",
+        ]);
+      });
+    });
+  }
+
   csvDownloadNtli(rows, `USC_NTLI_${oggi.replace(/\//g, "-")}.csv`);
 }
 
-async function esportaPDFNtli(ntliList: NtliRecord[]) {
+async function esportaPDFNtli(ntliList: NtliRecord[], dailyAll: NtliDaily[]) {
   const { default: jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
   const doc = new jsPDF({ orientation: "landscape" });
@@ -529,6 +611,37 @@ async function esportaPDFNtli(ntliList: NtliRecord[]) {
   } else {
     doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...gray);
     doc.text("Nessun NTLI chiuso.", M, y + 4);
+  }
+
+  // Palestra sessions
+  const palestraRecs = dailyAll.filter((d) => {
+    const mods = (d.trainingModification ?? "").split(",").map(s => s.trim());
+    return mods.includes("Palestra") && d.esercizi && d.esercizi.length > 0;
+  });
+  if (palestraRecs.length > 0) {
+    const curY = (doc as any).lastAutoTable?.finalY ?? y;
+    if (curY + 20 > H - 14) { doc.addPage(); addHeader(); y = HDR + 8; } else { y = curY + 10; }
+    y = secTitle(`Sessioni Palestra (${palestraRecs.length} sessioni con esercizi)`, y);
+    const palestraBody: string[][] = [];
+    palestraRecs.forEach((d) => {
+      const ntli = ntliList.find((n) => n.id === d.ntliId);
+      const athleteName = ntli?.athleteName ?? "—";
+      const dateFmt = d.date ? new Date(d.date + "T12:00").toLocaleDateString("it-IT") : "—";
+      (d.esercizi ?? []).forEach((ex) => {
+        palestraBody.push([dateFmt, athleteName, ex.nome ?? "—", ex.serie ?? "—", ex.reps ?? "—", ex.durata ?? "—", ex.carico ?? "—", ex.rir ?? "—", ex.vas ?? "—", ex.note ?? ""]);
+      });
+    });
+    autoTable(doc, {
+      startY: y,
+      head: [["Data", "Atleta", "Esercizio", "Serie", "Reps", "Durata", "Carico", "RIR", "VAS", "Note"]],
+      body: palestraBody,
+      headStyles: { fillColor: red as [number, number, number], textColor: 255 as any, fontSize: 7, halign: "center" as const, cellPadding: 2 },
+      bodyStyles: { fontSize: 7, cellPadding: 2, overflow: "linebreak" as const },
+      alternateRowStyles: { fillColor: [248, 248, 248] as [number, number, number] },
+      margin: { left: M, right: M, top: HDR + 8 },
+      columnStyles: { 0: { cellWidth: 18 }, 1: { cellWidth: 30 }, 2: { cellWidth: 40 }, 3: { cellWidth: 14 }, 4: { cellWidth: 14 }, 5: { cellWidth: 18 }, 6: { cellWidth: 18 }, 7: { cellWidth: 12 }, 8: { cellWidth: 12 }, 9: { cellWidth: "auto" as any } },
+      didDrawPage: () => { addHeader(); },
+    });
   }
 
   // Footer
@@ -638,6 +751,7 @@ export default function NtliPage() {
           vasEnd: patch.vasEnd ?? existing?.vasEnd ?? null,
           trainingModification: patch.trainingModification ?? existing?.trainingModification ?? "Nessuna modifica",
           note: patch.note ?? existing?.note ?? "",
+          esercizi: patch.esercizi ?? existing?.esercizi ?? [],
           createdAt: existing?.createdAt ?? new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -778,14 +892,14 @@ export default function NtliPage() {
           <div className="flex flex-col items-end gap-2 shrink-0">
             <div className="flex gap-2">
               <button
-                onClick={() => { setEsportando("csv"); try { esportaCSVNtli(ntliList); } finally { setEsportando(null); } }}
+                onClick={() => { setEsportando("csv"); try { esportaCSVNtli(ntliList, dailyAll); } finally { setEsportando(null); } }}
                 disabled={!!esportando || ntliList.length === 0}
                 className="flex items-center gap-1.5 border border-green-300 text-green-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
                 <Download className="w-3.5 h-3.5" />
                 {esportando === "csv" ? "..." : "CSV"}
               </button>
               <button
-                onClick={async () => { setEsportando("pdf"); try { await esportaPDFNtli(ntliList); } finally { setEsportando(null); } }}
+                onClick={async () => { setEsportando("pdf"); try { await esportaPDFNtli(ntliList, dailyAll); } finally { setEsportando(null); } }}
                 disabled={!!esportando || ntliList.length === 0}
                 className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
                 <FileText className="w-3.5 h-3.5" />
@@ -963,6 +1077,14 @@ export default function NtliPage() {
                             })}
                           </div>
                         </div>
+
+                        {/* Gym editor — visible when "Palestra" is selected */}
+                        {(row.trainingModification ?? "").split(",").map(s => s.trim()).includes("Palestra") && (
+                          <GymExercisesEditor
+                            esercizi={row.esercizi ?? []}
+                            onChange={(e) => setMonRow(ntli.id, { esercizi: e })}
+                          />
+                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
