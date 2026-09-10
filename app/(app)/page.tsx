@@ -276,26 +276,27 @@ export default function Dashboard() {
               </div>
               <h2 className="font-bold text-gray-900 text-lg">{nd(atletaSelezionato)}</h2>
               <p className="text-sm text-gray-500">{atletaSelezionato.categoria} · {atletaSelezionato.posizione || "—"}</p>
-              <span className={`text-xs px-3 py-1 rounded-full font-medium mt-1 inline-block ${statoColor[atletaSelezionato.stato]}`}>
-                {atletaSelezionato.stato}
-              </span>
+              <div className="flex items-center justify-center gap-1.5 mt-1.5">
+                <span className={`w-2 h-2 rounded-full ${statoDot[atletaSelezionato.stato]}`} />
+                <span className={`text-xs font-medium ${statoText[atletaSelezionato.stato]}`}>{atletaSelezionato.stato}</span>
+              </div>
             </div>
 
-            <div className="space-y-2.5 text-sm">
+            <div className="text-sm">
               {[
                 ["Piede dominante", atletaSelezionato.piedeDominante || "—"],
                 ["Infortunio", atletaSelezionato.infortunio || "—"],
                 ["Inizio riabilitazione", atletaSelezionato.inizioRehab ? new Date(atletaSelezionato.inizioRehab + "T12:00").toLocaleDateString("it-IT") : "—"],
               ].map(([label, value]) => (
-                <div key={label} className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-400">{label}</p>
+                <div key={label} className="py-2.5 border-b border-gray-50">
+                  <p className="text-xs text-gray-400 mb-0.5">{label}</p>
                   <p className="font-medium text-gray-900">{value}</p>
                 </div>
               ))}
 
               {atletaSelezionato.note && (
-                <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-400">Note</p>
+                <div className="py-2.5 border-b border-gray-50">
+                  <p className="text-xs text-gray-400 mb-0.5">Note</p>
                   <p className="text-gray-700">{atletaSelezionato.note}</p>
                 </div>
               )}

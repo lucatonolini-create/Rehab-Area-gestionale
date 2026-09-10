@@ -1598,6 +1598,18 @@ const statoColor: Record<Stato, string> = {
   "Disponibile": "bg-green-100 text-green-700",
 };
 
+const statoDot: Record<Stato, string> = {
+  "Infortunato": "bg-orange-400",
+  "NTL":         "bg-amber-400",
+  "Disponibile": "bg-green-400",
+};
+
+const statoText: Record<Stato, string> = {
+  "Infortunato": "text-orange-600",
+  "NTL":         "text-amber-600",
+  "Disponibile": "text-green-600",
+};
+
 const FILTRI_STATO: { label: string; value: Stato | "Tutti" }[] = [
   { label: "Tutti", value: "Tutti" },
   { label: "Infortunato", value: "Infortunato" },
@@ -2227,7 +2239,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                   </span>
                   <div className="flex-1 h-px bg-gray-100" />
                 </div>
-                <div className="space-y-3">
+                <div>
                   {lista.flatMap((atleta) => {
                     const concorrenti = (atleta.storicoInfortuni ?? []).filter(inf => inf.attivo === true);
                     const cards = [
@@ -2236,13 +2248,14 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                     ];
                     const isNtliVirtual = atleta.id.startsWith("__ntli__");
                     return cards.map(({ infortunio, tipo, cardKey }) => (
-                      <div key={cardKey} className="group flex items-center gap-2">
+                      <div key={cardKey} className="group flex items-center border-b border-gray-50">
                       <button onClick={() => { if (!isNtliVirtual) { setSelected(atleta); setTab("dati"); } }}
-                        className={`flex-1 min-w-0 bg-white rounded-xl p-4 border text-left transition-all hover:shadow-md ${
-                          isNtliVirtual ? "cursor-default border-amber-100" : selected?.id === atleta.id ? "border-[#C8102E] shadow-md" : "border-gray-100"
-                        }`}>
+                        className={`flex-1 min-w-0 px-4 py-3.5 text-left transition-colors relative ${
+                          isNtliVirtual ? "cursor-default" : "hover:bg-gray-50"
+                        } ${selected?.id === atleta.id ? "bg-red-50/20" : ""}`}>
+                        {selected?.id === atleta.id && <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#C8102E] rounded-r" />}
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${
                             atleta.stato === "Disponibile" ? "bg-gray-300" : atleta.stato === "NTL" ? "bg-amber-400" : "bg-[#2B2B2B]"
                           }`}>
                             {nd(atleta).trim().split(/\s+/).filter(Boolean).slice(0,2).map((w:string)=>(w[0]??"").toUpperCase()).join("")}
@@ -2250,9 +2263,10 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
                               <p className={`font-semibold truncate ${atleta.stato === "Disponibile" ? "text-gray-500" : "text-gray-900"}`}>{nd(atleta)}</p>
-                              <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${statoColor[atleta.stato]}`}>
-                                {atleta.stato}
-                              </span>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <span className={`w-1.5 h-1.5 rounded-full ${statoDot[atleta.stato]}`} />
+                                <span className={`text-xs font-medium ${statoText[atleta.stato]}`}>{atleta.stato}</span>
+                              </div>
                             </div>
                             {infortunio && <p className="text-xs text-gray-500 truncate font-medium">{infortunio}</p>}
                             <p className="text-xs text-gray-300 truncate mt-0.5">
@@ -2267,7 +2281,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       {!isNtliVirtual && (
                         <button
                           onClick={(e) => { e.stopPropagation(); elimina(atleta.id); }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1.5 rounded text-gray-300 hover:text-red-500"
                           title="Elimina atleta">
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -2308,9 +2322,10 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
               </div>
               <h2 className="font-bold text-gray-900 text-lg">{nd(selected)}</h2>
               <p className="text-sm text-gray-500">{selected.posizione} · {selected.categoria}</p>
-              <span className={`text-xs px-3 py-1 rounded-full font-medium mt-1 inline-block ${statoColor[selected.stato]}`}>
-                {selected.stato}
-              </span>
+              <div className="flex items-center justify-center gap-1.5 mt-1.5">
+                <span className={`w-2 h-2 rounded-full ${statoDot[selected.stato]}`} />
+                <span className={`text-xs font-medium ${statoText[selected.stato]}`}>{selected.stato}</span>
+              </div>
             </div>
 
             {selected.stato === "Disponibile" && (
