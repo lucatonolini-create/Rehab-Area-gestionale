@@ -94,7 +94,7 @@ export default function Sidebar() {
       <aside
         style={{
           background: (mobileAperta || !collapsed)
-            ? "linear-gradient(to right, #B8B8B8 0%, #e0e0e0 45%, #f4f4f4 75%, #ffffff 100%)"
+            ? "linear-gradient(to right, #c8c8c8 0%, #d4d4d4 35%, #e4e4e4 65%, #efefef 100%)"
             : SIDEBAR,
         }}
         className={`
