@@ -846,7 +846,7 @@ export default function NtliPage() {
                 <p className="text-sm text-gray-400 text-center py-8">Nessun NTLI attivo</p>
               ) : (
                 <div className="space-y-2">
-                  {activeNtli.map((n) => {
+                  {[...activeNtli].sort((a, b) => a.athleteName.localeCompare(b.athleteName, "it")).map((n) => {
                     const lastRec = dailyAll.filter((d) => d.ntliId === n.id).sort((a, b) => b.date.localeCompare(a.date))[0];
                     return (
                       <div key={n.id} className="p-3 rounded-xl border border-gray-100 hover:bg-gray-50">
