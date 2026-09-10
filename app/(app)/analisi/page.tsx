@@ -1769,7 +1769,7 @@ export default function AnalisiPage() {
             <div className="flex flex-wrap gap-2 mb-4">
               {(["mensile", "bimestrale", "trimestrale", "semestrale", "annuale", "stagione"] as TipoReport[]).map((t) => (
                 <button key={t} onClick={() => setTipoReport(t)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                     tipoReport === t ? "bg-[#C8102E] text-white border-[#C8102E]" : "border-gray-200 text-gray-600 hover:bg-gray-50"
                   }`}>
                   {t === "mensile" ? "Mensile" : t === "bimestrale" ? "Bimestrale" : t === "trimestrale" ? "Trimestrale" : t === "semestrale" ? "Semestrale" : t === "annuale" ? "Annuale" : "Fine stagione"}

@@ -2204,7 +2204,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
             const count = countPerStato(value);
             return (
               <button key={value} onClick={() => setFiltroStato(value)}
-                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   filtroStato === value
                     ? "bg-[#C8102E] text-white shadow-sm"
                     : "bg-white border border-gray-200 text-gray-500 hover:border-gray-300"
