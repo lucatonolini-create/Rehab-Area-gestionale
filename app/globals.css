@@ -14,7 +14,7 @@ html, body {
 
 /* Safe-area-aware main content padding */
 .app-main {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 4rem);
+  padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 @media (min-width: 768px) {
