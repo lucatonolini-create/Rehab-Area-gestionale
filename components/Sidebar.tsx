@@ -110,7 +110,7 @@ export default function Sidebar() {
         className={`
           flex flex-col text-gray-800 shrink-0
           transition-all duration-300 ease-in-out
-          absolute left-0 z-40 top-0 bottom-0
+          fixed left-0 z-40 top-0 bottom-0
           md:static md:translate-x-0
           ${mobileAperta ? "translate-x-0 w-full" : "-translate-x-full w-64"}
           ${collapsed ? "md:w-16" : "md:w-64"}
