@@ -78,8 +78,8 @@ export default function Sidebar() {
     <>
       {/* Overlay mobile */}
       {mobileAperta && (
-        <div className="absolute inset-0 bg-black/30 z-30 md:hidden"
-          style={{ backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
+        <div className="fixed inset-0 bg-black/25 z-30 md:hidden"
+          style={{ backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" }}
           onClick={() => setMobileAperta(false)} />
       )}
 
@@ -96,15 +96,15 @@ export default function Sidebar() {
       <aside
         style={{
           background: mobileAperta
-            ? "rgba(180,180,180,0.18)"
+            ? "rgba(160,160,160,0.38)"
             : "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)",
-          backdropFilter: "blur(28px) saturate(1.6)",
-          WebkitBackdropFilter: "blur(28px) saturate(1.6)",
+          backdropFilter: "blur(40px) saturate(1.8)",
+          WebkitBackdropFilter: "blur(40px) saturate(1.8)",
           maskImage: mobileAperta
-            ? "linear-gradient(to right, black 0%, black 55%, transparent 100%)"
+            ? "linear-gradient(to right, black 0%, black 58%, transparent 100%)"
             : "none",
           WebkitMaskImage: mobileAperta
-            ? "linear-gradient(to right, black 0%, black 55%, transparent 100%)"
+            ? "linear-gradient(to right, black 0%, black 58%, transparent 100%)"
             : "none",
         }}
         className={`
@@ -118,7 +118,7 @@ export default function Sidebar() {
       >
         {/* Header */}
         <div
-          className={`border-b border-black/10 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}
+          className={`border-b border-black/8 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}
           style={{ paddingTop: `calc(env(safe-area-inset-top, 0px) + ${collapsed ? "0.75rem" : "1.25rem"})` }}
         >
           {!collapsed && (
@@ -184,7 +184,7 @@ export default function Sidebar() {
 
         {/* Footer */}
         <div
-          className={`border-t border-black/10 shrink-0 ${collapsed ? "p-2 flex justify-center" : "p-4"}`}
+          className={`border-t border-black/8 shrink-0 ${collapsed ? "p-2 flex justify-center" : "p-4"}`}
           style={{ paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${collapsed ? "0.5rem" : "1rem"})` }}
         >
           {collapsed ? (
