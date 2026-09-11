@@ -985,6 +985,13 @@ export default function EserciziPage() {
   const esercizicampo = form.esercizicampo ?? [];
   const aggiungiCampo = () => setForm({ ...form, esercizicampo: [...esercizicampo, { ...campoVuoto }] });
   const rimuoviCampo = (i: number) => setForm({ ...form, esercizicampo: esercizicampo.filter((_, idx) => idx !== i) });
+  const spostaCampo = (i: number, dir: -1 | 1) => {
+    const arr = [...esercizicampo];
+    const j = i + dir;
+    if (j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    setForm({ ...form, esercizicampo: arr });
+  };
   const aggiornaCampo = (i: number, campo: keyof EsercizioCampo, val: string) => {
     setForm({ ...form, esercizicampo: esercizicampo.map((c, idx) => idx === i ? { ...c, [campo]: val } : c) });
   };
@@ -1827,6 +1834,16 @@ export default function EserciziPage() {
                               <input value={c.tipo} onChange={(e) => aggiornaCampo(i, "tipo", e.target.value)}
                                 placeholder="Nome esercizio (es. Sprint, RSA, Metabolico...)"
                                 className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white" />
+                              <div className="flex flex-col shrink-0">
+                                <button onClick={() => spostaCampo(i, -1)} disabled={i === 0}
+                                  className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none">
+                                  <ChevronUp className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => spostaCampo(i, 1)} disabled={i === esercizicampo.length - 1}
+                                  className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none">
+                                  <ChevronDown className="w-4 h-4" />
+                                </button>
+                              </div>
                               <button onClick={() => rimuoviCampo(i)} className="text-gray-300 hover:text-red-400 shrink-0">
                                 <Trash2 className="w-4 h-4" />
                               </button>
