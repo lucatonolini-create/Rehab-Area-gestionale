@@ -810,6 +810,7 @@ export default function EserciziPage() {
   const [esportandoCSVGiorno, setEsportandoCSVGiorno] = useState(false);
   const [esportandoCSVIntervallo, setEsportandoCSVIntervallo] = useState(false);
   const [atletiAggiuntivi, setAtletiAggiuntivi] = useState<string[]>([]);
+  const [applicaDropAperto, setApplicaDropAperto] = useState(false);
 
   const atletiOrdinati = useMemo(() => [...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")), [atleti]);
 
@@ -1502,36 +1503,53 @@ export default function EserciziPage() {
               </div>
 
               {/* Applica anche ad altri atleti (solo nuovo programma) */}
-              {!editId && form.atletaId && (
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Applica anche a</label>
-                  <div className="mt-2 border border-gray-200 rounded-xl overflow-hidden max-h-36 overflow-y-auto divide-y divide-gray-100">
-                    {atletiOrdinati
-                      .filter((a) => a.id !== form.atletaId && (a.stato === "Infortunato" || a.stato === "NTL"))
-                      .map((a) => {
-                        const checked = atletiAggiuntivi.includes(a.id);
-                        return (
-                          <label key={a.id} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${checked ? "bg-red-50" : "hover:bg-gray-50"}`}>
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => setAtletiAggiuntivi((prev) => checked ? prev.filter((id) => id !== a.id) : [...prev, a.id])}
-                              className="w-4 h-4 accent-[#C8102E] shrink-0"
-                            />
-                            <span className="text-sm text-gray-700">{nd(a)}</span>
-                            <span className="text-xs text-gray-400 ml-auto">{a.categoria}</span>
-                          </label>
-                        );
-                      })}
-                    {atletiOrdinati.filter((a) => a.id !== form.atletaId && (a.stato === "Infortunato" || a.stato === "NTL")).length === 0 && (
-                      <p className="text-sm text-gray-400 text-center py-4">Nessun altro atleta disponibile</p>
+              {!editId && form.atletaId && (() => {
+                const candidati = atletiOrdinati.filter((a) => a.id !== form.atletaId && (a.stato === "Infortunato" || a.stato === "NTL"));
+                const label = atletiAggiuntivi.length === 0
+                  ? "Nessuno"
+                  : atletiAggiuntivi.length === 1
+                    ? nd(atleti.find((a) => a.id === atletiAggiuntivi[0])!)
+                    : `${atletiAggiuntivi.length} atleti`;
+                return (
+                  <div className="relative">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Applica anche a</label>
+                    <button
+                      type="button"
+                      onClick={() => setApplicaDropAperto((v) => !v)}
+                      className="mt-2 w-full flex items-center justify-between border border-gray-200 rounded-xl px-4 py-2.5 bg-white text-sm text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#C8102E]"
+                    >
+                      <span className={atletiAggiuntivi.length === 0 ? "text-gray-400" : "text-gray-800"}>{label}</span>
+                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${applicaDropAperto ? "rotate-180" : ""}`} />
+                    </button>
+                    {applicaDropAperto && (
+                      <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                        {candidati.length === 0 ? (
+                          <p className="text-sm text-gray-400 text-center py-4">Nessun altro atleta disponibile</p>
+                        ) : (
+                          candidati.map((a) => {
+                            const checked = atletiAggiuntivi.includes(a.id);
+                            return (
+                              <label key={a.id} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer border-b border-gray-100 last:border-0 transition-colors ${checked ? "bg-red-50" : "hover:bg-gray-50"}`}>
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => setAtletiAggiuntivi((prev) => checked ? prev.filter((id) => id !== a.id) : [...prev, a.id])}
+                                  className="w-4 h-4 accent-[#C8102E] shrink-0"
+                                />
+                                <span className="text-sm text-gray-700 flex-1">{nd(a)}</span>
+                                <span className="text-xs text-gray-400">{a.categoria}</span>
+                              </label>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+                    {atletiAggiuntivi.length > 0 && (
+                      <p className="mt-1.5 text-xs text-[#C8102E] font-medium">Il programma verrà salvato per {atletiAggiuntivi.length + 1} atleti</p>
                     )}
                   </div>
-                  {atletiAggiuntivi.length > 0 && (
-                    <p className="mt-1.5 text-xs text-[#C8102E] font-medium">Il programma verrà salvato per {atletiAggiuntivi.length + 1} atleti</p>
-                  )}
-                </div>
-              )}
+                );
+              })()}
 
               {/* Presente / Assente / Riposo / Squadra */}
               {(() => {
