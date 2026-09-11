@@ -293,11 +293,12 @@ interface NtliFormData {
 }
 
 function NtliForm({
-  initial, onSave, onCancel,
+  initial, onSave, onCancel, atleti,
 }: {
   initial?: NtliRecord;
   onSave: (data: NtliFormData) => Promise<void>;
   onCancel: () => void;
+  atleti: Atleta[];
 }) {
   const [form, setForm] = useState<NtliFormData>({
     athleteId: initial?.athleteId ?? "",
@@ -329,7 +330,11 @@ function NtliForm({
             <div className="mt-1">
               <PlayerCombobox
                 value={form.athleteName}
-                onSelect={(nome) => { f("athleteName", nome); f("athleteId", ""); }}
+                onSelect={(nome) => {
+                  const match = atleti.find((a) => a.nome.trim().toLowerCase() === nome.trim().toLowerCase());
+                  f("athleteName", nome);
+                  f("athleteId", match?.id ?? "");
+                }}
                 placeholder="Cerca giocatore..."
               />
             </div>
@@ -1377,6 +1382,7 @@ export default function NtliPage() {
           initial={editNtli}
           onSave={handleSaveNtli}
           onCancel={() => { setShowForm(false); setShowNuovoForm(false); setEditNtli(undefined); }}
+          atleti={atleti}
         />
       )}
       {chiudiNtli && (
