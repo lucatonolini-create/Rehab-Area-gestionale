@@ -68,13 +68,6 @@ export default function Sidebar() {
     if (pathname === "/segnalazioni") resetIntakeBadge();
   }, [pathname]);
 
-  // Sincronizza il body background con l'apertura della sidebar su mobile
-  // La home indicator zone mostra il body background attraverso il vetro:
-  // usiamo lo stesso grigio che risulta dal compositing overlay+glass sul bianco
-  useEffect(() => {
-    document.body.style.backgroundColor = mobileAperta ? "#b3b3b3" : "";
-    return () => { document.body.style.backgroundColor = ""; };
-  }, [mobileAperta]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -85,7 +78,7 @@ export default function Sidebar() {
     <>
       {/* Overlay mobile */}
       {mobileAperta && (
-        <div className="fixed inset-0 bg-black/30 z-30 md:hidden"
+        <div className="absolute inset-0 bg-black/30 z-30 md:hidden"
           style={{ backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
           onClick={() => setMobileAperta(false)} />
       )}
@@ -113,14 +106,12 @@ export default function Sidebar() {
           WebkitMaskImage: mobileAperta
             ? "linear-gradient(to right, black 0%, black 55%, transparent 100%)"
             : "none",
-          minHeight: "-webkit-fill-available",
         }}
         className={`
           flex flex-col text-gray-800 shrink-0
           transition-all duration-300 ease-in-out
-          fixed left-0 z-40
+          absolute left-0 z-40 top-0 bottom-0
           md:static md:translate-x-0
-          top-0
           ${mobileAperta ? "translate-x-0 w-full" : "-translate-x-full w-64"}
           ${collapsed ? "md:w-16" : "md:w-64"}
         `}
