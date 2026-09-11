@@ -83,14 +83,29 @@ export default function Sidebar() {
           onClick={() => setMobileAperta(false)} />
       )}
 
-      {/* Bottone hamburger — mobile, quando sidebar è chiusa */}
-      {!mobileAperta && (
-        <button onClick={() => setMobileAperta(true)}
-          className="fixed left-4 z-50 md:hidden text-white p-2.5 rounded-xl shadow-lg"
-          style={{ top: "calc(env(safe-area-inset-top, 0px) + 1rem)", backgroundColor: RED }}>
-          <Menu className="w-5 h-5" />
-        </button>
-      )}
+      {/* Barra di navigazione mobile fissa — sostituisce il bottone hamburger isolato */}
+      <div className="fixed inset-x-0 top-0 z-20 md:hidden"
+        style={{
+          paddingTop: "env(safe-area-inset-top, 0px)",
+          background: "rgba(255,255,255,0.88)",
+          backdropFilter: "blur(24px) saturate(1.6)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.6)",
+          borderBottom: "1px solid rgba(0,0,0,0.07)",
+        }}>
+        <div className="flex items-center justify-between px-4" style={{ height: "3rem" }}>
+          <button onClick={() => setMobileAperta(true)}
+            className="text-white p-2.5 rounded-xl shrink-0"
+            style={{ backgroundColor: RED }}
+            aria-label="Apri menu">
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <AppLogo className="w-7 h-7 rounded-lg shrink-0" />
+            <span className="text-sm font-bold text-gray-900">Rehab Area</span>
+          </div>
+          <div className="w-10 shrink-0" />
+        </div>
+      </div>
 
       {/* Sidebar */}
       <aside
