@@ -11,10 +11,10 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  loadAtleti, loadProgrammi, loadNtli, upsertProgramma, upsertAtleta, deleteProgramma, uid, nd, calcolaProgressoAuto,
+  loadAtleti, loadProgrammi, upsertProgramma, upsertAtleta, deleteProgramma, uid, nd, calcolaProgressoAuto,
   subscribeToAtleti, subscribeToProgrammi,
   TESTS_PREDEFINITI, OBIETTIVI_PALESTRA, OBIETTIVI_CAMPO,
-  type Atleta, type Programma, type Esercizio, type TestFisiometrico, type Carico, type EsercizioCampo, type InfortunioStorico, type NtliRecord,
+  type Atleta, type Programma, type Esercizio, type TestFisiometrico, type Carico, type EsercizioCampo, type InfortunioStorico,
 } from "@/lib/store";
 
 const esVuoto: Esercizio = { nome: "", serie: "", reps: "", durata: "", carico: "", rir: "", vas: "", note: "" };
@@ -820,8 +820,6 @@ export default function EserciziPage() {
   const [caricandoAtleta, setCaricandoAtleta] = useState(false);
   const [aperto, setAperto] = useState<string | null>(null);
   const [mostraForm, setMostraForm] = useState(false);
-  const [tipoProgramma, setTipoProgramma] = useState<"TLI" | "NTLI">("TLI");
-  const [ntliRecords, setNtliRecords] = useState<NtliRecord[]>([]);
   const [form, setForm] = useState<Omit<Programma, "id">>(progVuoto);
   const [editId, setEditId] = useState<string | null>(null);
   const [sezioneAttiva, setSezioneAttiva] = useState<FormSection>("esercizi");
@@ -853,30 +851,10 @@ export default function EserciziPage() {
     };
   }, [applicaDropAperto]);
 
-  const atletiOrdinati = useMemo(() => {
-    const seen = new Set<string>();
-    return [...atleti]
-      .sort((a, b) => nd(a).localeCompare(nd(b), "it"))
-      .filter((a) => { const k = a.nome.trim().toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
-  }, [atleti]);
-  const activeNtliAthleteIds = useMemo(() => {
-    const active = ntliRecords.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso");
-    const ids = new Set<string>();
-    for (const n of active) {
-      if (n.athleteId) {
-        ids.add(n.athleteId);
-      } else {
-        // fallback per record legacy con athleteId vuoto: cerca per nome
-        const match = atleti.find((a) => a.nome.trim().toLowerCase() === n.athleteName.trim().toLowerCase());
-        if (match) ids.add(match.id);
-      }
-    }
-    return ids;
-  }, [ntliRecords, atleti]);
+  const atletiOrdinati = useMemo(() => [...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")), [atleti]);
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
-    loadNtli().then(setNtliRecords).catch(() => {});
     const unsubAtleti = subscribeToAtleti(() => loadAtleti().then(setAtleti));
     const unsubProgrammi = subscribeToProgrammi((atletaId) => {
       if (atletaId) {
@@ -927,7 +905,6 @@ export default function EserciziPage() {
     setForm({ ...rest, esercizi: rest.esercizi.map((e) => ({ ...e })), esercizicampo: (rest.esercizicampo ?? []).map((c) => ({ ...c })), tests: (rest.tests ?? []).map((t) => ({ ...t })), carico: rest.carico ?? { ...caricoVuoto } });
     setEditId(id); setMostraForm(true); setSezioneAttiva("esercizi");
     const atletaEdit = atleti.find((a) => a.id === rest.atletaId);
-    setTipoProgramma(atletaEdit && activeNtliAthleteIds.has(atletaEdit.id) ? "NTLI" : "TLI");
     if (rest.atletaId && !(rest.atletaId in programmiPerAtleta)) {
       loadProgrammi(rest.atletaId).then((progs) =>
         setProgrammiPerAtleta((prev) => ({ ...prev, [rest.atletaId]: progs }))
@@ -1227,27 +1204,15 @@ export default function EserciziPage() {
           <p className="text-gray-400 text-lg font-medium">Nessun atleta ancora</p>
           <p className="text-gray-300 text-sm mt-1">Aggiungi prima un atleta per creare programmi</p>
         </div>
-      ) : atletiOrdinati.filter((a) => a.stato === "Infortunato").length === 0 && activeNtliAthleteIds.size === 0 ? (
+      ) : atletiOrdinati.filter((a) => a.stato === "Infortunato").length === 0 ? (
         <div className="text-center py-20">
           <Dumbbell className="w-16 h-16 text-gray-200 mx-auto mb-4" />
           <p className="text-gray-400 text-lg font-medium">Nessun atleta in riabilitazione</p>
           <p className="text-gray-300 text-sm mt-1">Tutti gli atleti sono disponibili</p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {([
-            { key: "TLI", label: "Infortunati · TLI", colore: "bg-red-100 text-red-700", gruppo: atletiOrdinati.filter((a) => a.stato === "Infortunato") },
-            { key: "NTLI", label: "NTLI · Non Time Loss", colore: "bg-blue-100 text-blue-700", gruppo: atletiOrdinati.filter((a) => activeNtliAthleteIds.has(a.id)) },
-          ] as const).map(({ key, label, colore, gruppo }) => {
-            if (gruppo.length === 0) return null;
-            return (
-              <div key={key}>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{label}</span>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colore}`}>{gruppo.length}</span>
-                </div>
-                <div className="space-y-3">
-          {gruppo.map((atleta) => {
+        <div className="space-y-3">
+          {atletiOrdinati.filter((a) => a.stato === "Infortunato").map((atleta) => {
             const isOpen = atletaAperto === atleta.id;
             const lista = programmiPerAtleta[atleta.id] ?? [];
             return (
@@ -1545,10 +1510,6 @@ export default function EserciziPage() {
             </div>
             );
           })}
-                </div>
-              </div>
-            );
-          })}
         </div>
       )}
 
@@ -1572,24 +1533,6 @@ export default function EserciziPage() {
             </div>
 
             <div className="p-5 overflow-y-auto flex-1 space-y-5">
-              {/* Tipo programma — solo nuovo */}
-              {!editId && (
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tipo programma</label>
-                  <div className="mt-1.5 flex rounded-xl overflow-hidden border border-gray-200">
-                    <button type="button"
-                      onClick={() => { setTipoProgramma("TLI"); setForm((f) => ({ ...f, atletaId: "", infortunioId: undefined, infortunioLabel: undefined })); }}
-                      className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${tipoProgramma === "TLI" ? "bg-[#C8102E] text-white" : "text-gray-500 hover:bg-gray-50"}`}>
-                      Infortunato (TLI)
-                    </button>
-                    <button type="button"
-                      onClick={() => { setTipoProgramma("NTLI"); setForm((f) => ({ ...f, atletaId: "", infortunioId: undefined, infortunioLabel: undefined })); }}
-                      className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${tipoProgramma === "NTLI" ? "bg-[#C8102E] text-white" : "text-gray-500 hover:bg-gray-50"}`}>
-                      NTLI
-                    </button>
-                  </div>
-                </div>
-              )}
               {/* Info base */}
               <div className="flex gap-3 items-end">
                 <div className="flex-1 min-w-0">
@@ -1605,7 +1548,7 @@ export default function EserciziPage() {
                     }}
                     className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white">
                     <option value="">Seleziona atleta...</option>
-                    {atletiOrdinati.filter((a) => tipoProgramma === "TLI" ? a.stato === "Infortunato" : activeNtliAthleteIds.has(a.id)).map((a) => <option key={a.id} value={a.id}>{nd(a)} ({a.categoria})</option>)}
+                    {atletiOrdinati.filter((a) => a.stato === "Infortunato").map((a) => <option key={a.id} value={a.id}>{nd(a)} ({a.categoria})</option>)}
                   </select>
                 </div>
                 <div className="shrink-0">
@@ -1618,7 +1561,7 @@ export default function EserciziPage() {
 
               {/* Applica anche ad altri atleti (solo nuovo programma) */}
               {!editId && form.atletaId && (() => {
-                const candidati = atletiOrdinati.filter((a) => a.id !== form.atletaId && (tipoProgramma === "TLI" ? a.stato === "Infortunato" : activeNtliAthleteIds.has(a.id)));
+                const candidati = atletiOrdinati.filter((a) => a.id !== form.atletaId && a.stato === "Infortunato");
                 const filtrati = applicaRicerca.trim()
                   ? candidati.filter((a) => nd(a).toLowerCase().includes(applicaRicerca.toLowerCase()))
                   : candidati;
