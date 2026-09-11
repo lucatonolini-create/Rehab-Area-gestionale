@@ -77,8 +77,13 @@ export default function Sidebar() {
     <>
       {/* Overlay mobile */}
       {mobileAperta && (
-        <div className="fixed inset-0 bg-black/30 z-30 md:hidden"
-          style={{ backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
+        <div className="fixed left-0 right-0 top-0 bg-black/30 z-30 md:hidden"
+          style={{
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            height: "calc(100vh + env(safe-area-inset-bottom, 0px))",
+            minHeight: "-webkit-fill-available",
+          }}
           onClick={() => setMobileAperta(false)} />
       )}
 
@@ -105,14 +110,14 @@ export default function Sidebar() {
           WebkitMaskImage: mobileAperta
             ? "linear-gradient(to right, black 0%, black 55%, transparent 100%)"
             : "none",
-          bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))",
+          minHeight: "-webkit-fill-available",
         }}
         className={`
           flex flex-col text-gray-800 shrink-0
           transition-all duration-300 ease-in-out
           fixed left-0 z-40
           md:static md:translate-x-0
-          top-0 bottom-0
+          top-0
           ${mobileAperta ? "translate-x-0 w-full" : "-translate-x-full w-64"}
           ${collapsed ? "md:w-16" : "md:w-64"}
         `}
