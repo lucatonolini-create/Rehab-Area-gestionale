@@ -105,6 +105,7 @@ export default function Sidebar() {
           WebkitMaskImage: mobileAperta
             ? "linear-gradient(to right, black 0%, black 55%, transparent 100%)"
             : "none",
+          bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))",
         }}
         className={`
           flex flex-col text-gray-800 shrink-0
