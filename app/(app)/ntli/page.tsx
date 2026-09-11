@@ -870,7 +870,7 @@ export default function NtliPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="h-full overflow-y-auto overscroll-none bg-gray-50 px-4 pb-4 md:px-6 md:pb-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}>
       <style>{`
         @media print {
           @page { size: A4 landscape; margin: 10mm; }

@@ -12,18 +12,6 @@ html, body {
   @apply bg-white text-gray-900;
 }
 
-/* Safe-area-aware main content padding */
-.app-main {
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-@media (min-width: 768px) {
-  .app-main {
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-}
-
 /* Mobile: offset page titles past the floating hamburger button (~3.5rem from left edge) */
 @media (max-width: 767px) {
   main h1 { padding-left: 3.5rem; }

@@ -546,7 +546,7 @@ export default function EpidemiologiaPage() {
   const vuoto = filtered.length === 0;
 
   return (
-    <div className="p-6">
+    <div className="h-full overflow-y-auto overscroll-none px-6 pb-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
       {/* Header */}
       <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>

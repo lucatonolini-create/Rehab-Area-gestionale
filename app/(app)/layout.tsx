@@ -11,7 +11,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       style={{ height: "100dvh" }}
     >
       <Sidebar />
-      <main className="flex-1 overflow-y-auto overscroll-none app-main">{children}</main>
+      <main className="flex-1 overflow-hidden">{children}</main>
       <OfflineBanner />
       <IntakeNotifier />
       <PushSetup />

@@ -1021,7 +1021,7 @@ export default function EserciziPage() {
   const fasiFiltrate = fasiUniche.filter((f) => !form.fase.trim() || f.toLowerCase().includes(form.fase.toLowerCase())).slice(0, 6);
 
   return (
-    <div className="p-6">
+    <div className="h-full overflow-y-auto overscroll-none px-6 pb-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
       <div className="mb-6 flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Programmi <span className="whitespace-nowrap">di Lavoro</span></h1>

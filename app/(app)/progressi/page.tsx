@@ -1248,7 +1248,7 @@ export default function ProgressiPage() {
   const anni = Array.from({ length: 5 }, (_, i) => oggi.getFullYear() - 2 + i);
 
   return (
-    <div className="p-6">
+    <div className="h-full overflow-y-auto overscroll-none px-6 pb-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
       <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Progressi</h1>
