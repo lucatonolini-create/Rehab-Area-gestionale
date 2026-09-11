@@ -16,6 +16,7 @@ import {
   TESTS_PREDEFINITI, OBIETTIVI_PALESTRA, OBIETTIVI_CAMPO,
   type Atleta, type Programma, type Esercizio, type TestFisiometrico, type Carico, type EsercizioCampo, type InfortunioStorico, type NtliRecord,
 } from "@/lib/store";
+import { ROSA } from "@/lib/players";
 
 const esVuoto: Esercizio = { nome: "", serie: "", reps: "", durata: "", carico: "", rir: "", vas: "", note: "" };
 const testVuoto: TestFisiometrico = { nome: "", risultatoSx: "", risultatoDx: "", risultato: "", unita: "", note: "" };
@@ -869,6 +870,31 @@ export default function EserciziPage() {
     });
     return () => { unsubAtleti(); unsubProgrammi(); };
   }, []);
+
+  // Auto-crea Atleta minimali per atleti NTLI attivi non ancora presenti nella tabella atleti
+  useEffect(() => {
+    if (ntliRecords.length === 0 || atleti.length === 0) return;
+    const activeNtli = ntliRecords.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso");
+    const toCreate = activeNtli.filter((n) =>
+      !atleti.some((a) => a.nome.trim().toLowerCase() === n.athleteName.trim().toLowerCase())
+    );
+    if (toCreate.length === 0) return;
+    Promise.all(
+      toCreate.map(async (n) => {
+        const rosaPlayer = ROSA.find((g) => g.nome.trim().toLowerCase() === n.athleteName.trim().toLowerCase());
+        const newAtleta: Atleta = {
+          id: uid(), nome: n.athleteName,
+          categoria: (rosaPlayer?.categoria ?? "Altra squadra") as Atleta["categoria"],
+          posizione: rosaPlayer?.ruolo ?? "", piedeDominante: "Destro",
+          infortunio: "", inizioRehab: new Date().toISOString().slice(0, 10),
+          stato: "NTL", progresso: 0,
+          fisioterapista: "", preparatoreAtletico: "", telefono: "", email: "", note: "",
+        };
+        await upsertAtleta(newAtleta);
+        return newAtleta;
+      })
+    ).then((created) => setAtleti((prev) => [...prev, ...created])).catch(() => {});
+  }, [ntliRecords, atleti.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const apriAtleta = async (atletaId: string) => {
     if (atletaAperto === atletaId) { setAtletaAperto(null); return; }
