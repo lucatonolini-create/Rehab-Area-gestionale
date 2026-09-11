@@ -14,7 +14,10 @@ import {
 import PlayerCombobox from "@/components/PlayerCombobox";
 
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 
 function isoWeekDates(isoWeek: string): string[] {
   const [year, week] = isoWeek.split("-W").map(Number);
@@ -24,7 +27,7 @@ function isoWeekDates(isoWeek: string): string[] {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + i);
-    return d.toISOString().slice(0, 10);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   });
 }
 
