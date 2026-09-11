@@ -1364,7 +1364,9 @@ export default function AnalisiPage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto px-6 pt-6"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}>
       <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Analisi</h1>
@@ -1912,6 +1914,7 @@ export default function AnalisiPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
