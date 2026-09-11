@@ -12,6 +12,16 @@ html, body {
   @apply bg-white text-gray-900;
 }
 
+/* Safe-area-aware main content padding */
+.app-main {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 4rem); /* mobile: safe area + hamburger height */
+}
+@media (min-width: 768px) {
+  .app-main {
+    padding-top: env(safe-area-inset-top, 0px); /* desktop: just safe area, no hamburger */
+  }
+}
+
 /* Slight font reduction for main content area (sidebar and exports excluded) */
 main { font-size: 0.95rem; }
 main .text-xs   { font-size: 0.71rem; }

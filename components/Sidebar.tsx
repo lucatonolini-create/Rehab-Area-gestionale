@@ -117,7 +117,10 @@ export default function Sidebar() {
         `}
       >
         {/* Header */}
-        <div className={`border-b border-black/10 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}>
+        <div
+          className={`border-b border-black/10 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}
+          style={{ paddingTop: `calc(env(safe-area-inset-top, 0px) + ${collapsed ? "0.75rem" : "1.25rem"})` }}
+        >
           {!collapsed && (
             <div className="flex items-center gap-3">
               <AppLogo className="w-10 h-10 rounded-xl shrink-0" />
