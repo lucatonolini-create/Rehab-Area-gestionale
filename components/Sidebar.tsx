@@ -183,7 +183,10 @@ export default function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className={`border-t border-black/10 shrink-0 ${collapsed ? "p-2 flex justify-center" : "p-4"}`}>
+        <div
+          className={`border-t border-black/10 shrink-0 ${collapsed ? "p-2 flex justify-center" : "p-4"}`}
+          style={{ paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${collapsed ? "0.5rem" : "1rem"})` }}
+        >
           {collapsed ? (
             <button onClick={handleLogout} title="Esci" className="text-gray-500 hover:text-gray-900 transition-colors p-1">
               <LogOut className="w-4 h-4" />
