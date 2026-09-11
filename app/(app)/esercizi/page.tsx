@@ -811,6 +811,7 @@ export default function EserciziPage() {
   const [esportandoCSVIntervallo, setEsportandoCSVIntervallo] = useState(false);
   const [atletiAggiuntivi, setAtletiAggiuntivi] = useState<string[]>([]);
   const [applicaDropAperto, setApplicaDropAperto] = useState(false);
+  const [applicaRicerca, setApplicaRicerca] = useState("");
   const applicaDropRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!applicaDropAperto) return;
@@ -1527,35 +1528,55 @@ export default function EserciziPage() {
               {/* Applica anche ad altri atleti (solo nuovo programma) */}
               {!editId && form.atletaId && (() => {
                 const candidati = atletiOrdinati.filter((a) => a.id !== form.atletaId && (a.stato === "Infortunato" || a.stato === "NTL"));
-                const label = atletiAggiuntivi.length === 0
-                  ? "Nessuno"
-                  : atletiAggiuntivi.length === 1
-                    ? nd(atleti.find((a) => a.id === atletiAggiuntivi[0])!)
-                    : `${atletiAggiuntivi.length} atleti`;
+                const filtrati = applicaRicerca.trim()
+                  ? candidati.filter((a) => nd(a).toLowerCase().includes(applicaRicerca.toLowerCase()))
+                  : candidati;
                 return (
                   <div className="relative" ref={applicaDropRef}>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Applica anche a</label>
-                    <button
-                      type="button"
-                      onClick={() => setApplicaDropAperto((v) => !v)}
-                      className="mt-2 w-full flex items-center justify-between border border-gray-200 rounded-xl px-4 py-2.5 bg-white text-sm text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#C8102E]"
-                    >
-                      <span className={atletiAggiuntivi.length === 0 ? "text-gray-400" : "text-gray-800"}>{label}</span>
-                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${applicaDropAperto ? "rotate-180" : ""}`} />
-                    </button>
+                    {/* Chips atleti selezionati */}
+                    {atletiAggiuntivi.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {atletiAggiuntivi.map((id) => {
+                          const a = atleti.find((x) => x.id === id);
+                          return a ? (
+                            <span key={id} className="inline-flex items-center gap-1 bg-red-50 border border-red-200 text-red-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                              {nd(a)}
+                              <button type="button" onClick={() => setAtletiAggiuntivi((prev) => prev.filter((x) => x !== id))} className="hover:text-red-900">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
+                    <div className="relative mt-2">
+                      <input
+                        type="text"
+                        value={applicaRicerca}
+                        onChange={(e) => { setApplicaRicerca(e.target.value); setApplicaDropAperto(true); }}
+                        onFocus={() => setApplicaDropAperto(true)}
+                        placeholder="Cerca giocatore..."
+                        className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E] placeholder:text-gray-400"
+                      />
+                      <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none transition-transform ${applicaDropAperto ? "rotate-180" : ""}`} />
+                    </div>
                     {applicaDropAperto && (
-                      <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
-                        {candidati.length === 0 ? (
-                          <p className="text-sm text-gray-400 text-center py-4">Nessun altro atleta disponibile</p>
+                      <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto">
+                        {filtrati.length === 0 ? (
+                          <p className="text-sm text-gray-400 text-center py-4">Nessun atleta trovato</p>
                         ) : (
-                          candidati.map((a) => {
+                          filtrati.map((a) => {
                             const checked = atletiAggiuntivi.includes(a.id);
                             return (
                               <label key={a.id} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer border-b border-gray-100 last:border-0 transition-colors ${checked ? "bg-red-50" : "hover:bg-gray-50"}`}>
                                 <input
                                   type="checkbox"
                                   checked={checked}
-                                  onChange={() => setAtletiAggiuntivi((prev) => checked ? prev.filter((id) => id !== a.id) : [...prev, a.id])}
+                                  onChange={() => {
+                                    setAtletiAggiuntivi((prev) => checked ? prev.filter((id) => id !== a.id) : [...prev, a.id]);
+                                    setApplicaRicerca("");
+                                  }}
                                   className="w-4 h-4 accent-[#C8102E] shrink-0"
                                 />
                                 <span className="text-sm text-gray-700 flex-1">{nd(a)}</span>
