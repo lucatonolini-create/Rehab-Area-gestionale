@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Trash2, X, ChevronDown, ChevronUp, Edit2, Gauge, Upload, AlertTriangle, Footprints, CalendarX2, Users, BatteryFull, FileText, FileDown, ShieldPlus, TrendingUp, Dumbbell } from "lucide-react";
+import { Plus, Trash2, X, ChevronDown, Edit2, Gauge, Upload, AlertTriangle, Footprints, CalendarX2, Users, BatteryFull, FileText, FileDown, ShieldPlus, TrendingUp, Dumbbell, GripVertical } from "lucide-react";
+import {
+  DndContext, closestCenter, PointerSensor, TouchSensor, KeyboardSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, useSortable, verticalListSortingStrategy, sortableKeyboardCoordinates, arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   loadAtleti, loadProgrammi, upsertProgramma, upsertAtleta, deleteProgramma, uid, nd, calcolaProgressoAuto,
   subscribeToAtleti, subscribeToProgrammi,
@@ -790,6 +798,21 @@ function parseGpsCsv(text: string): Partial<Carico> {
 
 type FormSection = "esercizi" | "campo" | "test" | "carico" | "fisioterapia";
 
+function SortableRow({ id, children }: { id: string; children: (handle: React.ReactNode) => React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const handle = (
+    <button type="button" {...attributes} {...listeners}
+      className="touch-none cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 shrink-0 p-0.5">
+      <GripVertical className="w-4 h-4" />
+    </button>
+  );
+  return (
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}>
+      {children(handle)}
+    </div>
+  );
+}
+
 export default function EserciziPage() {
   const [atleti, setAtleti] = useState<Atleta[]>([]);
   const [programmiPerAtleta, setProgrammiPerAtleta] = useState<Record<string, Programma[]>>({});
@@ -984,15 +1007,22 @@ export default function EserciziPage() {
     });
   };
 
+  const dndSensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
   // Esercizi
   const aggiungiEs = () => setForm({ ...form, esercizi: [...form.esercizi, { ...esVuoto }] });
   const rimuoviEs = (i: number) => setForm({ ...form, esercizi: form.esercizi.filter((_, idx) => idx !== i) });
-  const spostaEs = (i: number, dir: -1 | 1) => {
-    const arr = [...form.esercizi];
-    const j = i + dir;
-    if (j < 0 || j >= arr.length) return;
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-    setForm({ ...form, esercizi: arr });
+  const handleDragEndEs = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIdx = Number(active.id);
+      const newIdx = Number(over.id);
+      setForm({ ...form, esercizi: arrayMove(form.esercizi, oldIdx, newIdx) });
+    }
   };
   const aggiornaEs = (i: number, campo: keyof Esercizio, val: string) => {
     setForm({ ...form, esercizi: form.esercizi.map((e, idx) => idx === i ? { ...e, [campo]: val } : e) });
@@ -1002,12 +1032,13 @@ export default function EserciziPage() {
   const esercizicampo = form.esercizicampo ?? [];
   const aggiungiCampo = () => setForm({ ...form, esercizicampo: [...esercizicampo, { ...campoVuoto }] });
   const rimuoviCampo = (i: number) => setForm({ ...form, esercizicampo: esercizicampo.filter((_, idx) => idx !== i) });
-  const spostaCampo = (i: number, dir: -1 | 1) => {
-    const arr = [...esercizicampo];
-    const j = i + dir;
-    if (j < 0 || j >= arr.length) return;
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-    setForm({ ...form, esercizicampo: arr });
+  const handleDragEndCampo = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIdx = Number(active.id);
+      const newIdx = Number(over.id);
+      setForm({ ...form, esercizicampo: arrayMove(esercizicampo, oldIdx, newIdx) });
+    }
   };
   const aggiornaCampo = (i: number, campo: keyof EsercizioCampo, val: string) => {
     setForm({ ...form, esercizicampo: esercizicampo.map((c, idx) => idx === i ? { ...c, [campo]: val } : c) });
@@ -1017,12 +1048,13 @@ export default function EserciziPage() {
   const tests = form.tests ?? [];
   const aggiungiTest = () => setForm({ ...form, tests: [...tests, { ...testVuoto }] });
   const rimuoviTest = (i: number) => setForm({ ...form, tests: tests.filter((_, idx) => idx !== i) });
-  const spostaTest = (i: number, dir: -1 | 1) => {
-    const arr = [...tests];
-    const j = i + dir;
-    if (j < 0 || j >= arr.length) return;
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-    setForm({ ...form, tests: arr });
+  const handleDragEndTest = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIdx = Number(active.id);
+      const newIdx = Number(over.id);
+      setForm({ ...form, tests: arrayMove(tests, oldIdx, newIdx) });
+    }
   };
   const aggiornaTest = (i: number, campo: keyof TestFisiometrico, val: string) => {
     setForm({ ...form, tests: tests.map((t, idx) => idx === i ? { ...t, [campo]: val } : t) });
@@ -1795,47 +1827,46 @@ export default function EserciziPage() {
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Esercizi in Palestra</label>
                     <button onClick={aggiungiEs} className="text-[#C8102E] text-xs font-semibold hover:underline">+ Aggiungi</button>
                   </div>
-                  <div className="space-y-3">
-                    {form.esercizi.map((es, i) => (
-                      <div key={i} className="bg-gray-50 rounded-xl p-3 space-y-2.5">
-                        {/* Nome + ordine + cestino */}
-                        <div className="flex items-center gap-2">
-                          <span className="w-6 h-6 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">{i + 1}</span>
-                          <input value={es.nome} onChange={(e) => aggiornaEs(i, "nome", e.target.value)}
-                            placeholder="Nome esercizio"
-                            className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
-                          <div className="flex flex-col shrink-0">
-                            <button onClick={() => spostaEs(i, -1)} disabled={i === 0}
-                              className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none">
-                              <ChevronUp className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => spostaEs(i, 1)} disabled={i === form.esercizi.length - 1}
-                              className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none">
-                              <ChevronDown className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <button onClick={() => rimuoviEs(i)} className="text-gray-300 hover:text-red-400 shrink-0">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                        {/* Metriche: 5 colonne compatte */}
-                        <div className="grid grid-cols-5 gap-1.5">
-                          {([ ["Serie", "serie"], ["Reps", "reps"], ["Durata", "durata"], ["Carico", "carico"], ["RIR", "rir"] ] as const).map(([label, key]) => (
-                            <div key={key}>
-                              <p className="text-[10px] text-gray-400 mb-0.5 text-center">{label}</p>
-                              <input value={es[key]} onChange={(e) => aggiornaEs(i, key, e.target.value)} placeholder="—"
-                                className="w-full bg-white border border-gray-200 rounded-lg px-1.5 py-1.5 text-xs text-center focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
-                            </div>
-                          ))}
-                        </div>
-                        {/* VAS */}
-                        <ScaleInput label={`VAS: ${es.vas || 0}/10`} value={es.vas} max={10} onChange={(v) => aggiornaEs(i, "vas", v)} color="text-red-500" />
-                        {/* Note */}
-                        <input value={es.note} onChange={(e) => aggiornaEs(i, "note", e.target.value)} placeholder="Note"
-                          className="w-full bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
+                  <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndEs}>
+                    <SortableContext items={form.esercizi.map((_, i) => String(i))} strategy={verticalListSortingStrategy}>
+                      <div className="space-y-3">
+                        {form.esercizi.map((es, i) => (
+                          <SortableRow key={i} id={String(i)}>
+                            {(handle) => (
+                              <div className="bg-gray-50 rounded-xl p-3 space-y-2.5">
+                                {/* Nome + handle + cestino */}
+                                <div className="flex items-center gap-2">
+                                  <span className="w-6 h-6 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">{i + 1}</span>
+                                  <input value={es.nome} onChange={(e) => aggiornaEs(i, "nome", e.target.value)}
+                                    placeholder="Nome esercizio"
+                                    className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
+                                  {handle}
+                                  <button onClick={() => rimuoviEs(i)} className="text-gray-300 hover:text-red-400 shrink-0">
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                {/* Metriche: 5 colonne compatte */}
+                                <div className="grid grid-cols-5 gap-1.5">
+                                  {([ ["Serie", "serie"], ["Reps", "reps"], ["Durata", "durata"], ["Carico", "carico"], ["RIR", "rir"] ] as const).map(([label, key]) => (
+                                    <div key={key}>
+                                      <p className="text-[10px] text-gray-400 mb-0.5 text-center">{label}</p>
+                                      <input value={es[key]} onChange={(e) => aggiornaEs(i, key, e.target.value)} placeholder="—"
+                                        className="w-full bg-white border border-gray-200 rounded-lg px-1.5 py-1.5 text-xs text-center focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
+                                    </div>
+                                  ))}
+                                </div>
+                                {/* VAS */}
+                                <ScaleInput label={`VAS: ${es.vas || 0}/10`} value={es.vas} max={10} onChange={(v) => aggiornaEs(i, "vas", v)} color="text-red-500" />
+                                {/* Note */}
+                                <input value={es.note} onChange={(e) => aggiornaEs(i, "note", e.target.value)} placeholder="Note"
+                                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
+                              </div>
+                            )}
+                          </SortableRow>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </SortableContext>
+                  </DndContext>
 
                   {/* RPE sessione */}
                   <div className="mt-4 bg-orange-50 border border-orange-100 rounded-xl p-4">
@@ -1885,50 +1916,49 @@ export default function EserciziPage() {
                       Nessun esercizio in campo. Clicca "+ Aggiungi" per inserirne uno.
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {esercizicampo.map((c, i) => {
-                        const inp = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white";
-                        return (
-                          <div key={i} className="bg-gray-50 rounded-xl p-4 space-y-3">
-                            <div className="flex items-center gap-2">
-                              <span className="w-6 h-6 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">{i + 1}</span>
-                              <input value={c.tipo} onChange={(e) => aggiornaCampo(i, "tipo", e.target.value)}
-                                placeholder="Nome esercizio (es. Sprint, RSA, Metabolico...)"
-                                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white" />
-                              <div className="flex flex-col shrink-0">
-                                <button onClick={() => spostaCampo(i, -1)} disabled={i === 0}
-                                  className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none">
-                                  <ChevronUp className="w-4 h-4" />
-                                </button>
-                                <button onClick={() => spostaCampo(i, 1)} disabled={i === esercizicampo.length - 1}
-                                  className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none">
-                                  <ChevronDown className="w-4 h-4" />
-                                </button>
-                              </div>
-                              <button onClick={() => rimuoviCampo(i)} className="text-gray-300 hover:text-red-400 shrink-0">
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <p className="text-xs text-gray-500 mb-1">Serie</p>
-                                <input value={c.serie} onChange={(e) => aggiornaCampo(i, "serie", e.target.value)} placeholder="Es. 4" className={inp} />
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 mb-1">Durata</p>
-                                <input value={c.durata} onChange={(e) => aggiornaCampo(i, "durata", e.target.value)} placeholder="Es. 30'' / 5'" className={inp} />
-                              </div>
-                            </div>
-                            <ScaleInput label={`VAS: ${c.vas || 0}/10`} value={c.vas} max={10} onChange={(v) => aggiornaCampo(i, "vas", v)} color="text-red-500" />
-                            <div>
-                              <p className="text-xs text-gray-500 mb-1">Descrizione</p>
-                              <input value={c.descrizione} onChange={(e) => aggiornaCampo(i, "descrizione", e.target.value)}
-                                placeholder="Es. 3×10'' lavoro a 90% VMax con recupero 30''" className={inp} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndCampo}>
+                      <SortableContext items={esercizicampo.map((_, i) => String(i))} strategy={verticalListSortingStrategy}>
+                        <div className="space-y-4">
+                          {esercizicampo.map((c, i) => {
+                            const inp = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white";
+                            return (
+                              <SortableRow key={i} id={String(i)}>
+                                {(handle) => (
+                                  <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-6 h-6 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">{i + 1}</span>
+                                      <input value={c.tipo} onChange={(e) => aggiornaCampo(i, "tipo", e.target.value)}
+                                        placeholder="Nome esercizio (es. Sprint, RSA, Metabolico...)"
+                                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white" />
+                                      {handle}
+                                      <button onClick={() => rimuoviCampo(i)} className="text-gray-300 hover:text-red-400 shrink-0">
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div>
+                                        <p className="text-xs text-gray-500 mb-1">Serie</p>
+                                        <input value={c.serie} onChange={(e) => aggiornaCampo(i, "serie", e.target.value)} placeholder="Es. 4" className={inp} />
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-gray-500 mb-1">Durata</p>
+                                        <input value={c.durata} onChange={(e) => aggiornaCampo(i, "durata", e.target.value)} placeholder="Es. 30'' / 5'" className={inp} />
+                                      </div>
+                                    </div>
+                                    <ScaleInput label={`VAS: ${c.vas || 0}/10`} value={c.vas} max={10} onChange={(v) => aggiornaCampo(i, "vas", v)} color="text-red-500" />
+                                    <div>
+                                      <p className="text-xs text-gray-500 mb-1">Descrizione</p>
+                                      <input value={c.descrizione} onChange={(e) => aggiornaCampo(i, "descrizione", e.target.value)}
+                                        placeholder="Es. 3×10'' lavoro a 90% VMax con recupero 30''" className={inp} />
+                                    </div>
+                                  </div>
+                                )}
+                              </SortableRow>
+                            );
+                          })}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
                   )}
                 </div>
               )}
@@ -1946,7 +1976,9 @@ export default function EserciziPage() {
                       Nessun test. Clicca "+ Aggiungi test" per inserire risultati.
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndTest}>
+                      <SortableContext items={tests.map((_, i) => String(i))} strategy={verticalListSortingStrategy}>
+                        <div className="space-y-3">
                       {tests.map((t, i) => {
                         const isDropJump   = t.nome === "Drop Jump";
                         const isSLDropJump = t.nome === "SL Drop Jump";
@@ -1967,7 +1999,9 @@ export default function EserciziPage() {
                           : superioreTest(t.risultatoSx, t.risultatoDx);
                         const inp = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white";
                         return (
-                          <div key={i} className={`rounded-xl p-4 space-y-3 ${asim !== null && asim > 10 ? "bg-red-50 border border-red-200" : "bg-gray-50"}`}>
+                          <SortableRow key={i} id={String(i)}>
+                            {(handle) => (
+                          <div className={`rounded-xl p-4 space-y-3 ${asim !== null && asim > 10 ? "bg-red-50 border border-red-200" : "bg-gray-50"}`}>
                             <div className="flex items-center gap-2">
                               <span className="w-6 h-6 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">{i + 1}</span>
                               <select value={t.nome} onChange={(e) => aggiornaTest(i, "nome", e.target.value)}
@@ -1977,16 +2011,7 @@ export default function EserciziPage() {
                   .sort((a, b) => a === "Personalizzato" ? 1 : b === "Personalizzato" ? -1 : a.localeCompare(b, "it", { sensitivity: "base" }))
                   .map((tp) => <option key={tp} value={tp}>{tp}</option>)}
                               </select>
-                              <div className="flex flex-col shrink-0">
-                                <button onClick={() => spostaTest(i, -1)} disabled={i === 0}
-                                  className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none">
-                                  <ChevronUp className="w-4 h-4" />
-                                </button>
-                                <button onClick={() => spostaTest(i, 1)} disabled={i === tests.length - 1}
-                                  className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none">
-                                  <ChevronDown className="w-4 h-4" />
-                                </button>
-                              </div>
+                              {handle}
                               <button onClick={() => rimuoviTest(i)} className="text-gray-300 hover:text-red-400 shrink-0">
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -2214,9 +2239,13 @@ export default function EserciziPage() {
                             <input value={t.note} onChange={(e) => aggiornaTest(i, "note", e.target.value)}
                               placeholder="Note aggiuntive" className={inp} />
                           </div>
+                            )}
+                          </SortableRow>
                         );
                       })}
-                    </div>
+                        </div>
+                      </SortableContext>
+                    </DndContext>
                   )}
                 </div>
               )}
