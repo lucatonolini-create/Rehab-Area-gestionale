@@ -24,6 +24,11 @@ html, body {
   }
 }
 
+/* Mobile: offset page titles past the floating hamburger button (~3.5rem from left edge) */
+@media (max-width: 767px) {
+  main h1 { padding-left: 3.5rem; }
+}
+
 /* Slight font reduction for main content area (sidebar and exports excluded) */
 main { font-size: 0.95rem; }
 main .text-xs   { font-size: 0.71rem; }
