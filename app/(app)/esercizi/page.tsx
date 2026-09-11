@@ -11,10 +11,10 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  loadAtleti, loadProgrammi, upsertProgramma, upsertAtleta, deleteProgramma, uid, nd, calcolaProgressoAuto,
+  loadAtleti, loadProgrammi, loadNtli, upsertProgramma, upsertAtleta, deleteProgramma, uid, nd, calcolaProgressoAuto,
   subscribeToAtleti, subscribeToProgrammi,
   TESTS_PREDEFINITI, OBIETTIVI_PALESTRA, OBIETTIVI_CAMPO,
-  type Atleta, type Programma, type Esercizio, type TestFisiometrico, type Carico, type EsercizioCampo, type InfortunioStorico,
+  type Atleta, type Programma, type Esercizio, type TestFisiometrico, type Carico, type EsercizioCampo, type InfortunioStorico, type NtliRecord,
 } from "@/lib/store";
 
 const esVuoto: Esercizio = { nome: "", serie: "", reps: "", durata: "", carico: "", rir: "", vas: "", note: "" };
@@ -821,6 +821,7 @@ export default function EserciziPage() {
   const [aperto, setAperto] = useState<string | null>(null);
   const [mostraForm, setMostraForm] = useState(false);
   const [tipoProgramma, setTipoProgramma] = useState<"TLI" | "NTLI">("TLI");
+  const [ntliRecords, setNtliRecords] = useState<NtliRecord[]>([]);
   const [form, setForm] = useState<Omit<Programma, "id">>(progVuoto);
   const [editId, setEditId] = useState<string | null>(null);
   const [sezioneAttiva, setSezioneAttiva] = useState<FormSection>("esercizi");
@@ -853,9 +854,11 @@ export default function EserciziPage() {
   }, [applicaDropAperto]);
 
   const atletiOrdinati = useMemo(() => [...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")), [atleti]);
+  const activeNtliAthleteIds = useMemo(() => new Set(ntliRecords.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso").map((n) => n.athleteId)), [ntliRecords]);
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
+    loadNtli().then(setNtliRecords).catch(() => {});
     const unsubAtleti = subscribeToAtleti(() => loadAtleti().then(setAtleti));
     const unsubProgrammi = subscribeToProgrammi((atletaId) => {
       if (atletaId) {
@@ -904,8 +907,7 @@ export default function EserciziPage() {
     const { id, ...rest } = p;
     setForm({ ...rest, esercizi: rest.esercizi.map((e) => ({ ...e })), esercizicampo: (rest.esercizicampo ?? []).map((c) => ({ ...c })), tests: (rest.tests ?? []).map((t) => ({ ...t })), carico: rest.carico ?? { ...caricoVuoto } });
     setEditId(id); setMostraForm(true); setSezioneAttiva("esercizi");
-    const atletaEdit = atleti.find((a) => a.id === rest.atletaId);
-    setTipoProgramma(atletaEdit?.stato === "NTL" ? "NTLI" : "TLI");
+    setTipoProgramma(activeNtliAthleteIds.has(rest.atletaId) ? "NTLI" : "TLI");
     if (rest.atletaId && !(rest.atletaId in programmiPerAtleta)) {
       loadProgrammi(rest.atletaId).then((progs) =>
         setProgrammiPerAtleta((prev) => ({ ...prev, [rest.atletaId]: progs }))
@@ -1583,7 +1585,7 @@ export default function EserciziPage() {
                     }}
                     className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white">
                     <option value="">Seleziona atleta...</option>
-                    {atletiOrdinati.filter((a) => tipoProgramma === "TLI" ? a.stato === "Infortunato" : a.stato === "NTL").map((a) => <option key={a.id} value={a.id}>{nd(a)} ({a.categoria})</option>)}
+                    {atletiOrdinati.filter((a) => tipoProgramma === "TLI" ? a.stato === "Infortunato" : activeNtliAthleteIds.has(a.id)).map((a) => <option key={a.id} value={a.id}>{nd(a)} ({a.categoria})</option>)}
                   </select>
                 </div>
                 <div className="shrink-0">
@@ -1596,7 +1598,7 @@ export default function EserciziPage() {
 
               {/* Applica anche ad altri atleti (solo nuovo programma) */}
               {!editId && form.atletaId && (() => {
-                const candidati = atletiOrdinati.filter((a) => a.id !== form.atletaId && (tipoProgramma === "TLI" ? a.stato === "Infortunato" : a.stato === "NTL"));
+                const candidati = atletiOrdinati.filter((a) => a.id !== form.atletaId && (tipoProgramma === "TLI" ? a.stato === "Infortunato" : activeNtliAthleteIds.has(a.id)));
                 const filtrati = applicaRicerca.trim()
                   ? candidati.filter((a) => nd(a).toLowerCase().includes(applicaRicerca.toLowerCase()))
                   : candidati;
