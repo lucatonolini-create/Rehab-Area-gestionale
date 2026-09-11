@@ -811,6 +811,21 @@ export default function EserciziPage() {
   const [esportandoCSVIntervallo, setEsportandoCSVIntervallo] = useState(false);
   const [atletiAggiuntivi, setAtletiAggiuntivi] = useState<string[]>([]);
   const [applicaDropAperto, setApplicaDropAperto] = useState(false);
+  const applicaDropRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!applicaDropAperto) return;
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (applicaDropRef.current && !applicaDropRef.current.contains(e.target as Node)) {
+        setApplicaDropAperto(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, [applicaDropAperto]);
 
   const atletiOrdinati = useMemo(() => [...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")), [atleti]);
 
@@ -1511,7 +1526,7 @@ export default function EserciziPage() {
                     ? nd(atleti.find((a) => a.id === atletiAggiuntivi[0])!)
                     : `${atletiAggiuntivi.length} atleti`;
                 return (
-                  <div className="relative">
+                  <div className="relative" ref={applicaDropRef}>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Applica anche a</label>
                     <button
                       type="button"
