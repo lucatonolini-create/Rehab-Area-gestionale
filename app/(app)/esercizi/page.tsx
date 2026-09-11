@@ -854,7 +854,7 @@ export default function EserciziPage() {
   }, [applicaDropAperto]);
 
   const atletiOrdinati = useMemo(() => [...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")), [atleti]);
-  const activeNtliNames = useMemo(() => new Set(ntliRecords.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso").map((n) => n.athleteName)), [ntliRecords]);
+  const activeNtliNames = useMemo(() => new Set(ntliRecords.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso").map((n) => n.athleteName.trim().toLowerCase())), [ntliRecords]);
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
@@ -1218,7 +1218,7 @@ export default function EserciziPage() {
         <div className="space-y-6">
           {([
             { key: "TLI", label: "Infortunati · TLI", colore: "bg-red-100 text-red-700", gruppo: atletiOrdinati.filter((a) => a.stato === "Infortunato") },
-            { key: "NTLI", label: "NTLI · Non Time Loss", colore: "bg-blue-100 text-blue-700", gruppo: atletiOrdinati.filter((a) => activeNtliNames.has(a.nome) || activeNtliNames.has(nd(a))) },
+            { key: "NTLI", label: "NTLI · Non Time Loss", colore: "bg-blue-100 text-blue-700", gruppo: atletiOrdinati.filter((a) => activeNtliNames.has(a.nome.trim().toLowerCase()) || activeNtliNames.has(nd(a).trim().toLowerCase())) },
           ] as const).map(({ key, label, colore, gruppo }) => {
             if (gruppo.length === 0) return null;
             return (
@@ -1586,7 +1586,7 @@ export default function EserciziPage() {
                     }}
                     className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white">
                     <option value="">Seleziona atleta...</option>
-                    {atletiOrdinati.filter((a) => tipoProgramma === "TLI" ? a.stato === "Infortunato" : activeNtliNames.has(a.nome) || activeNtliNames.has(nd(a))).map((a) => <option key={a.id} value={a.id}>{nd(a)} ({a.categoria})</option>)}
+                    {atletiOrdinati.filter((a) => tipoProgramma === "TLI" ? a.stato === "Infortunato" : activeNtliNames.has(a.nome.trim().toLowerCase()) || activeNtliNames.has(nd(a).trim().toLowerCase())).map((a) => <option key={a.id} value={a.id}>{nd(a)} ({a.categoria})</option>)}
                   </select>
                 </div>
                 <div className="shrink-0">
@@ -1599,7 +1599,7 @@ export default function EserciziPage() {
 
               {/* Applica anche ad altri atleti (solo nuovo programma) */}
               {!editId && form.atletaId && (() => {
-                const candidati = atletiOrdinati.filter((a) => a.id !== form.atletaId && (tipoProgramma === "TLI" ? a.stato === "Infortunato" : activeNtliNames.has(a.nome) || activeNtliNames.has(nd(a))));
+                const candidati = atletiOrdinati.filter((a) => a.id !== form.atletaId && (tipoProgramma === "TLI" ? a.stato === "Infortunato" : activeNtliNames.has(a.nome.trim().toLowerCase()) || activeNtliNames.has(nd(a).trim().toLowerCase())));
                 const filtrati = applicaRicerca.trim()
                   ? candidati.filter((a) => nd(a).toLowerCase().includes(applicaRicerca.toLowerCase()))
                   : candidati;

@@ -706,15 +706,17 @@ export default function NtliPage() {
   // Carica programmi per atleti NTLI attivi quando si apre il tab monitoraggio
   useEffect(() => {
     if (tab !== "monitoraggio") return;
-    for (const n of activeNtli) {
-      if (!(n.athleteId in ntliProgrammi)) {
-        loadProgrammi(n.athleteId)
-          .then((progs) => setNtliProgrammi((prev) => ({ ...prev, [n.athleteId]: progs })))
-          .catch(() => {});
-      }
+    const active = ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso");
+    for (const n of active) {
+      const atleta = atleti.find((a) => a.nome.trim().toLowerCase() === n.athleteName.trim().toLowerCase());
+      if (!atleta) continue;
+      if (atleta.id in ntliProgrammi) continue;
+      loadProgrammi(atleta.id)
+        .then((progs) => setNtliProgrammi((prev) => ({ ...prev, [atleta.id]: progs })))
+        .catch(() => {});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab]);
+  }, [tab, atleti, ntliList]);
 
   // ── Derived ──────────────────────────────────────────────────────────────
   const activeNtli = ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso");
@@ -1107,7 +1109,8 @@ export default function NtliPage() {
 
                         {/* Programmi del giorno (da sezione Programmi) */}
                         {(() => {
-                          const progs = (ntliProgrammi[ntli.athleteId] ?? []).filter(
+                          const atletaMatch = atleti.find((a) => a.nome.trim().toLowerCase() === ntli.athleteName.trim().toLowerCase());
+                          const progs = (ntliProgrammi[atletaMatch?.id ?? ""] ?? []).filter(
                             (p) => p.data === monDate && !p.assente && !p.riposo && !p.squadra
                           );
                           if (progs.length === 0) return null;
