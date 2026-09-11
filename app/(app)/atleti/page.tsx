@@ -2177,7 +2177,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
         document.body
       )}
       {/* Lista */}
-      <div className="flex-1 px-6 pt-6 overflow-y-auto" style={{ paddingBottom: "1.5rem" }}>
+      <div className="flex-1 px-6 pt-6 overflow-y-auto overscroll-contain" style={{ paddingBottom: "1.5rem" }}>
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Atleti</h1>
@@ -2382,7 +2382,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-5 pt-5" style={{ paddingBottom: "1.25rem" }}>
+          <div className="flex-1 overflow-y-auto overscroll-contain px-5 pt-5" style={{ paddingBottom: "1.25rem" }}>
             {tab === "dati" ? (
               <div className="space-y-2.5 text-sm">
                 {/* ── Sezione infortunio principale ── */}
