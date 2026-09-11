@@ -1016,6 +1016,13 @@ export default function EserciziPage() {
   const tests = form.tests ?? [];
   const aggiungiTest = () => setForm({ ...form, tests: [...tests, { ...testVuoto }] });
   const rimuoviTest = (i: number) => setForm({ ...form, tests: tests.filter((_, idx) => idx !== i) });
+  const spostaTest = (i: number, dir: -1 | 1) => {
+    const arr = [...tests];
+    const j = i + dir;
+    if (j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    setForm({ ...form, tests: arr });
+  };
   const aggiornaTest = (i: number, campo: keyof TestFisiometrico, val: string) => {
     setForm({ ...form, tests: tests.map((t, idx) => idx === i ? { ...t, [campo]: val } : t) });
   };
@@ -1949,6 +1956,16 @@ export default function EserciziPage() {
                   .sort((a, b) => a === "Personalizzato" ? 1 : b === "Personalizzato" ? -1 : a.localeCompare(b, "it", { sensitivity: "base" }))
                   .map((tp) => <option key={tp} value={tp}>{tp}</option>)}
                               </select>
+                              <div className="flex flex-col shrink-0">
+                                <button onClick={() => spostaTest(i, -1)} disabled={i === 0}
+                                  className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none">
+                                  <ChevronUp className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => spostaTest(i, 1)} disabled={i === tests.length - 1}
+                                  className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none">
+                                  <ChevronDown className="w-4 h-4" />
+                                </button>
+                              </div>
                               <button onClick={() => rimuoviTest(i)} className="text-gray-300 hover:text-red-400 shrink-0">
                                 <Trash2 className="w-4 h-4" />
                               </button>
