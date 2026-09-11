@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Trash2, X, ChevronDown, Edit2, Gauge, Upload, AlertTriangle, Footprints, CalendarX2, Users, BatteryFull, FileText, FileDown, ShieldPlus, TrendingUp, Dumbbell } from "lucide-react";
+import { Plus, Trash2, X, ChevronDown, ChevronUp, Edit2, Gauge, Upload, AlertTriangle, Footprints, CalendarX2, Users, BatteryFull, FileText, FileDown, ShieldPlus, TrendingUp, Dumbbell } from "lucide-react";
 import {
   loadAtleti, loadProgrammi, upsertProgramma, upsertAtleta, deleteProgramma, uid, nd, calcolaProgressoAuto,
   subscribeToAtleti, subscribeToProgrammi,
@@ -970,6 +970,13 @@ export default function EserciziPage() {
   // Esercizi
   const aggiungiEs = () => setForm({ ...form, esercizi: [...form.esercizi, { ...esVuoto }] });
   const rimuoviEs = (i: number) => setForm({ ...form, esercizi: form.esercizi.filter((_, idx) => idx !== i) });
+  const spostaEs = (i: number, dir: -1 | 1) => {
+    const arr = [...form.esercizi];
+    const j = i + dir;
+    if (j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    setForm({ ...form, esercizi: arr });
+  };
   const aggiornaEs = (i: number, campo: keyof Esercizio, val: string) => {
     setForm({ ...form, esercizi: form.esercizi.map((e, idx) => idx === i ? { ...e, [campo]: val } : e) });
   };
@@ -1723,12 +1730,22 @@ export default function EserciziPage() {
                   <div className="space-y-3">
                     {form.esercizi.map((es, i) => (
                       <div key={i} className="bg-gray-50 rounded-xl p-3 space-y-2.5">
-                        {/* Nome + cestino */}
+                        {/* Nome + ordine + cestino */}
                         <div className="flex items-center gap-2">
                           <span className="w-6 h-6 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">{i + 1}</span>
                           <input value={es.nome} onChange={(e) => aggiornaEs(i, "nome", e.target.value)}
                             placeholder="Nome esercizio"
                             className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
+                          <div className="flex flex-col shrink-0">
+                            <button onClick={() => spostaEs(i, -1)} disabled={i === 0}
+                              className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none">
+                              <ChevronUp className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => spostaEs(i, 1)} disabled={i === form.esercizi.length - 1}
+                              className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none">
+                              <ChevronDown className="w-4 h-4" />
+                            </button>
+                          </div>
                           <button onClick={() => rimuoviEs(i)} className="text-gray-300 hover:text-red-400 shrink-0">
                             <Trash2 className="w-4 h-4" />
                           </button>
