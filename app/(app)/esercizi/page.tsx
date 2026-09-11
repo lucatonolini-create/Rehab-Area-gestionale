@@ -1208,7 +1208,7 @@ export default function EserciziPage() {
           <p className="text-gray-400 text-lg font-medium">Nessun atleta ancora</p>
           <p className="text-gray-300 text-sm mt-1">Aggiungi prima un atleta per creare programmi</p>
         </div>
-      ) : atletiOrdinati.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").length === 0 ? (
+      ) : atletiOrdinati.filter((a) => a.stato === "Infortunato").length === 0 && activeNtliNames.size === 0 ? (
         <div className="text-center py-20">
           <Dumbbell className="w-16 h-16 text-gray-200 mx-auto mb-4" />
           <p className="text-gray-400 text-lg font-medium">Nessun atleta in riabilitazione</p>
@@ -1216,16 +1216,16 @@ export default function EserciziPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {(["Infortunato", "NTL"] as const).map((stato) => {
-            const gruppo = atletiOrdinati.filter((a) => a.stato === stato);
+          {([
+            { key: "TLI", label: "Infortunati · TLI", colore: "bg-red-100 text-red-700", gruppo: atletiOrdinati.filter((a) => a.stato === "Infortunato") },
+            { key: "NTLI", label: "NTLI · Non Time Loss", colore: "bg-blue-100 text-blue-700", gruppo: atletiOrdinati.filter((a) => activeNtliNames.has(a.nome) || activeNtliNames.has(nd(a))) },
+          ] as const).map(({ key, label, colore, gruppo }) => {
             if (gruppo.length === 0) return null;
-            const labelGruppo = stato === "Infortunato" ? "Infortunati · TLI" : "NTLI · Non Time Loss";
-            const coloreGruppo = stato === "Infortunato" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700";
             return (
-              <div key={stato}>
+              <div key={key}>
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{labelGruppo}</span>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${coloreGruppo}`}>{gruppo.length}</span>
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{label}</span>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colore}`}>{gruppo.length}</span>
                 </div>
                 <div className="space-y-3">
           {gruppo.map((atleta) => {
