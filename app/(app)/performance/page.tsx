@@ -1058,10 +1058,10 @@ export default function PerformancePage() {
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
+    <div className="h-full flex flex-col overflow-hidden bg-gray-50">
 
       {/* ── Top bar ─────────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0">
+      <div className="bg-white border-b border-gray-200 px-6 shrink-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)", paddingBottom: "1rem" }}>
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: RED }}>
@@ -1149,7 +1149,7 @@ export default function PerformancePage() {
       )}
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto overscroll-none px-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}>
+      <div className="flex-1 overflow-y-auto overscroll-none px-6" style={{ paddingTop: "1.5rem", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}>
 
         {/* Empty states */}
         {atletiConDati.length === 0 && (
