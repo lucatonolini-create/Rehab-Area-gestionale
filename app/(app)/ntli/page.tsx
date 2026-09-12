@@ -683,6 +683,7 @@ export default function NtliPage() {
   const [monSaving, setMonSaving] = useState(false);
   const [monMsg, setMonMsg] = useState<string | null>(null);
   const [palestraAperta, setPalestraAperta] = useState<Record<string, boolean>>({});
+  const [palestraEspansa, setPalestraEspansa] = useState<Record<string, boolean>>({});
 
   // Riepilogo
   const [week, setWeek] = useState(currentIsoWeek());
@@ -1123,17 +1124,49 @@ export default function NtliPage() {
                               </div>
                             </div>
                           ) : (
-                            <div className="flex items-center justify-between bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
-                              <span className="text-xs text-gray-600">
-                                {(row.esercizi ?? []).length > 0
-                                  ? `${(row.esercizi ?? []).length} esercizi palestra`
-                                  : "Nessun esercizio palestra"}
-                              </span>
+                            <div className="border border-red-100 rounded-xl overflow-hidden">
+                              {/* Header sempre visibile */}
                               <button type="button"
-                                onClick={() => setPalestraAperta((prev) => ({ ...prev, [ntli.id]: true }))}
-                                className="text-xs font-semibold text-[#C8102E] hover:underline">
-                                Modifica
+                                onClick={() => setPalestraEspansa((prev) => ({ ...prev, [ntli.id]: !prev[ntli.id] }))}
+                                className="w-full flex items-center justify-between bg-red-50 px-4 py-2.5 hover:bg-red-100 transition-colors">
+                                <span className="text-xs text-gray-600">
+                                  {(row.esercizi ?? []).length > 0
+                                    ? `${(row.esercizi ?? []).length} esercizi palestra`
+                                    : "Nessun esercizio palestra"}
+                                </span>
+                                <div className="flex items-center gap-3">
+                                  <button type="button"
+                                    onClick={(e) => { e.stopPropagation(); setPalestraAperta((prev) => ({ ...prev, [ntli.id]: true })); }}
+                                    className="text-xs font-semibold text-[#C8102E] hover:underline">
+                                    Modifica
+                                  </button>
+                                  <span className="text-gray-400 text-xs">{palestraEspansa[ntli.id] ? "▲" : "▼"}</span>
+                                </div>
                               </button>
+                              {/* Lista esercizi in sola lettura */}
+                              {palestraEspansa[ntli.id] && (row.esercizi ?? []).length > 0 && (
+                                <div className="bg-white px-4 py-3 space-y-2 border-t border-red-100">
+                                  {(row.esercizi ?? []).map((es, i) => (
+                                    <div key={i} className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                                        <p className="font-semibold text-gray-900 text-sm">{es.nome || "—"}</p>
+                                        <div className="flex items-center gap-1.5 flex-wrap text-xs text-gray-500">
+                                          {es.serie && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.serie} serie</span>}
+                                          {es.reps && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.reps} reps</span>}
+                                          {es.durata && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.durata}</span>}
+                                          {es.carico && <span className="bg-white border border-blue-200 text-blue-600 px-2 py-0.5 rounded-full">{es.carico}</span>}
+                                          {es.rir && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">RIR {es.rir}</span>}
+                                          {es.vas && <span className="bg-white border border-red-200 text-red-600 px-2 py-0.5 rounded-full">VAS {es.vas}/10</span>}
+                                        </div>
+                                      </div>
+                                      {es.note && <p className="text-xs text-gray-400 mt-1 italic">{es.note}</p>}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {palestraEspansa[ntli.id] && (row.esercizi ?? []).length === 0 && (
+                                <p className="bg-white px-4 py-3 text-xs text-gray-400 border-t border-red-100">Nessun esercizio aggiunto.</p>
+                              )}
                             </div>
                           )
                         )}
