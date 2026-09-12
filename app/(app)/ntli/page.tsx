@@ -682,6 +682,7 @@ export default function NtliPage() {
   const [monEdits, setMonEdits] = useState<Record<string, Partial<NtliDaily>>>({});
   const [monSaving, setMonSaving] = useState(false);
   const [monMsg, setMonMsg] = useState<string | null>(null);
+  const [palestraAperta, setPalestraAperta] = useState<Record<string, boolean>>({});
 
   // Riepilogo
   const [week, setWeek] = useState(currentIsoWeek());
@@ -1078,16 +1079,17 @@ export default function NtliPage() {
                               const toggle = () => {
                                 let next: string[];
                                 if (m === "Nessuna modifica" || m === "Nessun allenamento") {
-                                  // esclusivi: se già attivo deseleziona, altrimenti sostituisce tutto
                                   next = active ? [] : [m];
                                 } else {
-                                  // rimuovi i valori esclusivi e aggiungi/rimuovi questo
                                   const base = selected.filter(s => s !== "Nessuna modifica" && s !== "Nessun allenamento");
                                   next = active ? base.filter(s => s !== m) : [...base, m];
                                 }
                                 setMonRow(ntli.id, {
                                   trainingModification: (next.length ? next.join(", ") : "Nessuna modifica") as TrainingModification,
                                 });
+                                if (m === "Palestra" && !active) {
+                                  setPalestraAperta((prev) => ({ ...prev, [ntli.id]: true }));
+                                }
                               };
                               return (
                                 <button key={m} type="button"
@@ -1106,10 +1108,34 @@ export default function NtliPage() {
 
                         {/* Gym editor — visible when "Palestra" is selected */}
                         {(row.trainingModification ?? "").split(",").map(s => s.trim()).includes("Palestra") && (
-                          <GymExercisesEditor
-                            esercizi={row.esercizi ?? []}
-                            onChange={(e) => setMonRow(ntli.id, { esercizi: e })}
-                          />
+                          palestraAperta[ntli.id] ? (
+                            <div className="border border-dashed border-red-200 rounded-xl p-3 space-y-3">
+                              <GymExercisesEditor
+                                esercizi={row.esercizi ?? []}
+                                onChange={(e) => setMonRow(ntli.id, { esercizi: e })}
+                              />
+                              <div className="flex justify-end">
+                                <button type="button"
+                                  onClick={() => setPalestraAperta((prev) => ({ ...prev, [ntli.id]: false }))}
+                                  className="bg-[#C8102E] text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-red-800">
+                                  Salva esercizi palestra
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
+                              <span className="text-xs text-gray-600">
+                                {(row.esercizi ?? []).length > 0
+                                  ? `${(row.esercizi ?? []).length} esercizi palestra`
+                                  : "Nessun esercizio palestra"}
+                              </span>
+                              <button type="button"
+                                onClick={() => setPalestraAperta((prev) => ({ ...prev, [ntli.id]: true }))}
+                                className="text-xs font-semibold text-[#C8102E] hover:underline">
+                                Modifica
+                              </button>
+                            </div>
+                          )
                         )}
 
                         {/* Programmi del giorno (da sezione Programmi) */}
