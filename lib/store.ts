@@ -1362,8 +1362,8 @@ export async function searchOsiicsCodes(query: string): Promise<OsiicsCode[]> {
 export type NtliStato = "Attivo" | "In miglioramento" | "Stabile" | "Peggiorato" | "Risolto" | "Chiuso";
 export const NTLI_STATI: NtliStato[] = ["Attivo", "In miglioramento", "Stabile", "Peggiorato", "Risolto", "Chiuso"];
 
-export type TrainingModification = "Nessuna modifica" | "Modifica volume" | "Modifica intensità" | "Cambio esercizio" | "Palestra" | "Nessun allenamento";
-export const TRAINING_MODIFICATIONS: TrainingModification[] = ["Nessuna modifica", "Modifica volume", "Modifica intensità", "Cambio esercizio", "Palestra", "Nessun allenamento"];
+export type TrainingModification = "Nessuna modifica" | "Modifica volume" | "Modifica intensità" | "Cambio esercizio" | "Palestra" | "Riposo" | "Nessun allenamento";
+export const TRAINING_MODIFICATIONS: TrainingModification[] = ["Nessuna modifica", "Modifica volume", "Modifica intensità", "Cambio esercizio", "Palestra", "Riposo", "Nessun allenamento"];
 
 export interface NtliRecord {
   id: string;
