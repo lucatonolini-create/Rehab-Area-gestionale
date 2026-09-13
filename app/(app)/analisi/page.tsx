@@ -1367,12 +1367,11 @@ export default function AnalisiPage() {
     <div className="flex h-full flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto overscroll-none px-6"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}>
-      <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Analisi</h1>
-          <p className="text-gray-500 mt-1">Statistiche e report infortuni</p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="mb-4 text-center">
+        <h1 className="text-2xl font-bold text-gray-900">Analisi</h1>
+        <p className="text-sm text-gray-500 mt-1">Statistiche e report infortuni</p>
+      </div>
+      <div className="mb-4 flex items-center gap-3 flex-wrap justify-end">
           {/* Export buttons */}
           <div className="flex gap-2">
             <button onClick={() => handleExport("excel")} disabled={!!esportando}
@@ -1397,7 +1396,6 @@ export default function AnalisiPage() {
               </button>
             ))}
           </div>
-        </div>
       </div>
 
       {tab === "overview" ? (

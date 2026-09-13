@@ -1100,12 +1100,11 @@ export default function EserciziPage() {
 
   return (
     <div className="h-full overflow-y-auto overscroll-none px-6 pb-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
-      <div className="mb-6 flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Programmi <span className="whitespace-nowrap">di Lavoro</span></h1>
-          <p className="text-gray-500 mt-0.5 text-sm">{atleti.length} atleti</p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="mb-4 text-center">
+        <h1 className="text-2xl font-bold text-gray-900">Programmi di Lavoro</h1>
+        <p className="text-sm text-gray-500 mt-1">{atleti.length} atleti</p>
+      </div>
+      <div className="mb-4 flex items-center gap-2 flex-wrap justify-end">
           <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 bg-white shadow-sm">
             <input
               type="date"
@@ -1148,7 +1147,6 @@ export default function EserciziPage() {
             className="flex items-center gap-1.5 bg-[#C8102E] text-white px-3 py-2 rounded-xl text-sm font-medium hover:bg-red-800 shrink-0 whitespace-nowrap">
             <Plus className="w-4 h-4" /> Nuovo programma
           </button>
-        </div>
       </div>
 
       {/* PDF intervallo */}

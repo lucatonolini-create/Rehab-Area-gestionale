@@ -8,16 +8,16 @@ export default function OfflineBanner() {
   const [online, setOnline] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [justSynced, setJustSynced] = useState(false);
-  const justMounted = useRef(true);
+  // Only show sync banner if the user was actually offline at some point
+  const wasOffline = useRef(false);
 
   useEffect(() => {
     setOnline(navigator.onLine);
-    // Ignore the online event that fires on app launch (within first second)
-    const t = setTimeout(() => { justMounted.current = false; }, 1000);
 
     const goOnline = async () => {
       setOnline(true);
-      if (justMounted.current) return;
+      if (!wasOffline.current) return; // ignore spurious online events on app launch
+      wasOffline.current = false;
       setSyncing(true);
       await syncFlush();
       setSyncing(false);
@@ -28,6 +28,7 @@ export default function OfflineBanner() {
     const goOffline = () => {
       setOnline(false);
       setJustSynced(false);
+      wasOffline.current = true;
     };
 
     const onVisible = () => {
@@ -43,7 +44,6 @@ export default function OfflineBanner() {
     if (navigator.onLine) syncFlush().catch(() => {});
 
     return () => {
-      clearTimeout(t);
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
       document.removeEventListener("visibilitychange", onVisible);

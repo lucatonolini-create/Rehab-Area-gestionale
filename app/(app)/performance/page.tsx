@@ -1062,12 +1062,11 @@ export default function PerformancePage() {
 
       {/* ── Top bar ─────────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-200 px-6 shrink-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)", paddingBottom: "1rem" }}>
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Performance</h1>
-            <p className="text-gray-500 mt-1">Test, andamento GPS e carico in riabilitazione</p>
-          </div>
-
+        <div className="mb-2 text-center">
+          <h1 className="text-2xl font-bold text-gray-900">Performance</h1>
+          <p className="text-sm text-gray-500 mt-1">Test, andamento GPS e carico in riabilitazione</p>
+        </div>
+        <div className="flex justify-end">
           <div className="flex items-center gap-2">
             {/* View toggle */}
             <div className="flex rounded-lg border border-gray-200 overflow-hidden">

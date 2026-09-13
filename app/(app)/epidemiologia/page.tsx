@@ -550,12 +550,11 @@ export default function EpidemiologiaPage() {
   return (
     <div className="h-full overflow-y-auto overscroll-none px-6 pb-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Epidemiologia</h1>
-          <p className="text-gray-500 mt-1">Presenze, carichi di lavoro e RPE mensile per categoria</p>
-        </div>
-        <div className="flex gap-2">
+      <div className="mb-4 text-center">
+        <h1 className="text-2xl font-bold text-gray-900">Epidemiologia</h1>
+        <p className="text-sm text-gray-500 mt-1">Presenze, carichi di lavoro e RPE mensile per categoria</p>
+      </div>
+      <div className="mb-4 flex gap-2 justify-end">
           <button onClick={() => setShowUpload(true)}
             className="flex items-center gap-1.5 bg-[#C8102E] text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#a80d26] transition-colors">
             <Upload className="w-3.5 h-3.5" /> Carica File
@@ -565,7 +564,6 @@ export default function EpidemiologiaPage() {
             className="flex items-center gap-1.5 border border-red-300 text-red-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 disabled:opacity-40 transition-colors">
             <FileText className="w-3.5 h-3.5" /> {pdfLoading ? "..." : "PDF"}
           </button>
-        </div>
       </div>
 
       {/* Upload modal */}

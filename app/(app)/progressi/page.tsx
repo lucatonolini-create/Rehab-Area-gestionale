@@ -1249,11 +1249,11 @@ export default function ProgressiPage() {
 
   return (
     <div className="h-full overflow-y-auto overscroll-none px-6 pb-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
-      <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Progressi</h1>
-          <p className="text-gray-500 mt-1">Aggiorna e scarica la scheda riabilitativa</p>
-        </div>
+      <div className="mb-4 text-center">
+        <h1 className="text-2xl font-bold text-gray-900">Progressi</h1>
+        <p className="text-sm text-gray-500 mt-1">Aggiorna e scarica la scheda riabilitativa</p>
+      </div>
+      <div className="flex justify-end mb-4">
         <div className="flex bg-gray-100 rounded-xl p-1">
           {(["progressi", "report"] as PageTab[]).map((t) => (
             <button key={t} onClick={() => setPageTab(t)}

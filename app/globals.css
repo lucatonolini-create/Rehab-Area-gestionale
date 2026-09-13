@@ -12,10 +12,7 @@ html, body {
   @apply bg-white text-gray-900;
 }
 
-/* Mobile: offset page titles past the floating hamburger button (~3.5rem from left edge) */
-@media (max-width: 767px) {
-  main h1 { padding-left: 3.5rem; }
-}
+/* Mobile: page titles are centered, so no offset needed for the hamburger */
 
 /* Slight font reduction for main content area (sidebar and exports excluded) */
 main { font-size: 0.95rem; }
