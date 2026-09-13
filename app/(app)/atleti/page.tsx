@@ -2106,34 +2106,11 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
       .map((n) => n.athleteName.toLowerCase().trim())
   );
 
-  const ntliVirtual: Atleta[] = ntliList
-    .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
-    .filter((n) => !atleti.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
-    .map((n) => {
-      const rosa = ROSA.find((r) => r.nome.toLowerCase() === n.athleteName.toLowerCase());
-      return {
-        id: `__ntli__${n.id}`,
-        nome: n.athleteName,
-        categoria: (rosa?.categoria ?? "1ª Squadra") as (typeof CATEGORIE)[number],
-        posizione: rosa?.ruolo ?? "",
-        piedeDominante: "Destro" as any,
-        infortunio: [n.painLocation, n.bodySide].filter(Boolean).join(" · "),
-        inizioRehab: n.onsetDate ?? "",
-        stato: "NTL" as Stato,
-        progresso: 0,
-        fisioterapista: "",
-        preparatoreAtletico: "",
-        telefono: "",
-        email: "",
-        note: "",
-      };
-    });
-
   const atletiConNtli = atleti.map((a) =>
     activeNtliNames.has(a.nome.toLowerCase().trim()) ? { ...a, stato: "NTL" as Stato } : a
   );
 
-  const tuttiAtleti = [...atletiConNtli, ...ntliVirtual];
+  const tuttiAtleti = atletiConNtli;
 
   const filtered = tuttiAtleti.filter((a) => {
     const matchSearch =
@@ -2248,13 +2225,10 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                       { infortunio: atleta.infortunio, tipo: atleta.tipoInfortunio, cardKey: atleta.id },
                       ...concorrenti.map(inf => ({ infortunio: inf.diagnosi, tipo: inf.tipo, cardKey: `${atleta.id}-${inf.id}` })),
                     ];
-                    const isNtliVirtual = atleta.id.startsWith("__ntli__");
                     return cards.map(({ infortunio, tipo, cardKey }) => (
                       <div key={cardKey} className="group flex items-center border-b border-gray-50">
-                      <button onClick={() => { if (!isNtliVirtual) { setSelected(atleta); setTab("dati"); } }}
-                        className={`flex-1 min-w-0 px-4 py-3.5 text-left transition-colors relative ${
-                          isNtliVirtual ? "cursor-default" : "hover:bg-gray-50"
-                        } ${selected?.id === atleta.id ? "bg-red-50/20" : ""}`}>
+                      <button onClick={() => { setSelected(atleta); setTab("dati"); }}
+                        className={`flex-1 min-w-0 px-4 py-3.5 text-left transition-colors relative hover:bg-gray-50 ${selected?.id === atleta.id ? "bg-red-50/20" : ""}`}>
                         {selected?.id === atleta.id && <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#C8102E] rounded-r" />}
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${
@@ -2280,14 +2254,12 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                           </div>
                         </div>
                       </button>
-                      {!isNtliVirtual && (
-                        <button
+                      <button
                           onClick={(e) => { e.stopPropagation(); elimina(atleta.id); }}
                           className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1.5 rounded text-gray-300 hover:text-red-500"
                           title="Elimina atleta">
                           <Trash2 className="w-4 h-4" />
                         </button>
-                      )}
                       </div>
                     ));
                   })}
