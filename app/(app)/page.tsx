@@ -178,7 +178,7 @@ export default function Dashboard() {
       {/* Filtro per categoria */}
       <div className="mb-5">
         <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Filtra per categoria</h2>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 justify-center">
           {["Tutti", ...CATEGORIE].map((cat) => {
             const count = cat === "Tutti" ? tuttiAtleti.length : tuttiAtleti.filter((a) => a.categoria === cat).length;
             if (count === 0 && cat !== "Tutti") return null;
