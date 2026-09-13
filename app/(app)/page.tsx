@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useRouter } from "next/navigation";
 import { Users, Activity, TrendingUp, Dumbbell, ChevronRight, X, ShieldAlert } from "lucide-react";
 
@@ -52,6 +53,7 @@ export default function Dashboard() {
   const [filtroCategoria, setFiltroCategoria] = useState<string>("Tutti");
   const [atletaSelezionato, setAtletaSelezionato] = useState<Atleta | null>(null);
   const [mostraModifica, setMostraModifica] = useState(false);
+  const sidebarRef = useSwipeToClose(() => { setAtletaSelezionato(null); setMostraModifica(false); });
 
   useEffect(() => {
     const reload = async () => {
@@ -262,7 +264,7 @@ export default function Dashboard() {
 
       {/* Mini pannello atleta */}
       {atletaSelezionato && !mostraModifica && (
-        <div className="fixed inset-y-0 right-0 z-40 w-80 bg-white shadow-2xl border-l border-gray-100 flex flex-col">
+        <div ref={sidebarRef as React.RefObject<HTMLDivElement>} className="fixed inset-y-0 right-0 z-40 w-80 bg-white shadow-2xl border-l border-gray-100 flex flex-col">
           <div className="flex items-center justify-between p-5 border-b border-gray-100">
             <h3 className="font-bold text-gray-900">Scheda atleta</h3>
             <button onClick={() => setAtletaSelezionato(null)} className="text-gray-400 hover:text-gray-600">

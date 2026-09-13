@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { Activity, FileText, Upload, Trash2, Users, TrendingUp, Clock, X, AlertTriangle } from "lucide-react";
 import {
   loadEpiMonthly, upsertEpiMonthly, deleteEpiMonthly,
@@ -277,6 +278,7 @@ export default function EpidemiologiaPage() {
 
   // Upload modal state
   const [showUpload, setShowUpload] = useState(false);
+  const uploadModalRef = useSwipeToClose(() => setShowUpload(false));
   const [uploadCat, setUploadCat] = useState<Categoria>("U19");
   const [uploadAnno, setUploadAnno] = useState(new Date().getFullYear());
   const [uploadMese, setUploadMese] = useState(new Date().getMonth() + 1);
@@ -570,7 +572,7 @@ export default function EpidemiologiaPage() {
       {showUpload && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
           onClick={e => e.target === e.currentTarget && setShowUpload(false)}>
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md">
+          <div ref={uploadModalRef as React.RefObject<HTMLDivElement>} className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900">Carica File</h2>
               <button onClick={() => setShowUpload(false)} className="text-gray-400 hover:text-gray-600">

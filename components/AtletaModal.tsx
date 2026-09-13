@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { X } from "lucide-react";
 import { CATEGORIE, PIEDI, TIPI_INFORTUNIO, EVENTI_INFORTUNIO, MECCANISMI_INFORTUNIO, CONTATTI_INFORTUNIO, LATI_INFORTUNIO, POSIZIONI_INFORTUNIO, uid, type Atleta, type Stato, type Categoria, type Piede, type TipoInfortunio } from "@/lib/store";
 import PlayerCombobox from "@/components/PlayerCombobox";
@@ -83,10 +84,11 @@ export default function AtletaModal({ atletaIniziale, initialDettaglio, onSalva,
   // ID pre-generato per poter salvare il dettaglio con la FK corretta
   const [atletaId] = useState(() => atletaIniziale?.id ?? uid());
   const dettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
+  const modalRef = useSwipeToClose(onChiudi);
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div ref={modalRef as React.RefObject<HTMLDivElement>} className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
         <div className="flex items-center justify-between p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
           <h2 className="text-lg font-bold text-gray-900">
             {isModifica ? "Modifica Atleta" : "Nuovo Atleta"}

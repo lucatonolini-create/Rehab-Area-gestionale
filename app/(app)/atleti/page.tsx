@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { createPortal } from "react-dom";
 import { Plus, Search, User, ChevronRight, Phone, Mail, Trash2, AlertTriangle, CheckCircle2, Clock, Pencil, RotateCcw, FileDown, X, ExternalLink, Copy, Check } from "lucide-react";
 import {
@@ -1631,6 +1632,7 @@ export default function AtletiPage() {
   const [search, setSearch] = useState("");
   const [filtroStato, setFiltroStato] = useState<Stato | "Tutti">("Tutti");
   const [selected, setSelected] = useState<Atleta | null>(null);
+  const detailPanelRef = useSwipeToClose(() => setSelected(null));
   const [tab, setTab] = useState<Tab>("dati");
   const [mostraForm, setMostraForm] = useState(false);
   const [editAtleta, setEditAtleta] = useState<Atleta | undefined>(undefined);
@@ -2298,7 +2300,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
       {/* Pannello dettaglio */}
       {selected && !mostraForm && (
-        <div className="w-96 bg-white border-l border-gray-100 flex flex-col overflow-hidden">
+        <div ref={detailPanelRef as React.RefObject<HTMLDivElement>} className="w-96 bg-white border-l border-gray-100 flex flex-col overflow-hidden">
           <div className="p-5 border-b border-gray-100">
             <div className="flex items-start justify-between mb-3">
               <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
