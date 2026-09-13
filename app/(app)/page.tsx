@@ -143,12 +143,11 @@ export default function Dashboard() {
 
   const stats = [
     { label: "Atleti Totali",     value: tuttiAtleti.length,    icon: Users,       color: "bg-gray-400",   href: "/atleti" },
-    { label: "Infortunati (TL)",  value: inRecupero,            icon: Activity,    color: "bg-orange-500", href: "/atleti" },
-    { label: "NTL",               value: inNTL,                 icon: Activity,    color: "bg-amber-500",  href: "/atleti" },
     { label: "Disponibili",       value: guariti,               icon: TrendingUp,  color: "bg-green-500",  href: "/atleti" },
+    { label: "Infortunati (TL)",  value: inRecupero,            icon: Activity,    color: "bg-orange-500", href: "/atleti" },
+    { label: "NTLI",              value: ntliList.length,       icon: ShieldAlert, color: "bg-[#C8102E]",  href: "/ntli" },
     { label: "Programmi Attivi",  value: programmiAttivi,       icon: Dumbbell,    color: "bg-[#C8102E]",  href: "/esercizi" },
     { label: "Programmi Totali",  value: programmiReali.length, icon: Dumbbell,    color: "bg-[#2B2B2B]",  href: "/esercizi" },
-    { label: "NTLI",              value: ntliList.length,       icon: ShieldAlert, color: "bg-[#C8102E]",  href: "/ntli" },
   ];
 
   return (
@@ -160,38 +159,20 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Stat cards — icona + numero libero, senza card container */}
-      <div className="mb-8 pb-6 border-b border-gray-100 space-y-6">
-        {/* Row 1: 4 stats */}
-        <div className="grid grid-cols-4 gap-x-2">
-          {stats.slice(0, 4).map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Link key={stat.label} href={stat.href} className="flex flex-col group">
-                <div className={`${stat.color} p-1.5 rounded-lg w-fit mb-2 group-hover:scale-110 transition-transform`}>
-                  <Icon className="w-3 h-3 text-white" />
-                </div>
-                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-[8px] text-gray-400 font-semibold mt-1 uppercase tracking-widest leading-tight">{stat.label}</p>
-              </Link>
-            );
-          })}
-        </div>
-        {/* Row 2: 3 stats */}
-        <div className="grid grid-cols-3 gap-x-4">
-          {stats.slice(4).map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Link key={stat.label} href={stat.href} className="flex flex-col group">
-                <div className={`${stat.color} p-1.5 rounded-lg w-fit mb-2.5 group-hover:scale-110 transition-transform`}>
-                  <Icon className="w-3.5 h-3.5 text-white" />
-                </div>
-                <p className="text-4xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-[9px] text-gray-400 font-semibold mt-1 uppercase tracking-widest leading-tight">{stat.label}</p>
-              </Link>
-            );
-          })}
-        </div>
+      {/* Stat cards — 2 righe da 3, dimensioni uniformi */}
+      <div className="grid grid-cols-3 gap-x-4 gap-y-6 mb-8 pb-6 border-b border-gray-100">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <Link key={stat.label} href={stat.href} className="flex flex-col group">
+              <div className={`${stat.color} p-1.5 rounded-lg w-fit mb-2.5 group-hover:scale-110 transition-transform`}>
+                <Icon className="w-3.5 h-3.5 text-white" />
+              </div>
+              <p className="text-4xl font-bold text-gray-900">{stat.value}</p>
+              <p className="text-[9px] text-gray-400 font-semibold mt-1 uppercase tracking-widest leading-tight">{stat.label}</p>
+            </Link>
+          );
+        })}
       </div>
 
       {/* Filtro per categoria */}
