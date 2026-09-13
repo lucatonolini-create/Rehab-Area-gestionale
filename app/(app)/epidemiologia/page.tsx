@@ -672,8 +672,8 @@ export default function EpidemiologiaPage() {
             Carica un file mensile (CSV, Excel, PDF) per ogni categoria per visualizzare l&apos;analisi.
           </p>
           <button onClick={() => setShowUpload(true)}
-            className="inline-flex items-center gap-1.5 bg-[#C8102E] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#a80d26] transition-colors">
-            <Upload className="w-4 h-4" /> Carica il primo file
+            className="inline-flex items-center gap-1.5 bg-[#C8102E] text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#a80d26] transition-colors">
+            <Upload className="w-3.5 h-3.5" /> Carica il primo file
           </button>
         </div>
       ) : (
