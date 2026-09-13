@@ -567,7 +567,7 @@ export default function ImpostazioniPage() {
         <h1 className="text-2xl font-bold text-gray-900">Impostazioni</h1>
         <p className="text-sm text-gray-500 mt-1">Configura il tuo gestionale</p>
       </div>
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-center mb-4">
         <button onClick={salva}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
             salvato ? "bg-green-500 text-white" : "bg-[#C8102E] text-white hover:bg-red-800"

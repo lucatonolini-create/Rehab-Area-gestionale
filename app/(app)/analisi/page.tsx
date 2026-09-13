@@ -1371,7 +1371,7 @@ export default function AnalisiPage() {
         <h1 className="text-2xl font-bold text-gray-900">Analisi</h1>
         <p className="text-sm text-gray-500 mt-1">Statistiche e report infortuni</p>
       </div>
-      <div className="mb-4 flex items-center gap-3 flex-wrap justify-end">
+      <div className="mb-4 flex items-center gap-3 flex-wrap justify-center">
           {/* Export buttons */}
           <div className="flex gap-2">
             <button onClick={() => handleExport("excel")} disabled={!!esportando}

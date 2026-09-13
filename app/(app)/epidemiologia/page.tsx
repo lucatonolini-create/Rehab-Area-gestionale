@@ -554,7 +554,7 @@ export default function EpidemiologiaPage() {
         <h1 className="text-2xl font-bold text-gray-900">Epidemiologia</h1>
         <p className="text-sm text-gray-500 mt-1">Presenze, carichi di lavoro e RPE mensile per categoria</p>
       </div>
-      <div className="mb-4 flex gap-2 justify-end">
+      <div className="mb-4 flex gap-2 justify-center">
           <button onClick={() => setShowUpload(true)}
             className="flex items-center gap-1.5 bg-[#C8102E] text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#a80d26] transition-colors">
             <Upload className="w-3.5 h-3.5" /> Carica File

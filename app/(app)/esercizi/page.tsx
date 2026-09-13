@@ -1104,7 +1104,7 @@ export default function EserciziPage() {
         <h1 className="text-2xl font-bold text-gray-900">Programmi di Lavoro</h1>
         <p className="text-sm text-gray-500 mt-1">{atleti.length} atleti</p>
       </div>
-      <div className="mb-4 flex items-center gap-2 flex-wrap justify-end">
+      <div className="mb-4 flex items-center gap-2 flex-wrap justify-center">
           <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 bg-white shadow-sm">
             <input
               type="date"

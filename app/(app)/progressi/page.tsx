@@ -1253,7 +1253,7 @@ export default function ProgressiPage() {
         <h1 className="text-2xl font-bold text-gray-900">Progressi</h1>
         <p className="text-sm text-gray-500 mt-1">Aggiorna e scarica la scheda riabilitativa</p>
       </div>
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-center mb-4">
         <div className="flex bg-gray-100 rounded-xl p-1">
           {(["progressi", "report"] as PageTab[]).map((t) => (
             <button key={t} onClick={() => setPageTab(t)}

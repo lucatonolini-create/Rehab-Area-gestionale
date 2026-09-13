@@ -919,7 +919,7 @@ export default function NtliPage() {
           <h1 className="text-2xl font-bold text-gray-900">NTLI</h1>
           <p className="text-sm text-gray-500 mt-1">Monitoraggio infortuni senza perdita di tempo</p>
         </div>
-        <div className="flex items-center justify-end gap-2 mb-4 no-print flex-wrap">
+        <div className="flex items-center justify-center gap-2 mb-4 no-print flex-wrap">
           <button
             onClick={() => { setEsportando("csv"); try { esportaCSVNtli(ntliList, dailyAll); } finally { setEsportando(null); } }}
             disabled={!!esportando || ntliList.length === 0}

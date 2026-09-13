@@ -1066,7 +1066,7 @@ export default function PerformancePage() {
           <h1 className="text-2xl font-bold text-gray-900">Performance</h1>
           <p className="text-sm text-gray-500 mt-1">Test, andamento GPS e carico in riabilitazione</p>
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-center">
           <div className="flex items-center gap-2">
             {/* View toggle */}
             <div className="flex rounded-lg border border-gray-200 overflow-hidden">
