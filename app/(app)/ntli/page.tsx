@@ -922,23 +922,23 @@ export default function NtliPage() {
         <div className="mb-4 no-print space-y-2">
           <div className="flex justify-center">
             <button onClick={() => { setEditNtli(undefined); setShowForm(true); }}
-              className="flex items-center gap-2 bg-[#C8102E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-red-800">
-              <Plus className="w-4 h-4" /> Nuovo NTLI
+              className="flex items-center gap-1.5 bg-[#C8102E] text-white px-4 py-2 rounded-xl text-xs font-medium hover:bg-red-800">
+              <Plus className="w-3.5 h-3.5" /> Nuovo NTLI
             </button>
           </div>
           <div className="flex items-center justify-center gap-2">
             <button
               onClick={() => { setEsportando("csv"); try { esportaCSVNtli(ntliList, dailyAll); } finally { setEsportando(null); } }}
               disabled={!!esportando || ntliList.length === 0}
-              className="flex items-center gap-1.5 border border-green-300 text-green-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
-              <Download className="w-3.5 h-3.5" />
+              className="flex items-center gap-1 border border-green-300 text-green-700 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
+              <Download className="w-3 h-3" />
               {esportando === "csv" ? "..." : "CSV"}
             </button>
             <button
               onClick={async () => { setEsportando("pdf"); try { await esportaPDFNtli(ntliList, dailyAll); } finally { setEsportando(null); } }}
               disabled={!!esportando || ntliList.length === 0}
-              className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
-              <FileText className="w-3.5 h-3.5" />
+              className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
+              <FileText className="w-3 h-3" />
               {esportando === "pdf" ? "..." : "PDF"}
             </button>
           </div>
@@ -1036,7 +1036,7 @@ export default function NtliPage() {
               <div className="flex items-center gap-2">
                 <Lbl>Atleta</Lbl>
                 <select value={monAtleta} onChange={(e) => setMonAtleta(e.target.value)}
-                  className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white">
+                  className="border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white">
                   <option value="">Tutti</option>
                   {Array.from(new Set(activeNtli.map((n) => n.athleteName)))
                     .sort((a, b) => a.localeCompare(b, "it"))

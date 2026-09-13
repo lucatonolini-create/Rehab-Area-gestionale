@@ -2163,8 +2163,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
         </div>
         <div className="flex justify-center mb-4">
           <button onClick={apriNuovo}
-            className="flex items-center gap-2 bg-[#C8102E] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-red-800">
-            <Plus className="w-4 h-4" /> Nuovo Atleta
+            className="flex items-center gap-1.5 bg-[#C8102E] text-white px-4 py-2 rounded-xl text-xs font-medium hover:bg-red-800">
+            <Plus className="w-3.5 h-3.5" /> Nuovo Atleta
           </button>
         </div>
 

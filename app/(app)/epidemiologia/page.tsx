@@ -556,13 +556,13 @@ export default function EpidemiologiaPage() {
       </div>
       <div className="mb-4 flex gap-2 justify-center">
           <button onClick={() => setShowUpload(true)}
-            className="flex items-center gap-1.5 bg-[#C8102E] text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#a80d26] transition-colors">
-            <Upload className="w-3.5 h-3.5" /> Carica File
+            className="flex items-center gap-1 bg-[#C8102E] text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#a80d26] transition-colors">
+            <Upload className="w-3 h-3" /> Carica File
           </button>
           <button onClick={async () => { setPdfLoading(true); try { await esportaPDFEpi({ filtroCat, filtroAnno, filtroMese, kpi, catData, monthlyData }); } finally { setPdfLoading(false); } }}
             disabled={vuoto || pdfLoading}
-            className="flex items-center gap-1.5 border border-red-300 text-red-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 disabled:opacity-40 transition-colors">
-            <FileText className="w-3.5 h-3.5" /> {pdfLoading ? "..." : "PDF"}
+            className="flex items-center gap-1 border border-red-300 text-red-700 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-50 disabled:opacity-40 transition-colors">
+            <FileText className="w-3 h-3" /> {pdfLoading ? "..." : "PDF"}
           </button>
       </div>
 
@@ -647,17 +647,17 @@ export default function EpidemiologiaPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
         <select value={filtroCat} onChange={e => setFiltroCat(e.target.value)}
-          className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]">
+          className="border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]">
           <option value="Tutte">Tutte le categorie</option>
           {CATEGORIE.map(c => <option key={c}>{c}</option>)}
         </select>
         <select value={filtroAnno} onChange={e => setFiltroAnno(e.target.value)}
-          className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]">
+          className="border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]">
           <option value="Tutti">Tutti gli anni</option>
           {anni.map(a => <option key={a}>{a}</option>)}
         </select>
         <select value={filtroMese} onChange={e => setFiltroMese(e.target.value)}
-          className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]">
+          className="border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]">
           <option value="Tutti">Tutti i mesi</option>
           {MESI_FULL.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
         </select>
