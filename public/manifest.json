@@ -4,7 +4,7 @@
   "description": "Sistema di gestione per l'area riabilitazione U.S.C.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#2B2B2B",
+  "background_color": "#ffffff",
   "theme_color": "#C8102E",
   "icons": [
     {
