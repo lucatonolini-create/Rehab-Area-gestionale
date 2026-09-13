@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { syncFlush } from "@/lib/store";
 import { WifiOff, RefreshCw, Wifi } from "lucide-react";
 
@@ -8,12 +8,16 @@ export default function OfflineBanner() {
   const [online, setOnline] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [justSynced, setJustSynced] = useState(false);
+  const justMounted = useRef(true);
 
   useEffect(() => {
     setOnline(navigator.onLine);
+    // Ignore the online event that fires on app launch (within first second)
+    const t = setTimeout(() => { justMounted.current = false; }, 1000);
 
     const goOnline = async () => {
       setOnline(true);
+      if (justMounted.current) return;
       setSyncing(true);
       await syncFlush();
       setSyncing(false);
@@ -39,6 +43,7 @@ export default function OfflineBanner() {
     if (navigator.onLine) syncFlush().catch(() => {});
 
     return () => {
+      clearTimeout(t);
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
       document.removeEventListener("visibilitychange", onVisible);
