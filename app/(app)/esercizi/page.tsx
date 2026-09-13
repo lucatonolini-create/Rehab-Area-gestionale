@@ -961,13 +961,17 @@ export default function EserciziPage() {
       }
     }
 
-    // Salva una copia del programma per ogni atleta aggiuntivo — solo esercizi, no dati rehab
+    // Salva una copia del programma per ogni atleta aggiuntivo
     for (const addId of atletiAggiuntivi) {
       const pulitoCopia = {
         atletaId: addId,
         nome: pulito.nome,
         data: pulito.data,
         fase: "",
+        assente: pulito.assente,
+        riposo: pulito.riposo,
+        squadra: pulito.squadra,
+        noteAssenza: pulito.noteAssenza,
         esercizi: pulito.esercizi,
         esercizicampo: pulito.esercizicampo,
         obiettiviPalestra: pulito.obiettiviPalestra,
