@@ -161,21 +161,37 @@ export default function Dashboard() {
       </div>
 
       {/* Stat cards — icona + numero libero, senza card container */}
-      <div className="grid grid-cols-3 gap-x-4 gap-y-6 mb-8 pb-6 border-b border-gray-100">
-        {stats.map((stat, i) => {
-          const Icon = stat.icon;
-          const isOrphan = i === stats.length - 1 && stats.length % 3 === 1;
-          return (
-            <Link key={stat.label} href={stat.href}
-              className={`flex flex-col group ${isOrphan ? "col-start-2" : ""}`}>
-              <div className={`${stat.color} p-1.5 rounded-lg w-fit mb-2.5 group-hover:scale-110 transition-transform`}>
-                <Icon className="w-3.5 h-3.5 text-white" />
-              </div>
-              <p className="text-4xl font-bold text-gray-900">{stat.value}</p>
-              <p className="text-[9px] text-gray-400 font-semibold mt-1 uppercase tracking-widest leading-tight">{stat.label}</p>
-            </Link>
-          );
-        })}
+      <div className="mb-8 pb-6 border-b border-gray-100 space-y-6">
+        {/* Row 1: 4 stats */}
+        <div className="grid grid-cols-4 gap-x-2">
+          {stats.slice(0, 4).map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <Link key={stat.label} href={stat.href} className="flex flex-col group">
+                <div className={`${stat.color} p-1.5 rounded-lg w-fit mb-2 group-hover:scale-110 transition-transform`}>
+                  <Icon className="w-3 h-3 text-white" />
+                </div>
+                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-[8px] text-gray-400 font-semibold mt-1 uppercase tracking-widest leading-tight">{stat.label}</p>
+              </Link>
+            );
+          })}
+        </div>
+        {/* Row 2: 3 stats */}
+        <div className="grid grid-cols-3 gap-x-4">
+          {stats.slice(4).map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <Link key={stat.label} href={stat.href} className="flex flex-col group">
+                <div className={`${stat.color} p-1.5 rounded-lg w-fit mb-2.5 group-hover:scale-110 transition-transform`}>
+                  <Icon className="w-3.5 h-3.5 text-white" />
+                </div>
+                <p className="text-4xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-[9px] text-gray-400 font-semibold mt-1 uppercase tracking-widest leading-tight">{stat.label}</p>
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* Filtro per categoria */}
