@@ -1371,21 +1371,9 @@ export default function AnalisiPage() {
         <h1 className="text-2xl font-bold text-gray-900">Analisi</h1>
         <p className="text-sm text-gray-500 mt-1">Statistiche e report infortuni</p>
       </div>
-      <div className="mb-4 flex items-center gap-3 flex-wrap justify-center">
-          {/* Export buttons */}
-          <div className="flex gap-2">
-            <button onClick={() => handleExport("excel")} disabled={!!esportando}
-              className="flex items-center gap-1.5 border border-green-300 text-green-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
-              <Download className="w-3.5 h-3.5" />
-              {esportando?.includes("excel") ? "..." : "CSV"}
-            </button>
-            <button onClick={() => handleExport("pdf")} disabled={!!esportando}
-              className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
-              <FileText className="w-3.5 h-3.5" />
-              {esportando?.includes("pdf") ? "..." : "PDF"}
-            </button>
-          </div>
-          {/* Tab switcher */}
+      <div className="mb-4 space-y-2">
+        {/* Tab switcher */}
+        <div className="flex justify-center">
           <div className="flex bg-gray-100 rounded-xl p-1">
             {(["overview", "report"] as AnalisiTab[]).map((t) => (
               <button key={t} onClick={() => setTab(t)}
@@ -1396,6 +1384,20 @@ export default function AnalisiPage() {
               </button>
             ))}
           </div>
+        </div>
+        {/* Export buttons */}
+        <div className="flex justify-center gap-2">
+          <button onClick={() => handleExport("excel")} disabled={!!esportando}
+            className="flex items-center gap-1.5 border border-green-300 text-green-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
+            <Download className="w-3.5 h-3.5" />
+            {esportando?.includes("excel") ? "..." : "CSV"}
+          </button>
+          <button onClick={() => handleExport("pdf")} disabled={!!esportando}
+            className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
+            <FileText className="w-3.5 h-3.5" />
+            {esportando?.includes("pdf") ? "..." : "PDF"}
+          </button>
+        </div>
       </div>
 
       {tab === "overview" ? (

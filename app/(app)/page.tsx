@@ -162,11 +162,12 @@ export default function Dashboard() {
 
       {/* Stat cards — icona + numero libero, senza card container */}
       <div className="grid grid-cols-3 gap-x-4 gap-y-6 mb-8 pb-6 border-b border-gray-100">
-        {stats.map((stat) => {
+        {stats.map((stat, i) => {
           const Icon = stat.icon;
+          const isOrphan = i === stats.length - 1 && stats.length % 3 === 1;
           return (
             <Link key={stat.label} href={stat.href}
-              className="flex flex-col group">
+              className={`flex flex-col group ${isOrphan ? "col-start-2" : ""}`}>
               <div className={`${stat.color} p-1.5 rounded-lg w-fit mb-2.5 group-hover:scale-110 transition-transform`}>
                 <Icon className="w-3.5 h-3.5 text-white" />
               </div>
