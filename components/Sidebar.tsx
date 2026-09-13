@@ -1,16 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Users, TrendingUp, Dumbbell, Settings,
-  Menu, X, ChevronLeft, BarChart2, LogOut, HeartPulse,
-  Link2, Activity, ShieldAlert, MoreHorizontal,
+  LayoutDashboard, Users, TrendingUp, Dumbbell, Settings, Menu, X, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity, ShieldAlert,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
-import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
 function AppLogo({ className }: { className?: string }) {
   return (
@@ -28,46 +25,37 @@ function AppLogo({ className }: { className?: string }) {
 }
 
 const navItems = [
-  { href: "/",             label: "Dashboard",    icon: LayoutDashboard },
-  { href: "/atleti",       label: "Atleti",        icon: Users           },
-  { href: "/esercizi",     label: "Programmi",     icon: Dumbbell        },
-  { href: "/progressi",    label: "Progressi",     icon: TrendingUp      },
-  { href: "/analisi",      label: "Analisi",        icon: BarChart2       },
-  { href: "/performance",  label: "Performance",    icon: Activity        },
-  { href: "/epidemiologia",label: "Epidemiologia",  icon: HeartPulse      },
-  { href: "/ntli",         label: "NTLI",            icon: ShieldAlert     },
-  { href: "/segnalazioni", label: "Link",            icon: Link2           },
-  { href: "/impostazioni", label: "Impostazioni",   icon: Settings        },
+  { href: "/",             label: "Dashboard",   icon: LayoutDashboard },
+  { href: "/atleti",       label: "Atleti",       icon: Users },
+  { href: "/esercizi",     label: "Programmi",    icon: Dumbbell },
+  { href: "/progressi",    label: "Progressi",    icon: TrendingUp },
+  { href: "/analisi",        label: "Analisi",        icon: BarChart2   },
+  { href: "/performance",   label: "Performance",   icon: Activity    },
+  { href: "/epidemiologia", label: "Epidemiologia", icon: HeartPulse  },
+  { href: "/ntli",          label: "NTLI",           icon: ShieldAlert },
+  { href: "/segnalazioni", label: "Link",           icon: Link2      },
+  { href: "/impostazioni", label: "Impostazioni", icon: Settings },
 ];
 
-const BOTTOM_MAIN = ["/", "/atleti", "/esercizi", "/ntli"];
-const bottomMainItems = navItems.filter(i => BOTTOM_MAIN.includes(i.href));
-const bottomMoreItems = navItems.filter(i => !BOTTOM_MAIN.includes(i.href));
-
-const RED = "#C8102E";
+const RED     = "#C8102E";
+const DARK    = "#2B2B2B";
+const SIDEBAR = "#B8B8B8";
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router   = useRouter();
-
-  // Desktop sidebar state
-  const [collapsed,    setCollapsed]    = useState(false);
+  const router = useRouter();
   const [mobileAperta, setMobileAperta] = useState(false);
+  const [collapsed, setCollapsed]       = useState(false);
+  const [intakeBadge, setIntakeBadge]   = useState(0);
+  const [userEmail, setUserEmail]       = useState<string | null>(null);
 
-  // Mobile bottom-bar "more" drawer
-  const [moreOpen, setMoreOpen] = useState(false);
-
-  const [intakeBadge, setIntakeBadge] = useState(0);
-  const [userEmail,   setUserEmail]   = useState<string | null>(null);
-
-  const drawerRef = useSwipeToClose(() => setMoreOpen(false));
-
-  useEffect(() => { setMobileAperta(false); setMoreOpen(false); }, [pathname]);
+  useEffect(() => { setMobileAperta(false); }, [pathname]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null));
   }, []);
 
+  // Badge intake: leggi da localStorage e ascolta aggiornamenti in tempo reale
   useEffect(() => {
     setIntakeBadge(getIntakeBadgeCount());
     const handler = (e: Event) => setIntakeBadge((e as CustomEvent<number>).detail);
@@ -75,43 +63,64 @@ export default function Sidebar() {
     return () => window.removeEventListener("intake-badge-update", handler);
   }, []);
 
+  // Quando l'utente apre la pagina Link, azzera il badge
   useEffect(() => {
     if (pathname === "/segnalazioni") resetIntakeBadge();
   }, [pathname]);
+
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/login");
   };
 
-  const moreIsActive = !BOTTOM_MAIN.includes(pathname);
-
   return (
     <>
-      {/* ═══════════════════════════════════════
-          DESKTOP SIDEBAR (md+)
-      ═══════════════════════════════════════ */}
+      {/* Overlay mobile */}
       {mobileAperta && (
         <div className="fixed inset-0 bg-black/25 z-30 md:hidden"
           style={{ backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" }}
           onClick={() => setMobileAperta(false)} />
       )}
 
+      {/* Bottone hamburger — mobile, quando sidebar è chiusa */}
+      {!mobileAperta && (
+        <button onClick={() => setMobileAperta(true)}
+          className="fixed left-4 z-50 md:hidden text-white p-2.5 rounded-xl shadow-lg"
+          style={{ top: "calc(env(safe-area-inset-top, 0px) + 1rem)", backgroundColor: RED }}>
+          <Menu className="w-5 h-5" />
+        </button>
+      )}
+
+      {/* Sidebar */}
       <aside
         style={{
-          background: "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)",
+          background: mobileAperta
+            ? "rgba(160,160,160,0.38)"
+            : "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)",
           backdropFilter: "blur(40px) saturate(1.8)",
           WebkitBackdropFilter: "blur(40px) saturate(1.8)",
+          maskImage: mobileAperta
+            ? "linear-gradient(to right, black 0%, black 58%, transparent 100%)"
+            : "none",
+          WebkitMaskImage: mobileAperta
+            ? "linear-gradient(to right, black 0%, black 58%, transparent 100%)"
+            : "none",
         }}
         className={`
-          hidden md:flex flex-col text-gray-800 shrink-0
+          flex flex-col text-gray-800 shrink-0
           transition-all duration-300 ease-in-out
-          ${collapsed ? "w-16" : "w-64"}
+          fixed left-0 z-40 top-0 bottom-0
+          md:static md:translate-x-0
+          ${mobileAperta ? "translate-x-0 w-full" : "-translate-x-full w-64"}
+          ${collapsed ? "md:w-16" : "md:w-64"}
         `}
       >
         {/* Header */}
-        <div className={`border-b border-black/8 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}
-          style={{ paddingTop: `calc(env(safe-area-inset-top, 0px) + ${collapsed ? "0.75rem" : "1.25rem"})` }}>
+        <div
+          className={`border-b border-black/8 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}
+          style={{ paddingTop: `calc(env(safe-area-inset-top, 0px) + ${collapsed ? "0.75rem" : "1.25rem"})` }}
+        >
           {!collapsed && (
             <div className="flex items-center gap-3">
               <AppLogo className="w-10 h-10 rounded-xl shrink-0" />
@@ -120,12 +129,21 @@ export default function Sidebar() {
               </div>
             </div>
           )}
+
+          {/* Chiudi su mobile */}
+          {mobileAperta && !collapsed && (
+            <button onClick={() => setMobileAperta(false)} className="md:hidden text-gray-500 hover:text-gray-900">
+              <X className="w-5 h-5" />
+            </button>
+          )}
+
+          {/* Toggle collapse su desktop */}
           {collapsed ? (
-            <button onClick={() => setCollapsed(false)} className="text-gray-500 hover:text-gray-900" title="Espandi menu">
+            <button onClick={() => setCollapsed(false)} className="hidden md:flex text-gray-500 hover:text-gray-900" title="Espandi menu">
               <Menu className="w-5 h-5" />
             </button>
           ) : (
-            <button onClick={() => setCollapsed(true)} className="text-gray-500 hover:text-gray-900 ml-2" title="Nascondi menu">
+            <button onClick={() => setCollapsed(true)} className="hidden md:flex text-gray-500 hover:text-gray-900 ml-2" title="Nascondi menu">
               <ChevronLeft className="w-5 h-5" />
             </button>
           )}
@@ -134,10 +152,11 @@ export default function Sidebar() {
         {/* Nav */}
         <nav className={`flex-1 overflow-y-auto space-y-1 ${collapsed ? "p-2" : "p-4"}`}>
           {navItems.map(({ href, label, icon: Icon }) => {
-            const isActive  = pathname === href;
+            const isActive = pathname === href;
             const showBadge = href === "/segnalazioni" && intakeBadge > 0;
             return (
-              <Link key={href} href={href} title={collapsed ? label : undefined}
+              <Link key={href} href={href}
+                title={collapsed ? label : undefined}
                 className={`flex items-center rounded-xl transition-all duration-150 text-sm font-medium relative ${
                   collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
                 } ${isActive ? "text-[#C8102E] bg-[#C8102E]/10" : "text-gray-600 hover:text-gray-900 hover:bg-black/5"}`}>
@@ -164,8 +183,10 @@ export default function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className={`border-t border-black/8 shrink-0 ${collapsed ? "p-2 flex justify-center" : "p-4"}`}
-          style={{ paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${collapsed ? "0.5rem" : "1rem"})` }}>
+        <div
+          className={`border-t border-black/8 shrink-0 ${collapsed ? "p-2 flex justify-center" : "p-4"}`}
+          style={{ paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${collapsed ? "0.5rem" : "1rem"})` }}
+        >
           {collapsed ? (
             <button onClick={handleLogout} title="Esci" className="text-gray-500 hover:text-gray-900 transition-colors p-1">
               <LogOut className="w-4 h-4" />
@@ -187,116 +208,6 @@ export default function Sidebar() {
           )}
         </div>
       </aside>
-
-      {/* ═══════════════════════════════════════
-          MOBILE BOTTOM BAR (< md)
-      ═══════════════════════════════════════ */}
-      <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-stretch"
-        style={{
-          background: "rgba(255,255,255,0.92)",
-          backdropFilter: "blur(20px) saturate(1.6)",
-          WebkitBackdropFilter: "blur(20px) saturate(1.6)",
-          borderTop: "1px solid rgba(0,0,0,0.08)",
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        }}
-      >
-        {bottomMainItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href;
-          return (
-            <Link key={href} href={href}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors"
-              style={{ color: isActive ? RED : "#6b7280" }}>
-              <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 2.2 : 1.8} />
-              <span className="text-[10px] font-medium leading-none">{label}</span>
-            </Link>
-          );
-        })}
-
-        {/* More button */}
-        <button
-          onClick={() => setMoreOpen(true)}
-          className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors"
-          style={{ color: moreIsActive ? RED : "#6b7280" }}>
-          <MoreHorizontal className="w-[22px] h-[22px]" strokeWidth={moreIsActive ? 2.2 : 1.8} />
-          <span className="text-[10px] font-medium leading-none">Altro</span>
-        </button>
-      </nav>
-
-      {/* More drawer backdrop */}
-      {moreOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-50"
-          style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
-          onClick={() => setMoreOpen(false)}
-        />
-      )}
-
-      {/* More drawer */}
-      <div
-        ref={drawerRef as React.RefObject<HTMLDivElement>}
-        className="md:hidden fixed left-0 right-0 z-50 rounded-t-2xl transition-transform duration-300 ease-out"
-        style={{
-          bottom: 0,
-          background: "rgba(255,255,255,0.97)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          boxShadow: "0 -4px 32px rgba(0,0,0,0.12)",
-          transform: moreOpen ? "translateY(0)" : "translateY(110%)",
-          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
-        }}
-      >
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-gray-300" />
-        </div>
-
-        {/* Grid of extra items */}
-        <div className="grid grid-cols-3 gap-1 px-4 py-3">
-          {bottomMoreItems.map(({ href, label, icon: Icon }) => {
-            const isActive  = pathname === href;
-            const showBadge = href === "/segnalazioni" && intakeBadge > 0;
-            return (
-              <Link key={href} href={href}
-                className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl transition-colors relative"
-                style={{
-                  background: isActive ? `${RED}14` : "transparent",
-                  color: isActive ? RED : "#374151",
-                }}>
-                <div className="relative">
-                  <Icon className="w-6 h-6" strokeWidth={isActive ? 2.2 : 1.8} />
-                  {showBadge && (
-                    <span className="absolute -top-1 -right-1 min-w-[14px] h-3.5 bg-[#C8102E] rounded-full text-white text-[8px] font-bold flex items-center justify-center px-0.5">
-                      {intakeBadge > 9 ? "9+" : intakeBadge}
-                    </span>
-                  )}
-                </div>
-                <span className="text-[11px] font-medium text-center leading-tight">{label}</span>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Divider */}
-        <div className="h-px bg-gray-100 mx-4 mb-3" />
-
-        {/* User + logout */}
-        <div className="flex items-center gap-3 px-5 py-1">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-            style={{ backgroundColor: RED }}>
-            {userEmail ? userEmail[0].toUpperCase() : "S"}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{userEmail ?? "Staff Medico"}</p>
-            <p className="text-gray-400 text-xs">Rehab Area</p>
-          </div>
-          <button onClick={handleLogout}
-            className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors px-3 py-2 rounded-xl hover:bg-gray-100">
-            <LogOut className="w-4 h-4" />
-            Esci
-          </button>
-        </div>
-      </div>
     </>
   );
 }
