@@ -196,20 +196,20 @@ export default function Dashboard() {
 
       {/* Filtro per categoria */}
       <div className="mb-5">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Filtra per categoria</h2>
-        <div className="flex flex-wrap gap-2">
+        <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Filtra per categoria</h2>
+        <div className="flex flex-wrap gap-1.5">
           {["Tutti", ...CATEGORIE].map((cat) => {
             const count = cat === "Tutti" ? tuttiAtleti.length : tuttiAtleti.filter((a) => a.categoria === cat).length;
             if (count === 0 && cat !== "Tutti") return null;
             return (
               <button key={cat} onClick={() => setFiltroCategoria(cat)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   filtroCategoria === cat
                     ? "bg-[#C8102E] text-white"
-                    : "bg-white text-gray-600 border border-gray-200 hover:border-[#C8102E] hover:text-[#C8102E]"
+                    : "bg-white text-gray-500 border border-gray-200 hover:border-[#C8102E] hover:text-[#C8102E]"
                 }`}>
                 {cat}
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                <span className={`px-1 py-0.5 rounded-full text-[10px] ${
                   filtroCategoria === cat ? "bg-white/20 text-white" : "bg-gray-100 text-gray-400"
                 }`}>{count}</span>
               </button>

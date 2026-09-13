@@ -2178,7 +2178,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
         </div>
 
         {/* Filtro per stato */}
-        <div className="flex gap-2 mb-6 flex-wrap">
+        <div className="flex gap-1.5 mb-5 flex-wrap">
           {FILTRI_STATO.map(({ label, value }) => {
             const count = countPerStato(value);
             return (
