@@ -242,6 +242,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── Guard against concurrent duplicate submissions ────────────────────────
+    // Re-check immediately before INSERT: another parallel request may have already
+    // inserted an athlete with this name in the gap since our first SELECT above.
+    const { data: raceCheck } = await supabase
+      .from("atleti")
+      .select("id")
+      .ilike("nome", nomeNorm)
+      .limit(1);
+    if (raceCheck?.[0]) {
+      await notificaEBroadcast(supabase, nomeNorm, body.categoria, raceCheck[0].id);
+      return NextResponse.json({ ok: true, id: raceCheck[0].id });
+    }
+
     // ── Atleta non trovato: crea nuovo record ─────────────────────────────────
     const row = {
       id: crypto.randomUUID(),

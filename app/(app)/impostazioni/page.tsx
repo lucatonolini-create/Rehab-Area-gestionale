@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Save, Plus, Trash2, Check, RefreshCw, AlertCircle, Bell, BellOff, Send, Download, X } from "lucide-react";
-import { loadImpostazioni, saveImpostazioni, pushAllLocalToSupabase, loadAtleti, upsertAtleta, loadProgrammi, type Impostazioni, type GiocatoreRosa } from "@/lib/store";
+import { Save, Plus, Trash2, Check, RefreshCw, AlertCircle, Bell, BellOff, Send, Download, GitMerge } from "lucide-react";
+import { loadImpostazioni, saveImpostazioni, pushAllLocalToSupabase, loadAtleti, upsertAtleta, deleteAtleta, loadProgrammi, type Impostazioni, type GiocatoreRosa } from "@/lib/store";
 import { esportaExcel } from "@/lib/exportExcel";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
@@ -511,6 +511,126 @@ function RosaSection({
   );
 }
 
+function DeduplicaSection() {
+  const [stato, setStato] = useState<"idle" | "scanning" | "merging" | "ok" | "error">("idle");
+  const [msg, setMsg] = useState("");
+  const [gruppi, setGruppi] = useState<{ nome: string; ids: string[] }[]>([]);
+
+  const scansiona = async () => {
+    setStato("scanning");
+    setMsg("");
+    setGruppi([]);
+    try {
+      const atleti = await loadAtleti();
+      const mappa = new Map<string, string[]>();
+      for (const a of atleti) {
+        const key = (a.nome ?? "").toLowerCase().trim();
+        if (!key) continue;
+        const lista = mappa.get(key) ?? [];
+        lista.push(a.id);
+        mappa.set(key, lista);
+      }
+      const dupGruppi = Array.from(mappa.entries())
+        .filter(([, ids]) => ids.length > 1)
+        .map(([nome, ids]) => ({ nome, ids }));
+      setGruppi(dupGruppi);
+      if (dupGruppi.length === 0) {
+        setStato("ok");
+        setMsg("Nessun doppione trovato.");
+      } else {
+        setStato("idle");
+        setMsg(`Trovati ${dupGruppi.length} nomi con doppioni (${dupGruppi.reduce((s, g) => s + g.ids.length - 1, 0)} record extra).`);
+      }
+    } catch (err) {
+      setStato("error");
+      setMsg(`Errore: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    setTimeout(() => { if (stato !== "idle") setStato("idle"); }, 6000);
+  };
+
+  const unisci = async () => {
+    if (gruppi.length === 0) return;
+    setStato("merging");
+    setMsg("");
+    let eliminati = 0;
+    try {
+      const atleti = await loadAtleti();
+      for (const g of gruppi) {
+        const records = atleti.filter((a) => (a.nome ?? "").toLowerCase().trim() === g.nome);
+        if (records.length <= 1) continue;
+        // Keep the record with the most history/data, delete the rest
+        const sorted = [...records].sort((a, b) => {
+          const aScore = (a.storicoInfortuni?.length ?? 0) * 10 + (a.infortunio ? 1 : 0) + (a.fisioterapista ? 1 : 0);
+          const bScore = (b.storicoInfortuni?.length ?? 0) * 10 + (b.infortunio ? 1 : 0) + (b.fisioterapista ? 1 : 0);
+          return bScore - aScore;
+        });
+        for (const dup of sorted.slice(1)) {
+          await deleteAtleta(dup.id);
+          eliminati++;
+        }
+      }
+      setGruppi([]);
+      setStato("ok");
+      setMsg(`Eliminati ${eliminati} doppioni. Verrà sincronizzato con il server.`);
+    } catch (err) {
+      setStato("error");
+      setMsg(`Errore: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+      <h2 className="font-bold text-gray-900 mb-1">Rimuovi doppioni atleti</h2>
+      <p className="text-sm text-gray-500 mb-4">
+        Scansiona il database e rimuovi i record duplicati dello stesso atleta, tenendo quello con più dati.
+      </p>
+      <div className="flex gap-2 flex-wrap">
+        <button
+          onClick={scansiona}
+          disabled={stato === "scanning" || stato === "merging"}
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all ${
+            stato === "ok" && gruppi.length === 0 ? "bg-green-500 text-white" :
+            stato === "error" ? "bg-orange-500 text-white" :
+            "bg-[#2B2B2B] text-white hover:bg-black"
+          }`}>
+          {stato === "scanning"
+            ? <><RefreshCw className="w-4 h-4 animate-spin" /> Scansione…</>
+            : stato === "ok" && gruppi.length === 0
+            ? <><Check className="w-4 h-4" /> Nessun doppione</>
+            : stato === "error"
+            ? <><AlertCircle className="w-4 h-4" /> Errore</>
+            : <><RefreshCw className="w-4 h-4" /> Scansiona</>}
+        </button>
+        {gruppi.length > 0 && (
+          <button
+            onClick={unisci}
+            disabled={stato === "merging"}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium bg-[#C8102E] text-white hover:bg-red-800 transition-all">
+            {stato === "merging"
+              ? <><RefreshCw className="w-4 h-4 animate-spin" /> Unione in corso…</>
+              : <><GitMerge className="w-4 h-4" /> Elimina {gruppi.reduce((s, g) => s + g.ids.length - 1, 0)} doppioni</>}
+          </button>
+        )}
+      </div>
+      {msg && (
+        <p className={`mt-3 text-xs font-medium ${stato === "error" ? "text-orange-600" : "text-green-600"}`}>
+          {msg}
+        </p>
+      )}
+      {gruppi.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {gruppi.map((g) => (
+            <div key={g.nome} className="flex items-center justify-between bg-orange-50 border border-orange-100 rounded-xl px-4 py-2.5">
+              <span className="text-sm text-gray-900 font-medium capitalize">{g.nome}</span>
+              <span className="text-xs text-orange-600 font-semibold">{g.ids.length} record</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ImpostazioniPage() {
   const [form, setForm] = useState<Impostazioni>({
     nomeClub: "", nomeStruttura: "", indirizzo: "", fisioterapisti: [], preparatori: [], rosa: [],
@@ -673,6 +793,9 @@ export default function ImpostazioniPage() {
 
         {/* Esporta Excel */}
         <ExcelSection />
+
+        {/* Doppioni */}
+        <DeduplicaSection />
 
         {/* Sincronizzazione */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
