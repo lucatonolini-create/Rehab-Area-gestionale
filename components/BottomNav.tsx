@@ -116,11 +116,23 @@ export default function BottomNav() {
         </div>
       )}
 
+      {/* Safe area cover — same glass as pill, hides the white zone */}
+      <div
+        className="fixed left-0 right-0 z-49 md:hidden"
+        style={{
+          bottom: 0,
+          height: "env(safe-area-inset-bottom, 0px)",
+          background: "rgba(210,210,215,0.78)",
+          backdropFilter: "blur(30px) saturate(2)",
+          WebkitBackdropFilter: "blur(30px) saturate(2)",
+        }}
+      />
+
       {/* Floating pill tab bar — light glassmorphism */}
       <div
         className="fixed left-0 right-0 z-50 md:hidden flex justify-center"
         style={{
-          bottom: "calc(4px + env(safe-area-inset-bottom, 0px))",
+          bottom: "calc(6px + env(safe-area-inset-bottom, 0px))",
         }}
       >
         <nav
