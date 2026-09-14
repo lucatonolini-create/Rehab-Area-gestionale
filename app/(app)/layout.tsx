@@ -19,13 +19,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <IntakeNotifier />
         <PushSetup />
         <SessionTimeout />
-        {/* Cover only the safe-area home indicator strip */}
+        {/* Gradient covers padding zone below nav pill so no white block appears */}
         <div
           className="fixed left-0 right-0 pointer-events-none md:hidden"
           style={{
             bottom: 0,
-            height: "env(safe-area-inset-bottom, 0px)",
-            background: "white",
+            height: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
+            background: "linear-gradient(to top, white 40%, transparent 100%)",
             zIndex: 49,
           }}
         />
