@@ -30,6 +30,11 @@ main .text-5xl  { font-size: 2.85rem; }
   main {
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
+
+  /* Ensure last items scroll fully above the nav gradient zone */
+  .page-scroll {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 180px) !important;
+  }
 }
 
 /* ── Concept C — flat design in main content ──────────── */

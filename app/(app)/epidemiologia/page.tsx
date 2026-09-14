@@ -687,7 +687,7 @@ export default function EpidemiologiaPage() {
   const vuoto = filtered.length === 0;
 
   return (
-    <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 54px)" }}>
+    <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 54px)" }}>
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="text-left">
