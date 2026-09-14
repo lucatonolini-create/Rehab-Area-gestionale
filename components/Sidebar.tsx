@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Users, TrendingUp, Dumbbell, Settings, Menu, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity, ShieldAlert,
+  LayoutDashboard, Users, TrendingUp, Dumbbell, Settings, Menu, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity, ShieldAlert, X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
@@ -29,52 +29,35 @@ const navItems = [
   { href: "/atleti",       label: "Atleti",       icon: Users },
   { href: "/esercizi",     label: "Programmi",    icon: Dumbbell },
   { href: "/progressi",    label: "Progressi",    icon: TrendingUp },
-  { href: "/analisi",        label: "Analisi",        icon: BarChart2   },
-  { href: "/performance",   label: "Performance",   icon: Activity    },
-  { href: "/epidemiologia", label: "Epidemiologia", icon: HeartPulse  },
-  { href: "/ntli",          label: "NTLI",           icon: ShieldAlert },
-  { href: "/segnalazioni", label: "Link",           icon: Link2      },
+  { href: "/analisi",      label: "Analisi",      icon: BarChart2   },
+  { href: "/performance",  label: "Performance",  icon: Activity    },
+  { href: "/epidemiologia",label: "Epidemiologia",icon: HeartPulse  },
+  { href: "/ntli",         label: "NTLI",         icon: ShieldAlert },
+  { href: "/segnalazioni", label: "Link",         icon: Link2      },
   { href: "/impostazioni", label: "Impostazioni", icon: Settings },
 ];
 
 const RED = "#C8102E";
 
-export default function Sidebar() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [collapsed, setCollapsed] = useState(false);
-  const [intakeBadge, setIntakeBadge] = useState(0);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null));
-  }, []);
-
-  useEffect(() => {
-    setIntakeBadge(getIntakeBadgeCount());
-    const handler = (e: Event) => setIntakeBadge((e as CustomEvent<number>).detail);
-    window.addEventListener("intake-badge-update", handler);
-    return () => window.removeEventListener("intake-badge-update", handler);
-  }, []);
-
-  useEffect(() => {
-    if (pathname === "/segnalazioni") resetIntakeBadge();
-  }, [pathname]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
-
+function SidebarContent({
+  collapsed,
+  setCollapsed,
+  pathname,
+  intakeBadge,
+  userEmail,
+  handleLogout,
+  onNavClick,
+}: {
+  collapsed: boolean;
+  setCollapsed?: (v: boolean) => void;
+  pathname: string;
+  intakeBadge: number;
+  userEmail: string | null;
+  handleLogout: () => void;
+  onNavClick?: () => void;
+}) {
   return (
-    <aside
-      style={{
-        background: "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)",
-        backdropFilter: "blur(40px) saturate(1.8)",
-        WebkitBackdropFilter: "blur(40px) saturate(1.8)",
-      }}
-      className={`hidden md:flex flex-col text-gray-800 shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}
-    >
+    <>
       {/* Header */}
       <div
         className={`border-b border-black/8 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}
@@ -88,14 +71,20 @@ export default function Sidebar() {
             </div>
           </div>
         )}
-
-        {collapsed ? (
-          <button onClick={() => setCollapsed(false)} className="text-gray-500 hover:text-gray-900" title="Espandi menu">
-            <Menu className="w-5 h-5" />
-          </button>
-        ) : (
-          <button onClick={() => setCollapsed(true)} className="text-gray-500 hover:text-gray-900 ml-2" title="Nascondi menu">
-            <ChevronLeft className="w-5 h-5" />
+        {setCollapsed && (
+          collapsed ? (
+            <button onClick={() => setCollapsed(false)} className="text-gray-500 hover:text-gray-900" title="Espandi menu">
+              <Menu className="w-5 h-5" />
+            </button>
+          ) : (
+            <button onClick={() => setCollapsed(true)} className="text-gray-500 hover:text-gray-900 ml-2" title="Nascondi menu">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )
+        )}
+        {onNavClick && !setCollapsed && (
+          <button onClick={onNavClick} className="text-gray-500 hover:text-gray-900 ml-auto">
+            <X className="w-5 h-5" />
           </button>
         )}
       </div>
@@ -107,6 +96,7 @@ export default function Sidebar() {
           const showBadge = href === "/segnalazioni" && intakeBadge > 0;
           return (
             <Link key={href} href={href}
+              onClick={onNavClick}
               title={collapsed ? label : undefined}
               className={`flex items-center rounded-xl transition-all duration-150 text-sm font-medium relative ${
                 collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
@@ -157,6 +147,105 @@ export default function Sidebar() {
           </div>
         )}
       </div>
-    </aside>
+    </>
+  );
+}
+
+export default function Sidebar() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [intakeBadge, setIntakeBadge] = useState(0);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null));
+  }, []);
+
+  useEffect(() => {
+    setIntakeBadge(getIntakeBadgeCount());
+    const handler = (e: Event) => setIntakeBadge((e as CustomEvent<number>).detail);
+    window.addEventListener("intake-badge-update", handler);
+    return () => window.removeEventListener("intake-badge-update", handler);
+  }, []);
+
+  useEffect(() => {
+    if (pathname === "/segnalazioni") resetIntakeBadge();
+  }, [pathname]);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
+  const sidebarStyle = {
+    background: "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)",
+    backdropFilter: "blur(40px) saturate(1.8)",
+    WebkitBackdropFilter: "blur(40px) saturate(1.8)",
+  };
+
+  return (
+    <>
+      {/* ── Mobile hamburger button ── */}
+      <button
+        className="md:hidden fixed z-[60] flex items-center justify-center w-10 h-10 rounded-full bg-white/80 shadow-md active:opacity-70"
+        style={{
+          top: "calc(env(safe-area-inset-top, 0px) + 12px)",
+          left: 12,
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+        }}
+        onClick={() => setMobileOpen(true)}
+        aria-label="Apri menu"
+      >
+        <Menu className="w-5 h-5 text-gray-700" />
+      </button>
+
+      {/* ── Mobile overlay ── */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-[65] bg-black/40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* ── Mobile drawer ── */}
+      <aside
+        className="md:hidden fixed inset-y-0 left-0 z-[66] w-72 flex flex-col text-gray-800 transition-transform duration-300 ease-in-out"
+        style={{
+          ...sidebarStyle,
+          transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+        }}
+      >
+        <SidebarContent
+          collapsed={false}
+          pathname={pathname}
+          intakeBadge={intakeBadge}
+          userEmail={userEmail}
+          handleLogout={handleLogout}
+          onNavClick={() => setMobileOpen(false)}
+        />
+      </aside>
+
+      {/* ── Desktop sidebar ── */}
+      <aside
+        style={sidebarStyle}
+        className={`hidden md:flex flex-col text-gray-800 shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}
+      >
+        <SidebarContent
+          collapsed={collapsed}
+          setCollapsed={setCollapsed}
+          pathname={pathname}
+          intakeBadge={intakeBadge}
+          userEmail={userEmail}
+          handleLogout={handleLogout}
+        />
+      </aside>
+    </>
   );
 }
