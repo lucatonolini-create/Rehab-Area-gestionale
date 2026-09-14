@@ -116,15 +116,13 @@ export default function BottomNav() {
         </div>
       )}
 
-      {/* Safe area cover — same glass as pill, hides the white zone */}
+      {/* Safe area cover — white so it blends with app background */}
       <div
         className="fixed left-0 right-0 z-49 md:hidden"
         style={{
           bottom: 0,
           height: "env(safe-area-inset-bottom, 0px)",
-          background: "rgba(210,210,215,0.78)",
-          backdropFilter: "blur(30px) saturate(2)",
-          WebkitBackdropFilter: "blur(30px) saturate(2)",
+          background: "white",
         }}
       />
 
@@ -132,7 +130,7 @@ export default function BottomNav() {
       <div
         className="fixed left-0 right-0 z-50 md:hidden flex justify-center"
         style={{
-          bottom: "env(safe-area-inset-bottom, 6px)",
+          bottom: "calc(env(safe-area-inset-bottom, 0px) - 4px)",
         }}
       >
         <nav
