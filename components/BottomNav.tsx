@@ -82,6 +82,19 @@ export default function BottomNav() {
 
   return (
     <>
+      {/* Permanent safe-area backdrop — always covers the iOS home indicator zone even when nav is hidden */}
+      <div
+        className="fixed z-[49] md:hidden"
+        style={{
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: "env(safe-area-inset-bottom, 0px)",
+          background: "rgba(255,255,255,0.88)",
+          backdropFilter: "blur(24px) saturate(1.8)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.8)",
+        }}
+      />
       <div
         className="fixed z-50 md:hidden"
         style={{
