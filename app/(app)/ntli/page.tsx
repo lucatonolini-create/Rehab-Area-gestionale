@@ -917,7 +917,7 @@ export default function NtliPage() {
         {/* Header */}
         <div className="mb-4 text-center no-print">
           <h1 className="text-2xl font-bold text-gray-900">NTLI</h1>
-          <p className="text-sm text-gray-500 mt-1">Monitoraggio infortuni senza perdita di tempo</p>
+          <p className="text-sm text-gray-500 mt-1">Monitoraggio infortuni NTL</p>
         </div>
         <div className="mb-4 no-print space-y-2">
           <div className="flex justify-center">
