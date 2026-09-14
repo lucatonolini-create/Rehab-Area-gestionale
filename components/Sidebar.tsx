@@ -182,10 +182,6 @@ export default function Sidebar() {
     setMobileOpen(false);
   }, [pathname]);
 
-  useEffect(() => {
-    document.body.style.backgroundColor = mobileOpen ? "rgb(0,0,0)" : "";
-    return () => { document.body.style.backgroundColor = ""; };
-  }, [mobileOpen]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -223,9 +219,12 @@ export default function Sidebar() {
             style={{
               display: mobileOpen ? "block" : "none",
               position: "fixed",
-              inset: 0,
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "100dvh",
               zIndex: 9998,
-              background: "rgba(0,0,0,0.40)",
+              background: "rgba(0,0,0,0.45)",
             }}
             onClick={() => setMobileOpen(false)}
           />
@@ -235,7 +234,7 @@ export default function Sidebar() {
               position: "fixed",
               top: 0,
               left: 0,
-              bottom: 0,
+              height: "100dvh",
               width: "18rem",
               zIndex: 9999,
               display: "flex",
