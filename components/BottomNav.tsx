@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
-import { useBottomNav } from "@/lib/bottom-nav-context";
 
 const allTabs = [
   { href: "/",             label: "Dashboard",  icon: LayoutDashboard },
@@ -28,7 +27,6 @@ export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [intakeBadge, setIntakeBadge] = useState(0);
-  const { hidden } = useBottomNav();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -46,30 +44,23 @@ export default function BottomNav() {
     if (pathname === "/segnalazioni") resetIntakeBadge();
   }, [pathname]);
 
-  if (hidden) return null;
-
   return (
     <div
       className="fixed z-50 md:hidden"
       style={{
-        left: 10,
-        right: 10,
+        left: 0,
+        right: 0,
         bottom: 0,
-        background: "rgba(255,255,255,0.90)",
+        background: "rgba(255,255,255,0.92)",
         backdropFilter: "blur(24px) saturate(1.8)",
         WebkitBackdropFilter: "blur(24px) saturate(1.8)",
-        borderRadius: "22px 22px 0 0",
-        boxShadow: "0 -2px 20px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.07)",
+        borderTop: "0.5px solid rgba(0,0,0,0.10)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
       <nav
         className="flex items-center"
-        style={{
-          overflowX: "auto",
-          scrollbarWidth: "none",
-          WebkitOverflowScrolling: "touch",
-        }}
+        style={{ overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
       >
         <style>{`nav::-webkit-scrollbar { display: none; }`}</style>
         {allTabs.map(({ href, label, icon: Icon }) => {
@@ -103,10 +94,8 @@ export default function BottomNav() {
           );
         })}
 
-        {/* Divisore sottile */}
         <div className="flex-shrink-0 w-px h-5 bg-black/10" />
 
-        {/* Logout */}
         <button
           onClick={handleLogout}
           className="flex flex-col items-center justify-center gap-[3px] px-3 py-2.5 flex-shrink-0 min-w-[48px] active:opacity-60 transition-opacity"
