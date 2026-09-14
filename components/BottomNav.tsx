@@ -57,7 +57,6 @@ export default function BottomNav() {
       {moreOpen && (
         <div
           className="fixed inset-0 z-40 md:hidden"
-          style={{ backdropFilter: "blur(4px) brightness(0.9)", WebkitBackdropFilter: "blur(4px) brightness(0.9)", backgroundColor: "rgba(0,0,0,0.15)" }}
           onClick={() => setMoreOpen(false)}
         />
       )}
@@ -65,16 +64,16 @@ export default function BottomNav() {
       {/* "Altro" sheet */}
       {moreOpen && (
         <div
-          className="fixed left-0 right-0 z-50 rounded-t-2xl shadow-xl md:hidden"
+          className="fixed left-4 right-4 z-50 rounded-2xl shadow-2xl md:hidden overflow-hidden"
           style={{
-            bottom: "calc(60px + env(safe-area-inset-bottom, 0px))",
-            background: "rgba(250,250,250,0.97)",
+            bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+            background: "rgba(30,30,32,0.97)",
             backdropFilter: "blur(30px) saturate(1.8)",
             WebkitBackdropFilter: "blur(30px) saturate(1.8)",
           }}
         >
           <div className="flex justify-center pt-2.5 pb-1">
-            <div className="w-9 h-1 bg-gray-300 rounded-full" />
+            <div className="w-9 h-1 bg-white/20 rounded-full" />
           </div>
           <div className="grid grid-cols-3 gap-1 p-3">
             {moreTabs.map(({ href, label, icon: Icon }) => {
@@ -85,7 +84,7 @@ export default function BottomNav() {
                   key={href}
                   href={href}
                   className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-colors ${
-                    isActive ? "bg-[#C8102E]/10 text-[#C8102E]" : "text-gray-600 active:bg-gray-100"
+                    isActive ? "bg-white/20 text-white" : "text-white/60 active:bg-white/10"
                   }`}
                 >
                   <div className="relative">
@@ -101,10 +100,10 @@ export default function BottomNav() {
               );
             })}
           </div>
-          <div className="border-t border-gray-100 mx-4 pt-2 pb-3">
+          <div className="border-t border-white/10 mx-4 pt-2 pb-3">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 active:bg-gray-100 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/60 active:bg-white/10 transition-colors"
             >
               <LogOut className="w-5 h-5" />
               <span className="text-sm font-medium">Esci</span>
@@ -113,50 +112,63 @@ export default function BottomNav() {
         </div>
       )}
 
-      {/* Tab bar */}
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+      {/* Floating pill tab bar */}
+      <div
+        className="fixed left-0 right-0 z-50 md:hidden flex justify-center"
         style={{
-          background: "rgba(255,255,255,0.93)",
-          backdropFilter: "blur(20px) saturate(1.8)",
-          WebkitBackdropFilter: "blur(20px) saturate(1.8)",
-          borderTop: "0.5px solid rgba(0,0,0,0.12)",
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          bottom: "calc(8px + env(safe-area-inset-bottom, 0px))",
         }}
       >
-        <div className="flex h-[60px]">
+        <nav
+          className="flex items-center px-2 py-1.5 gap-1"
+          style={{
+            background: "rgba(28,28,30,0.95)",
+            backdropFilter: "blur(20px) saturate(1.8)",
+            WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+            borderRadius: "40px",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.35)",
+          }}
+        >
           {mainTabs.map(({ href, label, icon: Icon }) => {
             const isActive = pathname === href;
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors ${
-                  isActive ? "text-[#C8102E]" : "text-gray-400"
+                className={`flex flex-col items-center justify-center gap-[3px] px-4 py-2 rounded-full transition-all ${
+                  isActive ? "bg-white/20" : "active:bg-white/10"
                 }`}
               >
-                <Icon className={`w-[22px] h-[22px] ${isActive ? "stroke-[2.2px]" : "stroke-[1.8px]"}`} />
-                <span className={`text-[10px] leading-none ${isActive ? "font-semibold" : "font-medium"}`}>{label}</span>
+                <Icon
+                  className={`w-[22px] h-[22px] ${isActive ? "text-white stroke-[2.2px]" : "text-white/55 stroke-[1.8px]"}`}
+                />
+                <span className={`text-[10px] leading-none ${isActive ? "text-white font-semibold" : "text-white/55 font-medium"}`}>
+                  {label}
+                </span>
               </Link>
             );
           })}
 
           <button
             onClick={() => setMoreOpen(v => !v)}
-            className={`flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors ${
-              moreOpen || isMoreActive ? "text-[#C8102E]" : "text-gray-400"
+            className={`flex flex-col items-center justify-center gap-[3px] px-4 py-2 rounded-full transition-all ${
+              moreOpen || isMoreActive ? "bg-white/20" : "active:bg-white/10"
             }`}
           >
             <div className="relative">
-              <MoreHorizontal className={`w-[22px] h-[22px] ${(moreOpen || isMoreActive) ? "stroke-[2.2px]" : "stroke-[1.8px]"}`} />
+              <MoreHorizontal
+                className={`w-[22px] h-[22px] ${(moreOpen || isMoreActive) ? "text-white stroke-[2.2px]" : "text-white/55 stroke-[1.8px]"}`}
+              />
               {!moreOpen && intakeBadge > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#C8102E] rounded-full" />
               )}
             </div>
-            <span className={`text-[10px] leading-none ${(moreOpen || isMoreActive) ? "font-semibold" : "font-medium"}`}>Altro</span>
+            <span className={`text-[10px] leading-none ${(moreOpen || isMoreActive) ? "text-white font-semibold" : "text-white/55 font-medium"}`}>
+              Altro
+            </span>
           </button>
-        </div>
-      </nav>
+        </nav>
+      </div>
     </>
   );
 }

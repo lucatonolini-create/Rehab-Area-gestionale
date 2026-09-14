@@ -28,7 +28,7 @@ main .text-5xl  { font-size: 2.85rem; }
 
 @media (max-width: 767px) {
   main {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 }
 
