@@ -51,7 +51,7 @@ export default function BottomNav() {
   return (
     <div
       className="fixed left-0 right-0 z-50 md:hidden px-3"
-      style={{ bottom: "4px" }}
+      style={{ bottom: 0 }}
     >
       <nav
         className="flex items-center px-1.5 py-1.5 gap-0.5"
@@ -65,6 +65,7 @@ export default function BottomNav() {
           overflowX: "auto",
           scrollbarWidth: "none",
           WebkitOverflowScrolling: "touch",
+          marginBottom: "env(safe-area-inset-bottom, 4px)",
         }}
       >
         <style>{`nav::-webkit-scrollbar { display: none; }`}</style>
