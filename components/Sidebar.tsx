@@ -199,7 +199,6 @@ export default function Sidebar() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{userEmail ?? "Staff Medico"}</p>
-                <p className="text-gray-500 text-xs">Rehab Area</p>
               </div>
               <button onClick={handleLogout} title="Esci" className="text-gray-500 hover:text-gray-900 transition-colors shrink-0">
                 <LogOut className="w-4 h-4" />
