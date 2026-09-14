@@ -11,7 +11,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <BottomNavProvider>
       <div
         className="flex bg-white"
-        style={{ position: "fixed", inset: 0, height: "100dvh" }}
+        style={{ position: "fixed", inset: 0 }}
       >
         <Sidebar />
         <main className="flex-1 overflow-hidden" style={{ minHeight: 0, height: "100%" }}>{children}</main>
