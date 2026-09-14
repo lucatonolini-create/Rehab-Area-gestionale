@@ -19,13 +19,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <IntakeNotifier />
         <PushSetup />
         <SessionTimeout />
-        {/* Fade gradient from screen bottom upward — content scrolls behind nav */}
+        {/* Cover only the safe-area home indicator strip */}
         <div
           className="fixed left-0 right-0 pointer-events-none md:hidden"
           style={{
             bottom: 0,
-            height: "calc(env(safe-area-inset-bottom, 0px) + 70px)",
-            background: "linear-gradient(to top, white 30%, rgba(255,255,255,0) 100%)",
+            height: "env(safe-area-inset-bottom, 0px)",
+            background: "white",
             zIndex: 49,
           }}
         />
