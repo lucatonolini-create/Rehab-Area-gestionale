@@ -1107,7 +1107,7 @@ export default function EserciziPage() {
       {/* Azioni principali */}
       <div className="mb-6 bg-gray-50 rounded-2xl p-4 space-y-3">
         {/* Giornaliero */}
-        <div className="flex items-center gap-2 flex-wrap justify-center">
+        <div className="flex items-center gap-2 flex-wrap justify-center md:justify-start">
           <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 bg-white">
             <input
               type="date"
@@ -1149,7 +1149,7 @@ export default function EserciziPage() {
         </div>
 
         {/* Periodo */}
-        <div className="flex items-center gap-2 flex-wrap justify-center">
+        <div className="flex items-center gap-2 flex-wrap justify-center md:justify-start">
           <div className="flex items-center gap-1.5 border border-gray-200 rounded-xl px-3 py-2 bg-white">
             <span className="text-xs text-gray-400">Da</span>
             <input
@@ -1201,7 +1201,7 @@ export default function EserciziPage() {
         </div>
 
         {/* Nuovo programma */}
-        <div className="flex justify-center pt-1">
+        <div className="flex justify-center md:justify-start pt-1">
           <button onClick={apriNuovo}
             className="flex items-center gap-2 bg-[#C8102E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-red-800">
             <Plus className="w-4 h-4" /> Nuovo programma

@@ -682,7 +682,7 @@ export default function ImpostazioniPage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto overscroll-none px-6 pb-6 max-w-2xl" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
+    <div className="h-full overflow-y-auto overscroll-none px-6 pb-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
       <div className="mb-4 md:mb-6 md:flex md:items-center md:justify-between">
         <div className="text-center md:text-left mb-3 md:mb-0">
           <h1 className="text-2xl font-bold text-gray-900">Impostazioni</h1>

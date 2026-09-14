@@ -561,7 +561,7 @@ export default function EpidemiologiaPage() {
             <Upload className="w-3.5 h-3.5" /> Carica File
           </button>
           <button onClick={async () => { setPdfLoading(true); try { await esportaPDFEpi({ filtroCat, filtroAnno, filtroMese, kpi, catData, monthlyData }); } finally { setPdfLoading(false); } }}
-            disabled={vuoto || pdfLoading}
+            disabled={pdfLoading}
             className="flex items-center gap-1.5 border border-red-300 text-red-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 disabled:opacity-40 transition-colors">
             <FileText className="w-3.5 h-3.5" /> {pdfLoading ? "..." : "PDF"}
           </button>
