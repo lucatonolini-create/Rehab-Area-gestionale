@@ -1523,9 +1523,9 @@ export default function EserciziPage() {
 
       {/* Modale */}
       {mostraForm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div ref={formModalRef as React.RefObject<HTMLDivElement>} className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center md:p-4">
+          <div ref={formModalRef as React.RefObject<HTMLDivElement>} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-2xl max-h-[82vh] md:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 md:p-5 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-900">{editId ? "Modifica Programma" : "Nuovo Programma"}</h2>
               <div className="flex items-center gap-3">
                 {!editId && form.atletaId && (programmiPerAtleta[form.atletaId]?.length ?? 0) > 0 && (
@@ -1540,7 +1540,7 @@ export default function EserciziPage() {
               </div>
             </div>
 
-            <div className="px-5 pt-5 overflow-y-auto flex-1 space-y-5" style={{ }}>
+            <div className="px-4 pt-4 overflow-y-auto flex-1 space-y-4" style={{ }}>
               {/* Info base */}
               <div className="flex gap-3 items-end">
                 <div className="flex-1 min-w-0">
@@ -2408,7 +2408,7 @@ export default function EserciziPage() {
               </>}
             </div>
 
-            <div className="flex gap-3 p-6 border-t border-gray-100">
+            <div className="flex gap-3 px-4 py-3 border-t border-gray-100">
               <button onClick={() => setMostraForm(false)}
                 className="flex-1 border border-gray-200 text-gray-600 py-3 rounded-xl text-sm font-medium hover:bg-gray-50">
                 Annulla
