@@ -153,327 +153,221 @@ async function esportaPDFEpi(params: {
   const { default: autoTable } = await import("jspdf-autotable");
   const logoDataUrl = await getLogoDataUrl();
   const doc = new jsPDF();
+
   const red: [number, number, number] = [200, 16, 46];
   const dark: [number, number, number] = [43, 43, 43];
-  const gray: [number, number, number] = [130, 130, 130];
-  const blue: [number, number, number] = [29, 78, 216];
+  const gray: [number, number, number] = [120, 120, 120];
+  const lightGray: [number, number, number] = [230, 230, 230];
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
   const M = 14;
   const HDR = 30;
 
-  const filterLabel = (() => {
-    const parts: string[] = [];
-    if (params.filtroCat !== "Tutte") parts.push(params.filtroCat);
-    if (params.filtroAnno !== "Tutti") parts.push(params.filtroAnno);
-    if (params.filtroMese !== "Tutti") parts.push(MESI_FULL[parseInt(params.filtroMese) - 1]);
-    return parts.length > 0 ? parts.join(" · ") : "Tutti i dati";
-  })();
-
   function addHeader() {
     doc.setFillColor(255, 255, 255); doc.rect(0, 0, W, HDR, "F");
     doc.setFillColor(...red); doc.rect(0, 0, 3, HDR, "F");
-    doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.3); doc.line(0, HDR, W, HDR);
+    doc.setDrawColor(...lightGray); doc.setLineWidth(0.3); doc.line(0, HDR, W, HDR);
     if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 7, 10, 10, 10);
     const tx = logoDataUrl ? 21 : M;
     doc.setTextColor(...red); doc.setFontSize(13); doc.setFont("helvetica", "bold");
     doc.text("U.S. Cremonese", tx, 14);
     doc.setFontSize(8.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...dark);
-    doc.text("Rehab Area – Epidemiologia", tx, 19.5);
-    doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
-    doc.text(filterLabel, tx, 24.5);
-    doc.setFontSize(7); doc.setTextColor(...gray);
-    doc.text("Stagione 2026-2027", W - M, 14, { align: "right" });
-    doc.text(`Generato il ${new Date().toLocaleDateString("it-IT")}`, W - M, 19.5, { align: "right" });
+    doc.text("Rehab Area – Analisi Epidemiologica", tx, 20);
+    doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
+    doc.text("Stagione 2026-2027", W - M, 15, { align: "right" });
   }
 
   function addFooter() {
     const tot = doc.getNumberOfPages();
     for (let i = 1; i <= tot; i++) {
       doc.setPage(i);
-      doc.setDrawColor(210, 210, 210); doc.setLineWidth(0.3); doc.line(M, H - 12, W - M, H - 12);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(...gray);
-      doc.text("U.S. Cremonese · Rehab Area", M, H - 7);
-      doc.text(`Pagina ${i} di ${tot}`, W - M, H - 7, { align: "right" });
+      doc.setFillColor(...red); doc.rect(0, H - 10, W, 10, "F");
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(255, 255, 255);
+      doc.text("U.S. Cremonese · Rehab Area", M, H - 4);
+      doc.text(`Pagina ${i} di ${tot}`, W - M, H - 4, { align: "right" });
     }
   }
 
-  function secTitle(title: string, y: number, color: [number,number,number] = red) {
-    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...color);
-    doc.text(title.toUpperCase(), M, y);
-    doc.setDrawColor(...color); doc.setLineWidth(0.4);
-    doc.line(M, y + 1.5, W - M, y + 1.5);
-    doc.setTextColor(...dark);
-    return y + 8;
+  function secTitle(title: string, y: number): number {
+    doc.setFillColor(...red); doc.rect(M, y - 4.5, 3, 8, "F");
+    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...dark);
+    doc.text(title.toUpperCase(), M + 5, y);
+    const tw = doc.getTextWidth(title.toUpperCase());
+    doc.setDrawColor(...lightGray); doc.setLineWidth(0.3);
+    doc.line(M + 5 + tw + 4, y - 1.5, W - M, y - 1.5);
+    return y + 7;
   }
 
-  function checkPage(y: number, need: number = 30): number {
-    if (y + need > H - 18) { doc.addPage(); addHeader(); return HDR + 10; }
+  function subTitle(title: string, y: number): number {
+    doc.setFontSize(7.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...gray);
+    doc.text(title.toUpperCase(), M, y);
+    return y + 5;
+  }
+
+  function checkPage(y: number, need = 30): number {
+    if (y + need > H - 14) { doc.addPage(); addHeader(); return HDR + 10; }
     return y;
   }
 
-  function drawHBars(items: [string, number][], y: number, maxVal: number, barColor: [number,number,number], label?: string): number {
+  // Horizontal bar chart – all bars use Cremonese red
+  function drawHBars(items: [string, number][], y: number, maxVal: number, subLabel?: string): number {
     if (items.length === 0) return y;
-    if (label) {
-      doc.setFontSize(7.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...gray);
-      doc.text(label.toUpperCase(), M, y); y += 4;
-    }
-    const LABEL_W = 50; const BAR_W = W - M * 2 - LABEL_W - 18; const ROW_H = 6;
+    if (subLabel) { y = subTitle(subLabel, y); }
+    const LBL = 54; const BAR = W - M * 2 - LBL - 16; const RH = 8; const BAR_H = 4.5;
     for (const [lbl, val] of items) {
-      y = checkPage(y, ROW_H + 2);
-      const pct = maxVal > 0 ? (val / maxVal) : 0;
-      doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(...dark);
-      doc.text(lbl.length > 22 ? lbl.slice(0, 20) + "…" : lbl, M, y + ROW_H * 0.65);
-      doc.setFillColor(235, 235, 235); doc.rect(M + LABEL_W, y + 1.5, BAR_W, ROW_H - 3, "F");
-      if (pct > 0) { doc.setFillColor(...barColor); doc.rect(M + LABEL_W, y + 1.5, Math.max(BAR_W * pct, 1.5), ROW_H - 3, "F"); }
-      doc.setFontSize(7); doc.setFont("helvetica", "bold"); doc.setTextColor(...dark);
-      doc.text(String(val), M + LABEL_W + BAR_W + 2, y + ROW_H * 0.65);
-      y += ROW_H + 1;
+      y = checkPage(y, RH + 2);
+      const pct = maxVal > 0 ? val / maxVal : 0;
+      doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...dark);
+      doc.text(lbl.length > 24 ? lbl.slice(0, 22) + "…" : lbl, M, y + RH * 0.6);
+      // background track
+      doc.setFillColor(...lightGray); doc.roundedRect(M + LBL, y + (RH - BAR_H) / 2, BAR, BAR_H, 1.2, 1.2, "F");
+      // filled bar
+      if (pct > 0) {
+        doc.setFillColor(...red);
+        doc.roundedRect(M + LBL, y + (RH - BAR_H) / 2, Math.max(BAR * pct, 2), BAR_H, 1.2, 1.2, "F");
+      }
+      // value label
+      doc.setFontSize(7.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...dark);
+      doc.text(String(val), M + LBL + BAR + 3, y + RH * 0.6);
+      y += RH + 1.5;
     }
-    return y + 3;
+    return y + 4;
   }
 
-  function drawColumnChart(items: { label: string; value: number; color?: [number,number,number] }[], y: number, chartH: number, maxVal: number, title: string): number {
-    y = checkPage(y, chartH + 20);
-    doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...gray);
-    doc.text(title.toUpperCase(), M, y); y += 5;
-    if (items.length === 0) return y + 5;
-    const chartW = W - M * 2;
-    const colW = Math.min(chartW / items.length, 20);
-    const startX = M + (chartW - colW * items.length) / 2;
-    for (let i = 0; i < items.length; i++) {
-      const { label, value, color } = items[i];
-      const h = maxVal > 0 ? Math.max((value / maxVal) * chartH, value > 0 ? 2 : 0) : 0;
-      const x = startX + i * colW + 1;
-      const bW = colW - 2;
-      if (h > 0) {
-        doc.setFillColor(...(color ?? red));
-        doc.rect(x, y + chartH - h, bW, h, "F");
-      }
-      if (value > 0) {
-        doc.setFontSize(5.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...dark);
-        doc.text(String(value), x + bW / 2, y + chartH - h - 1, { align: "center" });
-      }
-      doc.setFontSize(5.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
-      const shortLabel = label.split(" ")[0].slice(0, 5);
-      doc.text(shortLabel, x + bW / 2, y + chartH + 4, { align: "center" });
-    }
-    return y + chartH + 8;
-  }
-
-  // ── Page 1: Carichi di Lavoro ─────────────────────────────────────────────
-  addHeader();
-  let y = HDR + 10;
-
-  y = secTitle("Carichi di Lavoro", y);
-
-  // KPI box
-  autoTable(doc, {
-    startY: y,
-    body: [
-      ["File mensili caricati", String(params.kpi.sessioni), "Presenza media", `${params.kpi.presenzaMedia}%`],
-      ["RPE medio", params.kpi.rpeMedia > 0 ? String(params.kpi.rpeMedia) : "—", "Minutaggio medio", params.kpi.minutiMedi > 0 ? `${params.kpi.minutiMedi} min` : "—"],
-    ],
-    theme: "grid",
-    styles: { fontSize: 9, cellPadding: 3, halign: "left", valign: "middle" },
-    columnStyles: {
-      0: { fontStyle: "bold", textColor: gray, cellWidth: 55 },
-      1: { cellWidth: 30 },
-      2: { fontStyle: "bold", textColor: gray, cellWidth: 55 },
-      3: { cellWidth: 30 },
-    },
-    margin: { left: M, right: M },
-  });
-  y = (doc as any).lastAutoTable.finalY + 8;
-
-  if (params.catData.length > 0) {
-    y = checkPage(y, 30);
-    y = secTitle("Analisi per Categoria", y, gray);
+  // KPI summary grid
+  function drawKpiGrid(rows: [string, string, string, string][], y: number): number {
     autoTable(doc, {
       startY: y,
-      head: [["Categoria", "File", "Presenza %", "RPE medio", "Min. medi"]],
-      body: params.catData.map(c => [
-        c.cat, c.sessioni, `${c.presenzaMedia}%`,
-        c.rpeMedia > 0 ? String(c.rpeMedia) : "—",
-        c.minutiMedi > 0 ? `${c.minutiMedi} min` : "—",
-      ]),
-      theme: "striped",
-      styles: { fontSize: 8.5, cellPadding: 2.5, halign: "left", valign: "middle" },
-      headStyles: { fillColor: red, textColor: [255, 255, 255] },
-      columnStyles: { 1: { halign: "center" }, 2: { halign: "center" }, 3: { halign: "center" }, 4: { halign: "center" } },
+      body: rows,
+      theme: "plain",
+      styles: { fontSize: 8.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 }, valign: "middle" },
+      columnStyles: {
+        0: { fontStyle: "bold", textColor: gray, cellWidth: 58, fillColor: [248, 248, 248] },
+        1: { fontStyle: "bold", textColor: dark, cellWidth: 28, fillColor: [255, 255, 255] },
+        2: { fontStyle: "bold", textColor: gray, cellWidth: 58, fillColor: [248, 248, 248] },
+        3: { fontStyle: "bold", textColor: dark, cellWidth: 28, fillColor: [255, 255, 255] },
+      },
+      tableLineColor: lightGray,
+      tableLineWidth: 0.3,
       margin: { left: M, right: M },
     });
-    y = (doc as any).lastAutoTable.finalY + 8;
-  }
-
-  if (params.monthlyData.length > 0) {
-    y = checkPage(y, 35);
-    y = secTitle("Trend Mensile", y, gray);
-    autoTable(doc, {
-      startY: y,
-      head: [["Mese", "File", "Presenza %", "RPE medio"]],
-      body: params.monthlyData.map(m => [
-        m.label, m.sessioni, `${m.presenzaMedia}%`,
-        m.rpeMedia > 0 ? String(m.rpeMedia) : "—",
-      ]),
-      theme: "striped",
-      styles: { fontSize: 8, cellPadding: 2, halign: "left", valign: "middle" },
-      headStyles: { fillColor: dark, textColor: [255, 255, 255] },
-      columnStyles: { 1: { halign: "center" }, 2: { halign: "center" }, 3: { halign: "center" } },
-      margin: { left: M, right: M },
-    });
-    y = (doc as any).lastAutoTable.finalY + 8;
-
-    // Column charts – Presenza %
-    y = checkPage(y, 50);
-    y = drawColumnChart(
-      params.monthlyData.map(m => ({ label: m.label, value: m.presenzaMedia, color: red })),
-      y, 30, 100, "Trend Presenza %"
-    );
-
-    // Column charts – RPE
-    const hasRpe = params.monthlyData.some(m => m.rpeMedia > 0);
-    if (hasRpe) {
-      y = checkPage(y, 50);
-      y = drawColumnChart(
-        params.monthlyData.map(m => ({
-          label: m.label, value: m.rpeMedia,
-          color: (m.rpeMedia >= 8 ? [200, 16, 46] : m.rpeMedia >= 6 ? [249, 115, 22] : [34, 197, 94]) as [number,number,number],
-        })),
-        y, 30, 10, "Trend RPE Medio"
-      );
-      // legend
-      doc.setFontSize(6.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
-      doc.text("< 6 Basso  ·  6–7 Medio  ·  ≥ 8 Elevato", M, y); y += 6;
-    }
-  }
-
-  // Presenza per Categoria horizontal bars
-  if (params.catData.length > 1) {
-    y = checkPage(y, 20 + params.catData.length * 8);
-    y = secTitle("Presenza per Categoria", y, gray);
-    y = drawHBars(
-      [...params.catData].sort((a, b) => b.presenzaMedia - a.presenzaMedia).map(c => [c.cat, c.presenzaMedia] as [string, number]),
-      y, 100, red
-    );
+    return (doc as any).lastAutoTable.finalY + 8;
   }
 
   // ── Statistiche Infortuni ─────────────────────────────────────────────────
   const inf = params.infStats;
-  if (inf.totaleInfortuni > 0 || inf.fiiccsCount > 0) {
-    y = checkPage(y, 20);
-    doc.addPage(); addHeader(); y = HDR + 10;
+  if (inf.totaleInfortuni === 0 && inf.fiiccsCount === 0) {
+    addHeader(); addFooter();
+    doc.save(`USC_Epidemiologia_${new Date().toISOString().slice(0, 10)}.pdf`);
+    return;
+  }
 
-    y = secTitle("Statistiche Infortuni", y);
+  addHeader();
+  let y = HDR + 10;
+  y = secTitle("Statistiche Infortuni", y);
 
-    // KPI
+  y = drawKpiGrid([
+    ["Infortuni totali", String(inf.totaleInfortuni), "Attualmente in rehab", String(inf.atletiInfortunatiOra)],
+    ["Codici OSIICS", String(inf.osiicsCount), "Minuto medio infortunio", inf.minutoMedio != null ? `${inf.minutoMedio}'` : "—"],
+    ["Schede FIICCS", String(inf.fiiccsCount), "Con palla / Senza palla", (inf.conPalla > 0 || inf.senzaPalla > 0) ? `${inf.conPalla} / ${inf.senzaPalla}` : "—"],
+  ], y);
+
+  if (inf.perTipo.length > 0) {
+    y = checkPage(y, 18 + inf.perTipo.length * 10);
+    y = secTitle("Tipo di Infortunio", y);
+    y = drawHBars(inf.perTipo, y, inf.perTipo[0][1]);
+  }
+
+  if (inf.perMeccanismo.length > 0) {
+    y = checkPage(y, 18 + inf.perMeccanismo.length * 10);
+    y = secTitle("Meccanismo di Infortunio", y);
+    y = drawHBars(inf.perMeccanismo, y, inf.perMeccanismo[0][1]);
+  }
+
+  if (inf.perOsiicsCategoria.length > 0) {
+    y = checkPage(y, 18 + inf.perOsiicsCategoria.length * 10);
+    y = secTitle("Classificazione OSIICS — Categoria Lesione", y);
+    y = drawHBars(inf.perOsiicsCategoria, y, inf.perOsiicsCategoria[0][1]);
+  }
+
+  if (inf.perOsiicsCodice.length > 0) {
+    y = checkPage(y, 35);
+    y = secTitle("Classificazione OSIICS — Codici Specifici", y);
     autoTable(doc, {
       startY: y,
-      body: [
-        ["Infortuni totali", String(inf.totaleInfortuni), "Attualmente in rehab", String(inf.atletiInfortunatiOra)],
-        ["Codici OSIICS", String(inf.osiicsCount), "Minuto medio infortunio", inf.minutoMedio != null ? `${inf.minutoMedio}'` : "—"],
-        ["Schede FIICCS", String(inf.fiiccsCount), "Con palla / Senza palla", inf.conPalla > 0 || inf.senzaPalla > 0 ? `${inf.conPalla} / ${inf.senzaPalla}` : "—"],
-      ],
-      theme: "grid",
-      styles: { fontSize: 9, cellPadding: 3, halign: "left", valign: "middle" },
-      columnStyles: {
-        0: { fontStyle: "bold", textColor: gray, cellWidth: 55 },
-        1: { cellWidth: 30 },
-        2: { fontStyle: "bold", textColor: gray, cellWidth: 55 },
-        3: { cellWidth: 30 },
-      },
+      head: [["Codice", "Descrizione", "N"]],
+      body: inf.perOsiicsCodice.map(([code, n]) => [code, params.atletiMap.get(code) ?? "", n]),
+      theme: "striped",
+      styles: { fontSize: 8, cellPadding: 3, font: "helvetica" },
+      headStyles: { fillColor: red, textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8 },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      columnStyles: { 0: { cellWidth: 22, fontStyle: "bold", textColor: red }, 2: { cellWidth: 16, halign: "center", fontStyle: "bold" } },
       margin: { left: M, right: M },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
+  }
 
-    if (inf.perTipo.length > 0) {
-      y = checkPage(y, 15 + inf.perTipo.length * 8);
-      y = secTitle("Tipo Infortunio", y, gray);
-      y = drawHBars(inf.perTipo, y, inf.perTipo[0][1], red);
+  // FIICCS sections
+  if (inf.perSeduta.length > 0) {
+    y = checkPage(y, 18 + inf.perSeduta.length * 10);
+    y = secTitle("Contesto dell'Infortunio — Tipo Seduta (FIICCS)", y);
+    y = drawHBars(inf.perSeduta, y, inf.perSeduta[0][1]);
+    if (inf.conPalla > 0 || inf.senzaPalla > 0) {
+      y = checkPage(y, 12);
+      doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
+      doc.text(`Con palla: ${inf.conPalla}   ·   Senza palla: ${inf.senzaPalla}`, M, y);
+      y += 7;
     }
+  }
 
-    if (inf.perMeccanismo.length > 0) {
-      y = checkPage(y, 15 + inf.perMeccanismo.length * 8);
-      y = secTitle("Meccanismo di Infortunio", y, gray);
-      y = drawHBars(inf.perMeccanismo, y, inf.perMeccanismo[0][1], dark);
-    }
+  if (inf.perAttivita.length > 0) {
+    y = checkPage(y, 18 + inf.perAttivita.length * 10);
+    y = secTitle("Attività Fisica al Momento dell'Infortunio (FIICCS)", y);
+    y = drawHBars(inf.perAttivita, y, inf.perAttivita[0][1]);
+  }
 
-    if (inf.perOsiicsCategoria.length > 0) {
-      y = checkPage(y, 15 + inf.perOsiicsCategoria.length * 8);
-      y = secTitle("OSIICS — Categoria Lesione", y, blue);
-      y = drawHBars(inf.perOsiicsCategoria, y, inf.perOsiicsCategoria[0][1], blue);
-    }
+  if (inf.perInsorgenza.length > 0) {
+    y = checkPage(y, 18 + inf.perInsorgenza.length * 10);
+    y = secTitle("Modalità di Insorgenza (FIICCS)", y);
+    y = drawHBars(inf.perInsorgenza, y, inf.perInsorgenza[0][1]);
+  }
 
-    if (inf.perOsiicsCodice.length > 0) {
-      y = checkPage(y, 30);
-      y = secTitle("OSIICS — Codici Specifici", y, blue);
-      autoTable(doc, {
-        startY: y,
-        head: [["Codice", "Descrizione", "N"]],
-        body: inf.perOsiicsCodice.map(([code, n]) => [code, params.atletiMap.get(code) ?? "", n]),
-        theme: "striped",
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: blue, textColor: [255, 255, 255] },
-        columnStyles: { 0: { cellWidth: 22, fontStyle: "bold" }, 2: { cellWidth: 14, halign: "center" } },
-        margin: { left: M, right: M },
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
-    }
+  if (inf.perFaseGioco.length > 0) {
+    y = checkPage(y, 18 + inf.perFaseGioco.length * 10);
+    y = secTitle("Fase di Gioco (FIICCS)", y);
+    y = drawHBars(inf.perFaseGioco, y, inf.perFaseGioco[0][1]);
+  }
 
-    if (inf.perSeduta.length > 0) {
-      y = checkPage(y, 15 + inf.perSeduta.length * 8);
-      y = secTitle("Tipo Seduta (FIICCS)", y, gray);
-      y = drawHBars(inf.perSeduta, y, inf.perSeduta[0][1], blue);
-    }
+  if (inf.perSede.length > 0) {
+    y = checkPage(y, 18 + inf.perSede.length * 10);
+    y = secTitle(`Sede Partita — ${inf.inPartitiCount} infortuni in partita (FIICCS)`, y);
+    y = drawHBars(inf.perSede, y, inf.perSede[0][1]);
+  }
 
-    if (inf.perAttivita.length > 0) {
-      y = checkPage(y, 15 + inf.perAttivita.length * 8);
-      y = secTitle("Attività Fisica (FIICCS)", y, gray);
-      y = drawHBars(inf.perAttivita, y, inf.perAttivita[0][1], [217, 119, 6]);
-    }
+  if (inf.perTempo.length > 0) {
+    y = checkPage(y, 18 + inf.perTempo.length * 10);
+    y = secTitle("Tempo della Partita (FIICCS)", y);
+    y = drawHBars(inf.perTempo, y, inf.perTempo[0][1]);
+  }
 
-    if (inf.perInsorgenza.length > 0) {
-      y = checkPage(y, 15 + inf.perInsorgenza.length * 8);
-      y = secTitle("Modalità Insorgenza (FIICCS)", y, gray);
-      y = drawHBars(inf.perInsorgenza, y, inf.perInsorgenza[0][1], [124, 58, 237]);
-    }
+  if (inf.perTerrenoPartita.length > 0) {
+    y = checkPage(y, 18 + inf.perTerrenoPartita.length * 10);
+    y = secTitle("Terreno di Gioco — Partita (FIICCS)", y);
+    y = drawHBars(inf.perTerrenoPartita, y, inf.perTerrenoPartita[0][1]);
+  }
 
-    if (inf.perFaseGioco.length > 0) {
-      y = checkPage(y, 15 + inf.perFaseGioco.length * 8);
-      y = secTitle("Fase di Gioco (FIICCS)", y, gray);
-      y = drawHBars(inf.perFaseGioco, y, inf.perFaseGioco[0][1], [220, 38, 38]);
-    }
+  if (inf.perTerrenoAllenamento.length > 0) {
+    y = checkPage(y, 18 + inf.perTerrenoAllenamento.length * 10);
+    y = secTitle("Terreno di Gioco — Allenamento (FIICCS)", y);
+    y = drawHBars(inf.perTerrenoAllenamento, y, inf.perTerrenoAllenamento[0][1]);
+  }
 
-    if (inf.perSede.length > 0) {
-      y = checkPage(y, 15 + inf.perSede.length * 8);
-      y = secTitle(`Sede Partita — ${inf.inPartitiCount} infortuni in partita (FIICCS)`, y, gray);
-      y = drawHBars(inf.perSede, y, inf.perSede[0][1], [5, 150, 105]);
-    }
-
-    if (inf.perTempo.length > 0) {
-      y = checkPage(y, 15 + inf.perTempo.length * 8);
-      y = secTitle("Tempo della Partita (FIICCS)", y, gray);
-      y = drawHBars(inf.perTempo, y, inf.perTempo[0][1], [37, 99, 235]);
-    }
-
-    if (inf.perTerrenoPartita.length > 0) {
-      y = checkPage(y, 15 + inf.perTerrenoPartita.length * 8);
-      y = secTitle("Terreno di Gioco — Partita (FIICCS)", y, gray);
-      y = drawHBars(inf.perTerrenoPartita, y, inf.perTerrenoPartita[0][1], [5, 150, 105]);
-    }
-
-    if (inf.perTerrenoAllenamento.length > 0) {
-      y = checkPage(y, 15 + inf.perTerrenoAllenamento.length * 8);
-      y = secTitle(`Terreno di Gioco — Allenamento (FIICCS)`, y, gray);
-      y = drawHBars(inf.perTerrenoAllenamento, y, inf.perTerrenoAllenamento[0][1], [5, 150, 105]);
-    }
-
-    if (inf.perLato.length > 0 || inf.perCategoria.length > 0) {
-      y = checkPage(y, 20);
-      y = secTitle("Distribuzione", y, gray);
-      if (inf.perLato.length > 0) y = drawHBars(inf.perLato, y, inf.perLato[0][1], [245, 158, 11], "Lato");
-      if (inf.perCategoria.length > 0) y = drawHBars(inf.perCategoria, y, inf.perCategoria[0][1], red, "Per Categoria");
-    }
+  if (inf.perLato.length > 0 || inf.perCategoria.length > 0) {
+    const need = 18 + (inf.perLato.length + inf.perCategoria.length) * 10;
+    y = checkPage(y, need);
+    y = secTitle("Distribuzione", y);
+    if (inf.perLato.length > 0) y = drawHBars(inf.perLato, y, inf.perLato[0][1], "Lato");
+    if (inf.perCategoria.length > 0) y = drawHBars(inf.perCategoria, y, inf.perCategoria[0][1], "Per Categoria");
   }
 
   addFooter();
