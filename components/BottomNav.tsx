@@ -74,14 +74,21 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className="flex flex-col items-center justify-center gap-[3px] px-3 py-2.5 flex-1 flex-shrink-0 min-w-[56px] active:opacity-60 transition-opacity"
+              className="flex flex-col items-center justify-center gap-[2px] px-2 py-2 flex-1 flex-shrink-0 min-w-[52px] active:opacity-60 transition-opacity"
             >
-              <div className="relative">
+              <div
+                className="relative flex items-center justify-center rounded-full transition-all duration-200"
+                style={{
+                  width: 48,
+                  height: 28,
+                  background: isActive ? "rgba(200,16,46,0.10)" : "transparent",
+                }}
+              >
                 <Icon
-                  className={`w-[22px] h-[22px] ${isActive ? "text-[#C8102E] stroke-[2.2px]" : "text-gray-500 stroke-[1.7px]"}`}
+                  className={`w-[20px] h-[20px] ${isActive ? "text-[#C8102E] stroke-[2.2px]" : "text-gray-500 stroke-[1.7px]"}`}
                 />
                 {showBadge && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#C8102E] rounded-full" />
+                  <span className="absolute top-0 right-1 w-2 h-2 bg-[#C8102E] rounded-full" />
                 )}
               </div>
               <span className={`text-[10px] leading-none whitespace-nowrap ${isActive ? "text-[#C8102E] font-semibold" : "text-gray-500 font-normal"}`}>
