@@ -1061,7 +1061,7 @@ export default function PerformancePage() {
     <div className="h-full flex flex-col overflow-hidden bg-gray-50">
 
       {/* ── Top bar ─────────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-200 px-6 shrink-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)", paddingBottom: "1rem" }}>
+      <div className="bg-white border-b border-gray-200 px-4 md:px-6 shrink-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)", paddingBottom: "1rem" }}>
         <div className="md:flex md:items-center md:justify-between">
           <div className="text-center md:text-left mb-2 md:mb-0">
             <h1 className="text-2xl font-bold text-gray-900">Performance</h1>
@@ -1110,7 +1110,7 @@ export default function PerformancePage() {
 
       {/* ── Athlete selector ─────────────────────────────────────────────────── */}
       {atletiConDati.length > 0 && (
-        <div className="bg-white border-b border-gray-200 px-6 py-3 shrink-0">
+        <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 shrink-0">
           <div className="flex items-center gap-2 max-w-md">
             <button
               onClick={() => idx > 0 && setSelectedId(atletiConDati[idx - 1].id)}
@@ -1145,7 +1145,7 @@ export default function PerformancePage() {
       )}
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto overscroll-none px-6" style={{ paddingTop: "1.5rem", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}>
+      <div className="flex-1 overflow-y-auto overscroll-none px-4 md:px-6" style={{ paddingTop: "1.5rem", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}>
 
         {/* Empty states */}
         {atletiConDati.length === 0 && (
