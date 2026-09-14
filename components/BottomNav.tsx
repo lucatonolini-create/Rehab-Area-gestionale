@@ -84,15 +84,15 @@ export default function BottomNav() {
     <div
       className="fixed z-50 md:hidden"
       style={{
-        left: 0,
-        right: 0,
-        bottom: 0,
+        left: 10,
+        right: 10,
+        bottom: 8,
         background: "rgba(255,255,255,0.96)",
         backdropFilter: "blur(24px) saturate(1.8)",
         WebkitBackdropFilter: "blur(24px) saturate(1.8)",
-        borderRadius: "20px 20px 0 0",
-        boxShadow: "0 -4px 20px rgba(0,0,0,0.08)",
-        transform: visible ? "translateY(0)" : "translateY(110%)",
+        borderRadius: "20px",
+        boxShadow: "0 -2px 16px rgba(0,0,0,0.10), 0 4px 24px rgba(0,0,0,0.08)",
+        transform: visible ? "translateY(0)" : "translateY(130%)",
         transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
         willChange: "transform",
       }}
@@ -109,7 +109,8 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className="flex flex-col items-center justify-center gap-[2px] px-2 py-2 flex-1 flex-shrink-0 min-w-[52px] active:opacity-60 transition-opacity"
+              className="flex flex-col items-center justify-center gap-[2px] px-2 py-2 flex-shrink-0 active:opacity-60 transition-opacity"
+              style={{ flex: "0 0 20%" }}
             >
               <div
                 className="relative flex items-center justify-center rounded-full transition-all duration-200"
@@ -137,7 +138,8 @@ export default function BottomNav() {
 
         <button
           onClick={handleLogout}
-          className="flex flex-col items-center justify-center gap-[3px] px-3 py-2.5 flex-shrink-0 min-w-[48px] active:opacity-60 transition-opacity"
+          className="flex flex-col items-center justify-center gap-[3px] py-2.5 flex-shrink-0 active:opacity-60 transition-opacity"
+          style={{ flex: "0 0 20%" }}
         >
           <LogOut className="w-[22px] h-[22px] text-red-400 stroke-[1.7px]" />
           <span className="text-[10px] leading-none whitespace-nowrap text-red-400 font-normal">Esci</span>
