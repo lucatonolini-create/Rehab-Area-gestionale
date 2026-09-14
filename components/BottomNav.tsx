@@ -82,30 +82,31 @@ export default function BottomNav() {
 
   return (
     <>
-      {/* Permanent safe-area backdrop — always covers the iOS home indicator zone even when nav is hidden */}
-      <div
-        className="fixed z-[49] md:hidden"
-        style={{
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: "env(safe-area-inset-bottom, 0px)",
-          background: "rgba(255,255,255,0.88)",
-          backdropFilter: "blur(24px) saturate(1.8)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.8)",
-        }}
-      />
+      {/* Safe-area spacer — always anchored at physical bottom, never moves.
+          Covers the iOS home indicator zone regardless of nav visibility. */}
       <div
         className="fixed z-50 md:hidden"
         style={{
           left: 0,
           right: 0,
           bottom: 0,
+          height: "env(safe-area-inset-bottom, 0px)",
+          background: "rgba(255,255,255,0.95)",
+          backdropFilter: "blur(24px) saturate(1.8)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.8)",
+        }}
+      />
+      {/* Nav buttons — sit above the safe-area zone and slide away on scroll */}
+      <div
+        className="fixed z-50 md:hidden"
+        style={{
+          left: 0,
+          right: 0,
+          bottom: "env(safe-area-inset-bottom, 0px)",
           background: "rgba(255,255,255,0.88)",
           backdropFilter: "blur(24px) saturate(1.8)",
           WebkitBackdropFilter: "blur(24px) saturate(1.8)",
           borderTop: "0.5px solid rgba(0,0,0,0.10)",
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
           transform: visible ? "translateY(0)" : "translateY(110%)",
           transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
           willChange: "transform",
