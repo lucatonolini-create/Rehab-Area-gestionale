@@ -683,12 +683,12 @@ export default function ImpostazioniPage() {
 
   return (
     <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 54px)" }}>
-      <div className="mb-4 md:mb-6 md:flex md:items-center md:justify-between">
-        <div className="text-center md:text-left mb-3 md:mb-0">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="text-left">
           <h1 className="text-2xl font-bold text-gray-900">Impostazioni</h1>
           <p className="text-sm text-gray-500 mt-1">Configura il tuo gestionale</p>
         </div>
-        <div className="flex justify-center md:justify-end">
+        <div className="flex">
           <button onClick={salva}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
               salvato ? "bg-green-500 text-white" : "bg-[#C8102E] text-white hover:bg-red-800"
