@@ -31,9 +31,9 @@ main .text-5xl  { font-size: 2.85rem; }
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 
-  /* Last item clears the nav pill — enough room to scroll last card fully above nav */
+  /* Content scrolls all the way under the nav (Facebook-style) */
   .page-scroll {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
   }
 }
 
