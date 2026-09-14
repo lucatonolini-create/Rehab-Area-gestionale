@@ -552,7 +552,7 @@ export default function EpidemiologiaPage() {
       {/* Header */}
       <div className="mb-4 text-center">
         <h1 className="text-2xl font-bold text-gray-900">Epidemiologia</h1>
-        <p className="text-sm text-gray-500 mt-1">Presenze, carichi di lavoro e RPE mensile per categoria</p>
+        <p className="text-sm text-gray-500 mt-1">Presenze, carichi di lavoro e RPE mensile</p>
       </div>
       <div className="mb-4 flex gap-2 justify-center">
           <button onClick={() => setShowUpload(true)}
@@ -645,19 +645,19 @@ export default function EpidemiologiaPage() {
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto">
         <select value={filtroCat} onChange={e => setFiltroCat(e.target.value)}
-          className="border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]">
+          className="shrink-0 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]">
           <option value="Tutte">Tutte le categorie</option>
           {CATEGORIE.map(c => <option key={c}>{c}</option>)}
         </select>
         <select value={filtroAnno} onChange={e => setFiltroAnno(e.target.value)}
-          className="border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]">
+          className="shrink-0 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]">
           <option value="Tutti">Tutti gli anni</option>
           {anni.map(a => <option key={a}>{a}</option>)}
         </select>
         <select value={filtroMese} onChange={e => setFiltroMese(e.target.value)}
-          className="border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]">
+          className="shrink-0 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#C8102E]">
           <option value="Tutti">Tutti i mesi</option>
           {MESI_FULL.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
         </select>
