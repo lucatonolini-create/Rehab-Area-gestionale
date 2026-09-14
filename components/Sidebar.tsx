@@ -182,6 +182,11 @@ export default function Sidebar() {
     setMobileOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    document.body.style.backgroundColor = mobileOpen ? "rgb(0,0,0)" : "";
+    return () => { document.body.style.backgroundColor = ""; };
+  }, [mobileOpen]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/login");
