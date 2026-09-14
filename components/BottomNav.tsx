@@ -50,18 +50,17 @@ export default function BottomNav() {
 
   return (
     <div
-      className="fixed left-0 right-0 z-50 md:hidden px-3"
-      style={{ bottom: 8 }}
+      className="fixed left-0 right-0 z-50 md:hidden"
+      style={{ bottom: 0 }}
     >
       <nav
-        className="flex items-center px-1.5 py-1.5 gap-0.5"
+        className="flex items-center"
         style={{
-          background: "rgba(210,210,215,0.78)",
-          backdropFilter: "blur(30px) saturate(2)",
-          WebkitBackdropFilter: "blur(30px) saturate(2)",
-          borderRadius: "40px",
-          border: "0.5px solid rgba(255,255,255,0.65)",
-          boxShadow: "0 2px 20px rgba(0,0,0,0.14)",
+          background: "rgba(255,255,255,0.92)",
+          backdropFilter: "blur(20px) saturate(1.8)",
+          WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+          borderTop: "0.5px solid rgba(0,0,0,0.10)",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
           overflowX: "auto",
           scrollbarWidth: "none",
           WebkitOverflowScrolling: "touch",
@@ -75,20 +74,17 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center justify-center gap-[3px] px-3.5 py-2 rounded-full transition-all flex-shrink-0 ${
-                isActive ? "" : "active:bg-black/10"
-              }`}
-              style={isActive ? { backgroundColor: "#C8102E" } : {}}
+              className="flex flex-col items-center justify-center gap-[3px] px-3 py-2.5 flex-1 flex-shrink-0 min-w-[56px] active:opacity-60 transition-opacity"
             >
               <div className="relative">
                 <Icon
-                  className={`w-[21px] h-[21px] ${isActive ? "text-white stroke-[2.2px]" : "text-gray-600 stroke-[1.8px]"}`}
+                  className={`w-[22px] h-[22px] ${isActive ? "text-[#C8102E] stroke-[2.2px]" : "text-gray-500 stroke-[1.7px]"}`}
                 />
                 {showBadge && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#C8102E] rounded-full border border-white/60" />
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#C8102E] rounded-full" />
                 )}
               </div>
-              <span className={`text-[10px] leading-none whitespace-nowrap ${isActive ? "text-white font-semibold" : "text-gray-600 font-medium"}`}>
+              <span className={`text-[10px] leading-none whitespace-nowrap ${isActive ? "text-[#C8102E] font-semibold" : "text-gray-500 font-normal"}`}>
                 {label}
               </span>
             </Link>
@@ -96,15 +92,15 @@ export default function BottomNav() {
         })}
 
         {/* Divisore sottile */}
-        <div className="flex-shrink-0 w-px h-6 bg-black/15 mx-1" />
+        <div className="flex-shrink-0 w-px h-5 bg-black/10" />
 
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className="flex flex-col items-center justify-center gap-[3px] px-3.5 py-2 rounded-full transition-all flex-shrink-0 active:bg-red-500/15"
+          className="flex flex-col items-center justify-center gap-[3px] px-3 py-2.5 flex-shrink-0 min-w-[48px] active:opacity-60 transition-opacity"
         >
-          <LogOut className="w-[21px] h-[21px] text-red-500 stroke-[1.8px]" />
-          <span className="text-[10px] leading-none whitespace-nowrap text-red-500 font-medium">Esci</span>
+          <LogOut className="w-[22px] h-[22px] text-red-400 stroke-[1.7px]" />
+          <span className="text-[10px] leading-none whitespace-nowrap text-red-400 font-normal">Esci</span>
         </button>
       </nav>
     </div>
