@@ -26,11 +26,12 @@ main .text-3xl  { font-size: 1.78rem; }
 main .text-4xl  { font-size: 2.14rem; }
 main .text-5xl  { font-size: 2.85rem; }
 
-/* Content fills the full physical screen including the iOS safe area zone.
-   Bottom padding = nav height (68px) + safe-area inset so the last row is
-   always fully scrollable above the floating nav. */
-.page-scroll {
-  padding-bottom: calc(68px + env(safe-area-inset-bottom, 34px));
+/* Mobile only: leave room below last item so it can scroll above the
+   floating bottom nav. Desktop has no bottom nav — no padding needed. */
+@media (max-width: 767px) {
+  .page-scroll {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 34px));
+  }
 }
 
 /* ── Concept C — flat design in main content ──────────── */
