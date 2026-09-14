@@ -86,13 +86,13 @@ export default function BottomNav() {
       style={{
         left: 10,
         right: 10,
-        bottom: 8,
+        bottom: 0,
         background: "rgba(255,255,255,0.96)",
         backdropFilter: "blur(24px) saturate(1.8)",
         WebkitBackdropFilter: "blur(24px) saturate(1.8)",
-        borderRadius: "20px",
-        boxShadow: "0 -2px 16px rgba(0,0,0,0.10), 0 4px 24px rgba(0,0,0,0.08)",
-        transform: visible ? "translateY(0)" : "translateY(130%)",
+        borderRadius: "20px 20px 0 0",
+        boxShadow: "0 -2px 16px rgba(0,0,0,0.10), 0 0 40px rgba(0,0,0,0.06)",
+        transform: visible ? "translateY(0)" : "translateY(120%)",
         transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
         willChange: "transform",
       }}
