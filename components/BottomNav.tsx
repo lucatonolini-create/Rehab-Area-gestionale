@@ -93,7 +93,9 @@ export default function BottomNav() {
         WebkitBackdropFilter: "blur(28px) saturate(2)",
         borderRadius: "20px 20px 0 0",
         boxShadow: "0 -2px 20px rgba(0,0,0,0.10)",
-        transform: visible ? "translateY(0)" : "translateY(110%)",
+        transform: visible
+          ? "translateY(0)"
+          : "translateY(calc(100% - env(safe-area-inset-bottom, 0px)))",
         transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
         willChange: "transform",
       }}
@@ -148,20 +150,6 @@ export default function BottomNav() {
       </nav>
     </div>
 
-    {/* Copre sempre la safe area iOS in fondo, anche quando la nav è nascosta */}
-    <div
-      className="fixed md:hidden"
-      style={{
-        zIndex: 49,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        height: "env(safe-area-inset-bottom, 0px)",
-        background: "rgba(255,255,255,0.72)",
-        backdropFilter: "blur(28px) saturate(2)",
-        WebkitBackdropFilter: "blur(28px) saturate(2)",
-      }}
-    />
     </>
   );
 }
