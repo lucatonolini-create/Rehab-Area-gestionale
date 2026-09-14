@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
+import { useBottomNav } from "@/lib/bottom-nav-context";
 
 const mainTabs = [
   { href: "/",         label: "Dashboard", icon: LayoutDashboard },
@@ -31,6 +32,7 @@ export default function BottomNav() {
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
   const [intakeBadge, setIntakeBadge] = useState(0);
+  const { hidden } = useBottomNav();
 
   useEffect(() => {
     setIntakeBadge(getIntakeBadgeCount());
@@ -51,6 +53,8 @@ export default function BottomNav() {
     router.push("/login");
   };
 
+  if (hidden) return null;
+
   return (
     <>
       {/* Tap outside to close */}
@@ -63,7 +67,7 @@ export default function BottomNav() {
         <div
           className="fixed z-50 md:hidden"
           style={{
-            bottom: "calc(66px + env(safe-area-inset-bottom, 0px))",
+            bottom: "calc(70px + env(safe-area-inset-bottom, 0px))",
             right: "12px",
             minWidth: "220px",
             background: "rgba(235,235,240,0.93)",
@@ -116,21 +120,11 @@ export default function BottomNav() {
         </div>
       )}
 
-      {/* Safe area cover — white so it blends with app background */}
-      <div
-        className="fixed left-0 right-0 z-49 md:hidden"
-        style={{
-          bottom: 0,
-          height: "env(safe-area-inset-bottom, 0px)",
-          background: "white",
-        }}
-      />
-
-      {/* Floating pill tab bar — light glassmorphism */}
+      {/* Floating pill tab bar — light glassmorphism, WhatsApp-style positioning */}
       <div
         className="fixed left-0 right-0 z-50 md:hidden flex justify-center"
         style={{
-          bottom: "calc(env(safe-area-inset-bottom, 0px) - 4px)",
+          bottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
         }}
       >
         <nav

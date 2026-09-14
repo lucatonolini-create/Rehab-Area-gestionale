@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useBottomNav } from "@/lib/bottom-nav-context";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useRouter } from "next/navigation";
 import { Users, Activity, TrendingUp, Dumbbell, ChevronRight, X, ShieldAlert } from "lucide-react";
@@ -54,6 +55,11 @@ export default function Dashboard() {
   const [atletaSelezionato, setAtletaSelezionato] = useState<Atleta | null>(null);
   const [mostraModifica, setMostraModifica] = useState(false);
   const sidebarRef = useSwipeToClose(() => { setAtletaSelezionato(null); setMostraModifica(false); });
+  const { hide: hideNav, show: showNav } = useBottomNav();
+
+  useEffect(() => {
+    if (atletaSelezionato) hideNav(); else showNav();
+  }, [atletaSelezionato]);
 
   useEffect(() => {
     const reload = async () => {
@@ -151,7 +157,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="h-full overflow-y-auto overscroll-none px-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}>
+    <div className="h-full overflow-y-auto overscroll-none px-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}>
       <div className="mb-6 text-center md:text-left">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -304,7 +310,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="px-5 pt-5 border-t border-gray-100 space-y-2" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)" }}>
+          <div className="px-5 pt-5 border-t border-gray-100 space-y-2" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)" }}>
             <button onClick={() => setMostraModifica(true)}
               className="w-full bg-[#C8102E] text-white py-3 rounded-xl text-sm font-medium hover:bg-red-800">
               Modifica dati

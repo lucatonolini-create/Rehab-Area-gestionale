@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useBottomNav } from "@/lib/bottom-nav-context";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { createPortal } from "react-dom";
 import { Plus, Search, User, ChevronRight, Phone, Mail, Trash2, AlertTriangle, CheckCircle2, Clock, Pencil, RotateCcw, FileDown, X, ExternalLink, Copy, Check } from "lucide-react";
@@ -1633,6 +1634,8 @@ export default function AtletiPage() {
   const [filtroStato, setFiltroStato] = useState<Stato | "Tutti">("Tutti");
   const [selected, setSelected] = useState<Atleta | null>(null);
   const detailPanelRef = useSwipeToClose(() => setSelected(null));
+  const { hide: hideNav, show: showNav } = useBottomNav();
+  useEffect(() => { if (selected) hideNav(); else showNav(); }, [selected]);
   const [tab, setTab] = useState<Tab>("dati");
   const [mostraForm, setMostraForm] = useState(false);
   const [editAtleta, setEditAtleta] = useState<Atleta | undefined>(undefined);
@@ -2156,7 +2159,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
         document.body
       )}
       {/* Lista */}
-      <div className="flex-1 px-6 overflow-y-auto overscroll-none" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}>
+      <div className="flex-1 px-6 overflow-y-auto overscroll-none" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}>
         <div className="mb-4 md:mb-6 md:flex md:items-center md:justify-between">
           <div className="text-center md:text-left mb-3 md:mb-0">
             <h1 className="text-2xl font-bold text-gray-900">Atleti</h1>
@@ -2358,7 +2361,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto overscroll-none px-5" style={{ paddingTop: "1.25rem", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}>
+          <div className="flex-1 overflow-y-auto overscroll-none px-5" style={{ paddingTop: "1.25rem", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}>
             {tab === "dati" ? (
               <div className="space-y-2.5 text-sm">
                 {/* ── Sezione infortunio principale ── */}
