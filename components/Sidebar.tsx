@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Users, TrendingUp, Dumbbell, Settings, Menu, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity, ShieldAlert, X,
+  LayoutDashboard, Users, TrendingUp, Dumbbell, Settings, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity, ShieldAlert, Menu, X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
@@ -156,12 +155,8 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [intakeBadge, setIntakeBadge] = useState(0);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null));
@@ -178,15 +173,6 @@ export default function Sidebar() {
     if (pathname === "/segnalazioni") resetIntakeBadge();
   }, [pathname]);
 
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    document.body.style.backgroundColor = mobileOpen ? "rgb(0,0,0)" : "";
-    return () => { document.body.style.backgroundColor = ""; };
-  }, [mobileOpen]);
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/login");
@@ -199,80 +185,18 @@ export default function Sidebar() {
   };
 
   return (
-    <>
-      {/* ── Mobile hamburger button ── */}
-      <button
-        className="md:hidden fixed z-[60] flex items-center justify-center w-10 h-10 rounded-full bg-white/80 shadow-md active:opacity-70"
-        style={{
-          top: "calc(env(safe-area-inset-top, 0px) + 12px)",
-          left: 12,
-          backdropFilter: "blur(10px)",
-          WebkitBackdropFilter: "blur(10px)",
-        }}
-        onClick={() => setMobileOpen(true)}
-        aria-label="Apri menu"
-      >
-        <Menu className="w-5 h-5 text-gray-700" />
-      </button>
-
-      {/* ── Mobile overlay + drawer — portals diretti nel body, nessun containing block ── */}
-      {mounted && createPortal(
-        <>
-          {/* Overlay */}
-          <div
-            style={{
-              display: mobileOpen ? "block" : "none",
-              position: "fixed",
-              inset: 0,
-              zIndex: 9998,
-              background: "rgba(0,0,0,0.40)",
-            }}
-            onClick={() => setMobileOpen(false)}
-          />
-          {/* Drawer */}
-          <aside
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              bottom: 0,
-              width: "18rem",
-              zIndex: 9999,
-              display: "flex",
-              flexDirection: "column",
-              background: "rgb(248,248,248)",
-              transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
-              transition: "transform 300ms ease-in-out",
-              color: "#1f2937",
-            }}
-          >
-            <SidebarContent
-              collapsed={false}
-              pathname={pathname}
-              intakeBadge={intakeBadge}
-              userEmail={userEmail}
-              handleLogout={handleLogout}
-              onNavClick={() => setMobileOpen(false)}
-            />
-          </aside>
-        </>,
-        document.body
-      )}
-
-      {/* ── Desktop sidebar ── */}
-      <aside
-        style={sidebarStyle}
-        className={`hidden md:flex flex-col text-gray-800 shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}
-      >
-        <SidebarContent
-          collapsed={collapsed}
-          setCollapsed={setCollapsed}
-          pathname={pathname}
-          intakeBadge={intakeBadge}
-          userEmail={userEmail}
-          handleLogout={handleLogout}
-        />
-      </aside>
-    </>
+    <aside
+      style={sidebarStyle}
+      className={`hidden md:flex flex-col text-gray-800 shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}
+    >
+      <SidebarContent
+        collapsed={collapsed}
+        setCollapsed={setCollapsed}
+        pathname={pathname}
+        intakeBadge={intakeBadge}
+        userEmail={userEmail}
+        handleLogout={handleLogout}
+      />
+    </aside>
   );
 }
