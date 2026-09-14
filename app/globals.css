@@ -31,9 +31,9 @@ main .text-5xl  { font-size: 2.85rem; }
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 
-  /* Content scrolls all the way under the nav (Facebook-style) */
+  /* Content fills to screen edge — nav pill floats on top */
   .page-scroll {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+    padding-bottom: 0 !important;
   }
 }
 
