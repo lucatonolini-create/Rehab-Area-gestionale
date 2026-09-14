@@ -81,6 +81,7 @@ export default function BottomNav() {
   const visible = scrollVisible && !hidden;
 
   return (
+    <>
     <div
       className="fixed z-50 md:hidden"
       style={{
@@ -146,5 +147,21 @@ export default function BottomNav() {
         </button>
       </nav>
     </div>
+
+    {/* Copre sempre la safe area iOS in fondo, anche quando la nav è nascosta */}
+    <div
+      className="fixed md:hidden"
+      style={{
+        zIndex: 49,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: "env(safe-area-inset-bottom, 0px)",
+        background: "rgba(255,255,255,0.72)",
+        backdropFilter: "blur(28px) saturate(2)",
+        WebkitBackdropFilter: "blur(28px) saturate(2)",
+      }}
+    />
+    </>
   );
 }
