@@ -50,20 +50,18 @@ export default function BottomNav() {
 
   return (
     <div
-      className="fixed left-0 right-0 z-50 md:hidden"
+      className="fixed left-0 right-0 z-50 md:hidden px-3"
       style={{ bottom: 0 }}
     >
       <nav
-        className="flex items-center px-3 py-1.5 gap-0.5"
+        className="flex items-center px-1.5 py-1.5 gap-0.5"
         style={{
-          background: "rgba(210,210,215,0.82)",
+          background: "rgba(210,210,215,0.78)",
           backdropFilter: "blur(30px) saturate(2)",
           WebkitBackdropFilter: "blur(30px) saturate(2)",
-          borderRadius: "28px 28px 0 0",
-          borderTop: "0.5px solid rgba(255,255,255,0.70)",
-          borderLeft: "0.5px solid rgba(255,255,255,0.70)",
-          borderRight: "0.5px solid rgba(255,255,255,0.70)",
-          boxShadow: "0 -2px 20px rgba(0,0,0,0.10)",
+          borderRadius: "40px",
+          border: "0.5px solid rgba(255,255,255,0.65)",
+          boxShadow: "0 2px 20px rgba(0,0,0,0.14)",
           overflowX: "auto",
           scrollbarWidth: "none",
           WebkitOverflowScrolling: "touch",
