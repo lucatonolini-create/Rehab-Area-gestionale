@@ -1102,7 +1102,7 @@ export default function EserciziPage() {
     <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 54px)" }}>
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900">Programmi di Lavoro</h1>
-        <div className="flex items-center justify-between mt-1">
+        <div className="flex items-end justify-between mt-1">
           <p className="text-sm text-gray-500">{atleti.length} atleti</p>
           <button onClick={apriNuovo}
             className="flex items-center gap-1.5 bg-[#C8102E] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-800 shrink-0">
@@ -1113,7 +1113,7 @@ export default function EserciziPage() {
       {/* Azioni principali – 2 righe compatte */}
       <div className="mb-6 bg-gray-50 rounded-2xl p-3 space-y-2">
         {/* Riga 1: giornaliero */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center justify-end gap-1.5 flex-wrap">
           <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
             <input
               type="date"
@@ -1154,7 +1154,7 @@ export default function EserciziPage() {
           </button>
         </div>
         {/* Riga 2: periodo */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center justify-end gap-1.5 flex-wrap">
           <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
             <span className="text-xs text-gray-400">Da</span>
             <input
