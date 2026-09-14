@@ -19,6 +19,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <IntakeNotifier />
         <PushSetup />
         <SessionTimeout />
+        {/* Gradient fade — content dissolves into nav pill on mobile */}
+        <div
+          className="md:hidden pointer-events-none fixed left-0 right-0 z-40"
+          style={{
+            bottom: 0,
+            height: 110,
+            background: "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.7) 50%, white 100%)",
+          }}
+        />
         <BottomNav />
       </div>
     </BottomNavProvider>
