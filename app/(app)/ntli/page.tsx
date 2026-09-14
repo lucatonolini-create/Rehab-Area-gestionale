@@ -1021,7 +1021,7 @@ export default function NtliPage() {
               </button>
             </div>
             <button onClick={() => { setEditNtli(undefined); setShowForm(true); }}
-              className="flex items-center gap-1.5 bg-[#C8102E] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-800">
+              className="flex items-center justify-center gap-1.5 w-full bg-[#C8102E] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-800">
               <Plus className="w-3.5 h-3.5" /> Nuovo NTLI
             </button>
           </div>
