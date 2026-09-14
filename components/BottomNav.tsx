@@ -91,7 +91,6 @@ export default function BottomNav() {
         backdropFilter: "blur(24px) saturate(1.8)",
         WebkitBackdropFilter: "blur(24px) saturate(1.8)",
         borderTop: "0.5px solid rgba(0,0,0,0.10)",
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
         transform: visible ? "translateY(0)" : "translateY(110%)",
         transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
         willChange: "transform",
