@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -156,8 +157,11 @@ export default function Sidebar() {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [intakeBadge, setIntakeBadge] = useState(0);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null));
@@ -206,35 +210,49 @@ export default function Sidebar() {
         <Menu className="w-5 h-5 text-gray-700" />
       </button>
 
-      {/* ── Mobile overlay ── */}
-      {mobileOpen && (
-        <div
-          className="md:hidden fixed z-[65] bg-black/40"
-          style={{ top: 0, left: 0, right: 0, height: "100dvh" }}
-          onClick={() => setMobileOpen(false)}
-        />
+      {/* ── Mobile overlay + drawer — portals diretti nel body, nessun containing block ── */}
+      {mounted && createPortal(
+        <>
+          {/* Overlay */}
+          <div
+            style={{
+              display: mobileOpen ? "block" : "none",
+              position: "fixed",
+              inset: 0,
+              zIndex: 9998,
+              background: "rgba(0,0,0,0.40)",
+            }}
+            onClick={() => setMobileOpen(false)}
+          />
+          {/* Drawer */}
+          <aside
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              bottom: 0,
+              width: "18rem",
+              zIndex: 9999,
+              display: "flex",
+              flexDirection: "column",
+              background: "rgb(248,248,248)",
+              transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+              transition: "transform 300ms ease-in-out",
+              color: "#1f2937",
+            }}
+          >
+            <SidebarContent
+              collapsed={false}
+              pathname={pathname}
+              intakeBadge={intakeBadge}
+              userEmail={userEmail}
+              handleLogout={handleLogout}
+              onNavClick={() => setMobileOpen(false)}
+            />
+          </aside>
+        </>,
+        document.body
       )}
-
-      {/* ── Mobile drawer ── */}
-      <aside
-        className="md:hidden fixed left-0 z-[66] w-72 flex flex-col text-gray-800 transition-transform duration-300 ease-in-out"
-        style={{
-          top: 0,
-          height: "100dvh",
-          ...sidebarStyle,
-          background: "rgb(248,248,248)",
-          transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
-        }}
-      >
-        <SidebarContent
-          collapsed={false}
-          pathname={pathname}
-          intakeBadge={intakeBadge}
-          userEmail={userEmail}
-          handleLogout={handleLogout}
-          onNavClick={() => setMobileOpen(false)}
-        />
-      </aside>
 
       {/* ── Desktop sidebar ── */}
       <aside
