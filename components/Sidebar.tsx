@@ -106,6 +106,7 @@ export default function Sidebar() {
           WebkitMaskImage: mobileAperta
             ? "linear-gradient(to right, black 0%, black 58%, transparent 100%)"
             : "none",
+          bottom: mobileAperta ? "-34px" : undefined,
         }}
         className={`
           flex flex-col text-gray-800 shrink-0
@@ -185,7 +186,7 @@ export default function Sidebar() {
         {/* Footer */}
         <div
           className={`border-t border-black/8 shrink-0 ${collapsed ? "p-2 flex justify-center" : "p-4"}`}
-          style={{ paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${collapsed ? "0.5rem" : "1rem"})` }}
+          style={{ paddingBottom: `calc(max(env(safe-area-inset-bottom, 0px), 34px) + ${collapsed ? "0.25rem" : "0.5rem"})` }}
         >
           {collapsed ? (
             <button onClick={handleLogout} title="Esci" className="text-gray-500 hover:text-gray-900 transition-colors p-1">
@@ -208,20 +209,6 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Copre la safe area home indicator su iOS — fuori dall'aside per non subire il maskImage */}
-      {mobileAperta && (
-        <div
-          className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
-          style={{
-            height: "env(safe-area-inset-bottom, 34px)",
-            background: "rgba(150,150,150,0.85)",
-            backdropFilter: "blur(40px) saturate(1.8)",
-            WebkitBackdropFilter: "blur(40px) saturate(1.8)",
-            maskImage: "linear-gradient(to right, black 0%, black 58%, transparent 100%)",
-            WebkitMaskImage: "linear-gradient(to right, black 0%, black 58%, transparent 100%)",
-          }}
-        />
-      )}
     </>
   );
 }
