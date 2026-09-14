@@ -209,6 +209,10 @@ async function esportaPDFEpi(params: {
     return y;
   }
 
+  function newPage(): number {
+    doc.addPage(); addHeader(); return HDR + 10;
+  }
+
   // Horizontal bar chart – all bars use Cremonese red
   function drawHBars(items: [string, number][], y: number, maxVal: number, subLabel?: string): number {
     if (items.length === 0) return y;
@@ -273,25 +277,25 @@ async function esportaPDFEpi(params: {
   ], y);
 
   if (inf.perTipo.length > 0) {
-    y = checkPage(y, 18 + inf.perTipo.length * 10);
+    y = newPage();
     y = secTitle("Tipo di Infortunio", y);
     y = drawHBars(inf.perTipo, y, inf.perTipo[0][1]);
   }
 
   if (inf.perMeccanismo.length > 0) {
-    y = checkPage(y, 18 + inf.perMeccanismo.length * 10);
+    y = newPage();
     y = secTitle("Meccanismo di Infortunio", y);
     y = drawHBars(inf.perMeccanismo, y, inf.perMeccanismo[0][1]);
   }
 
   if (inf.perOsiicsCategoria.length > 0) {
-    y = checkPage(y, 18 + inf.perOsiicsCategoria.length * 10);
+    y = newPage();
     y = secTitle("Classificazione OSIICS — Categoria Lesione", y);
     y = drawHBars(inf.perOsiicsCategoria, y, inf.perOsiicsCategoria[0][1]);
   }
 
   if (inf.perOsiicsCodice.length > 0) {
-    y = checkPage(y, 35);
+    y = newPage();
     y = secTitle("Classificazione OSIICS — Codici Specifici", y);
     autoTable(doc, {
       startY: y,
@@ -309,11 +313,10 @@ async function esportaPDFEpi(params: {
 
   // FIICCS sections
   if (inf.perSeduta.length > 0) {
-    y = checkPage(y, 18 + inf.perSeduta.length * 10);
+    y = newPage();
     y = secTitle("Contesto dell'Infortunio — Tipo Seduta (FIICCS)", y);
     y = drawHBars(inf.perSeduta, y, inf.perSeduta[0][1]);
     if (inf.conPalla > 0 || inf.senzaPalla > 0) {
-      y = checkPage(y, 12);
       doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
       doc.text(`Con palla: ${inf.conPalla}   ·   Senza palla: ${inf.senzaPalla}`, M, y);
       y += 7;
@@ -321,50 +324,49 @@ async function esportaPDFEpi(params: {
   }
 
   if (inf.perAttivita.length > 0) {
-    y = checkPage(y, 18 + inf.perAttivita.length * 10);
+    y = newPage();
     y = secTitle("Attività Fisica al Momento dell'Infortunio (FIICCS)", y);
     y = drawHBars(inf.perAttivita, y, inf.perAttivita[0][1]);
   }
 
   if (inf.perInsorgenza.length > 0) {
-    y = checkPage(y, 18 + inf.perInsorgenza.length * 10);
+    y = newPage();
     y = secTitle("Modalità di Insorgenza (FIICCS)", y);
     y = drawHBars(inf.perInsorgenza, y, inf.perInsorgenza[0][1]);
   }
 
   if (inf.perFaseGioco.length > 0) {
-    y = checkPage(y, 18 + inf.perFaseGioco.length * 10);
+    y = newPage();
     y = secTitle("Fase di Gioco (FIICCS)", y);
     y = drawHBars(inf.perFaseGioco, y, inf.perFaseGioco[0][1]);
   }
 
   if (inf.perSede.length > 0) {
-    y = checkPage(y, 18 + inf.perSede.length * 10);
+    y = newPage();
     y = secTitle(`Sede Partita — ${inf.inPartitiCount} infortuni in partita (FIICCS)`, y);
     y = drawHBars(inf.perSede, y, inf.perSede[0][1]);
   }
 
   if (inf.perTempo.length > 0) {
-    y = checkPage(y, 18 + inf.perTempo.length * 10);
+    y = newPage();
     y = secTitle("Tempo della Partita (FIICCS)", y);
     y = drawHBars(inf.perTempo, y, inf.perTempo[0][1]);
   }
 
   if (inf.perTerrenoPartita.length > 0) {
-    y = checkPage(y, 18 + inf.perTerrenoPartita.length * 10);
+    y = newPage();
     y = secTitle("Terreno di Gioco — Partita (FIICCS)", y);
     y = drawHBars(inf.perTerrenoPartita, y, inf.perTerrenoPartita[0][1]);
   }
 
   if (inf.perTerrenoAllenamento.length > 0) {
-    y = checkPage(y, 18 + inf.perTerrenoAllenamento.length * 10);
+    y = newPage();
     y = secTitle("Terreno di Gioco — Allenamento (FIICCS)", y);
     y = drawHBars(inf.perTerrenoAllenamento, y, inf.perTerrenoAllenamento[0][1]);
   }
 
   if (inf.perLato.length > 0 || inf.perCategoria.length > 0) {
-    const need = 18 + (inf.perLato.length + inf.perCategoria.length) * 10;
-    y = checkPage(y, need);
+    y = newPage();
     y = secTitle("Distribuzione", y);
     if (inf.perLato.length > 0) y = drawHBars(inf.perLato, y, inf.perLato[0][1], "Lato");
     if (inf.perCategoria.length > 0) y = drawHBars(inf.perCategoria, y, inf.perCategoria[0][1], "Per Categoria");
