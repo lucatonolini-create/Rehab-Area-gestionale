@@ -1110,11 +1110,11 @@ export default function EserciziPage() {
           </button>
         </div>
       </div>
-      {/* Azioni principali */}
-      <div className="mb-6 bg-gray-50 rounded-2xl p-3 space-y-3">
-        {/* Riga giornaliero: data sx — PDF CSV dx */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1.5 bg-white shrink-0">
+      {/* Azioni principali – 2 righe compatte */}
+      <div className="mb-6 bg-gray-50 rounded-2xl p-3 space-y-2">
+        {/* Riga 1: giornaliero */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
             <input
               type="date"
               value={dataGiorno}
@@ -1122,97 +1122,87 @@ export default function EserciziPage() {
               className="text-xs text-gray-700 focus:outline-none bg-transparent"
             />
           </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              disabled={esportandoGiorno}
-              onClick={async () => {
-                setEsportandoGiorno(true);
-                try {
-                  const tutti = await loadProgrammi();
-                  await esportaPDFGiornaliero(dataGiorno, atleti, tutti);
-                } finally {
-                  setEsportandoGiorno(false);
-                }
-              }}
-              className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-red-50 disabled:opacity-50 whitespace-nowrap bg-white">
-              <FileText className="w-3.5 h-3.5" />
-              {esportandoGiorno ? "…" : "PDF"}
-            </button>
-            <button
-              disabled={esportandoCSVGiorno}
-              onClick={async () => {
-                setEsportandoCSVGiorno(true);
-                try {
-                  const tutti = await loadProgrammi();
-                  esportaCSVGiornaliero(dataGiorno, atleti, tutti);
-                } finally {
-                  setEsportandoCSVGiorno(false);
-                }
-              }}
-              className="flex items-center gap-1 border border-gray-200 text-gray-600 px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50 whitespace-nowrap bg-white">
-              <FileDown className="w-3.5 h-3.5" />
-              {esportandoCSVGiorno ? "…" : "CSV"}
-            </button>
-          </div>
+          <button
+            disabled={esportandoGiorno}
+            onClick={async () => {
+              setEsportandoGiorno(true);
+              try {
+                const tutti = await loadProgrammi();
+                await esportaPDFGiornaliero(dataGiorno, atleti, tutti);
+              } finally {
+                setEsportandoGiorno(false);
+              }
+            }}
+            className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-red-50 disabled:opacity-50 shrink-0 whitespace-nowrap bg-white">
+            <FileText className="w-3.5 h-3.5" />
+            {esportandoGiorno ? "…" : "PDF"}
+          </button>
+          <button
+            disabled={esportandoCSVGiorno}
+            onClick={async () => {
+              setEsportandoCSVGiorno(true);
+              try {
+                const tutti = await loadProgrammi();
+                esportaCSVGiornaliero(dataGiorno, atleti, tutti);
+              } finally {
+                setEsportandoCSVGiorno(false);
+              }
+            }}
+            className="flex items-center gap-1 border border-gray-200 text-gray-600 px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50 shrink-0 whitespace-nowrap bg-white">
+            <FileDown className="w-3.5 h-3.5" />
+            {esportandoCSVGiorno ? "…" : "CSV"}
+          </button>
         </div>
-
-        {/* Separatore */}
-        <div className="border-t border-gray-200" />
-
-        {/* Riga periodo: date Da/A sx — bottoni periodo dx */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
-              <span className="text-xs text-gray-400 w-4 shrink-0">Da</span>
-              <input
-                type="date"
-                value={dataInizioIntervallo}
-                onChange={(e) => setDataInizioIntervallo(e.target.value)}
-                className="text-xs text-gray-700 focus:outline-none bg-transparent"
-              />
-            </div>
-            <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
-              <span className="text-xs text-gray-400 w-4 shrink-0">A</span>
-              <input
-                type="date"
-                value={dataFineIntervallo}
-                onChange={(e) => setDataFineIntervallo(e.target.value)}
-                className="text-xs text-gray-700 focus:outline-none bg-transparent"
-              />
-            </div>
+        {/* Riga 2: periodo */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
+            <span className="text-xs text-gray-400">Da</span>
+            <input
+              type="date"
+              value={dataInizioIntervallo}
+              onChange={(e) => setDataInizioIntervallo(e.target.value)}
+              className="text-xs text-gray-700 focus:outline-none bg-transparent"
+            />
           </div>
-          <div className="flex flex-col gap-1 shrink-0">
-            <button
-              disabled={esportandoIntervallo}
-              onClick={async () => {
-                setEsportandoIntervallo(true);
-                try {
-                  const tutti = await loadProgrammi();
-                  await esportaPDFIntervallo(dataInizioIntervallo, dataFineIntervallo, atleti, tutti);
-                } finally {
-                  setEsportandoIntervallo(false);
-                }
-              }}
-              className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-red-50 disabled:opacity-50 whitespace-nowrap bg-white">
-              <FileText className="w-3.5 h-3.5" />
-              {esportandoIntervallo ? "…" : "PDF periodo"}
-            </button>
-            <button
-              disabled={esportandoCSVIntervallo}
-              onClick={async () => {
-                setEsportandoCSVIntervallo(true);
-                try {
-                  const tutti = await loadProgrammi();
-                  esportaCSVIntervallo(dataInizioIntervallo, dataFineIntervallo, atleti, tutti);
-                } finally {
-                  setEsportandoCSVIntervallo(false);
-                }
-              }}
-              className="flex items-center gap-1 border border-gray-200 text-gray-600 px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50 whitespace-nowrap bg-white">
-              <FileDown className="w-3.5 h-3.5" />
-              {esportandoCSVIntervallo ? "…" : "CSV periodo"}
-            </button>
+          <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
+            <span className="text-xs text-gray-400">A</span>
+            <input
+              type="date"
+              value={dataFineIntervallo}
+              onChange={(e) => setDataFineIntervallo(e.target.value)}
+              className="text-xs text-gray-700 focus:outline-none bg-transparent"
+            />
           </div>
+          <button
+            disabled={esportandoIntervallo}
+            onClick={async () => {
+              setEsportandoIntervallo(true);
+              try {
+                const tutti = await loadProgrammi();
+                await esportaPDFIntervallo(dataInizioIntervallo, dataFineIntervallo, atleti, tutti);
+              } finally {
+                setEsportandoIntervallo(false);
+              }
+            }}
+            className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-red-50 disabled:opacity-50 shrink-0 whitespace-nowrap bg-white">
+            <FileText className="w-3.5 h-3.5" />
+            {esportandoIntervallo ? "…" : "PDF periodo"}
+          </button>
+          <button
+            disabled={esportandoCSVIntervallo}
+            onClick={async () => {
+              setEsportandoCSVIntervallo(true);
+              try {
+                const tutti = await loadProgrammi();
+                esportaCSVIntervallo(dataInizioIntervallo, dataFineIntervallo, atleti, tutti);
+              } finally {
+                setEsportandoCSVIntervallo(false);
+              }
+            }}
+            className="flex items-center gap-1 border border-gray-200 text-gray-600 px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50 shrink-0 whitespace-nowrap bg-white">
+            <FileDown className="w-3.5 h-3.5" />
+            {esportandoCSVIntervallo ? "…" : "CSV periodo"}
+          </button>
         </div>
       </div>
 
