@@ -1300,13 +1300,13 @@ export default function ProgressiPage() {
                     {!isNtliVirtual && (
                       <div className="flex gap-2 shrink-0">
                         <button onClick={() => handleExport(atleta, "excel")} disabled={!!esportando}
-                          className="flex items-center gap-1 border border-green-300 text-green-700 px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-green-50 disabled:opacity-50">
-                          <Download className="w-3 h-3" />
+                          className="flex items-center gap-1.5 border border-green-300 text-green-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-green-50 disabled:opacity-50">
+                          <Download className="w-3.5 h-3.5" />
                           {esportando === atleta.id + "excel" ? "..." : "CSV"}
                         </button>
                         <button onClick={() => handleExport(atleta, "pdf")} disabled={!!esportando}
-                          className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-red-50 disabled:opacity-50">
-                          <FileText className="w-3 h-3" />
+                          className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-50 disabled:opacity-50">
+                          <FileText className="w-3.5 h-3.5" />
                           {esportando === atleta.id + "pdf" ? "..." : "PDF"}
                         </button>
                       </div>

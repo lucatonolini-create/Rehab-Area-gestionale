@@ -319,17 +319,17 @@ function NotificheSection() {
           <button
             onClick={inviaTest}
             disabled={testStato === "loading"}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
               testStato === "ok" ? "bg-green-500 text-white" :
               testStato === "error" ? "bg-orange-500 text-white" :
               "border border-gray-200 text-gray-600 hover:bg-gray-50"
             }`}>
             {testStato === "loading"
-              ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Invio…</>
+              ? <><RefreshCw className="w-4 h-4 animate-spin" /> Invio…</>
               : testStato === "ok"
-              ? <><Check className="w-3.5 h-3.5" /> Inviata!</>
+              ? <><Check className="w-4 h-4" /> Inviata!</>
               : testStato === "error"
-              ? <><AlertCircle className="w-3.5 h-3.5" /> Errore</>
+              ? <><AlertCircle className="w-4 h-4" /> Errore</>
               : <><Send className="w-4 h-4" /> Invia notifica test</>}
           </button>
           {testMsg && (
@@ -379,8 +379,8 @@ function ListaPersonale({
           placeholder={placeholder}
           className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
         <button onClick={() => { if (input.trim()) { onAggiungi(input.trim()); setInput(""); } }}
-          className="flex items-center gap-1 bg-[#C8102E] text-white px-3 py-2 rounded-xl text-xs font-medium hover:bg-red-800">
-          <Plus className="w-3.5 h-3.5" />
+          className="flex items-center gap-1.5 bg-[#C8102E] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-red-800">
+          <Plus className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -487,12 +487,12 @@ function RosaSection({
         <div className="flex gap-2 pt-1 items-center">
           <button onClick={salva}
             disabled={!form.nome.trim() || !form.categoria || !form.ruolo}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors disabled:opacity-40 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-40 ${
               stato === "ok" ? "bg-green-500 text-white" :
               stato === "error" ? "bg-orange-500 text-white" :
               "bg-[#C8102E] text-white hover:bg-red-800"
             }`}>
-            <Check className="w-3.5 h-3.5" />
+            <Check className="w-4 h-4" />
             {stato === "ok"
               ? "Salvato!"
               : stato === "error"
@@ -501,8 +501,8 @@ function RosaSection({
           </button>
           {selectedNome && stato === "idle" && (
             <button onClick={rimuovi}
-              className="flex items-center gap-1.5 border border-red-200 text-red-500 px-3 py-2 rounded-xl text-xs font-medium hover:bg-red-50 transition-colors">
-              <Trash2 className="w-3.5 h-3.5" /> Elimina
+              className="flex items-center gap-2 border border-red-200 text-red-500 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors">
+              <Trash2 className="w-4 h-4" /> Elimina
             </button>
           )}
         </div>
@@ -689,10 +689,10 @@ export default function ImpostazioniPage() {
       </div>
       <div className="flex justify-center mb-4">
         <button onClick={salva}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
             salvato ? "bg-green-500 text-white" : "bg-[#C8102E] text-white hover:bg-red-800"
           }`}>
-          {salvato ? <><Check className="w-3.5 h-3.5" /> Salvato!</> : <><Save className="w-3.5 h-3.5" /> Salva</>}
+          {salvato ? <><Check className="w-4 h-4" /> Salvato!</> : <><Save className="w-4 h-4" /> Salva</>}
         </button>
       </div>
 

@@ -1072,22 +1072,22 @@ export default function PerformancePage() {
             <div className="flex rounded-lg border border-gray-200 overflow-hidden">
               <button
                 onClick={() => setView("grafici")}
-                className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
                   view === "grafici" ? "text-white" : "text-gray-600 hover:bg-gray-50"
                 }`}
                 style={view === "grafici" ? { backgroundColor: RED } : {}}
               >
-                <BarChart3 className="w-3.5 h-3.5" />
+                <BarChart3 className="w-4 h-4" />
                 Grafici
               </button>
               <button
                 onClick={() => setView("tabella")}
-                className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
                   view === "tabella" ? "text-white" : "text-gray-600 hover:bg-gray-50"
                 }`}
                 style={view === "tabella" ? { backgroundColor: RED } : {}}
               >
-                <Table2 className="w-3.5 h-3.5" />
+                <Table2 className="w-4 h-4" />
                 Tabella
               </button>
             </div>
@@ -1096,10 +1096,10 @@ export default function PerformancePage() {
             <button
               onClick={exportPdf}
               disabled={!selectedAtleta || sessions.length === 0}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-white rounded-lg disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-40 hover:opacity-90 transition-opacity"
               style={{ backgroundColor: RED }}
             >
-              <FileDown className="w-3.5 h-3.5" />
+              <FileDown className="w-4 h-4" />
               PDF
             </button>
           </div>

@@ -63,7 +63,7 @@ export default function SegnalazioniPage() {
               <button
                 onClick={() => copia(cat)}
                 disabled={!origin}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors shrink-0 ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors shrink-0 ${
                   isCopied
                     ? "bg-green-100 text-green-700"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -86,7 +86,7 @@ export default function SegnalazioniPage() {
             <p className="text-sm font-bold text-gray-900">Modulo cartaceo</p>
             <p className="text-xs text-gray-400">Segnalazione infortunio — PDF stampabile</p>
           </div>
-          <span className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-600 shrink-0">
+          <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gray-100 text-gray-600 shrink-0">
             <FileDown className="w-3.5 h-3.5" />
             Apri
           </span>

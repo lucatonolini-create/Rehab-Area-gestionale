@@ -2163,8 +2163,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
         </div>
         <div className="flex justify-center mb-4">
           <button onClick={apriNuovo}
-            className="flex items-center gap-1.5 bg-[#C8102E] text-white px-4 py-2 rounded-xl text-xs font-medium hover:bg-red-800">
-            <Plus className="w-3.5 h-3.5" /> Nuovo Atleta
+            className="flex items-center gap-2 bg-[#C8102E] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-red-800">
+            <Plus className="w-4 h-4" /> Nuovo Atleta
           </button>
         </div>
 
@@ -2178,18 +2178,18 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
         </div>
 
         {/* Filtro per stato */}
-        <div className="flex gap-1.5 mb-4 flex-wrap justify-center">
+        <div className="flex gap-1.5 mb-5 flex-wrap">
           {FILTRI_STATO.map(({ label, value }) => {
             const count = countPerStato(value);
             return (
               <button key={value} onClick={() => setFiltroStato(value)}
-                className={`flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all ${
+                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   filtroStato === value
                     ? "bg-[#C8102E] text-white shadow-sm"
                     : "bg-white border border-gray-200 text-gray-500 hover:border-gray-300"
                 }`}>
                 {label}
-                <span className={`px-1 py-0.5 rounded-full text-[9px] ${
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
                   filtroStato === value ? "bg-white/20 text-white" : "bg-gray-100 text-gray-400"
                 }`}>{count}</span>
               </button>
