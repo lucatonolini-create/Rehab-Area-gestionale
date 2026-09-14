@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, Dumbbell, ShieldAlert,
-  TrendingUp, BarChart2, Activity, HeartPulse, Link2, Settings,
+  TrendingUp, BarChart2, Activity, HeartPulse, Link2, Settings, LogOut,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
 import { useBottomNav } from "@/lib/bottom-nav-context";
 
@@ -25,8 +26,14 @@ const allTabs = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [intakeBadge, setIntakeBadge] = useState(0);
   const { hidden } = useBottomNav();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
 
   useEffect(() => {
     setIntakeBadge(getIntakeBadgeCount());
@@ -87,6 +94,18 @@ export default function BottomNav() {
             </Link>
           );
         })}
+
+        {/* Divisore sottile */}
+        <div className="flex-shrink-0 w-px h-6 bg-black/15 mx-1" />
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="flex flex-col items-center justify-center gap-[3px] px-3.5 py-2 rounded-full transition-all flex-shrink-0 active:bg-red-500/15"
+        >
+          <LogOut className="w-[21px] h-[21px] text-red-500 stroke-[1.8px]" />
+          <span className="text-[10px] leading-none whitespace-nowrap text-red-500 font-medium">Esci</span>
+        </button>
       </nav>
     </div>
   );
