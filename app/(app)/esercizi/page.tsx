@@ -1106,7 +1106,8 @@ export default function EserciziPage() {
       </div>
       {/* Azioni principali */}
       <div className="mb-6 bg-gray-50 rounded-2xl p-4 space-y-3">
-        {/* Giornaliero */}
+        {/* Giornaliero + Nuovo programma su desktop */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap justify-center md:justify-start">
           <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 bg-white">
             <input
@@ -1147,6 +1148,14 @@ export default function EserciziPage() {
             {esportandoCSVGiorno ? "Generazione…" : "CSV giorno"}
           </button>
         </div>
+        {/* Nuovo programma - destra su desktop, sotto su mobile */}
+        <div className="flex justify-center md:justify-end pt-1 md:pt-0">
+          <button onClick={apriNuovo}
+            className="flex items-center gap-2 bg-[#C8102E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-red-800">
+            <Plus className="w-4 h-4" /> Nuovo programma
+          </button>
+        </div>
+      </div>
 
         {/* Periodo */}
         <div className="flex items-center gap-2 flex-wrap justify-center md:justify-start">
@@ -1197,14 +1206,6 @@ export default function EserciziPage() {
             className="flex items-center gap-1.5 border border-gray-200 text-gray-600 px-3 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50 shrink-0 whitespace-nowrap bg-white">
             <FileDown className="w-4 h-4" />
             {esportandoCSVIntervallo ? "Generazione…" : "CSV periodo"}
-          </button>
-        </div>
-
-        {/* Nuovo programma */}
-        <div className="flex justify-center md:justify-start pt-1">
-          <button onClick={apriNuovo}
-            className="flex items-center gap-2 bg-[#C8102E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-red-800">
-            <Plus className="w-4 h-4" /> Nuovo programma
           </button>
         </div>
       </div>
