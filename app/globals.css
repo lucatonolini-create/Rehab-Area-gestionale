@@ -26,6 +26,11 @@ main .text-3xl  { font-size: 1.78rem; }
 main .text-4xl  { font-size: 2.14rem; }
 main .text-5xl  { font-size: 2.85rem; }
 
+/* Extend page scroll containers to physical screen bottom on iOS */
+.page-scroll {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* ── Concept C — flat design in main content ──────────── */
 main .shadow-sm,
 main .shadow,

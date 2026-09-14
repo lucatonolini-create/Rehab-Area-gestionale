@@ -11,7 +11,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       style={{ position: "fixed", inset: 0 }}
     >
       <Sidebar />
-      <main className="flex-1 overflow-hidden">{children}</main>
+      <main className="flex-1 overflow-hidden" style={{ height: "100%" }}>{children}</main>
       <OfflineBanner />
       <IntakeNotifier />
       <PushSetup />
