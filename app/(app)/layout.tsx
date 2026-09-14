@@ -19,13 +19,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <IntakeNotifier />
         <PushSetup />
         <SessionTimeout />
-        {/* Safe-area strip only — no gradient blocking content below nav pill */}
+        {/* Gradient covers empty padding zone — hides white block below/around nav pill */}
         <div
           className="fixed left-0 right-0 pointer-events-none md:hidden"
           style={{
             bottom: 0,
-            height: "env(safe-area-inset-bottom, 0px)",
-            background: "white",
+            height: "calc(env(safe-area-inset-bottom, 0px) + 100px)",
+            background: "linear-gradient(to top, white 35%, transparent 100%)",
             zIndex: 49,
           }}
         />
