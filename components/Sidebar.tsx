@@ -206,11 +206,22 @@ export default function Sidebar() {
             </div>
           )}
         </div>
-        {/* Copre la safe area home indicator su iOS */}
-        {mobileAperta && (
-          <div className="shrink-0" style={{ height: "env(safe-area-inset-bottom, 0px)", background: "rgba(150,150,150,0.72)" }} />
-        )}
       </aside>
+
+      {/* Copre la safe area home indicator su iOS — fuori dall'aside per non subire il maskImage */}
+      {mobileAperta && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
+          style={{
+            height: "env(safe-area-inset-bottom, 34px)",
+            background: "rgba(150,150,150,0.85)",
+            backdropFilter: "blur(40px) saturate(1.8)",
+            WebkitBackdropFilter: "blur(40px) saturate(1.8)",
+            maskImage: "linear-gradient(to right, black 0%, black 58%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to right, black 0%, black 58%, transparent 100%)",
+          }}
+        />
+      )}
     </>
   );
 }
