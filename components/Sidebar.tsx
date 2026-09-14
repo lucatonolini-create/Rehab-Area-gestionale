@@ -210,7 +210,7 @@ export default function Sidebar() {
       {mobileOpen && (
         <div
           className="md:hidden fixed z-[65] bg-black/40"
-          style={{ top: 0, left: 0, right: 0, bottom: 0 }}
+          style={{ top: 0, left: 0, right: 0, height: "100dvh" }}
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -220,8 +220,9 @@ export default function Sidebar() {
         className="md:hidden fixed left-0 z-[66] w-72 flex flex-col text-gray-800 transition-transform duration-300 ease-in-out"
         style={{
           top: 0,
-          bottom: 0,
+          height: "100dvh",
           ...sidebarStyle,
+          background: "rgb(248,248,248)",
           transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
         }}
       >
