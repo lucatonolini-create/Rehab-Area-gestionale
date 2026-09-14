@@ -24,8 +24,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           className="fixed left-0 right-0 pointer-events-none md:hidden"
           style={{
             bottom: 0,
-            height: "calc(env(safe-area-inset-bottom, 0px) + 100px)",
-            background: "linear-gradient(to top, white 35%, transparent 100%)",
+            height: "calc(env(safe-area-inset-bottom, 0px) + 65px)",
+            background: "linear-gradient(to top, white 50%, transparent 100%)",
             zIndex: 49,
           }}
         />
