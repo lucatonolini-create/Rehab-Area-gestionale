@@ -53,80 +53,85 @@ export default function BottomNav() {
 
   return (
     <>
-      {/* Overlay backdrop */}
+      {/* Tap outside to close */}
       {moreOpen && (
-        <div
-          className="fixed inset-0 z-40 md:hidden"
-          onClick={() => setMoreOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 md:hidden" onClick={() => setMoreOpen(false)} />
       )}
 
-      {/* "Altro" sheet */}
+      {/* Popup menu — floating above the "..." button */}
       {moreOpen && (
         <div
-          className="fixed left-4 right-4 z-50 rounded-2xl shadow-2xl md:hidden overflow-hidden"
+          className="fixed z-50 md:hidden"
           style={{
-            bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
-            background: "rgba(30,30,32,0.97)",
-            backdropFilter: "blur(30px) saturate(1.8)",
-            WebkitBackdropFilter: "blur(30px) saturate(1.8)",
+            bottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
+            right: "12px",
+            minWidth: "220px",
+            background: "rgba(235,235,240,0.93)",
+            backdropFilter: "blur(40px) saturate(2)",
+            WebkitBackdropFilter: "blur(40px) saturate(2)",
+            borderRadius: "16px",
+            border: "0.5px solid rgba(255,255,255,0.6)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+            overflow: "hidden",
           }}
         >
-          <div className="flex justify-center pt-2.5 pb-1">
-            <div className="w-9 h-1 bg-white/20 rounded-full" />
-          </div>
-          <div className="grid grid-cols-3 gap-1 p-3">
-            {moreTabs.map(({ href, label, icon: Icon }) => {
-              const isActive = pathname === href;
-              const showBadge = href === "/segnalazioni" && intakeBadge > 0;
-              return (
+          {moreTabs.map(({ href, label, icon: Icon }, i) => {
+            const isActive = pathname === href;
+            const showBadge = href === "/segnalazioni" && intakeBadge > 0;
+            return (
+              <div key={href}>
                 <Link
-                  key={href}
                   href={href}
-                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-colors ${
-                    isActive ? "bg-white/20 text-white" : "text-white/60 active:bg-white/10"
+                  className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                    isActive ? "text-[#C8102E]" : "text-gray-800 active:bg-black/5"
                   }`}
                 >
                   <div className="relative">
-                    <Icon className="w-6 h-6" />
+                    <Icon className="w-5 h-5" />
                     {showBadge && (
-                      <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-[#C8102E] rounded-full text-white text-[9px] font-bold flex items-center justify-center px-0.5">
-                        {intakeBadge > 9 ? "9+" : intakeBadge}
-                      </span>
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#C8102E] rounded-full" />
                     )}
                   </div>
-                  <span className="text-xs font-medium text-center leading-tight">{label}</span>
+                  <span className="text-sm font-medium flex-1">{label}</span>
+                  {showBadge && (
+                    <span className="bg-[#C8102E] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      {intakeBadge > 9 ? "9+" : intakeBadge}
+                    </span>
+                  )}
                 </Link>
-              );
-            })}
-          </div>
-          <div className="border-t border-white/10 mx-4 pt-2 pb-3">
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/60 active:bg-white/10 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="text-sm font-medium">Esci</span>
-            </button>
-          </div>
+                {i < moreTabs.length - 1 && (
+                  <div className="h-px bg-black/8 mx-4" />
+                )}
+              </div>
+            );
+          })}
+          <div className="h-px bg-black/10" />
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 text-red-600 active:bg-black/5 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="text-sm font-medium">Esci</span>
+          </button>
         </div>
       )}
 
-      {/* Floating pill tab bar */}
+      {/* Floating pill tab bar — light glassmorphism */}
       <div
         className="fixed left-0 right-0 z-50 md:hidden flex justify-center"
         style={{
-          bottom: "calc(8px + env(safe-area-inset-bottom, 0px))",
+          bottom: "calc(4px + env(safe-area-inset-bottom, 0px))",
         }}
       >
         <nav
-          className="flex items-center px-2 py-1.5 gap-1"
+          className="flex items-center px-1.5 py-1.5 gap-0.5"
           style={{
-            background: "rgba(28,28,30,0.95)",
-            backdropFilter: "blur(20px) saturate(1.8)",
-            WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+            background: "rgba(210,210,215,0.78)",
+            backdropFilter: "blur(30px) saturate(2)",
+            WebkitBackdropFilter: "blur(30px) saturate(2)",
             borderRadius: "40px",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.35)",
+            border: "0.5px solid rgba(255,255,255,0.65)",
+            boxShadow: "0 2px 20px rgba(0,0,0,0.14)",
           }}
         >
           {mainTabs.map(({ href, label, icon: Icon }) => {
@@ -135,14 +140,15 @@ export default function BottomNav() {
               <Link
                 key={href}
                 href={href}
-                className={`flex flex-col items-center justify-center gap-[3px] px-4 py-2 rounded-full transition-all ${
-                  isActive ? "bg-white/20" : "active:bg-white/10"
+                className={`flex flex-col items-center justify-center gap-[3px] px-3.5 py-2 rounded-full transition-all ${
+                  isActive ? "" : "active:bg-black/10"
                 }`}
+                style={isActive ? { backgroundColor: "#C8102E" } : {}}
               >
                 <Icon
-                  className={`w-[22px] h-[22px] ${isActive ? "text-white stroke-[2.2px]" : "text-white/55 stroke-[1.8px]"}`}
+                  className={`w-[21px] h-[21px] ${isActive ? "text-white stroke-[2.2px]" : "text-gray-600 stroke-[1.8px]"}`}
                 />
-                <span className={`text-[10px] leading-none ${isActive ? "text-white font-semibold" : "text-white/55 font-medium"}`}>
+                <span className={`text-[10px] leading-none ${isActive ? "text-white font-semibold" : "text-gray-600 font-medium"}`}>
                   {label}
                 </span>
               </Link>
@@ -151,19 +157,20 @@ export default function BottomNav() {
 
           <button
             onClick={() => setMoreOpen(v => !v)}
-            className={`flex flex-col items-center justify-center gap-[3px] px-4 py-2 rounded-full transition-all ${
-              moreOpen || isMoreActive ? "bg-white/20" : "active:bg-white/10"
+            className={`flex flex-col items-center justify-center gap-[3px] px-3.5 py-2 rounded-full transition-all ${
+              moreOpen || isMoreActive ? "" : "active:bg-black/10"
             }`}
+            style={(moreOpen || isMoreActive) ? { backgroundColor: "#C8102E" } : {}}
           >
             <div className="relative">
               <MoreHorizontal
-                className={`w-[22px] h-[22px] ${(moreOpen || isMoreActive) ? "text-white stroke-[2.2px]" : "text-white/55 stroke-[1.8px]"}`}
+                className={`w-[21px] h-[21px] ${(moreOpen || isMoreActive) ? "text-white stroke-[2.2px]" : "text-gray-600 stroke-[1.8px]"}`}
               />
               {!moreOpen && intakeBadge > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#C8102E] rounded-full" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#C8102E] rounded-full border border-white/60" />
               )}
             </div>
-            <span className={`text-[10px] leading-none ${(moreOpen || isMoreActive) ? "text-white font-semibold" : "text-white/55 font-medium"}`}>
+            <span className={`text-[10px] leading-none ${(moreOpen || isMoreActive) ? "text-white font-semibold" : "text-gray-600 font-medium"}`}>
               Altro
             </span>
           </button>
