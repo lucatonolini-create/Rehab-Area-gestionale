@@ -34,6 +34,13 @@ main .text-5xl  { font-size: 2.85rem; }
   }
 }
 
+/* ── DIAGNOSTIC BORDERS — REMOVE BEFORE PRODUCTION ────── */
+@media (max-width: 767px) {
+  [data-diag="appshell"] { outline: 3px solid lime !important; }
+  main                   { outline: 3px solid violet !important; }
+  .page-scroll           { outline: 3px solid orange !important; }
+}
+
 /* ── Concept C — flat design in main content ──────────── */
 main .shadow-sm,
 main .shadow,

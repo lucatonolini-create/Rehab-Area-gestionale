@@ -5,11 +5,13 @@ import IntakeNotifier from "@/components/IntakeNotifier";
 import PushSetup from "@/components/PushSetup";
 import SessionTimeout from "@/components/SessionTimeout";
 import { BottomNavProvider } from "@/lib/bottom-nav-context";
+import DiagPanel from "@/components/DiagPanel";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <BottomNavProvider>
       <div
+        data-diag="appshell"
         className="flex bg-white"
         style={{ position: "fixed", inset: 0 }}
       >
@@ -21,6 +23,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SessionTimeout />
       </div>
       <BottomNav />
+      <DiagPanel />
     </BottomNavProvider>
   );
 }
