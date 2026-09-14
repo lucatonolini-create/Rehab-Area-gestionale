@@ -268,8 +268,16 @@ export default function Dashboard() {
 
       {/* Mini pannello atleta */}
       {atletaSelezionato && !mostraModifica && (
-        <div ref={sidebarRef as React.RefObject<HTMLDivElement>} className="fixed inset-0 md:inset-y-0 md:left-auto md:right-0 md:w-80 z-40 bg-white shadow-2xl md:border-l md:border-gray-100 flex flex-col">
-          <div className="flex items-center justify-between px-5 pb-4 border-b border-gray-100" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.25rem)" }}>
+        <div
+          ref={sidebarRef as React.RefObject<HTMLDivElement>}
+          className="fixed bottom-0 left-0 right-0 md:bottom-auto md:top-0 md:left-auto md:right-0 md:w-80 z-40 bg-white shadow-2xl rounded-t-[28px] md:rounded-none md:border-l md:border-gray-100 flex flex-col"
+          style={{ maxHeight: "90dvh" }}
+        >
+          {/* Drag handle — mobile only */}
+          <div className="md:hidden flex-shrink-0 flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between px-5 pb-4 border-b border-gray-100" style={{ paddingTop: "1.25rem" }}>
             <h3 className="font-bold text-gray-900">Scheda atleta</h3>
             <button onClick={() => setAtletaSelezionato(null)} className="text-gray-400 hover:text-gray-600">
               <X className="w-5 h-5" />

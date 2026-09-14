@@ -2277,8 +2277,19 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
       {/* Pannello dettaglio */}
       {selected && !mostraForm && (
-        <div ref={detailPanelRef as React.RefObject<HTMLDivElement>} className="fixed inset-0 z-40 md:relative md:inset-auto md:z-auto md:w-96 bg-white md:border-l md:border-gray-100 flex flex-col overflow-hidden">
-          <div className="px-5 pb-5 border-b border-gray-100" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.25rem)" }}>
+        <>
+          {/* Backdrop — mobile only */}
+          <div className="fixed inset-0 z-40 md:hidden bg-black/40" onClick={() => setSelected(null)} />
+          <div
+            ref={detailPanelRef as React.RefObject<HTMLDivElement>}
+            className="fixed bottom-0 left-0 right-0 z-50 md:relative md:bottom-auto md:left-auto md:right-auto md:z-auto md:w-96 bg-white rounded-t-[28px] md:rounded-none md:border-l md:border-gray-100 flex flex-col overflow-hidden"
+            style={{ maxHeight: "90dvh" }}
+          >
+          {/* Drag handle — mobile only */}
+          <div className="md:hidden flex-shrink-0 flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          </div>
+          <div className="flex-shrink-0 px-5 pb-5 border-b border-gray-100" style={{ paddingTop: "1.25rem" }}>
             <div className="flex items-start justify-between mb-3">
               <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
               <div className="flex gap-2">
@@ -3501,7 +3512,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
               })()
             )}
           </div>
-        </div>
+          </div>
+        </>
       )}
 
       {/* Modale form */}
