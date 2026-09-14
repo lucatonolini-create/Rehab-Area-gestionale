@@ -2156,7 +2156,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
         document.body
       )}
       {/* Lista */}
-      <div className="flex-1 px-6 overflow-y-auto overscroll-none" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}>
+      <div className="flex-1 px-6 overflow-y-auto overscroll-none" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}>
         <div className="mb-4 md:mb-6 md:flex md:items-center md:justify-between">
           <div className="text-center md:text-left mb-3 md:mb-0">
             <h1 className="text-2xl font-bold text-gray-900">Atleti</h1>
@@ -2275,7 +2275,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
       {/* Pannello dettaglio */}
       {selected && !mostraForm && (
         <div ref={detailPanelRef as React.RefObject<HTMLDivElement>} className="w-96 bg-white border-l border-gray-100 flex flex-col overflow-hidden">
-          <div className="p-5 border-b border-gray-100">
+          <div className="px-5 pb-5 border-b border-gray-100" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.25rem)" }}>
             <div className="flex items-start justify-between mb-3">
               <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
               <div className="flex gap-2">
@@ -2358,7 +2358,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto overscroll-none px-5" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.25rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.25rem)" }}>
+          <div className="flex-1 overflow-y-auto overscroll-none px-5" style={{ paddingTop: "1.25rem", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}>
             {tab === "dati" ? (
               <div className="space-y-2.5 text-sm">
                 {/* ── Sezione infortunio principale ── */}

@@ -151,7 +151,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="h-full overflow-y-auto overscroll-none px-6 pb-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
+    <div className="h-full overflow-y-auto overscroll-none px-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}>
       <div className="mb-6 text-center md:text-left">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -270,7 +270,7 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-5">
+          <div className="flex-1 overflow-y-auto p-5 pb-2">
             <div className="text-center mb-5">
               <div className="w-16 h-16 bg-[#2B2B2B] rounded-full flex items-center justify-center text-white font-bold text-xl mx-auto mb-2">
                 {nd(atletaSelezionato).trim().split(/\s+/).filter(Boolean).slice(0,2).map((w:string)=>(w[0]??"").toUpperCase()).join("")}
@@ -304,7 +304,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="p-5 border-t border-gray-100 space-y-2">
+          <div className="px-5 pt-5 border-t border-gray-100 space-y-2" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)" }}>
             <button onClick={() => setMostraModifica(true)}
               className="w-full bg-[#C8102E] text-white py-3 rounded-xl text-sm font-medium hover:bg-red-800">
               Modifica dati
