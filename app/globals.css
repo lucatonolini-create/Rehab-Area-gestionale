@@ -31,9 +31,9 @@ main .text-5xl  { font-size: 2.85rem; }
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 
-  /* Ensure last items scroll fully above the nav gradient zone */
+  /* Last item clears the nav pill top — content scrolls freely behind the blurred nav */
   .page-scroll {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 180px) !important;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 90px) !important;
   }
 }
 
