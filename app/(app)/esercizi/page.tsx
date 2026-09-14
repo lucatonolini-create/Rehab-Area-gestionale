@@ -1123,18 +1123,18 @@ export default function EserciziPage() {
           />
           <div className="flex items-center gap-1 shrink-0">
             <button
+              title="Esporta PDF giornaliero"
               disabled={esportandoGiorno}
               onClick={async () => { setEsportandoGiorno(true); try { const tutti = await loadProgrammi(); await esportaPDFGiornaliero(dataGiorno, atleti, tutti); } finally { setEsportandoGiorno(false); } }}
-              className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2 py-1 rounded-lg text-xs font-medium hover:bg-red-50 disabled:opacity-50 bg-white">
-              <FileText className="w-3.5 h-3.5" />
-              {esportandoGiorno ? "…" : "PDF"}
+              className="flex items-center justify-center border border-red-200 text-[#C8102E] p-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50 bg-white">
+              {esportandoGiorno ? <span className="text-xs w-4 text-center">…</span> : <FileText className="w-4 h-4" />}
             </button>
             <button
+              title="Esporta CSV giornaliero"
               disabled={esportandoCSVGiorno}
               onClick={async () => { setEsportandoCSVGiorno(true); try { const tutti = await loadProgrammi(); esportaCSVGiornaliero(dataGiorno, atleti, tutti); } finally { setEsportandoCSVGiorno(false); } }}
-              className="flex items-center gap-1 border border-gray-200 text-gray-600 px-2 py-1 rounded-lg text-xs font-medium hover:bg-gray-100 disabled:opacity-50 bg-white">
-              <FileDown className="w-3.5 h-3.5" />
-              {esportandoCSVGiorno ? "…" : "CSV"}
+              className="flex items-center justify-center border border-gray-200 text-gray-500 p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50 bg-white">
+              {esportandoCSVGiorno ? <span className="text-xs w-4 text-center">…</span> : <FileDown className="w-4 h-4" />}
             </button>
           </div>
         </div>
@@ -1159,18 +1159,18 @@ export default function EserciziPage() {
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <button
+              title="Esporta PDF periodo"
               disabled={esportandoIntervallo}
               onClick={async () => { setEsportandoIntervallo(true); try { const tutti = await loadProgrammi(); await esportaPDFIntervallo(dataInizioIntervallo, dataFineIntervallo, atleti, tutti); } finally { setEsportandoIntervallo(false); } }}
-              className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2 py-1 rounded-lg text-xs font-medium hover:bg-red-50 disabled:opacity-50 bg-white">
-              <FileText className="w-3.5 h-3.5" />
-              {esportandoIntervallo ? "…" : "PDF"}
+              className="flex items-center justify-center border border-red-200 text-[#C8102E] p-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50 bg-white">
+              {esportandoIntervallo ? <span className="text-xs w-4 text-center">…</span> : <FileText className="w-4 h-4" />}
             </button>
             <button
+              title="Esporta CSV periodo"
               disabled={esportandoCSVIntervallo}
               onClick={async () => { setEsportandoCSVIntervallo(true); try { const tutti = await loadProgrammi(); esportaCSVIntervallo(dataInizioIntervallo, dataFineIntervallo, atleti, tutti); } finally { setEsportandoCSVIntervallo(false); } }}
-              className="flex items-center gap-1 border border-gray-200 text-gray-600 px-2 py-1 rounded-lg text-xs font-medium hover:bg-gray-100 disabled:opacity-50 bg-white">
-              <FileDown className="w-3.5 h-3.5" />
-              {esportandoCSVIntervallo ? "…" : "CSV"}
+              className="flex items-center justify-center border border-gray-200 text-gray-500 p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50 bg-white">
+              {esportandoCSVIntervallo ? <span className="text-xs w-4 text-center">…</span> : <FileDown className="w-4 h-4" />}
             </button>
           </div>
         </div>
