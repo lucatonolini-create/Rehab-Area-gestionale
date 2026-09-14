@@ -82,22 +82,15 @@ export default function BottomNav() {
 
   return (
     <>
-      {/* Always covers the iOS home-indicator zone — matches the body background
-          so it's invisible when the nav slides away, yet prevents the white-strip gap */}
-      <div
-        className="fixed bottom-0 left-0 right-0 md:hidden"
-        style={{ height: "env(safe-area-inset-bottom, 0px)", background: "#ffffff", zIndex: 48 }}
-      />
-
       <div
         className="fixed z-50 md:hidden"
         style={{
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(255,255,255,0.94)",
-          backdropFilter: "blur(20px) saturate(1.8)",
-          WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+          background: "rgba(255,255,255,0.88)",
+          backdropFilter: "blur(24px) saturate(1.8)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.8)",
           borderTop: "0.5px solid rgba(0,0,0,0.10)",
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
           transform: visible ? "translateY(0)" : "translateY(110%)",
@@ -157,3 +150,4 @@ export default function BottomNav() {
     </>
   );
 }
+

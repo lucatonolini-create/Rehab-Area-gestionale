@@ -270,7 +270,7 @@ export default function Dashboard() {
       {atletaSelezionato && !mostraModifica && (
         <div
           ref={sidebarRef as React.RefObject<HTMLDivElement>}
-          className="fixed bottom-0 left-0 right-0 md:bottom-auto md:top-0 md:left-auto md:right-0 md:w-80 z-40 bg-white shadow-2xl rounded-t-[28px] md:rounded-none md:border-l md:border-gray-100 flex flex-col"
+          className="fixed bottom-0 left-3 right-3 md:bottom-auto md:top-0 md:left-auto md:right-0 md:w-80 z-40 bg-white shadow-2xl rounded-2xl md:rounded-none md:border-l md:border-gray-100 flex flex-col"
           style={{ maxHeight: "90dvh" }}
         >
           {/* Drag handle — mobile only */}

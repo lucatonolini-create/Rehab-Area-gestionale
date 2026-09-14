@@ -26,8 +26,10 @@ main .text-3xl  { font-size: 1.78rem; }
 main .text-4xl  { font-size: 2.14rem; }
 main .text-5xl  { font-size: 2.85rem; }
 
+/* Content fills the full physical screen including the iOS safe area zone —
+   the nav floats on top via backdrop-filter/frosted glass */
 .page-scroll {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: 0;
 }
 
 /* ── Concept C — flat design in main content ──────────── */

@@ -1523,8 +1523,8 @@ export default function EserciziPage() {
 
       {/* Modale */}
       {mostraForm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center md:p-4" style={{ paddingTop: "env(safe-area-inset-top, 44px)", paddingBottom: 68 } as React.CSSProperties}>
-          <div ref={formModalRef as React.RefObject<HTMLDivElement>} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-2xl md:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden" style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top, 44px) - 68px)" }}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center md:p-4 px-3" style={{ paddingTop: "env(safe-area-inset-top, 44px)", paddingBottom: 68 } as React.CSSProperties}>
+          <div ref={formModalRef as React.RefObject<HTMLDivElement>} className="bg-white rounded-2xl w-full max-w-2xl md:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden" style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top, 44px) - 68px)" }}>
             <div className="flex items-center justify-between px-4 py-3 md:p-5 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-900">{editId ? "Modifica Programma" : "Nuovo Programma"}</h2>
               <div className="flex items-center gap-3">
