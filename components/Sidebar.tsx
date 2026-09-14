@@ -184,9 +184,9 @@ export default function Sidebar() {
   };
 
   const sidebarStyle = {
-    background: "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)",
-    backdropFilter: "blur(40px) saturate(1.8)",
-    WebkitBackdropFilter: "blur(40px) saturate(1.8)",
+    background: "linear-gradient(to right, rgba(248,248,248,0.98) 0%, rgba(245,245,245,0.92) 70%, rgba(240,240,240,0.60) 100%)",
+    backdropFilter: "blur(40px) saturate(1.4)",
+    WebkitBackdropFilter: "blur(40px) saturate(1.4)",
   };
 
   return (
