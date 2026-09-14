@@ -27,11 +27,9 @@ main .text-4xl  { font-size: 2.14rem; }
 main .text-5xl  { font-size: 2.85rem; }
 
 @media (max-width: 767px) {
-  .page-scroll {
-    padding-bottom: 0 !important;
-  }
-  /* Force all scroll containers to have no bottom padding on mobile */
-  [class*="overflow-y-auto"] {
+  .page-scroll,
+  [class*="overflow-y-auto"],
+  [class*="overflow-y-scroll"] {
     padding-bottom: 0 !important;
   }
 }
