@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
+import { useBottomNav } from "@/lib/bottom-nav-context";
 
 const allTabs = [
   { href: "/",             label: "Dashboard",  icon: LayoutDashboard },
@@ -27,6 +28,8 @@ export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [intakeBadge, setIntakeBadge] = useState(0);
+  const [scrollVisible, setScrollVisible] = useState(true);
+  const { hidden } = useBottomNav();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -44,6 +47,39 @@ export default function BottomNav() {
     if (pathname === "/segnalazioni") resetIntakeBadge();
   }, [pathname]);
 
+  // Auto-hide on scroll down, show on scroll up — Instagram style
+  useEffect(() => {
+    let lastY = 0;
+
+    const onScroll = (e: Event) => {
+      const el = e.target as HTMLElement;
+      const y = el.scrollTop ?? 0;
+
+      if (y <= 0) {
+        setScrollVisible(true);
+        lastY = 0;
+        return;
+      }
+      if (y > lastY + 6) {
+        setScrollVisible(false); // scrolling down → hide
+      } else if (y < lastY - 6) {
+        setScrollVisible(true);  // scrolling up → show
+      }
+      lastY = y;
+    };
+
+    // capture:true catches scroll events on any child element (they don't bubble)
+    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => document.removeEventListener("scroll", onScroll, { capture: true } as EventListenerOptions);
+  }, []);
+
+  // Reset scroll visibility whenever the route changes
+  useEffect(() => {
+    setScrollVisible(true);
+  }, [pathname]);
+
+  const visible = scrollVisible && !hidden;
+
   return (
     <div
       className="fixed z-50 md:hidden"
@@ -51,18 +87,21 @@ export default function BottomNav() {
         left: 0,
         right: 0,
         bottom: 0,
-        background: "rgba(255,255,255,0.92)",
+        background: "rgba(255,255,255,0.94)",
         backdropFilter: "blur(24px) saturate(1.8)",
         WebkitBackdropFilter: "blur(24px) saturate(1.8)",
         borderTop: "0.5px solid rgba(0,0,0,0.10)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        transform: visible ? "translateY(0)" : "translateY(110%)",
+        transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
+        willChange: "transform",
       }}
     >
       <nav
         className="flex items-center"
         style={{ overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
       >
-        <style>{`nav::-webkit-scrollbar { display: none; }`}</style>
+        <style>{`nav::-webkit-scrollbar{display:none}`}</style>
         {allTabs.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href;
           const showBadge = href === "/segnalazioni" && intakeBadge > 0;
