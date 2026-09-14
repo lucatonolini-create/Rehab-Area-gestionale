@@ -1145,7 +1145,7 @@ export default function PerformancePage() {
       )}
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto overscroll-none px-4 md:px-6" style={{ paddingTop: "1.5rem", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 88px)" }}>
+      <div className="flex-1 overflow-y-auto overscroll-none px-4 md:px-6" style={{ paddingTop: "1.5rem", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 54px)" }}>
 
         {/* Empty states */}
         {atletiConDati.length === 0 && (
