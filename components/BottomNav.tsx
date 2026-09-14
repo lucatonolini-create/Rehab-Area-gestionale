@@ -50,20 +50,22 @@ export default function BottomNav() {
 
   return (
     <div
-      className="fixed left-0 right-0 z-50 md:hidden"
+      className="fixed z-50 md:hidden"
       style={{
-        bottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
-        padding: "0 10px",
+        left: 10,
+        right: 10,
+        bottom: 0,
+        background: "rgba(255,255,255,0.90)",
+        backdropFilter: "blur(24px) saturate(1.8)",
+        WebkitBackdropFilter: "blur(24px) saturate(1.8)",
+        borderRadius: "22px 22px 0 0",
+        boxShadow: "0 -2px 20px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.07)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
       <nav
         className="flex items-center"
         style={{
-          background: "rgba(255,255,255,0.88)",
-          backdropFilter: "blur(24px) saturate(1.8)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.8)",
-          borderRadius: 22,
-          boxShadow: "0 2px 24px rgba(0,0,0,0.13), 0 0 0 0.5px rgba(0,0,0,0.07)",
           overflowX: "auto",
           scrollbarWidth: "none",
           WebkitOverflowScrolling: "touch",
