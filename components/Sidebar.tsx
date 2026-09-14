@@ -96,7 +96,7 @@ export default function Sidebar() {
       <aside
         style={{
           background: mobileAperta
-            ? "rgba(160,160,160,0.38)"
+            ? "rgba(150,150,150,0.72)"
             : "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)",
           backdropFilter: "blur(40px) saturate(1.8)",
           WebkitBackdropFilter: "blur(40px) saturate(1.8)",
@@ -206,6 +206,10 @@ export default function Sidebar() {
             </div>
           )}
         </div>
+        {/* Copre la safe area home indicator su iOS */}
+        {mobileAperta && (
+          <div className="shrink-0" style={{ height: "env(safe-area-inset-bottom, 0px)", background: "rgba(150,150,150,0.72)" }} />
+        )}
       </aside>
     </>
   );
