@@ -695,10 +695,6 @@ export default function EpidemiologiaPage() {
           <p className="text-sm text-gray-500 mt-1">Presenze, carichi di lavoro e RPE mensile</p>
         </div>
         <div className="flex gap-2 shrink-0">
-          <button onClick={() => setShowUpload(true)}
-            className="flex items-center gap-1.5 bg-[#C8102E] text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#a80d26] transition-colors">
-            <Upload className="w-3.5 h-3.5" /> Carica File
-          </button>
           <button onClick={async () => {
             setPdfLoading(true);
             try {

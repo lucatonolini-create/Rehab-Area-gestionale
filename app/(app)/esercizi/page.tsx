@@ -1100,9 +1100,15 @@ export default function EserciziPage() {
 
   return (
     <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 54px)" }}>
-      <div className="mb-4 text-left">
-        <h1 className="text-2xl font-bold text-gray-900">Programmi di Lavoro</h1>
-        <p className="text-sm text-gray-500 mt-1">{atleti.length} atleti</p>
+      <div className="mb-4 flex items-center justify-between">
+        <div className="text-left">
+          <h1 className="text-2xl font-bold text-gray-900">Programmi di Lavoro</h1>
+          <p className="text-sm text-gray-500 mt-1">{atleti.length} atleti</p>
+        </div>
+        <button onClick={apriNuovo}
+          className="flex items-center gap-1.5 bg-[#C8102E] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-800 shrink-0">
+          <Plus className="w-3.5 h-3.5" /> Nuovo programma
+        </button>
       </div>
       {/* Azioni principali – 2 righe compatte */}
       <div className="mb-6 bg-gray-50 rounded-2xl p-3 space-y-2">
@@ -1145,11 +1151,6 @@ export default function EserciziPage() {
             className="flex items-center gap-1 border border-gray-200 text-gray-600 px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50 shrink-0 whitespace-nowrap bg-white">
             <FileDown className="w-3.5 h-3.5" />
             {esportandoCSVGiorno ? "…" : "CSV"}
-          </button>
-          <div className="flex-1" />
-          <button onClick={apriNuovo}
-            className="flex items-center gap-1.5 bg-[#C8102E] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-800 shrink-0">
-            <Plus className="w-3.5 h-3.5" /> Nuovo programma
           </button>
         </div>
         {/* Riga 2: periodo */}

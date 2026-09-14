@@ -1003,21 +1003,23 @@ export default function NtliPage() {
             <h1 className="text-2xl font-bold text-gray-900">NTLI</h1>
             <p className="text-sm text-gray-500 mt-1">Monitoraggio infortuni NTL</p>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              onClick={() => { setEsportando("csv"); try { esportaCSVNtli(ntliList, dailyAll); } finally { setEsportando(null); } }}
-              disabled={!!esportando || ntliList.length === 0}
-              className="flex items-center gap-1 border border-green-300 text-green-700 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
-              <Download className="w-3.5 h-3.5" />
-              CSV
-            </button>
-            <button
-              onClick={async () => { setEsportando("pdf"); try { await esportaPDFNtli(ntliList, dailyAll); } finally { setEsportando(null); } }}
-              disabled={!!esportando || ntliList.length === 0}
-              className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
-              <FileText className="w-3.5 h-3.5" />
-              PDF
-            </button>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => { setEsportando("csv"); try { esportaCSVNtli(ntliList, dailyAll); } finally { setEsportando(null); } }}
+                disabled={!!esportando || ntliList.length === 0}
+                className="flex items-center gap-1 border border-green-300 text-green-700 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
+                <Download className="w-3.5 h-3.5" />
+                CSV
+              </button>
+              <button
+                onClick={async () => { setEsportando("pdf"); try { await esportaPDFNtli(ntliList, dailyAll); } finally { setEsportando(null); } }}
+                disabled={!!esportando || ntliList.length === 0}
+                className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
+                <FileText className="w-3.5 h-3.5" />
+                PDF
+              </button>
+            </div>
             <button onClick={() => { setEditNtli(undefined); setShowForm(true); }}
               className="flex items-center gap-1.5 bg-[#C8102E] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-800">
               <Plus className="w-3.5 h-3.5" /> Nuovo NTLI

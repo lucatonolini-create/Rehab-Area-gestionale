@@ -1067,8 +1067,17 @@ export default function PerformancePage() {
             <h1 className="text-2xl font-bold text-gray-900">Performance</h1>
             <p className="text-sm text-gray-500 mt-1">Test, andamento GPS e carico</p>
           </div>
-          <div className="flex">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col items-end gap-1.5">
+            {/* PDF */}
+            <button
+              onClick={exportPdf}
+              disabled={!selectedAtleta || sessions.length === 0}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-40 hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: RED }}
+            >
+              <FileDown className="w-4 h-4" />
+              PDF
+            </button>
             {/* View toggle */}
             <div className="flex rounded-lg border border-gray-200 overflow-hidden">
               <button
@@ -1092,18 +1101,6 @@ export default function PerformancePage() {
                 Tabella
               </button>
             </div>
-
-            {/* PDF */}
-            <button
-              onClick={exportPdf}
-              disabled={!selectedAtleta || sessions.length === 0}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-40 hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: RED }}
-            >
-              <FileDown className="w-4 h-4" />
-              PDF
-            </button>
-          </div>
           </div>
         </div>
       </div>

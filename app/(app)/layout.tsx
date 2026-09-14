@@ -19,6 +19,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <IntakeNotifier />
         <PushSetup />
         <SessionTimeout />
+        {/* Gradient fade above nav — masks content scrolling behind the pill */}
+        <div
+          className="fixed left-0 right-0 pointer-events-none md:hidden"
+          style={{
+            bottom: "calc(env(safe-area-inset-bottom, 0px) + 54px)",
+            height: "48px",
+            background: "linear-gradient(to bottom, transparent, white)",
+            zIndex: 49,
+          }}
+        />
         <BottomNav />
       </div>
     </BottomNavProvider>

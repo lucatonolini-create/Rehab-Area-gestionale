@@ -1372,7 +1372,19 @@ export default function AnalisiPage() {
           <h1 className="text-2xl font-bold text-gray-900">Analisi</h1>
           <p className="text-sm text-gray-500 mt-1">Statistiche e report infortuni</p>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => handleExport("excel")} disabled={!!esportando}
+              className="flex items-center gap-1 border border-green-300 text-green-700 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
+              <Download className="w-3.5 h-3.5" />
+              {esportando?.includes("excel") ? "..." : "CSV"}
+            </button>
+            <button onClick={() => handleExport("pdf")} disabled={!!esportando}
+              className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
+              <FileText className="w-3.5 h-3.5" />
+              {esportando?.includes("pdf") ? "..." : "PDF"}
+            </button>
+          </div>
           <div className="flex bg-gray-100 rounded-lg p-0.5">
             {(["overview", "report"] as AnalisiTab[]).map((t) => (
               <button key={t} onClick={() => setTab(t)}
@@ -1383,16 +1395,6 @@ export default function AnalisiPage() {
               </button>
             ))}
           </div>
-          <button onClick={() => handleExport("excel")} disabled={!!esportando}
-            className="flex items-center gap-1 border border-green-300 text-green-700 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
-            <Download className="w-3.5 h-3.5" />
-            {esportando?.includes("excel") ? "..." : "CSV"}
-          </button>
-          <button onClick={() => handleExport("pdf")} disabled={!!esportando}
-            className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
-            <FileText className="w-3.5 h-3.5" />
-            {esportando?.includes("pdf") ? "..." : "PDF"}
-          </button>
         </div>
       </div>
 
