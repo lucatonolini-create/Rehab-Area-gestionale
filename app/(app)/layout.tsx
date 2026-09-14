@@ -23,6 +23,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SessionTimeout />
       </div>
       <BottomNav />
+      {/* iOS standalone PWA: outerH - innerH = safeTop (47px). CSS bottom:0 = innerH,
+          leaving a physical gap below. This filler extends into that gap. */}
+      <div
+        className="fixed md:hidden"
+        style={{
+          left: 0,
+          right: 0,
+          bottom: "calc(-1 * env(safe-area-inset-top, 0px))",
+          height: "env(safe-area-inset-top, 0px)",
+          background: "rgba(255,255,255,0.88)",
+          backdropFilter: "blur(24px) saturate(1.8)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.8)",
+          zIndex: 49,
+        }}
+      />
       <DiagPanel />
     </BottomNavProvider>
   );
