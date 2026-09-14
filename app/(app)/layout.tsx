@@ -8,7 +8,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="flex overflow-hidden bg-white"
-      style={{ height: "100dvh", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      style={{ position: "fixed", inset: 0 }}
     >
       <Sidebar />
       <main className="flex-1 overflow-hidden">{children}</main>
