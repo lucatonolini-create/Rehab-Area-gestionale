@@ -1110,11 +1110,11 @@ export default function EserciziPage() {
           </button>
         </div>
       </div>
-      {/* Azioni principali – 2 righe compatte */}
-      <div className="mb-6 bg-gray-50 rounded-2xl p-3 space-y-2">
-        {/* Riga 1: data a sx, PDF+CSV a dx */}
-        <div className="flex items-center justify-between gap-1.5">
-          <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
+      {/* Azioni principali */}
+      <div className="mb-6 bg-gray-50 rounded-2xl p-3 space-y-3">
+        {/* Riga giornaliero: data sx — PDF CSV dx */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1.5 bg-white shrink-0">
             <input
               type="date"
               value={dataGiorno}
@@ -1122,7 +1122,7 @@ export default function EserciziPage() {
               className="text-xs text-gray-700 focus:outline-none bg-transparent"
             />
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5">
             <button
               disabled={esportandoGiorno}
               onClick={async () => {
@@ -1155,11 +1155,15 @@ export default function EserciziPage() {
             </button>
           </div>
         </div>
-        {/* Riga 2: date Da/A impilate a sx, bottoni periodo impilati a dx */}
-        <div className="flex items-center justify-between gap-1.5">
+
+        {/* Separatore */}
+        <div className="border-t border-gray-200" />
+
+        {/* Riga periodo: date Da/A sx — bottoni periodo dx */}
+        <div className="flex items-start justify-between gap-2">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
-              <span className="text-xs text-gray-400">Da</span>
+              <span className="text-xs text-gray-400 w-4 shrink-0">Da</span>
               <input
                 type="date"
                 value={dataInizioIntervallo}
@@ -1168,7 +1172,7 @@ export default function EserciziPage() {
               />
             </div>
             <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
-              <span className="text-xs text-gray-400">A</span>
+              <span className="text-xs text-gray-400 w-4 shrink-0">A</span>
               <input
                 type="date"
                 value={dataFineIntervallo}

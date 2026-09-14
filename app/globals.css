@@ -31,9 +31,9 @@ main .text-5xl  { font-size: 2.85rem; }
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 
-  /* Last item clears the nav pill top — content scrolls freely behind the blurred nav */
+  /* Last item clears the nav pill — enough room to scroll last card fully above nav */
   .page-scroll {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 90px) !important;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important;
   }
 }
 
