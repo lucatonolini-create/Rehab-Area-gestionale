@@ -84,15 +84,15 @@ export default function BottomNav() {
     <div
       className="fixed z-50 md:hidden"
       style={{
-        left: 10,
-        right: 10,
+        left: 0,
+        right: 0,
         bottom: 0,
         background: "rgba(255,255,255,0.96)",
         backdropFilter: "blur(24px) saturate(1.8)",
         WebkitBackdropFilter: "blur(24px) saturate(1.8)",
         borderRadius: "20px 20px 0 0",
-        boxShadow: "0 -2px 16px rgba(0,0,0,0.10), 0 0 40px rgba(0,0,0,0.06)",
-        transform: visible ? "translateY(0)" : "translateY(120%)",
+        boxShadow: "0 -2px 20px rgba(0,0,0,0.10)",
+        transform: visible ? "translateY(0)" : "translateY(110%)",
         transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
         willChange: "transform",
       }}
