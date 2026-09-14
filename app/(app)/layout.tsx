@@ -19,13 +19,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <IntakeNotifier />
         <PushSetup />
         <SessionTimeout />
-        {/* Fade cards as they scroll under nav + cover safe-area white zone */}
+        {/* Cover only the safe-area strip at the very bottom */}
         <div
           className="fixed left-0 right-0 pointer-events-none md:hidden"
           style={{
             bottom: 0,
-            height: "calc(env(safe-area-inset-bottom, 0px) + 72px)",
-            background: "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.75) 45%, white 75%)",
+            height: "env(safe-area-inset-bottom, 0px)",
+            background: "white",
             zIndex: 49,
           }}
         />
