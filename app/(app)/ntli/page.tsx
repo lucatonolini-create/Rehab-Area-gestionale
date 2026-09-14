@@ -915,32 +915,32 @@ export default function NtliPage() {
 
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-4 text-center no-print">
-          <h1 className="text-2xl font-bold text-gray-900">NTLI</h1>
-          <p className="text-sm text-gray-500 mt-1">Monitoraggio infortuni NTL</p>
-        </div>
-        <div className="mb-4 no-print space-y-2">
-          <div className="flex justify-center">
+        <div className="mb-4 md:mb-6 md:flex md:items-start md:justify-between no-print">
+          <div className="text-center md:text-left mb-3 md:mb-0">
+            <h1 className="text-2xl font-bold text-gray-900">NTLI</h1>
+            <p className="text-sm text-gray-500 mt-1">Monitoraggio infortuni NTL</p>
+          </div>
+          <div className="flex flex-col items-center md:items-end gap-2 shrink-0">
             <button onClick={() => { setEditNtli(undefined); setShowForm(true); }}
               className="flex items-center gap-2 bg-[#C8102E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-red-800">
               <Plus className="w-4 h-4" /> Nuovo NTLI
             </button>
-          </div>
-          <div className="flex items-center justify-center gap-2">
-            <button
-              onClick={() => { setEsportando("csv"); try { esportaCSVNtli(ntliList, dailyAll); } finally { setEsportando(null); } }}
-              disabled={!!esportando || ntliList.length === 0}
-              className="flex items-center gap-1.5 border border-green-300 text-green-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
-              <Download className="w-3.5 h-3.5" />
-              {esportando === "csv" ? "..." : "CSV"}
-            </button>
-            <button
-              onClick={async () => { setEsportando("pdf"); try { await esportaPDFNtli(ntliList, dailyAll); } finally { setEsportando(null); } }}
-              disabled={!!esportando || ntliList.length === 0}
-              className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
-              <FileText className="w-3.5 h-3.5" />
-              {esportando === "pdf" ? "..." : "PDF"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setEsportando("csv"); try { esportaCSVNtli(ntliList, dailyAll); } finally { setEsportando(null); } }}
+                disabled={!!esportando || ntliList.length === 0}
+                className="flex items-center gap-1.5 border border-green-300 text-green-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
+                <Download className="w-3.5 h-3.5" />
+                {esportando === "csv" ? "..." : "CSV"}
+              </button>
+              <button
+                onClick={async () => { setEsportando("pdf"); try { await esportaPDFNtli(ntliList, dailyAll); } finally { setEsportando(null); } }}
+                disabled={!!esportando || ntliList.length === 0}
+                className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
+                <FileText className="w-3.5 h-3.5" />
+                {esportando === "pdf" ? "..." : "PDF"}
+              </button>
+            </div>
           </div>
         </div>
 

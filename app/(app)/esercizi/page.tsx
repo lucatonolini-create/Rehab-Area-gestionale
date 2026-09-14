@@ -1100,7 +1100,7 @@ export default function EserciziPage() {
 
   return (
     <div className="h-full overflow-y-auto overscroll-none px-6 pb-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
-      <div className="mb-4 text-center">
+      <div className="mb-4 text-center md:text-left">
         <h1 className="text-2xl font-bold text-gray-900">Programmi di Lavoro</h1>
         <p className="text-sm text-gray-500 mt-1">{atleti.length} atleti</p>
       </div>

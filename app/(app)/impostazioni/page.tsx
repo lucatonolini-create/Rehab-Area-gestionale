@@ -683,17 +683,19 @@ export default function ImpostazioniPage() {
 
   return (
     <div className="h-full overflow-y-auto overscroll-none px-6 pb-6 max-w-2xl" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
-      <div className="mb-4 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Impostazioni</h1>
-        <p className="text-sm text-gray-500 mt-1">Configura il tuo gestionale</p>
-      </div>
-      <div className="flex justify-center mb-4">
-        <button onClick={salva}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            salvato ? "bg-green-500 text-white" : "bg-[#C8102E] text-white hover:bg-red-800"
-          }`}>
-          {salvato ? <><Check className="w-4 h-4" /> Salvato!</> : <><Save className="w-4 h-4" /> Salva</>}
-        </button>
+      <div className="mb-4 md:mb-6 md:flex md:items-center md:justify-between">
+        <div className="text-center md:text-left mb-3 md:mb-0">
+          <h1 className="text-2xl font-bold text-gray-900">Impostazioni</h1>
+          <p className="text-sm text-gray-500 mt-1">Configura il tuo gestionale</p>
+        </div>
+        <div className="flex justify-center md:justify-end">
+          <button onClick={salva}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              salvato ? "bg-green-500 text-white" : "bg-[#C8102E] text-white hover:bg-red-800"
+            }`}>
+            {salvato ? <><Check className="w-4 h-4" /> Salvato!</> : <><Save className="w-4 h-4" /> Salva</>}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-5">

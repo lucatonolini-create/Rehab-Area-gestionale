@@ -1249,20 +1249,22 @@ export default function ProgressiPage() {
 
   return (
     <div className="h-full overflow-y-auto overscroll-none px-6 pb-6" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
-      <div className="mb-4 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Progressi</h1>
-        <p className="text-sm text-gray-500 mt-1">Aggiorna e scarica la scheda riabilitativa</p>
-      </div>
-      <div className="flex justify-center mb-4">
-        <div className="flex bg-gray-100 rounded-xl p-1">
-          {(["progressi", "report"] as PageTab[]).map((t) => (
-            <button key={t} onClick={() => setPageTab(t)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                pageTab === t ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
-              }`}>
-              {t === "progressi" ? "Progressi" : "Report"}
-            </button>
-          ))}
+      <div className="mb-4 md:mb-6 md:flex md:items-center md:justify-between">
+        <div className="text-center md:text-left mb-3 md:mb-0">
+          <h1 className="text-2xl font-bold text-gray-900">Progressi</h1>
+          <p className="text-sm text-gray-500 mt-1">Aggiorna e scarica la scheda riabilitativa</p>
+        </div>
+        <div className="flex justify-center md:justify-end">
+          <div className="flex bg-gray-100 rounded-xl p-1">
+            {(["progressi", "report"] as PageTab[]).map((t) => (
+              <button key={t} onClick={() => setPageTab(t)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  pageTab === t ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+                }`}>
+                {t === "progressi" ? "Progressi" : "Report"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

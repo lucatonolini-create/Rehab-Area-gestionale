@@ -1367,13 +1367,13 @@ export default function AnalisiPage() {
     <div className="flex h-full flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto overscroll-none px-6"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}>
-      <div className="mb-4 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Analisi</h1>
-        <p className="text-sm text-gray-500 mt-1">Statistiche e report infortuni</p>
-      </div>
-      <div className="mb-4 space-y-2">
-        {/* Tab switcher */}
-        <div className="flex justify-center">
+      <div className="mb-4 md:mb-6 md:flex md:items-start md:justify-between">
+        <div className="text-center md:text-left mb-3 md:mb-0">
+          <h1 className="text-2xl font-bold text-gray-900">Analisi</h1>
+          <p className="text-sm text-gray-500 mt-1">Statistiche e report infortuni</p>
+        </div>
+        <div className="flex flex-col items-center md:items-end gap-2 shrink-0">
+          {/* Tab switcher */}
           <div className="flex bg-gray-100 rounded-xl p-1">
             {(["overview", "report"] as AnalisiTab[]).map((t) => (
               <button key={t} onClick={() => setTab(t)}
@@ -1384,19 +1384,19 @@ export default function AnalisiPage() {
               </button>
             ))}
           </div>
-        </div>
-        {/* Export buttons */}
-        <div className="flex justify-center gap-2">
-          <button onClick={() => handleExport("excel")} disabled={!!esportando}
-            className="flex items-center gap-1.5 border border-green-300 text-green-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
-            <Download className="w-3.5 h-3.5" />
-            {esportando?.includes("excel") ? "..." : "CSV"}
-          </button>
-          <button onClick={() => handleExport("pdf")} disabled={!!esportando}
-            className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
-            <FileText className="w-3.5 h-3.5" />
-            {esportando?.includes("pdf") ? "..." : "PDF"}
-          </button>
+          {/* Export buttons */}
+          <div className="flex gap-2">
+            <button onClick={() => handleExport("excel")} disabled={!!esportando}
+              className="flex items-center gap-1.5 border border-green-300 text-green-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-green-50 disabled:opacity-50 transition-colors">
+              <Download className="w-3.5 h-3.5" />
+              {esportando?.includes("excel") ? "..." : "CSV"}
+            </button>
+            <button onClick={() => handleExport("pdf")} disabled={!!esportando}
+              className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
+              <FileText className="w-3.5 h-3.5" />
+              {esportando?.includes("pdf") ? "..." : "PDF"}
+            </button>
+          </div>
         </div>
       </div>
 
