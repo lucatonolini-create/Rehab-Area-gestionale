@@ -209,20 +209,19 @@ async function esportaPDFEpi(params: {
     return y;
   }
 
-  function newPage(): number {
-    doc.addPage(); addHeader(); return HDR + 10;
-  }
-
-  // Horizontal bar chart – all bars use Cremonese red
+  // Horizontal bar chart – all bars use Cremonese red, labels wrap if long
   function drawHBars(items: [string, number][], y: number, maxVal: number, subLabel?: string): number {
     if (items.length === 0) return y;
     if (subLabel) { y = subTitle(subLabel, y); }
-    const LBL = 54; const BAR = W - M * 2 - LBL - 16; const RH = 8; const BAR_H = 4.5;
+    const LBL = 56; const BAR = W - M * 2 - LBL - 16; const BAR_H = 4.5; const LINE_H = 3.8;
     for (const [lbl, val] of items) {
+      doc.setFontSize(7); doc.setFont("helvetica", "normal");
+      const lines: string[] = doc.splitTextToSize(lbl, LBL - 3);
+      const RH = Math.max(9, lines.length * LINE_H + 4);
       y = checkPage(y, RH + 2);
       const pct = maxVal > 0 ? val / maxVal : 0;
-      doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...dark);
-      doc.text(lbl.length > 24 ? lbl.slice(0, 22) + "…" : lbl, M, y + RH * 0.6);
+      doc.setTextColor(...dark);
+      doc.text(lines, M, y + LINE_H);
       // background track
       doc.setFillColor(...lightGray); doc.roundedRect(M + LBL, y + (RH - BAR_H) / 2, BAR, BAR_H, 1.2, 1.2, "F");
       // filled bar
@@ -231,11 +230,16 @@ async function esportaPDFEpi(params: {
         doc.roundedRect(M + LBL, y + (RH - BAR_H) / 2, Math.max(BAR * pct, 2), BAR_H, 1.2, 1.2, "F");
       }
       // value label
-      doc.setFontSize(7.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...dark);
-      doc.text(String(val), M + LBL + BAR + 3, y + RH * 0.6);
+      doc.setFontSize(7); doc.setFont("helvetica", "bold"); doc.setTextColor(...dark);
+      doc.text(String(val), M + LBL + BAR + 3, y + RH * 0.55);
       y += RH + 1.5;
     }
     return y + 4;
+  }
+
+  // Estimate height of a bar section (title + n bars) for checkPage
+  function sectionH(n: number, extraLines = 0): number {
+    return 12 + n * 12 + extraLines * 4;
   }
 
   // KPI summary grid
@@ -277,25 +281,19 @@ async function esportaPDFEpi(params: {
   ], y);
 
   if (inf.perTipo.length > 0) {
-    y = newPage();
+    y = checkPage(y, sectionH(inf.perTipo.length));
     y = secTitle("Tipo di Infortunio", y);
     y = drawHBars(inf.perTipo, y, inf.perTipo[0][1]);
   }
 
   if (inf.perMeccanismo.length > 0) {
-    y = newPage();
+    y = checkPage(y, sectionH(inf.perMeccanismo.length));
     y = secTitle("Meccanismo di Infortunio", y);
     y = drawHBars(inf.perMeccanismo, y, inf.perMeccanismo[0][1]);
   }
 
-  if (inf.perOsiicsCategoria.length > 0) {
-    y = newPage();
-    y = secTitle("Classificazione OSIICS — Categoria Lesione", y);
-    y = drawHBars(inf.perOsiicsCategoria, y, inf.perOsiicsCategoria[0][1]);
-  }
-
   if (inf.perOsiicsCodice.length > 0) {
-    y = newPage();
+    y = checkPage(y, 14 + inf.perOsiicsCodice.length * 12);
     y = secTitle("Classificazione OSIICS — Codici Specifici", y);
     autoTable(doc, {
       startY: y,
@@ -313,7 +311,7 @@ async function esportaPDFEpi(params: {
 
   // FIICCS sections
   if (inf.perSeduta.length > 0) {
-    y = newPage();
+    y = checkPage(y, sectionH(inf.perSeduta.length, inf.conPalla > 0 || inf.senzaPalla > 0 ? 2 : 0));
     y = secTitle("Contesto dell'Infortunio — Tipo Seduta (FIICCS)", y);
     y = drawHBars(inf.perSeduta, y, inf.perSeduta[0][1]);
     if (inf.conPalla > 0 || inf.senzaPalla > 0) {
@@ -324,49 +322,49 @@ async function esportaPDFEpi(params: {
   }
 
   if (inf.perAttivita.length > 0) {
-    y = newPage();
+    y = checkPage(y, sectionH(inf.perAttivita.length));
     y = secTitle("Attività Fisica al Momento dell'Infortunio (FIICCS)", y);
     y = drawHBars(inf.perAttivita, y, inf.perAttivita[0][1]);
   }
 
   if (inf.perInsorgenza.length > 0) {
-    y = newPage();
+    y = checkPage(y, sectionH(inf.perInsorgenza.length));
     y = secTitle("Modalità di Insorgenza (FIICCS)", y);
     y = drawHBars(inf.perInsorgenza, y, inf.perInsorgenza[0][1]);
   }
 
   if (inf.perFaseGioco.length > 0) {
-    y = newPage();
+    y = checkPage(y, sectionH(inf.perFaseGioco.length));
     y = secTitle("Fase di Gioco (FIICCS)", y);
     y = drawHBars(inf.perFaseGioco, y, inf.perFaseGioco[0][1]);
   }
 
   if (inf.perSede.length > 0) {
-    y = newPage();
+    y = checkPage(y, sectionH(inf.perSede.length));
     y = secTitle(`Sede Partita — ${inf.inPartitiCount} infortuni in partita (FIICCS)`, y);
     y = drawHBars(inf.perSede, y, inf.perSede[0][1]);
   }
 
   if (inf.perTempo.length > 0) {
-    y = newPage();
+    y = checkPage(y, sectionH(inf.perTempo.length));
     y = secTitle("Tempo della Partita (FIICCS)", y);
     y = drawHBars(inf.perTempo, y, inf.perTempo[0][1]);
   }
 
   if (inf.perTerrenoPartita.length > 0) {
-    y = newPage();
+    y = checkPage(y, sectionH(inf.perTerrenoPartita.length));
     y = secTitle("Terreno di Gioco — Partita (FIICCS)", y);
     y = drawHBars(inf.perTerrenoPartita, y, inf.perTerrenoPartita[0][1]);
   }
 
   if (inf.perTerrenoAllenamento.length > 0) {
-    y = newPage();
+    y = checkPage(y, sectionH(inf.perTerrenoAllenamento.length));
     y = secTitle("Terreno di Gioco — Allenamento (FIICCS)", y);
     y = drawHBars(inf.perTerrenoAllenamento, y, inf.perTerrenoAllenamento[0][1]);
   }
 
   if (inf.perLato.length > 0 || inf.perCategoria.length > 0) {
-    y = newPage();
+    y = checkPage(y, sectionH(inf.perLato.length + inf.perCategoria.length + 2));
     y = secTitle("Distribuzione", y);
     if (inf.perLato.length > 0) y = drawHBars(inf.perLato, y, inf.perLato[0][1], "Lato");
     if (inf.perCategoria.length > 0) y = drawHBars(inf.perCategoria, y, inf.perCategoria[0][1], "Per Categoria");
