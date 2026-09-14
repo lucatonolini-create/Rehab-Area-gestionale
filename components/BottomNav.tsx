@@ -67,7 +67,6 @@ export default function BottomNav() {
           overflowX: "auto",
           scrollbarWidth: "none",
           WebkitOverflowScrolling: "touch",
-          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
         }}
       >
         <style>{`nav::-webkit-scrollbar { display: none; }`}</style>
