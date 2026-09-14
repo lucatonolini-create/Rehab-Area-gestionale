@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Users, TrendingUp, Dumbbell, Settings, Menu, X, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity, ShieldAlert,
+  LayoutDashboard, Users, TrendingUp, Dumbbell, Settings, Menu, ChevronLeft, BarChart2, LogOut, HeartPulse, Link2, Activity, ShieldAlert,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
@@ -37,25 +37,19 @@ const navItems = [
   { href: "/impostazioni", label: "Impostazioni", icon: Settings },
 ];
 
-const RED     = "#C8102E";
-const DARK    = "#2B2B2B";
-const SIDEBAR = "#B8B8B8";
+const RED = "#C8102E";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [mobileAperta, setMobileAperta] = useState(false);
-  const [collapsed, setCollapsed]       = useState(false);
-  const [intakeBadge, setIntakeBadge]   = useState(0);
-  const [userEmail, setUserEmail]       = useState<string | null>(null);
-
-  useEffect(() => { setMobileAperta(false); }, [pathname]);
+  const [collapsed, setCollapsed] = useState(false);
+  const [intakeBadge, setIntakeBadge] = useState(0);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null));
   }, []);
 
-  // Badge intake: leggi da localStorage e ascolta aggiornamenti in tempo reale
   useEffect(() => {
     setIntakeBadge(getIntakeBadgeCount());
     const handler = (e: Event) => setIntakeBadge((e as CustomEvent<number>).detail);
@@ -63,11 +57,9 @@ export default function Sidebar() {
     return () => window.removeEventListener("intake-badge-update", handler);
   }, []);
 
-  // Quando l'utente apre la pagina Link, azzera il badge
   useEffect(() => {
     if (pathname === "/segnalazioni") resetIntakeBadge();
   }, [pathname]);
-
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -75,140 +67,96 @@ export default function Sidebar() {
   };
 
   return (
-    <>
-      {/* Overlay mobile */}
-      {mobileAperta && (
-        <div className="fixed inset-0 bg-black/25 z-30 md:hidden"
-          style={{ backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" }}
-          onClick={() => setMobileAperta(false)} />
-      )}
-
-      {/* Bottone hamburger — mobile, quando sidebar è chiusa */}
-      {!mobileAperta && (
-        <button onClick={() => setMobileAperta(true)}
-          className="fixed left-4 z-50 md:hidden text-white p-2.5 rounded-xl shadow-lg"
-          style={{ top: "calc(env(safe-area-inset-top, 0px) + 1rem)", backgroundColor: RED }}>
-          <Menu className="w-5 h-5" />
-        </button>
-      )}
-
-      {/* Sidebar */}
-      <aside
-        style={{
-          background: mobileAperta
-            ? "rgba(150,150,150,0.72)"
-            : "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)",
-          backdropFilter: "blur(40px) saturate(1.8)",
-          WebkitBackdropFilter: "blur(40px) saturate(1.8)",
-          maskImage: mobileAperta
-            ? "linear-gradient(to right, black 0%, black 58%, transparent 100%)"
-            : "none",
-          WebkitMaskImage: mobileAperta
-            ? "linear-gradient(to right, black 0%, black 58%, transparent 100%)"
-            : "none",
-          bottom: mobileAperta ? "-34px" : undefined,
-        }}
-        className={`
-          flex flex-col text-gray-800 shrink-0
-          transition-all duration-300 ease-in-out
-          fixed left-0 z-40 top-0 bottom-0
-          md:static md:translate-x-0
-          ${mobileAperta ? "translate-x-0 w-full" : "-translate-x-full w-64"}
-          ${collapsed ? "md:w-16" : "md:w-64"}
-        `}
+    <aside
+      style={{
+        background: "linear-gradient(to right, rgba(130,130,130,0.97) 0%, rgba(160,160,160,0.30) 60%, transparent 100%)",
+        backdropFilter: "blur(40px) saturate(1.8)",
+        WebkitBackdropFilter: "blur(40px) saturate(1.8)",
+      }}
+      className={`hidden md:flex flex-col text-gray-800 shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}
+    >
+      {/* Header */}
+      <div
+        className={`border-b border-black/8 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}
+        style={{ paddingTop: `calc(env(safe-area-inset-top, 0px) + ${collapsed ? "0.75rem" : "1.25rem"})` }}
       >
-        {/* Header */}
-        <div
-          className={`border-b border-black/8 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}
-          style={{ paddingTop: `calc(env(safe-area-inset-top, 0px) + ${collapsed ? "0.75rem" : "1.25rem"})` }}
-        >
-          {!collapsed && (
-            <div className="flex items-center gap-3">
-              <AppLogo className="w-10 h-10 rounded-xl shrink-0" />
-              <div>
-                <h1 className="font-bold text-sm text-gray-900 leading-tight">Rehab Area</h1>
-              </div>
+        {!collapsed && (
+          <div className="flex items-center gap-3">
+            <AppLogo className="w-10 h-10 rounded-xl shrink-0" />
+            <div>
+              <h1 className="font-bold text-sm text-gray-900 leading-tight">Rehab Area</h1>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Chiudi su mobile */}
-          {mobileAperta && !collapsed && (
-            <button onClick={() => setMobileAperta(false)} className="md:hidden text-gray-500 hover:text-gray-900">
-              <X className="w-5 h-5" />
-            </button>
-          )}
+        {collapsed ? (
+          <button onClick={() => setCollapsed(false)} className="text-gray-500 hover:text-gray-900" title="Espandi menu">
+            <Menu className="w-5 h-5" />
+          </button>
+        ) : (
+          <button onClick={() => setCollapsed(true)} className="text-gray-500 hover:text-gray-900 ml-2" title="Nascondi menu">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        )}
+      </div>
 
-          {/* Toggle collapse su desktop */}
-          {collapsed ? (
-            <button onClick={() => setCollapsed(false)} className="hidden md:flex text-gray-500 hover:text-gray-900" title="Espandi menu">
-              <Menu className="w-5 h-5" />
-            </button>
-          ) : (
-            <button onClick={() => setCollapsed(true)} className="hidden md:flex text-gray-500 hover:text-gray-900 ml-2" title="Nascondi menu">
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-
-        {/* Nav */}
-        <nav className={`flex-1 overflow-y-auto space-y-1 ${collapsed ? "p-2" : "p-4"}`}>
-          {navItems.map(({ href, label, icon: Icon }) => {
-            const isActive = pathname === href;
-            const showBadge = href === "/segnalazioni" && intakeBadge > 0;
-            return (
-              <Link key={href} href={href}
-                title={collapsed ? label : undefined}
-                className={`flex items-center rounded-xl transition-all duration-150 text-sm font-medium relative ${
-                  collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
-                } ${isActive ? "text-[#C8102E] bg-[#C8102E]/10" : "text-gray-600 hover:text-gray-900 hover:bg-black/5"}`}>
-                {isActive && !collapsed && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#C8102E] rounded-r" />
-                )}
-                <div className="relative shrink-0">
-                  <Icon className="w-5 h-5" />
-                  {showBadge && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-[#C8102E] rounded-full text-white text-[9px] font-bold flex items-center justify-center px-0.5 border border-[#B8B8B8]">
-                      {intakeBadge > 9 ? "9+" : intakeBadge}
-                    </span>
-                  )}
-                </div>
-                {!collapsed && <span className="flex-1">{label}</span>}
-                {!collapsed && showBadge && (
-                  <span className="ml-auto bg-[#C8102E] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+      {/* Nav */}
+      <nav className={`flex-1 overflow-y-auto space-y-1 ${collapsed ? "p-2" : "p-4"}`}>
+        {navItems.map(({ href, label, icon: Icon }) => {
+          const isActive = pathname === href;
+          const showBadge = href === "/segnalazioni" && intakeBadge > 0;
+          return (
+            <Link key={href} href={href}
+              title={collapsed ? label : undefined}
+              className={`flex items-center rounded-xl transition-all duration-150 text-sm font-medium relative ${
+                collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
+              } ${isActive ? "text-[#C8102E] bg-[#C8102E]/10" : "text-gray-600 hover:text-gray-900 hover:bg-black/5"}`}>
+              {isActive && !collapsed && (
+                <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#C8102E] rounded-r" />
+              )}
+              <div className="relative shrink-0">
+                <Icon className="w-5 h-5" />
+                {showBadge && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-[#C8102E] rounded-full text-white text-[9px] font-bold flex items-center justify-center px-0.5 border border-[#B8B8B8]">
                     {intakeBadge > 9 ? "9+" : intakeBadge}
                   </span>
                 )}
-              </Link>
-            );
-          })}
-        </nav>
+              </div>
+              {!collapsed && <span className="flex-1">{label}</span>}
+              {!collapsed && showBadge && (
+                <span className="ml-auto bg-[#C8102E] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {intakeBadge > 9 ? "9+" : intakeBadge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
 
-        {/* Footer */}
-        <div
-          className={`border-t border-black/8 shrink-0 ${collapsed ? "p-2 flex justify-center" : "p-4"}`}
-          style={{ paddingBottom: `calc(max(env(safe-area-inset-bottom, 0px), 34px) + ${collapsed ? "0.25rem" : "0.5rem"})` }}
-        >
-          {collapsed ? (
-            <button onClick={handleLogout} title="Esci" className="text-gray-500 hover:text-gray-900 transition-colors p-1">
+      {/* Footer */}
+      <div
+        className={`border-t border-black/8 shrink-0 ${collapsed ? "p-2 flex justify-center" : "p-4"}`}
+        style={{ paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${collapsed ? "0.5rem" : "1rem"})` }}
+      >
+        {collapsed ? (
+          <button onClick={handleLogout} title="Esci" className="text-gray-500 hover:text-gray-900 transition-colors p-1">
+            <LogOut className="w-4 h-4" />
+          </button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+              style={{ backgroundColor: RED }}>
+              {userEmail ? userEmail[0].toUpperCase() : "S"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">{userEmail ?? "Staff Medico"}</p>
+            </div>
+            <button onClick={handleLogout} title="Esci" className="text-gray-500 hover:text-gray-900 transition-colors shrink-0">
               <LogOut className="w-4 h-4" />
             </button>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                style={{ backgroundColor: RED }}>
-                {userEmail ? userEmail[0].toUpperCase() : "S"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{userEmail ?? "Staff Medico"}</p>
-              </div>
-              <button onClick={handleLogout} title="Esci" className="text-gray-500 hover:text-gray-900 transition-colors shrink-0">
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-      </aside>
-
-    </>
+          </div>
+        )}
+      </div>
+    </aside>
   );
 }

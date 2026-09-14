@@ -1,4 +1,5 @@
 import Sidebar from "@/components/Sidebar";
+import BottomNav from "@/components/BottomNav";
 import OfflineBanner from "@/components/OfflineBanner";
 import IntakeNotifier from "@/components/IntakeNotifier";
 import PushSetup from "@/components/PushSetup";
@@ -8,7 +9,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="flex overflow-hidden bg-white"
-      style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: "-34px" }}
+      style={{ position: "fixed", inset: 0 }}
     >
       <Sidebar />
       <main className="flex-1 overflow-hidden">{children}</main>
@@ -16,6 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <IntakeNotifier />
       <PushSetup />
       <SessionTimeout />
+      <BottomNav />
     </div>
   );
 }
