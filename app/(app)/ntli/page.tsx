@@ -529,11 +529,14 @@ async function esportaPDFNtli(ntliList: NtliRecord[], dailyAll: NtliDaily[]) {
   const { default: autoTable } = await import("jspdf-autotable");
   const doc = new jsPDF({ orientation: "landscape" });
   const red: [number, number, number] = [200, 16, 46];
+  const redLight: [number, number, number] = [220, 110, 130];
   const dark: [number, number, number] = [43, 43, 43];
   const gray: [number, number, number] = [130, 130, 130];
-  const M = 14; const W = 297; const H = 210; const HDR = 28;
+  const lightGray: [number, number, number] = [230, 230, 230];
+  const M = 14; const W = 297; const H = 210; const HDR = 28; const FOOTER = 16;
   const oggi = new Date().toLocaleDateString("it-IT");
   const fmt = (d?: string) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT") : "—";
+  const fmtShort = (d: string) => new Date(d + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" });
 
   let logoDataUrl: string | null = null;
   try {
@@ -546,123 +549,203 @@ async function esportaPDFNtli(ntliList: NtliRecord[], dailyAll: NtliDaily[]) {
 
   const addHeader = () => {
     doc.setFillColor(247, 247, 247); doc.rect(0, 0, W, HDR, "F");
-    doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(0, HDR, W, HDR);
-    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 4, 8, 10, 10);
-    const tx = logoDataUrl ? 18 : M;
+    doc.setFillColor(...red); doc.rect(0, 0, 3, HDR, "F");
+    doc.setDrawColor(...lightGray); doc.setLineWidth(0.3); doc.line(0, HDR, W, HDR);
+    if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 6, 9, 10, 10);
+    const tx = logoDataUrl ? 20 : M;
     doc.setTextColor(...red); doc.setFontSize(13); doc.setFont("helvetica", "bold");
     doc.text("U.S. Cremonese", tx, 14);
     doc.setFontSize(8.5); doc.setFont("helvetica", "bolditalic"); doc.setTextColor(...gray);
-    doc.text("NTLI — Non-Time-Loss Injuries", tx, 19);
+    doc.text("NTLI — Non-Time-Loss Injuries", tx, 20);
     doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(175, 175, 175);
     doc.text(`Esportato il ${oggi}`, W - M, 14, { align: "right" });
-    doc.text("Stagione 2026-2027", W - M, 19, { align: "right" });
+    doc.text("Stagione 2026-2027", W - M, 20, { align: "right" });
   };
 
-  addHeader();
+  const secTitle = (text: string, y: number) => {
+    doc.setFillColor(245, 245, 245); doc.rect(M, y - 3, W - M * 2, 8, "F");
+    doc.setFillColor(...red); doc.rect(M, y - 3, 3, 8, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...dark);
+    doc.text(text.toUpperCase(), M + 6, y + 2);
+    return y + 12;
+  };
 
+  // ── Summary table helpers ─────────────────────────────────────────────────
   const actives = ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso");
   const closed = ntliList.filter((n) => n.status === "Risolto" || n.status === "Chiuso");
 
   const makeBody = (list: NtliRecord[]) =>
-    list.map((n) => [
-      n.athleteName,
-      n.painLocation ?? "—",
-      n.bodySide ?? "—",
-      n.clinicalDiagnosis ?? "—",
-      n.osiicsCode ?? "—",
-      fmt(n.onsetDate),
-      n.endDate ? fmt(n.endDate) : "—",
-      n.status,
-    ]);
+    list.map((n) => [n.athleteName, n.painLocation ?? "—", n.bodySide ?? "—", n.clinicalDiagnosis ?? "—", n.osiicsCode ?? "—", fmt(n.onsetDate), n.endDate ? fmt(n.endDate) : "—", n.status]);
 
-  const tableOpts = (startY: number) => ({
-    startY,
+  const summaryTableOpts = (startY: number) => ({
+    startY, margin: { left: M, right: M, top: HDR + 8 },
     head: [["Atleta", "Sede dolore", "Lato", "Diagnosi clinica", "OSIICS", "Insorgenza", "Chiusura", "Stato"]],
-    headStyles: { fillColor: red as [number, number, number], textColor: 255 as any, fontSize: 7, halign: "center" as const, cellPadding: 2 },
-    bodyStyles: { fontSize: 7, cellPadding: 2, overflow: "linebreak" as const },
-    alternateRowStyles: { fillColor: [248, 248, 248] as [number, number, number] },
-    margin: { left: M, right: M, top: HDR + 8 },
-    columnStyles: {
-      0: { cellWidth: 35 },
-      1: { cellWidth: 30 },
-      2: { cellWidth: 25 },
-      3: { cellWidth: 55 },
-      4: { cellWidth: 18 },
-      5: { cellWidth: 20 },
-      6: { cellWidth: 20 },
-      7: { cellWidth: 22 },
-    },
+    headStyles: { fillColor: red as [number,number,number], textColor: 255 as any, fontSize: 7, halign: "center" as const, cellPadding: 2.5, fontStyle: "bold" as const },
+    bodyStyles: { fontSize: 7.5, cellPadding: 2.5, overflow: "linebreak" as const },
+    alternateRowStyles: { fillColor: [248, 248, 248] as [number,number,number] },
+    columnStyles: { 0: { cellWidth: 36 }, 1: { cellWidth: 32 }, 2: { cellWidth: 26 }, 3: { cellWidth: "auto" as any }, 4: { cellWidth: 18 }, 5: { cellWidth: 22 }, 6: { cellWidth: 22 }, 7: { cellWidth: 22 } },
     didDrawPage: () => { addHeader(); },
   });
 
-  // Section title helper
-  const secTitle = (text: string, y: number) => {
-    doc.setFillColor(245, 245, 245); doc.rect(M, y - 3, W - M * 2, 7, "F");
-    doc.setFillColor(...red); doc.rect(M, y - 3, 2.5, 7, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...dark);
-    doc.text(text.toUpperCase(), M + 5, y + 1.5);
-    return y + 10;
-  };
+  // ── VAS chart ─────────────────────────────────────────────────────────────
+  function drawVasChart(days: NtliDaily[], cx: number, cy: number, cw: number, ch: number) {
+    const daysWithData = days.filter(d => d.vasStart != null || d.vasEnd != null);
+    // chart background
+    doc.setFillColor(250, 250, 250); doc.rect(cx, cy, cw, ch, "F");
+    doc.setDrawColor(...lightGray); doc.setLineWidth(0.2); doc.rect(cx, cy, cw, ch);
+    const PL = 14; const PR = 6; const PT = 8; const PB = 16;
+    const px = cx + PL; const pw = cw - PL - PR;
+    const py = cy + PT; const ph = ch - PT - PB;
+    // grid + y labels
+    for (let v = 0; v <= 10; v += 2) {
+      const gy = py + ph - (v / 10) * ph;
+      doc.setDrawColor(...lightGray); doc.setLineWidth(0.15); doc.line(px, gy, px + pw, gy);
+      doc.setFontSize(5.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
+      doc.text(String(v), px - 1.5, gy + 1.5, { align: "right" });
+    }
+    // y axis label
+    doc.setFontSize(5); doc.setTextColor(...gray);
+    doc.text("VAS", cx + 3, cy + ch / 2, { angle: 90, align: "center" });
+    if (daysWithData.length === 0) {
+      doc.setFontSize(7); doc.setTextColor(...gray);
+      doc.text("Nessun dato VAS registrato", cx + cw / 2, cy + ch / 2, { align: "center" });
+      return;
+    }
+    const n = daysWithData.length;
+    const xOf = (i: number) => px + (n > 1 ? i * pw / (n - 1) : pw / 2);
+    // x axis dates
+    daysWithData.forEach((d, i) => {
+      const x = xOf(i);
+      doc.setFontSize(5); doc.setTextColor(...gray);
+      const lbl = fmtShort(d.date);
+      doc.text(lbl, x, cy + ch - 1.5, { align: "center" });
+      doc.setDrawColor(...lightGray); doc.setLineWidth(0.1); doc.line(x, py + ph, x, py + ph + 2);
+    });
+    // vasStart line
+    const startPts = daysWithData.map((d, i) => ({ x: xOf(i), y: py + ph - ((d.vasStart ?? 0) / 10) * ph, v: d.vasStart })).filter(p => p.v != null);
+    if (startPts.length >= 2) {
+      doc.setDrawColor(...redLight); doc.setLineWidth(0.5);
+      for (let i = 0; i < startPts.length - 1; i++) doc.line(startPts[i].x, startPts[i].y, startPts[i+1].x, startPts[i+1].y);
+    }
+    startPts.forEach(p => { doc.setFillColor(...redLight); doc.circle(p.x, p.y, 0.9, "F"); });
+    // vasEnd line
+    const endPts = daysWithData.map((d, i) => ({ x: xOf(i), y: py + ph - ((d.vasEnd ?? 0) / 10) * ph, v: d.vasEnd })).filter(p => p.v != null);
+    if (endPts.length >= 2) {
+      doc.setDrawColor(...red); doc.setLineWidth(0.8);
+      for (let i = 0; i < endPts.length - 1; i++) doc.line(endPts[i].x, endPts[i].y, endPts[i+1].x, endPts[i+1].y);
+    }
+    endPts.forEach(p => { doc.setFillColor(...red); doc.circle(p.x, p.y, 1.1, "F"); });
+    // value labels on points
+    startPts.forEach(p => {
+      if (p.v == null) return;
+      doc.setFontSize(5); doc.setFont("helvetica", "bold"); doc.setTextColor(...redLight);
+      doc.text(String(p.v), p.x, p.y - 2, { align: "center" });
+    });
+    endPts.forEach(p => {
+      if (p.v == null) return;
+      doc.setFontSize(5); doc.setFont("helvetica", "bold"); doc.setTextColor(...red);
+      doc.text(String(p.v), p.x, p.y - 2.5, { align: "center" });
+    });
+    // legend
+    const legX = cx + cw - 60; const legY = cy + 5;
+    doc.setFillColor(...redLight); doc.circle(legX, legY, 1, "F");
+    doc.setFontSize(5.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...gray);
+    doc.text("VAS Inizio seduta", legX + 2.5, legY + 1.5);
+    doc.setFillColor(...red); doc.circle(legX + 32, legY, 1, "F");
+    doc.text("VAS Fine seduta", legX + 34.5, legY + 1.5);
+  }
 
+  // ── Page 1: summary ───────────────────────────────────────────────────────
+  addHeader();
   let y = HDR + 8;
   y = secTitle(`NTLI Attivi (${actives.length})`, y);
   if (actives.length > 0) {
-    autoTable(doc, { ...tableOpts(y), body: makeBody(actives) });
+    autoTable(doc, { ...summaryTableOpts(y), body: makeBody(actives) });
     y = (doc as any).lastAutoTable.finalY + 10;
   } else {
     doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...gray);
-    doc.text("Nessun NTLI attivo.", M, y + 4);
-    y += 12;
+    doc.text("Nessun NTLI attivo.", M, y + 4); y += 12;
   }
-
-  if (y + 20 > H - 14) { doc.addPage(); addHeader(); y = HDR + 8; }
+  if (y + 20 > H - FOOTER) { doc.addPage(); addHeader(); y = HDR + 8; }
   y = secTitle(`NTLI Chiusi / Risolti (${closed.length})`, y);
   if (closed.length > 0) {
-    autoTable(doc, { ...tableOpts(y), body: makeBody(closed) });
+    autoTable(doc, { ...summaryTableOpts(y), body: makeBody(closed) });
   } else {
     doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...gray);
     doc.text("Nessun NTLI chiuso.", M, y + 4);
   }
 
-  // Palestra sessions
-  const palestraRecs = dailyAll.filter((d) => {
-    const mods = (d.trainingModification ?? "").split(",").map(s => s.trim());
-    return mods.includes("Palestra") && d.esercizi && d.esercizi.length > 0;
-  });
-  if (palestraRecs.length > 0) {
-    const curY = (doc as any).lastAutoTable?.finalY ?? y;
-    if (curY + 20 > H - 14) { doc.addPage(); addHeader(); y = HDR + 8; } else { y = curY + 10; }
-    y = secTitle(`Sessioni Palestra (${palestraRecs.length} sessioni con esercizi)`, y);
-    const palestraBody: string[][] = [];
-    palestraRecs.forEach((d) => {
-      const ntli = ntliList.find((n) => n.id === d.ntliId);
-      const athleteName = ntli?.athleteName ?? "—";
-      const dateFmt = d.date ? new Date(d.date + "T12:00").toLocaleDateString("it-IT") : "—";
-      (d.esercizi ?? []).forEach((ex) => {
-        palestraBody.push([dateFmt, athleteName, ex.nome ?? "—", ex.serie ?? "—", ex.reps ?? "—", ex.durata ?? "—", ex.carico ?? "—", ex.rir ?? "—", ex.vas ?? "—", ex.note ?? ""]);
-      });
-    });
+  // ── Per-player monitoring pages ───────────────────────────────────────────
+  const CHART_H = 58;
+  for (const ntli of ntliList) {
+    const days = dailyAll.filter(d => d.ntliId === ntli.id).sort((a, b) => a.date.localeCompare(b.date));
+    if (days.length === 0) continue;
+
+    // Always start each player on a fresh page
+    doc.addPage(); addHeader();
+    let py = HDR + 8;
+
+    // Player header
+    doc.setFillColor(245, 245, 245); doc.rect(M, py - 3, W - M * 2, 14, "F");
+    doc.setFillColor(...red); doc.rect(M, py - 3, 3, 14, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(...red);
+    doc.text(ntli.athleteName, M + 7, py + 3);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(...gray);
+    const meta = [ntli.osiicsCode, ntli.painLocation, ntli.bodySide, ntli.clinicalDiagnosis].filter(Boolean).join("  ·  ");
+    doc.text(meta, M + 7, py + 8.5);
+    const periodo = `${fmt(ntli.onsetDate)} — ${ntli.endDate ? fmt(ntli.endDate) : "in corso"}`;
+    doc.text(periodo, W - M, py + 3, { align: "right" });
+    doc.text(`${days.length} giorni registrati`, W - M, py + 8.5, { align: "right" });
+    py += 18;
+
+    // Monitoring table (full width)
     autoTable(doc, {
-      startY: y,
-      head: [["Data", "Atleta", "Esercizio", "Serie", "Reps", "Durata", "Carico", "RIR", "VAS", "Note"]],
-      body: palestraBody,
-      headStyles: { fillColor: red as [number, number, number], textColor: 255 as any, fontSize: 7, halign: "center" as const, cellPadding: 2 },
-      bodyStyles: { fontSize: 7, cellPadding: 2, overflow: "linebreak" as const },
-      alternateRowStyles: { fillColor: [248, 248, 248] as [number, number, number] },
-      margin: { left: M, right: M, top: HDR + 8 },
-      columnStyles: { 0: { cellWidth: 18 }, 1: { cellWidth: 30 }, 2: { cellWidth: 40 }, 3: { cellWidth: 14 }, 4: { cellWidth: 14 }, 5: { cellWidth: 18 }, 6: { cellWidth: 18 }, 7: { cellWidth: 12 }, 8: { cellWidth: 12 }, 9: { cellWidth: "auto" as any } },
+      startY: py,
+      margin: { left: M, right: M, top: HDR + 6 },
+      head: [["Data", "Modifica seduta", "Note", "VAS Inizio", "VAS Fine"]],
+      body: days.map(d => [
+        fmt(d.date),
+        d.trainingModification ?? "—",
+        d.note ?? "",
+        d.vasStart != null ? String(d.vasStart) : "—",
+        d.vasEnd != null ? String(d.vasEnd) : "—",
+      ]),
+      headStyles: { fillColor: red as [number,number,number], textColor: 255 as any, fontSize: 7.5, halign: "center" as const, cellPadding: 3, fontStyle: "bold" as const },
+      bodyStyles: { fontSize: 8, cellPadding: 3, overflow: "linebreak" as const },
+      alternateRowStyles: { fillColor: [248, 248, 248] as [number,number,number] },
+      columnStyles: {
+        0: { cellWidth: 28, halign: "center" as const },
+        1: { cellWidth: 65 },
+        2: { cellWidth: "auto" as any },
+        3: { cellWidth: 28, halign: "center" as const, fontStyle: "bold" as const },
+        4: { cellWidth: 28, halign: "center" as const, fontStyle: "bold" as const, textColor: red as [number,number,number] },
+      },
       didDrawPage: () => { addHeader(); },
     });
+
+    // Chart — add new page if not enough space
+    const afterTable = (doc as any).lastAutoTable.finalY + 8;
+    if (afterTable + CHART_H > H - FOOTER) {
+      doc.addPage(); addHeader();
+      py = HDR + 8;
+    } else {
+      py = afterTable;
+    }
+    // Chart title
+    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...dark);
+    doc.text("ANDAMENTO VAS", M, py + 3);
+    py += 6;
+    drawVasChart(days, M, py, W - M * 2, CHART_H);
   }
 
-  // Footer
+  // ── Footer on all pages ───────────────────────────────────────────────────
   const tot = doc.getNumberOfPages();
   for (let i = 1; i <= tot; i++) {
     doc.setPage(i);
-    doc.setDrawColor(210, 210, 210); doc.setLineWidth(0.3); doc.line(M, H - 12, W - M, H - 12);
+    doc.setDrawColor(...lightGray); doc.setLineWidth(0.3); doc.line(M, H - 10, W - M, H - 10);
     doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(...gray);
-    doc.text("U.S. Cremonese · Rehab Area", M, H - 7);
-    doc.text(`Pagina ${i} di ${tot}`, W - M, H - 7, { align: "right" });
+    doc.text("U.S. Cremonese · Rehab Area", M, H - 5);
+    doc.text(`Pagina ${i} di ${tot}`, W - M, H - 5, { align: "right" });
   }
 
   doc.save(`USC_NTLI_${oggi.replace(/\//g, "-")}.pdf`);
