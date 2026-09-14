@@ -63,7 +63,7 @@ export default function BottomNav() {
         <div
           className="fixed z-50 md:hidden"
           style={{
-            bottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
+            bottom: "calc(66px + env(safe-area-inset-bottom, 0px))",
             right: "12px",
             minWidth: "220px",
             background: "rgba(235,235,240,0.93)",
@@ -132,7 +132,7 @@ export default function BottomNav() {
       <div
         className="fixed left-0 right-0 z-50 md:hidden flex justify-center"
         style={{
-          bottom: "calc(6px + env(safe-area-inset-bottom, 0px))",
+          bottom: "env(safe-area-inset-bottom, 6px)",
         }}
       >
         <nav
