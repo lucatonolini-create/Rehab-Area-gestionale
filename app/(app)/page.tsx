@@ -268,7 +268,7 @@ export default function Dashboard() {
 
       {/* Mini pannello atleta */}
       {atletaSelezionato && !mostraModifica && (
-        <div ref={sidebarRef as React.RefObject<HTMLDivElement>} className="fixed inset-y-0 right-0 z-40 w-80 bg-white shadow-2xl border-l border-gray-100 flex flex-col">
+        <div ref={sidebarRef as React.RefObject<HTMLDivElement>} className="fixed inset-0 md:inset-y-0 md:left-auto md:right-0 md:w-80 z-40 bg-white shadow-2xl md:border-l md:border-gray-100 flex flex-col">
           <div className="flex items-center justify-between px-5 pb-4 border-b border-gray-100" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.25rem)" }}>
             <h3 className="font-bold text-gray-900">Scheda atleta</h3>
             <button onClick={() => setAtletaSelezionato(null)} className="text-gray-400 hover:text-gray-600">

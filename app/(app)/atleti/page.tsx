@@ -2277,7 +2277,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
 
       {/* Pannello dettaglio */}
       {selected && !mostraForm && (
-        <div ref={detailPanelRef as React.RefObject<HTMLDivElement>} className="w-96 bg-white border-l border-gray-100 flex flex-col overflow-hidden">
+        <div ref={detailPanelRef as React.RefObject<HTMLDivElement>} className="fixed inset-0 z-40 md:relative md:inset-auto md:z-auto md:w-96 bg-white md:border-l md:border-gray-100 flex flex-col overflow-hidden">
           <div className="px-5 pb-5 border-b border-gray-100" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.25rem)" }}>
             <div className="flex items-start justify-between mb-3">
               <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
