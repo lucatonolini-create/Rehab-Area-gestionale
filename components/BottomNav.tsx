@@ -99,7 +99,7 @@ export default function BottomNav() {
     >
       <nav
         className="flex items-center"
-        style={{ overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+        style={{ overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", paddingBottom: "env(safe-area-inset-bottom, 0px)" } as React.CSSProperties}
       >
         <style>{`nav::-webkit-scrollbar{display:none}`}</style>
         {allTabs.map(({ href, label, icon: Icon }) => {
