@@ -1523,7 +1523,7 @@ export default function EserciziPage() {
 
       {/* Modale */}
       {mostraForm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center md:p-4">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center md:p-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 60px)" } as React.CSSProperties}>
           <div ref={formModalRef as React.RefObject<HTMLDivElement>} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-2xl max-h-[82vh] md:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 md:p-5 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-900">{editId ? "Modifica Programma" : "Nuovo Programma"}</h2>
