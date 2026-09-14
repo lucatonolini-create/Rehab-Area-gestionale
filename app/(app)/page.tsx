@@ -157,7 +157,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 54px)" }}>
+    <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
       <div className="mb-6 text-left">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -318,7 +318,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="px-5 pt-5 border-t border-gray-100 space-y-2" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)" }}>
+          <div className="px-5 pt-5 border-t border-gray-100 space-y-2" style={{ }}>
             <button onClick={() => setMostraModifica(true)}
               className="w-full bg-[#C8102E] text-white py-3 rounded-xl text-sm font-medium hover:bg-red-800">
               Modifica dati

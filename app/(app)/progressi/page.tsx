@@ -1248,7 +1248,7 @@ export default function ProgressiPage() {
   const anni = Array.from({ length: 5 }, (_, i) => oggi.getFullYear() - 2 + i);
 
   return (
-    <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 54px)" }}>
+    <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
       <div className="mb-4 flex items-center justify-between">
         <div className="text-left">
           <h1 className="text-2xl font-bold text-gray-900">Progressi</h1>

@@ -2159,7 +2159,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
         document.body
       )}
       {/* Lista */}
-      <div className="flex-1 px-4 md:px-6 overflow-y-auto overscroll-none page-scroll" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 54px)" }}>
+      <div className="flex-1 px-4 md:px-6 overflow-y-auto overscroll-none page-scroll" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
         <div className="mb-4 flex items-center justify-between">
           <div className="text-left">
             <h1 className="text-2xl font-bold text-gray-900">Atleti</h1>
@@ -2370,7 +2370,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto overscroll-none px-5" style={{ paddingTop: "1.25rem", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 54px)" }}>
+          <div className="flex-1 overflow-y-auto overscroll-none px-5" style={{ paddingTop: "1.25rem" }}>
             {tab === "dati" ? (
               <div className="space-y-2.5 text-sm">
                 {/* ── Sezione infortunio principale ── */}

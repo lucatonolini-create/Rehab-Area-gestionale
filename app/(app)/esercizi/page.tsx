@@ -1099,7 +1099,7 @@ export default function EserciziPage() {
   const fasiFiltrate = fasiUniche.filter((f) => !form.fase.trim() || f.toLowerCase().includes(form.fase.toLowerCase())).slice(0, 6);
 
   return (
-    <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 54px)" }}>
+    <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900">Programmi di Lavoro</h1>
         <div className="flex items-end justify-between mt-1">
@@ -1550,7 +1550,7 @@ export default function EserciziPage() {
               </div>
             </div>
 
-            <div className="px-5 pt-5 overflow-y-auto flex-1 space-y-5" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 54px)" }}>
+            <div className="px-5 pt-5 overflow-y-auto flex-1 space-y-5" style={{ }}>
               {/* Info base */}
               <div className="flex gap-3 items-end">
                 <div className="flex-1 min-w-0">

@@ -19,13 +19,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <IntakeNotifier />
         <PushSetup />
         <SessionTimeout />
-        {/* Fade sottile sopra la nav pill — le card sfumano mentre scorrono sotto */}
+        {/* Fade — le card sfumano mentre scorrono dietro e sotto la nav pill */}
         <div
           className="fixed left-0 right-0 pointer-events-none md:hidden"
           style={{
-            bottom: "calc(env(safe-area-inset-bottom, 0px) + 62px)",
-            height: "36px",
-            background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.55))",
+            bottom: "calc(env(safe-area-inset-bottom, 0px) + 2px)",
+            height: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
+            background: "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.6) 45%, rgba(255,255,255,0.85) 100%)",
             zIndex: 49,
           }}
         />
