@@ -81,7 +81,6 @@ export default function BottomNav() {
   const visible = scrollVisible && !hidden;
 
   return (
-    <>
     <div
       className="fixed z-50 md:hidden"
       style={{
@@ -93,9 +92,7 @@ export default function BottomNav() {
         WebkitBackdropFilter: "blur(28px) saturate(2)",
         borderRadius: "20px 20px 0 0",
         boxShadow: "0 -2px 20px rgba(0,0,0,0.10)",
-        transform: visible
-          ? "translateY(0)"
-          : "translateY(calc(100% - env(safe-area-inset-bottom, 0px)))",
+        transform: visible ? "translateY(0)" : "translateY(110%)",
         transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
         willChange: "transform",
       }}
@@ -149,7 +146,5 @@ export default function BottomNav() {
         </button>
       </nav>
     </div>
-
-    </>
   );
 }
