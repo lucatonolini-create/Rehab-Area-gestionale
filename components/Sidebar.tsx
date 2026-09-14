@@ -209,15 +209,18 @@ export default function Sidebar() {
       {/* ── Mobile overlay ── */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 z-[65] bg-black/40"
+          className="md:hidden fixed z-[65] bg-black/40"
+          style={{ top: 0, left: 0, right: 0, bottom: 0 }}
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* ── Mobile drawer ── */}
       <aside
-        className="md:hidden fixed inset-y-0 left-0 z-[66] w-72 flex flex-col text-gray-800 transition-transform duration-300 ease-in-out"
+        className="md:hidden fixed left-0 z-[66] w-72 flex flex-col text-gray-800 transition-transform duration-300 ease-in-out"
         style={{
+          top: 0,
+          bottom: 0,
           ...sidebarStyle,
           transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
         }}
