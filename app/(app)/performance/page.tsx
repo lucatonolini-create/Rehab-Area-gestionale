@@ -1072,10 +1072,9 @@ export default function PerformancePage() {
             <button
               onClick={exportPdf}
               disabled={!selectedAtleta || sessions.length === 0}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-40 hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: RED }}
+              className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors"
             >
-              <FileDown className="w-4 h-4" />
+              <FileDown className="w-3.5 h-3.5" />
               PDF
             </button>
             {/* View toggle */}
