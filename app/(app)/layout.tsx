@@ -21,6 +21,18 @@ className="flex bg-white"
         <SessionTimeout />
       </div>
       <BottomNav />
+      {/* Top fade — il contenuto sfuma sotto la barra status (ora/batteria) */}
+      <div
+        className="fixed md:hidden pointer-events-none"
+        style={{
+          left: 0,
+          right: 0,
+          top: 0,
+          height: 56,
+          background: "linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%)",
+          zIndex: 45,
+        }}
+      />
     </BottomNavProvider>
   );
 }
