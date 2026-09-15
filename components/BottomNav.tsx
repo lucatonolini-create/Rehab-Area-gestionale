@@ -83,27 +83,26 @@ export default function BottomNav() {
 
   return (
     <>
-      {/* Floating pill nav */}
+      {/* Floating pill nav — Instagram style */}
       <div
         className="fixed z-50 md:hidden"
         style={{
-          left: 12,
-          right: 12,
-          bottom: "calc(env(safe-area-inset-bottom, 0px) + 40px)",
-          borderRadius: 24,
-          background: "rgba(255,255,255,0.88)",
-          backdropFilter: "blur(24px) saturate(1.8)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.8)",
-          border: "0.5px solid rgba(0,0,0,0.10)",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
+          left: 16,
+          right: 16,
+          bottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+          borderRadius: 40,
+          background: "rgba(228,228,228,0.92)",
+          backdropFilter: "blur(20px) saturate(1.6)",
+          WebkitBackdropFilter: "blur(20px) saturate(1.6)",
+          boxShadow: "0 2px 16px rgba(0,0,0,0.12)",
           transform: slideOut,
           transition,
           willChange: "transform",
         }}
       >
         <nav
-          className="flex items-center"
-          style={{ overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", height: 56 } as React.CSSProperties}
+          className="flex items-center px-1"
+          style={{ overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", height: 66 } as React.CSSProperties}
         >
           <style>{`nav::-webkit-scrollbar{display:none}`}</style>
           {allTabs.map(({ href, icon: Icon }) => {
@@ -114,11 +113,19 @@ export default function BottomNav() {
                 key={href}
                 href={href}
                 className="flex items-center justify-center flex-shrink-0 active:opacity-50 transition-opacity"
-                style={{ flex: "0 0 20%", height: 56 }}
+                style={{ flex: "0 0 20%", height: 66 }}
               >
-                <div className="relative flex items-center justify-center">
+                <div
+                  className="relative flex items-center justify-center transition-all duration-200"
+                  style={{
+                    width: 48,
+                    height: 36,
+                    borderRadius: 18,
+                    background: isActive ? "rgba(255,255,255,0.70)" : "transparent",
+                  }}
+                >
                   <Icon
-                    className={`w-[26px] h-[26px] ${isActive ? "text-black stroke-[2.2px]" : "text-black stroke-[1.5px] opacity-35"}`}
+                    className={`w-[26px] h-[26px] ${isActive ? "text-black stroke-[2.2px]" : "text-black stroke-[1.5px] opacity-40"}`}
                   />
                   {showBadge && (
                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#C8102E] rounded-full" />
@@ -133,9 +140,14 @@ export default function BottomNav() {
           <button
             onClick={handleLogout}
             className="flex items-center justify-center flex-shrink-0 active:opacity-50 transition-opacity"
-            style={{ flex: "0 0 20%", height: 56 }}
+            style={{ flex: "0 0 20%", height: 66 }}
           >
-            <LogOut className="w-[26px] h-[26px] text-red-400 stroke-[1.5px]" />
+            <div
+              className="flex items-center justify-center"
+              style={{ width: 48, height: 36, borderRadius: 18 }}
+            >
+              <LogOut className="w-[26px] h-[26px] text-red-400 stroke-[1.5px]" />
+            </div>
           </button>
         </nav>
       </div>

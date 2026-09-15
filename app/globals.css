@@ -30,8 +30,8 @@ main .text-5xl  { font-size: 2.85rem; }
    floating bottom nav. Desktop has no bottom nav — no padding needed. */
 @media (max-width: 767px) {
   .page-scroll {
-    /* nav height 56px + gap 16px + home-indicator + 16px breathing room */
-    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 32px);
+    /* nav height 66px + gap 12px + home-indicator + 16px breathing room */
+    padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px) + 28px);
   }
 }
 
