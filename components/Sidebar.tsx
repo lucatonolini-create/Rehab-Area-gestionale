@@ -180,7 +180,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      style={{ background: "rgba(248,248,248,1)", position: "relative" }}
+      style={{ background: "rgba(232,232,232,1)", position: "relative" }}
       className={`hidden md:flex flex-col text-gray-800 shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}
     >
       {/* Right-edge fade */}
@@ -192,7 +192,7 @@ export default function Sidebar() {
           right: 0,
           bottom: 0,
           width: collapsed ? 16 : 48,
-          background: "linear-gradient(to right, rgba(248,248,248,0) 0%, rgba(255,255,255,0.85) 100%)",
+          background: "linear-gradient(to right, rgba(232,232,232,0) 0%, rgba(255,255,255,0.90) 100%)",
           pointerEvents: "none",
           zIndex: 1,
         }}
