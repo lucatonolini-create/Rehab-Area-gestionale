@@ -91,7 +91,7 @@ export default function BottomNav() {
           right: 16,
           bottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)",
           borderRadius: 40,
-          background: "rgba(242,242,247,0.72)",
+          background: "rgba(210,210,215,0.80)",
           backdropFilter: "blur(28px) saturate(2)",
           WebkitBackdropFilter: "blur(28px) saturate(2)",
           border: "0.5px solid rgba(255,255,255,0.6)",
