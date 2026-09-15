@@ -833,6 +833,7 @@ export default function EserciziPage() {
   const [esportandoIntervallo, setEsportandoIntervallo] = useState(false);
   const [esportandoCSVGiorno, setEsportandoCSVGiorno] = useState(false);
   const [esportandoCSVIntervallo, setEsportandoCSVIntervallo] = useState(false);
+  const [atletaFiltroExport, setAtletaFiltroExport] = useState<string>("tutti");
   const [atletiAggiuntivi, setAtletiAggiuntivi] = useState<string[]>([]);
   const [applicaDropAperto, setApplicaDropAperto] = useState(false);
   const [applicaRicerca, setApplicaRicerca] = useState("");
@@ -1112,6 +1113,19 @@ export default function EserciziPage() {
       </div>
       {/* Azioni principali – 2 righe compatte */}
       <div className="mb-6 bg-gray-50 rounded-2xl p-3 space-y-2">
+        {/* Filtro giocatore */}
+        <div className="flex items-center gap-1.5">
+          <select
+            value={atletaFiltroExport}
+            onChange={(e) => setAtletaFiltroExport(e.target.value)}
+            className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-200"
+          >
+            <option value="tutti">Tutti i giocatori</option>
+            {atleti.map((a) => (
+              <option key={a.id} value={a.id}>{nd(a)}</option>
+            ))}
+          </select>
+        </div>
         {/* Riga 1: giornaliero */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
@@ -1128,7 +1142,8 @@ export default function EserciziPage() {
               setEsportandoGiorno(true);
               try {
                 const tutti = await loadProgrammi();
-                await esportaPDFGiornaliero(dataGiorno, atleti, tutti);
+                const atletiFiltrati = atletaFiltroExport === "tutti" ? atleti : atleti.filter(a => a.id === atletaFiltroExport);
+                await esportaPDFGiornaliero(dataGiorno, atletiFiltrati, tutti);
               } finally {
                 setEsportandoGiorno(false);
               }
@@ -1143,7 +1158,8 @@ export default function EserciziPage() {
               setEsportandoCSVGiorno(true);
               try {
                 const tutti = await loadProgrammi();
-                esportaCSVGiornaliero(dataGiorno, atleti, tutti);
+                const atletiFiltrati = atletaFiltroExport === "tutti" ? atleti : atleti.filter(a => a.id === atletaFiltroExport);
+                esportaCSVGiornaliero(dataGiorno, atletiFiltrati, tutti);
               } finally {
                 setEsportandoCSVGiorno(false);
               }
@@ -1179,7 +1195,8 @@ export default function EserciziPage() {
               setEsportandoIntervallo(true);
               try {
                 const tutti = await loadProgrammi();
-                await esportaPDFIntervallo(dataInizioIntervallo, dataFineIntervallo, atleti, tutti);
+                const atletiFiltrati = atletaFiltroExport === "tutti" ? atleti : atleti.filter(a => a.id === atletaFiltroExport);
+                await esportaPDFIntervallo(dataInizioIntervallo, dataFineIntervallo, atletiFiltrati, tutti);
               } finally {
                 setEsportandoIntervallo(false);
               }
@@ -1194,7 +1211,8 @@ export default function EserciziPage() {
               setEsportandoCSVIntervallo(true);
               try {
                 const tutti = await loadProgrammi();
-                esportaCSVIntervallo(dataInizioIntervallo, dataFineIntervallo, atleti, tutti);
+                const atletiFiltrati = atletaFiltroExport === "tutti" ? atleti : atleti.filter(a => a.id === atletaFiltroExport);
+                esportaCSVIntervallo(dataInizioIntervallo, dataFineIntervallo, atletiFiltrati, tutti);
               } finally {
                 setEsportandoCSVIntervallo(false);
               }
