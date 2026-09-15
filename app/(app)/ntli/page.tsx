@@ -795,7 +795,12 @@ export default function NtliPage() {
 
 
   // ── Derived ──────────────────────────────────────────────────────────────
-  const activeNtli = ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso");
+  const activeNtli = ntliList.filter((n) => {
+    if (n.status === "Risolto" || n.status === "Chiuso") return false;
+    const atleta = atleti.find((a) => a.nome.trim().toLowerCase() === n.athleteName.trim().toLowerCase());
+    if (atleta?.stato === "Infortunato") return false;
+    return true;
+  });
   const todayStr = today();
 
   const todayDaily = dailyAll.filter((d) => d.date === todayStr);
