@@ -119,9 +119,9 @@ export default function BottomNav() {
                 <div
                   className="relative flex items-center justify-center transition-all duration-200"
                   style={{
-                    width: 48,
-                    height: 36,
-                    borderRadius: 18,
+                    width: 56,
+                    height: 42,
+                    borderRadius: 21,
                     background: isActive ? "rgba(200,16,46,0.10)" : "transparent",
                   }}
                 >
