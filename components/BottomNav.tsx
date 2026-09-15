@@ -26,10 +26,6 @@ const allTabs = [
 
 // Nav floats this far above the home indicator / screen bottom
 const NAV_BOTTOM = "calc(env(safe-area-inset-bottom, 0px) + 30px)";
-// Approximate nav content height (no padding needed since we float above home indicator)
-const NAV_H = 56;
-// Gradient sits immediately above the nav
-const GRADIENT_BOTTOM = `calc(env(safe-area-inset-bottom, 0px) + 20px + ${NAV_H}px)`;
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -89,22 +85,6 @@ export default function BottomNav() {
 
   return (
     <>
-      {/* Gradient fade — content sfuma prima di passare dietro la nav */}
-      <div
-        className="fixed md:hidden pointer-events-none"
-        style={{
-          left: 0,
-          right: 0,
-          bottom: GRADIENT_BOTTOM,
-          height: 64,
-          background: "linear-gradient(to bottom, rgba(255,255,255,0), rgba(242,242,247,0.95))",
-          zIndex: 48,
-          transform: slideOut,
-          transition,
-          willChange: "transform",
-        }}
-      />
-
       {/* Floating pill nav */}
       <div
         className="fixed z-50 md:hidden"
