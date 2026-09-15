@@ -465,8 +465,8 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
     doc.text(label, M + 8, y + DATE_ROW_H / 2 + 1.5, { baseline: "middle" as const });
   };
 
-  const tableOpts = (body: any[], catRowIndices: Set<number>, absenteRowIndices: Set<number>, riposoRowIndices: Set<number>, squadraRowIndices: Set<number>, altRowIndices: Set<number>) => ({
-    startY: HDR + 8 + DATE_ROW_H,
+  const tableOpts = (startY: number, body: any[], catRowIndices: Set<number>, absenteRowIndices: Set<number>, riposoRowIndices: Set<number>, squadraRowIndices: Set<number>, altRowIndices: Set<number>) => ({
+    startY,
     head: [["Atleta", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS\nPal.", "Obiettivi\nCampo", "Esercizi\nCampo", "VAS\nCampo", "GPS", "RPE"]],
     body,
     headStyles: { fillColor: [110, 110, 110] as [number,number,number], textColor: 255, fontSize: 7, halign: "center" as const, valign: "middle" as const },
@@ -513,9 +513,17 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
     },
   });
 
+  let currentY = HDR + 8;
   for (let dIdx = 0; dIdx < dateOrdinate.length; dIdx++) {
     const data = dateOrdinate[dIdx];
-    if (dIdx > 0) { doc.addPage(); addHeader(); }
+    if (dIdx > 0) {
+      const spaceLeft = H - 20 - currentY;
+      if (spaceLeft < DATE_ROW_H + 30) {
+        doc.addPage(); addHeader(); currentY = HDR + 8;
+      } else {
+        currentY += 6;
+      }
+    }
 
     const body: any[] = [];
     const catRowIndices = new Set<number>();
@@ -527,7 +535,7 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
     const progDelGiorno = perData.get(data) ?? [];
     const dataConGiorno = (() => { const s = new Date(data + "T12:00").toLocaleDateString("it-IT", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" }); return s.charAt(0).toUpperCase() + s.slice(1); })();
     const dataShort = new Date(data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" });
-    drawDateRow(dataConGiorno, HDR + 8);
+    drawDateRow(dataConGiorno, currentY);
 
     const perCategoria = new Map<string, { atleta: Atleta; prog: Programma }[]>();
     for (const prog of progDelGiorno) {
@@ -627,7 +635,8 @@ async function esportaPDFIntervallo(dataInizio: string, dataFine: string, atleti
       }
     }
 
-    autoTable(doc, tableOpts(body, catRowIndices, absenteRowIndices, riposoRowIndices, squadraRowIndices, altRowIndices));
+    autoTable(doc, tableOpts(currentY + DATE_ROW_H, body, catRowIndices, absenteRowIndices, riposoRowIndices, squadraRowIndices, altRowIndices));
+    currentY = (doc as any).lastAutoTable.finalY + 8;
   }
 
   // ── Test table (raggruppata per data+giocatore con rowSpan) ─────────────────
