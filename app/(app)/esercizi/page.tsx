@@ -1121,7 +1121,7 @@ export default function EserciziPage() {
             className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-200"
           >
             <option value="tutti">Tutti i giocatori</option>
-            {atleti.map((a) => (
+            {[...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")).map((a) => (
               <option key={a.id} value={a.id}>{nd(a)}</option>
             ))}
           </select>
