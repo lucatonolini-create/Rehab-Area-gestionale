@@ -7,9 +7,9 @@ import { Plus, X, Printer, ChevronLeft, ChevronRight, Search, Download, FileText
 import {
   loadNtli, upsertNtli, deleteNtli,
   loadNtliDaily, upsertNtliDaily,
-  loadAtleti, loadProgrammi,
+  loadAtleti,
   searchOsiicsCodes,
-  type NtliRecord, type NtliDaily, type NtliStato, type TrainingModification, type Atleta, type OsiicsCode, type Esercizio, type Programma,
+  type NtliRecord, type NtliDaily, type NtliStato, type TrainingModification, type Atleta, type OsiicsCode, type Esercizio,
   NTLI_STATI, TRAINING_MODIFICATIONS,
 } from "@/lib/store";
 import PlayerCombobox from "@/components/PlayerCombobox";
@@ -777,9 +777,6 @@ export default function NtliPage() {
   // Export
   const [esportando, setEsportando] = useState<"csv" | "pdf" | null>(null);
 
-  // Programmi per atleta NTLI (caricati on-demand)
-  const [ntliProgrammi, setNtliProgrammi] = useState<Record<string, Programma[]>>({});
-
   // Gestione
   const [gestFiltro, setGestFiltro] = useState<NtliStato | "Tutti">("Tutti");
   const [editNtli, setEditNtli] = useState<NtliRecord | undefined>(undefined);
@@ -796,20 +793,6 @@ export default function NtliPage() {
 
   useEffect(() => { reload(); }, [reload]);
 
-  // Carica programmi per atleti NTLI attivi quando si apre il tab monitoraggio
-  useEffect(() => {
-    if (tab !== "monitoraggio") return;
-    const active = ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso");
-    for (const n of active) {
-      const atleta = atleti.find((a) => a.nome.trim().toLowerCase() === n.athleteName.trim().toLowerCase());
-      if (!atleta) continue;
-      if (atleta.id in ntliProgrammi) continue;
-      loadProgrammi(atleta.id)
-        .then((progs) => setNtliProgrammi((prev) => ({ ...prev, [atleta.id]: progs })))
-        .catch(() => {});
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, atleti, ntliList]);
 
   // ── Derived ──────────────────────────────────────────────────────────────
   const activeNtli = ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso");
@@ -1256,35 +1239,6 @@ export default function NtliPage() {
                             </div>
                           )
                         )}
-
-                        {/* Programmi del giorno (da sezione Programmi) */}
-                        {(() => {
-                          const atletaMatch = atleti.find((a) => a.nome.trim().toLowerCase() === ntli.athleteName.trim().toLowerCase());
-                          const progs = (ntliProgrammi[atletaMatch?.id ?? ""] ?? []).filter(
-                            (p) => p.data === monDate && !p.assente && !p.riposo && !p.squadra
-                          );
-                          if (progs.length === 0) return null;
-                          return (
-                            <div>
-                              <Lbl>Programmi del giorno</Lbl>
-                              <div className="mt-2 space-y-2">
-                                {progs.map((p) => (
-                                  <div key={p.id} className="bg-blue-50 border border-blue-100 rounded-xl p-3">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="font-semibold text-sm text-gray-900">{p.nome}</span>
-                                      {p.fase && <span className="text-xs bg-white border border-blue-200 text-blue-600 px-2 py-0.5 rounded-full">{p.fase}</span>}
-                                    </div>
-                                    <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                                      {p.esercizi.length > 0 && <span>{p.esercizi.length} esercizi palestra</span>}
-                                      {(p.esercizicampo?.length ?? 0) > 0 && <span>· {p.esercizicampo!.length} in campo</span>}
-                                      {(p.tests?.length ?? 0) > 0 && <span>· {p.tests.length} test</span>}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })()}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
