@@ -89,7 +89,7 @@ export default function BottomNav() {
         style={{
           left: 16,
           right: 16,
-          bottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)",
+          bottom: "calc(env(safe-area-inset-bottom, 0px) + 30px)",
           borderRadius: 40,
           background: "rgba(210,210,215,0.80)",
           backdropFilter: "blur(28px) saturate(2)",
