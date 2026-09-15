@@ -124,7 +124,9 @@ export default function Dashboard() {
     });
 
   const atletiConNtli = atleti.map((a) =>
-    activeNtliNames.has(a.nome.toLowerCase().trim()) ? { ...a, stato: "NTL" as Stato } : a
+    activeNtliNames.has(a.nome.toLowerCase().trim()) && a.stato !== "Infortunato"
+      ? { ...a, stato: "NTL" as Stato }
+      : a
   );
 
   const tuttiAtleti = [...atletiConNtli, ...ntliVirtual];
