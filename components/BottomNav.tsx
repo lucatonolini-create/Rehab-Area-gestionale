@@ -25,11 +25,11 @@ const allTabs = [
 ];
 
 // Nav floats this far above the home indicator / screen bottom
-const NAV_BOTTOM = "calc(env(safe-area-inset-bottom, 0px) + 12px)";
+const NAV_BOTTOM = "calc(env(safe-area-inset-bottom, 0px) + 20px)";
 // Approximate nav content height (no padding needed since we float above home indicator)
 const NAV_H = 56;
 // Gradient sits immediately above the nav
-const GRADIENT_BOTTOM = `calc(env(safe-area-inset-bottom, 0px) + 12px + ${NAV_H}px)`;
+const GRADIENT_BOTTOM = `calc(env(safe-area-inset-bottom, 0px) + 20px + ${NAV_H}px)`;
 
 export default function BottomNav() {
   const pathname = usePathname();
