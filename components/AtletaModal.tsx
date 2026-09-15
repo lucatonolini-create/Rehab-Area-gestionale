@@ -87,8 +87,8 @@ export default function AtletaModal({ atletaIniziale, initialDettaglio, onSalva,
   const modalRef = useSwipeToClose(onChiudi);
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center px-3 md:p-4" style={{ paddingTop: "env(safe-area-inset-top, 44px)", paddingBottom: 68 } as React.CSSProperties}>
-      <div ref={modalRef as React.RefObject<HTMLDivElement>} className="bg-white rounded-2xl w-full max-w-lg overflow-y-auto shadow-2xl" style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top, 44px) - 68px)" }}>
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center px-3 md:p-4" style={{ paddingTop: "16px", paddingBottom: "calc(env(safe-area-inset-bottom, 34px) + 110px)" } as React.CSSProperties}>
+      <div ref={modalRef as React.RefObject<HTMLDivElement>} className="bg-white rounded-2xl w-full max-w-lg overflow-y-auto shadow-2xl" style={{ maxHeight: "calc(100dvh - 16px - env(safe-area-inset-bottom, 34px) - 110px)" }}>
         <div className="flex items-center justify-between p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
           <h2 className="text-lg font-bold text-gray-900">
             {isModifica ? "Modifica Atleta" : "Nuovo Atleta"}
