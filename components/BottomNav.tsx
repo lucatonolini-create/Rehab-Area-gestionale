@@ -89,12 +89,13 @@ export default function BottomNav() {
         style={{
           left: 16,
           right: 16,
-          bottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+          bottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)",
           borderRadius: 40,
-          background: "rgba(228,228,228,0.92)",
-          backdropFilter: "blur(20px) saturate(1.6)",
-          WebkitBackdropFilter: "blur(20px) saturate(1.6)",
-          boxShadow: "0 2px 16px rgba(0,0,0,0.12)",
+          background: "rgba(242,242,247,0.72)",
+          backdropFilter: "blur(28px) saturate(2)",
+          WebkitBackdropFilter: "blur(28px) saturate(2)",
+          border: "0.5px solid rgba(255,255,255,0.6)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
           transform: slideOut,
           transition,
           willChange: "transform",
@@ -121,11 +122,11 @@ export default function BottomNav() {
                     width: 48,
                     height: 36,
                     borderRadius: 18,
-                    background: isActive ? "rgba(255,255,255,0.70)" : "transparent",
+                    background: isActive ? "rgba(200,16,46,0.10)" : "transparent",
                   }}
                 >
                   <Icon
-                    className={`w-[26px] h-[26px] ${isActive ? "text-black stroke-[2.2px]" : "text-black stroke-[1.5px] opacity-40"}`}
+                    className={`w-[26px] h-[26px] ${isActive ? "text-[#C8102E] stroke-[2.2px]" : "text-black stroke-[1.5px] opacity-40"}`}
                   />
                   {showBadge && (
                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#C8102E] rounded-full" />
