@@ -91,9 +91,9 @@ export default function BottomNav() {
           right: 16,
           bottom: "calc(env(safe-area-inset-bottom, 0px) + 30px)",
           borderRadius: 40,
-          background: "rgba(210,210,210,0.88)",
-          backdropFilter: "blur(20px) saturate(1.4)",
-          WebkitBackdropFilter: "blur(20px) saturate(1.4)",
+          background: "rgba(200,200,200,0.68)",
+          backdropFilter: "blur(36px) saturate(1.6)",
+          WebkitBackdropFilter: "blur(36px) saturate(1.6)",
           border: "none",
           boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
           transform: slideOut,
@@ -119,10 +119,10 @@ export default function BottomNav() {
                 <div
                   className="relative flex items-center justify-center transition-all duration-200"
                   style={{
-                    width: 56,
-                    height: 42,
-                    borderRadius: 21,
-                    background: isActive ? "rgba(200,16,46,0.10)" : "transparent",
+                    width: 62,
+                    height: 54,
+                    borderRadius: 27,
+                    background: isActive ? "rgba(200,16,46,0.12)" : "transparent",
                   }}
                 >
                   <Icon
