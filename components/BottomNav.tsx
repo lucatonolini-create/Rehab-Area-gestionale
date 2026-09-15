@@ -24,8 +24,6 @@ const allTabs = [
   { href: "/impostazioni", label: "Impost.",    icon: Settings },
 ];
 
-// Nav floats this far above the home indicator / screen bottom
-const NAV_BOTTOM = "calc(env(safe-area-inset-bottom, 0px) + 30px)";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -80,24 +78,20 @@ export default function BottomNav() {
   }, [pathname]);
 
   const visible = scrollVisible && !hidden;
-  const slideOut = visible ? "translateY(0)" : "translateY(200px)";
+  const slideOut = visible ? "translateY(0)" : "translateY(120px)";
   const transition = "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)";
 
   return (
     <>
-      {/* Floating pill nav */}
+      {/* Instagram-style full-width bottom bar */}
       <div
         className="fixed z-50 md:hidden"
         style={{
-          left: 12,
-          right: 12,
-          bottom: NAV_BOTTOM,
-          borderRadius: 24,
-          background: "rgba(242,242,247,0.82)",
-          backdropFilter: "blur(24px) saturate(1.8)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.8)",
-          border: "0.5px solid rgba(0,0,0,0.08)",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "#ffffff",
+          borderTop: "0.5px solid rgba(0,0,0,0.15)",
           transform: slideOut,
           transition,
           willChange: "transform",
@@ -105,37 +99,27 @@ export default function BottomNav() {
       >
         <nav
           className="flex items-center"
-          style={{ overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+          style={{ overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", height: 49 } as React.CSSProperties}
         >
           <style>{`nav::-webkit-scrollbar{display:none}`}</style>
-          {allTabs.map(({ href, label, icon: Icon }) => {
+          {allTabs.map(({ href, icon: Icon }) => {
             const isActive = pathname === href;
             const showBadge = href === "/segnalazioni" && intakeBadge > 0;
             return (
               <Link
                 key={href}
                 href={href}
-                className="flex flex-col items-center justify-center gap-[2px] px-2 py-2 flex-shrink-0 active:opacity-60 transition-opacity"
-                style={{ flex: "0 0 20%" }}
+                className="flex items-center justify-center flex-shrink-0 active:opacity-50 transition-opacity"
+                style={{ flex: "0 0 20%", height: 49 }}
               >
-                <div
-                  className="relative flex items-center justify-center rounded-full transition-all duration-200"
-                  style={{
-                    width: 48,
-                    height: 28,
-                    background: isActive ? "rgba(200,16,46,0.10)" : "transparent",
-                  }}
-                >
+                <div className="relative flex items-center justify-center">
                   <Icon
-                    className={`w-[20px] h-[20px] ${isActive ? "text-[#C8102E] stroke-[2.2px]" : "text-gray-500 stroke-[1.7px]"}`}
+                    className={`w-[26px] h-[26px] ${isActive ? "text-black stroke-[2.2px]" : "text-black stroke-[1.5px] opacity-40"}`}
                   />
                   {showBadge && (
-                    <span className="absolute top-0 right-1 w-2 h-2 bg-[#C8102E] rounded-full" />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#C8102E] rounded-full" />
                   )}
                 </div>
-                <span className={`text-[10px] leading-none whitespace-nowrap ${isActive ? "text-[#C8102E] font-semibold" : "text-gray-500 font-normal"}`}>
-                  {label}
-                </span>
               </Link>
             );
           })}
@@ -144,13 +128,14 @@ export default function BottomNav() {
 
           <button
             onClick={handleLogout}
-            className="flex flex-col items-center justify-center gap-[3px] py-2.5 flex-shrink-0 active:opacity-60 transition-opacity"
-            style={{ flex: "0 0 20%" }}
+            className="flex items-center justify-center flex-shrink-0 active:opacity-50 transition-opacity"
+            style={{ flex: "0 0 20%", height: 49 }}
           >
-            <LogOut className="w-[22px] h-[22px] text-red-400 stroke-[1.7px]" />
-            <span className="text-[10px] leading-none whitespace-nowrap text-red-400 font-normal">Esci</span>
+            <LogOut className="w-[26px] h-[26px] text-red-400 stroke-[1.5px]" />
           </button>
         </nav>
+        {/* Home indicator spacer */}
+        <div style={{ height: "env(safe-area-inset-bottom, 0px)", background: "#ffffff" }} />
       </div>
     </>
   );
