@@ -7,7 +7,7 @@ import { Plus, X, Printer, ChevronLeft, ChevronRight, Search, Download, FileText
 import {
   loadNtli, upsertNtli, deleteNtli,
   loadNtliDaily, upsertNtliDaily,
-  loadAtleti, upsertAtleta,
+  loadAtleti, patchStato,
   searchOsiicsCodes,
   type NtliRecord, type NtliDaily, type NtliStato, type TrainingModification, type Atleta, type OsiicsCode, type Esercizio, type Stato,
   NTLI_STATI, TRAINING_MODIFICATIONS,
@@ -1140,9 +1140,8 @@ export default function NtliPage() {
                             const statoCorrente: Stato = atletaMatch.stato === "Infortunato" ? "Infortunato" : "NTL";
                             const toggleStato = async () => {
                               const nuovoStato: Stato = statoCorrente === "Infortunato" ? "NTL" : "Infortunato";
-                              const aggiornato = { ...atletaMatch, stato: nuovoStato };
-                              await upsertAtleta(aggiornato);
-                              setAtleti((prev) => prev.map((a) => a.id === atletaMatch.id ? aggiornato : a));
+                              setAtleti((prev) => prev.map((a) => a.id === atletaMatch.id ? { ...a, stato: nuovoStato } : a));
+                              await patchStato(atletaMatch.id, nuovoStato);
                             };
                             return (
                               <button

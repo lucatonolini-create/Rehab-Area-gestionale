@@ -784,6 +784,19 @@ export async function patchRefertiClinici(atletaId: string, referti: RefertoClin
   } catch { return false; }
 }
 
+// Direct patch of stato — bypasses the write-queue so realtime subscribers see it immediately.
+export async function patchStato(atletaId: string, stato: Stato): Promise<boolean> {
+  const db = getDB();
+  const existing = await db.atleti.get(atletaId);
+  if (existing) await db.atleti.put({ ...existing, stato });
+  if (!isOnline()) return true;
+  try {
+    const { error } = await supabase.from("atleti").update({ stato }).eq("id", atletaId);
+    if (error) { console.error("[patchStato]", error.code, error.message); return false; }
+    return true;
+  } catch { return false; }
+}
+
 export async function deleteAtleta(id: string): Promise<void> {
   const db = getDB();
   await db.atleti.delete(id);
