@@ -286,7 +286,7 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-5 pb-2">
+          <div className="flex-1 overflow-y-auto p-5" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 34px) + 16px)" }}>
             <div className="text-center mb-5">
               <div className="w-16 h-16 bg-[#2B2B2B] rounded-full flex items-center justify-center text-white font-bold text-xl mx-auto mb-2">
                 {nd(atletaSelezionato).trim().split(/\s+/).filter(Boolean).slice(0,2).map((w:string)=>(w[0]??"").toUpperCase()).join("")}
@@ -320,7 +320,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="px-5 pt-5 border-t border-gray-100 space-y-2" style={{ }}>
+          <div className="px-5 pt-5 border-t border-gray-100 space-y-2" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 34px) + 12px)" }}>
             <button onClick={() => setMostraModifica(true)}
               className="w-full bg-[#C8102E] text-white py-3 rounded-xl text-sm font-medium hover:bg-red-800">
               Modifica dati

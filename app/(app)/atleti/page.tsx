@@ -2372,7 +2372,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto overscroll-none px-5" style={{ paddingTop: "1.25rem" }}>
+          <div className="flex-1 overflow-y-auto overscroll-none px-5" style={{ paddingTop: "1.25rem", paddingBottom: "calc(env(safe-area-inset-bottom, 34px) + 24px)" }}>
             {tab === "dati" ? (
               <div className="space-y-2.5 text-sm">
                 {/* ── Sezione infortunio principale ── */}
