@@ -1099,7 +1099,7 @@ export default function EserciziPage() {
   const fasiFiltrate = fasiUniche.filter((f) => !form.fase.trim() || f.toLowerCase().includes(form.fase.toLowerCase())).slice(0, 6);
 
   return (
-    <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
+    <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "1.5rem" }}>
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900">Programmi di Lavoro</h1>
         <div className="flex items-end justify-between mt-1">

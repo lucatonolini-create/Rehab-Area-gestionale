@@ -154,7 +154,7 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-[100dvh] flex items-center justify-center bg-gray-50 px-4"
-      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      
     >
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">

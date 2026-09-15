@@ -2159,7 +2159,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
         document.body
       )}
       {/* Lista */}
-      <div className="flex-1 px-4 md:px-6 overflow-y-auto overscroll-none page-scroll" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
+      <div className="flex-1 px-4 md:px-6 overflow-y-auto overscroll-none page-scroll" style={{ paddingTop: "1.5rem" }}>
         <div className="mb-4 flex items-center justify-between">
           <div className="text-left">
             <h1 className="text-2xl font-bold text-gray-900">Atleti</h1>

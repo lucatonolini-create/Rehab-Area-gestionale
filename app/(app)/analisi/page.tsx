@@ -1366,7 +1366,7 @@ export default function AnalisiPage() {
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto overscroll-none px-4 md:px-6 page-scroll"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
+        style={{ paddingTop: "1.5rem" }}>
       <div className="mb-4 flex items-center justify-between">
         <div className="text-left">
           <h1 className="text-2xl font-bold text-gray-900">Analisi</h1>
