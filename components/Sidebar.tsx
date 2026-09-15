@@ -178,17 +178,25 @@ export default function Sidebar() {
     router.push("/login");
   };
 
-  const sidebarStyle = {
-    background: "linear-gradient(to right, rgba(248,248,248,0.98) 0%, rgba(245,245,245,0.92) 70%, rgba(240,240,240,0.60) 100%)",
-    backdropFilter: "blur(40px) saturate(1.4)",
-    WebkitBackdropFilter: "blur(40px) saturate(1.4)",
-  };
-
   return (
     <aside
-      style={sidebarStyle}
+      style={{ background: "rgba(248,248,248,1)", position: "relative" }}
       className={`hidden md:flex flex-col text-gray-800 shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}
     >
+      {/* Right-edge fade */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: collapsed ? 16 : 48,
+          background: "linear-gradient(to right, rgba(248,248,248,0) 0%, rgba(255,255,255,0.85) 100%)",
+          pointerEvents: "none",
+          zIndex: 1,
+        }}
+      />
       <SidebarContent
         collapsed={collapsed}
         setCollapsed={setCollapsed}
