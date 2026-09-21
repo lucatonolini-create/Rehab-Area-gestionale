@@ -30,21 +30,16 @@ function BarraOrizzontale({ label, value, max, color = "bg-[#C8102E]", sub }: {
   );
 }
 
-function StatCard({ label, value, sub, icon: Icon, color }: {
-  label: string; value: number | string; sub?: string; icon: any; color: string;
+function StatCard({ label, value, icon: Icon, color }: {
+  label: string; value: number | string; icon: any; color: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs text-gray-500 font-medium">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
-          {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
-        </div>
-        <div className={`${color} p-2.5 rounded-xl`}>
-          <Icon className="w-5 h-5 text-white" />
-        </div>
+    <div className="flex flex-col">
+      <div className={`${color} p-1.5 rounded-lg w-fit mb-2.5`}>
+        <Icon className="w-3.5 h-3.5 text-white" />
       </div>
+      <p className="text-4xl font-bold text-gray-900">{value}</p>
+      <p className="text-[9px] text-gray-400 font-semibold mt-1 uppercase tracking-widest leading-tight">{label}</p>
     </div>
   );
 }
@@ -1438,7 +1433,7 @@ export default function AnalisiPage() {
 
       {tab === "overview" ? (
         <div className="space-y-6">
-          <div className="grid grid-cols-3 gap-x-4 gap-y-6">
+          <div className="grid grid-cols-3 gap-x-4 gap-y-6 mb-8 pb-6 border-b border-gray-100">
             <StatCard label="Atleti Totali" value={tuttiAtleti.length} icon={Users} color="bg-gray-400" />
             <StatCard label="Disponibili" value={guariti.length} icon={TrendingUp} color="bg-green-500" />
             <StatCard label="Infortunati (TL)" value={attivi.length} icon={Activity} color="bg-orange-500" />
