@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Dumbbell, Users, Activity, TrendingUp, Calendar, Download, FileText, ShieldAlert } from "lucide-react";
-import { loadAtleti, loadProgrammi, loadNtli, nd, CATEGORIE, TIPI_INFORTUNIO, type Atleta, type Programma, type NtliRecord } from "@/lib/store";
+import { loadAtleti, loadProgrammi, loadNtli, subscribeToAtleti, subscribeToProgrammi, subscribeToNtli, nd, CATEGORIE, TIPI_INFORTUNIO, type Atleta, type Programma, type NtliRecord } from "@/lib/store";
 import { ROSA } from "@/lib/players";
 
 const MESI = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
@@ -1157,12 +1157,29 @@ export default function AnalisiPage() {
   const [stagioneMeseFine, setStagioneMeseFine] = useState(5);
 
   useEffect(() => {
-    loadNtli().then(setNtliList);
-    loadAtleti().then(async (atletiData) => {
+    const reloadAtleti = async () => {
+      const atletiData = await loadAtleti();
       setAtleti(atletiData);
       const all = (await Promise.all(atletiData.map((a) => loadProgrammi(a.id)))).flat();
       setProgrammi(all);
-    });
+    };
+    const reloadNtli = () => loadNtli().then(setNtliList);
+    reloadAtleti();
+    reloadNtli();
+    const unsubAtleti = subscribeToAtleti(reloadAtleti);
+    const unsubProgrammi = subscribeToProgrammi(reloadAtleti);
+    const unsubNtli = subscribeToNtli(reloadNtli);
+    const onVisible = () => { if (document.visibilityState === "visible") { reloadAtleti(); reloadNtli(); } };
+    const onOnline = () => { reloadAtleti(); reloadNtli(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", onOnline);
+    return () => {
+      unsubAtleti();
+      unsubProgrammi();
+      unsubNtli();
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", onOnline);
+    };
   }, []);
 
   const atletiDedup = atleti.filter((a, idx, arr) =>

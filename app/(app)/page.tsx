@@ -20,7 +20,7 @@ function AppLogo({ className }: { className?: string }) {
 }
 import {
   loadAtleti, loadProgrammi, upsertAtleta, nd,
-  subscribeToAtleti, subscribeToProgrammi,
+  subscribeToAtleti, subscribeToProgrammi, subscribeToNtli,
   loadNtli,
   CATEGORIE, type Atleta, type Programma, type Stato, type NtliRecord,
 } from "@/lib/store";
@@ -76,6 +76,7 @@ export default function Dashboard() {
     reload();
     const unsubAtleti = subscribeToAtleti(reload);
     const unsubProgrammi = subscribeToProgrammi(reload);
+    const unsubNtli = subscribeToNtli(() => loadNtli().then(setNtliList));
     const onVisible = () => { if (document.visibilityState === "visible") reload(); };
     const onOnline = () => reload();
     document.addEventListener("visibilitychange", onVisible);
@@ -83,6 +84,7 @@ export default function Dashboard() {
     return () => {
       unsubAtleti();
       unsubProgrammi();
+      unsubNtli();
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("online", onOnline);
     };

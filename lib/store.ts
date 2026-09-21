@@ -887,6 +887,14 @@ export function subscribeToProgrammi(onChange: (atletaId?: string) => void): () 
   return () => { supabase.removeChannel(channel); };
 }
 
+export function subscribeToNtli(onChange: () => void): () => void {
+  const channel = supabase
+    .channel(`ntli-rt-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "ntli" }, onChange)
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}
+
 // ─── Impostazioni ────────────────────────────────────────────────────────────
 
 const defaultImpostazioni: Impostazioni = {

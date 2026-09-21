@@ -6,6 +6,7 @@ import { Activity, FileText, Upload, Trash2, Users, TrendingUp, Clock, X, AlertT
 import {
   loadEpiMonthly, upsertEpiMonthly, deleteEpiMonthly,
   loadAtleti, loadNtli, loadProgrammi,
+  subscribeToAtleti, subscribeToProgrammi, subscribeToNtli,
   CATEGORIE, TIPI_INFORTUNIO,
   type Categoria, type EpiMonthlyRecord, type EpiMonthlyEntry,
   type Atleta, type NtliRecord, type Programma,
@@ -435,12 +436,29 @@ export default function EpidemiologiaPage() {
 
   useEffect(() => {
     loadEpiMonthly().then(r => { setRecords(r); setLoading(false); });
-    loadAtleti().then(async (atletiData) => {
+    const reloadAtleti = async () => {
+      const atletiData = await loadAtleti();
       setAtleti(atletiData);
       const all = (await Promise.all(atletiData.map((a) => loadProgrammi(a.id)))).flat();
       setProgrammi(all);
-    });
-    loadNtli().then(setNtliList);
+    };
+    const reloadNtli = () => loadNtli().then(setNtliList);
+    reloadAtleti();
+    reloadNtli();
+    const unsubAtleti = subscribeToAtleti(reloadAtleti);
+    const unsubProgrammi = subscribeToProgrammi(reloadAtleti);
+    const unsubNtli = subscribeToNtli(reloadNtli);
+    const onVisible = () => { if (document.visibilityState === "visible") { reloadAtleti(); reloadNtli(); } };
+    const onOnline = () => { reloadAtleti(); reloadNtli(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", onOnline);
+    return () => {
+      unsubAtleti();
+      unsubProgrammi();
+      unsubNtli();
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", onOnline);
+    };
   }, []);
 
   const atletiDedup = atleti.filter((a, idx, arr) =>
