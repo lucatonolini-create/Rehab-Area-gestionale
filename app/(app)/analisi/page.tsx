@@ -1442,7 +1442,7 @@ export default function AnalisiPage() {
             <StatCard label="Atleti Totali" value={tuttiAtleti.length} icon={Users} color="bg-gray-400" />
             <StatCard label="Disponibili" value={guariti.length} icon={TrendingUp} color="bg-green-500" />
             <StatCard label="Infortunati (TL)" value={attivi.length} icon={Activity} color="bg-orange-500" />
-            <StatCard label="NTLI" value={ntliList.length} icon={ShieldAlert} color="bg-[#C8102E]" />
+            <StatCard label="NTLI" value={ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso").length} icon={ShieldAlert} color="bg-[#C8102E]" />
             <StatCard label="Programmi Attivi" value={programmiAttivi} icon={Dumbbell} color="bg-[#C8102E]" />
             <StatCard label="Programmi Totali" value={programmiReali.length} icon={Dumbbell} color="bg-[#2B2B2B]" />
           </div>

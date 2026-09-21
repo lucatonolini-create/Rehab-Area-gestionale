@@ -755,7 +755,7 @@ export default function EpidemiologiaPage() {
           { label: "Atleti Totali",    value: tuttiAtleti.length, Icon: Users,       color: "bg-gray-400"   },
           { label: "Disponibili",      value: guariti,            Icon: TrendingUp,  color: "bg-green-500"  },
           { label: "Infortunati (TL)", value: inRecupero,         Icon: Activity,    color: "bg-orange-500" },
-          { label: "NTLI",             value: ntliList.length,    Icon: ShieldAlert, color: "bg-[#C8102E]"  },
+          { label: "NTLI",             value: ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso").length, Icon: ShieldAlert, color: "bg-[#C8102E]" },
           { label: "Programmi Attivi", value: programmiAttivi,    Icon: Dumbbell,    color: "bg-[#C8102E]"  },
           { label: "Programmi Totali", value: programmiReali.length, Icon: Dumbbell, color: "bg-[#2B2B2B]"  },
         ].map(({ label, value, Icon, color }) => (
