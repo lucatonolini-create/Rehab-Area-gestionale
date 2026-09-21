@@ -2,13 +2,13 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
-import { Activity, FileText, Upload, Trash2, Users, TrendingUp, Clock, X, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Activity, FileText, Upload, Trash2, Users, TrendingUp, Clock, X, AlertTriangle, ShieldAlert, Dumbbell } from "lucide-react";
 import {
   loadEpiMonthly, upsertEpiMonthly, deleteEpiMonthly,
-  loadAtleti, loadNtli,
+  loadAtleti, loadNtli, loadProgrammi,
   CATEGORIE, TIPI_INFORTUNIO,
   type Categoria, type EpiMonthlyRecord, type EpiMonthlyEntry,
-  type Atleta, type NtliRecord,
+  type Atleta, type NtliRecord, type Programma,
 } from "@/lib/store";
 import { ROSA } from "@/lib/players";
 
@@ -414,6 +414,7 @@ export default function EpidemiologiaPage() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [atleti, setAtleti] = useState<Atleta[]>([]);
   const [ntliList, setNtliList] = useState<NtliRecord[]>([]);
+  const [programmi, setProgrammi] = useState<Programma[]>([]);
 
   // Upload modal state
   const [showUpload, setShowUpload] = useState(false);
@@ -434,7 +435,11 @@ export default function EpidemiologiaPage() {
 
   useEffect(() => {
     loadEpiMonthly().then(r => { setRecords(r); setLoading(false); });
-    loadAtleti().then(setAtleti);
+    loadAtleti().then(async (atletiData) => {
+      setAtleti(atletiData);
+      const all = (await Promise.all(atletiData.map((a) => loadProgrammi(a.id)))).flat();
+      setProgrammi(all);
+    });
     loadNtli().then(setNtliList);
   }, []);
 
@@ -472,6 +477,12 @@ export default function EpidemiologiaPage() {
     activeNtliNames.has(a.nome.toLowerCase().trim()) ? { ...a, stato: "NTL" as any } : a
   );
   const tuttiAtleti = [...atletiConNtli, ...ntliVirtual];
+
+  const inRecupero = atletiConNtli.filter((a) => a.stato === "Infortunato").length;
+  const guariti    = atletiConNtli.filter((a) => a.stato === "Disponibile").length;
+  const programmiReali = programmi.filter((p) => !p.riposo);
+  const attiviBisognoIds = new Set(atleti.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").map((a) => a.id));
+  const programmiAttivi = programmiReali.filter((p) => attiviBisognoIds.has(p.atletaId)).length;
 
   const filtered = useMemo(() => records.filter(r => {
     if (filtroCat !== "Tutte" && r.categoria !== filtroCat) return false;
@@ -718,6 +729,26 @@ export default function EpidemiologiaPage() {
             <FileText className="w-3.5 h-3.5" /> {pdfLoading ? "..." : "PDF"}
           </button>
         </div>
+      </div>
+
+      {/* Dashboard cards */}
+      <div className="grid grid-cols-3 gap-x-4 gap-y-6 mb-8 pb-6 border-b border-gray-100">
+        {[
+          { label: "Atleti Totali",    value: tuttiAtleti.length, Icon: Users,       color: "bg-gray-400"   },
+          { label: "Disponibili",      value: guariti,            Icon: TrendingUp,  color: "bg-green-500"  },
+          { label: "Infortunati (TL)", value: inRecupero,         Icon: Activity,    color: "bg-orange-500" },
+          { label: "NTLI",             value: ntliList.length,    Icon: ShieldAlert, color: "bg-[#C8102E]"  },
+          { label: "Programmi Attivi", value: programmiAttivi,    Icon: Dumbbell,    color: "bg-[#C8102E]"  },
+          { label: "Programmi Totali", value: programmiReali.length, Icon: Dumbbell, color: "bg-[#2B2B2B]"  },
+        ].map(({ label, value, Icon, color }) => (
+          <div key={label} className="flex flex-col">
+            <div className={`${color} p-1.5 rounded-lg w-fit mb-2.5`}>
+              <Icon className="w-3.5 h-3.5 text-white" />
+            </div>
+            <p className="text-4xl font-bold text-gray-900">{value}</p>
+            <p className="text-[9px] text-gray-400 font-semibold mt-1 uppercase tracking-widest leading-tight">{label}</p>
+          </div>
+        ))}
       </div>
 
       {/* Upload modal */}

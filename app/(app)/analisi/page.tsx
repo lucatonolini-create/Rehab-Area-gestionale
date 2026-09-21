@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BarChart2, Users, Activity, TrendingUp, Calendar, Download, FileText, ShieldAlert } from "lucide-react";
+import { Dumbbell, Users, Activity, TrendingUp, Calendar, Download, FileText, ShieldAlert } from "lucide-react";
 import { loadAtleti, loadProgrammi, loadNtli, nd, CATEGORIE, TIPI_INFORTUNIO, type Atleta, type Programma, type NtliRecord } from "@/lib/store";
 import { ROSA } from "@/lib/players";
 
@@ -1203,6 +1203,8 @@ export default function AnalisiPage() {
   const attivi = tuttiAtleti.filter((a) => a.stato === "Infortunato");
   const guariti = tuttiAtleti.filter((a) => a.stato === "Disponibile");
   const programmiReali = programmi.filter((p) => !p.riposo);
+  const attiviBisognoIds = new Set(atleti.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").map((a) => a.id));
+  const programmiAttivi = programmiReali.filter((p) => attiviBisognoIds.has(p.atletaId)).length;
 
   const totaleInfortuni = tuttiAtleti.reduce((sum, a) => {
     const corrente = a.stato === "Infortunato" && (a.infortunio || a.tipoInfortunio) ? 1 : 0;
@@ -1419,13 +1421,13 @@ export default function AnalisiPage() {
 
       {tab === "overview" ? (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <StatCard label="Atleti totali" value={tuttiAtleti.length} sub="in gestione" icon={Users} color="bg-[#2B2B2B]" />
-            <StatCard label="Infortuni totali" value={totaleInfortuni} sub="attivi + archiviati" icon={Activity} color="bg-[#C8102E]" />
-            <StatCard label="In riabilitazione" value={attivi.length} sub="infortuni attivi" icon={Activity} color="bg-orange-500" />
-            <StatCard label="In NTLI" value={tuttiAtleti.filter((a) => a.stato === "NTL").length} sub="sotto monitoraggio" icon={ShieldAlert} color="bg-amber-500" />
-            <StatCard label="Disponibili" value={guariti.length} sub="atleti guariti" icon={TrendingUp} color="bg-green-500" />
-            <StatCard label="Sessioni totali" value={programmiReali.length} sub="programmi di lavoro" icon={BarChart2} color="bg-gray-500" />
+          <div className="grid grid-cols-3 gap-x-4 gap-y-6">
+            <StatCard label="Atleti Totali" value={tuttiAtleti.length} icon={Users} color="bg-gray-400" />
+            <StatCard label="Disponibili" value={guariti.length} icon={TrendingUp} color="bg-green-500" />
+            <StatCard label="Infortunati (TL)" value={attivi.length} icon={Activity} color="bg-orange-500" />
+            <StatCard label="NTLI" value={ntliList.length} icon={ShieldAlert} color="bg-[#C8102E]" />
+            <StatCard label="Programmi Attivi" value={programmiAttivi} icon={Dumbbell} color="bg-[#C8102E]" />
+            <StatCard label="Programmi Totali" value={programmiReali.length} icon={Dumbbell} color="bg-[#2B2B2B]" />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
