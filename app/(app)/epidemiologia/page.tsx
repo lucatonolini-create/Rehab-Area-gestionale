@@ -1002,22 +1002,7 @@ export default function EpidemiologiaPage() {
           </div>
 
           {/* KPI row */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-5">
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <p className="text-2xl font-bold text-[#C8102E]">{infStats.totaleInfortuni}</p>
-              <p className="text-sm font-medium text-gray-700 mt-0.5">Infortuni totali</p>
-              <p className="text-xs text-gray-400 mt-0.5">attivi + archiviati</p>
-            </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <p className="text-2xl font-bold text-orange-500">{infStats.atletiInfortunatiOra}</p>
-              <p className="text-sm font-medium text-gray-700 mt-0.5">In rehab ora</p>
-              <p className="text-xs text-gray-400 mt-0.5">infortuni attivi</p>
-            </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <p className="text-2xl font-bold text-amber-500">{infStats.atletiInNtl}</p>
-              <p className="text-sm font-medium text-gray-700 mt-0.5">In NTLI</p>
-              <p className="text-xs text-gray-400 mt-0.5">sotto monitoraggio</p>
-            </div>
+          <div className="grid grid-cols-2 gap-4 mb-5">
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <p className="text-2xl font-bold text-blue-600">{infStats.osiicsCount}</p>
               <p className="text-sm font-medium text-gray-700 mt-0.5">Codici OSIICS</p>
