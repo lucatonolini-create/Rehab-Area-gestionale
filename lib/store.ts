@@ -1498,10 +1498,18 @@ export async function loadNtliDaily(ntliId?: string): Promise<NtliDaily[]> {
 
 export async function upsertNtliDaily(d: NtliDaily): Promise<void> {
   const sb = ntliSbClient();
+  // Look up the actual existing row so we never change its primary key.
+  // Using onConflict:"ntli_id,date" alone would overwrite id on every save.
+  const { data: existing } = await sb
+    .from("ntli_daily")
+    .select("id")
+    .eq("ntli_id", d.ntliId)
+    .eq("date", d.date)
+    .maybeSingle();
   const row = {
-    id: d.id,
+    id: existing?.id ?? d.id,
     ntli_id: d.ntliId,
-    athlete_id: d.athleteId,
+    athlete_id: d.athleteId || null,
     date: d.date,
     vas_start_training: d.vasStart ?? null,
     vas_end_training: d.vasEnd ?? null,
@@ -1510,7 +1518,7 @@ export async function upsertNtliDaily(d: NtliDaily): Promise<void> {
     esercizi_palestra: d.esercizi?.length ? d.esercizi : null,
     updated_at: new Date().toISOString(),
   };
-  const { error } = await sb.from("ntli_daily").upsert(row, { onConflict: "ntli_id,date" });
+  const { error } = await sb.from("ntli_daily").upsert(row, { onConflict: "id" });
   if (error) throw new Error(error.message ?? JSON.stringify(error));
 }
 

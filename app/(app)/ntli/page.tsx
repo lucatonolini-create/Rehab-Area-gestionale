@@ -871,6 +871,19 @@ export default function NtliPage() {
 
   // ── Gestione helpers ──────────────────────────────────────────────────────
   async function handleSaveNtli(data: NtliFormData) {
+    // Guard: prevent creating a duplicate active NTLI for the same athlete + body location
+    if (!editNtli) {
+      const duplicate = ntliList.find((n) =>
+        n.status !== "Risolto" && n.status !== "Chiuso" &&
+        n.athleteName.toLowerCase().trim() === data.athleteName.toLowerCase().trim() &&
+        n.painLocation.toLowerCase().trim() === data.painLocation.toLowerCase().trim() &&
+        n.bodySide === data.bodySide
+      );
+      if (duplicate) {
+        alert(`Esiste già un NTLI attivo per ${data.athleteName} (${data.painLocation} · ${data.bodySide}). Modifica quello esistente invece di crearne uno nuovo.`);
+        return;
+      }
+    }
     const now = new Date().toISOString();
     const rec: NtliRecord = {
       id: editNtli?.id ?? uid(),
