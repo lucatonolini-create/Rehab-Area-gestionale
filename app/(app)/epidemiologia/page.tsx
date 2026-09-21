@@ -554,7 +554,7 @@ export default function EpidemiologiaPage() {
     ]);
 
     const totaleInfortuni = tuttiInfortuni.length;
-    const atletiInfortunatiOra = tuttiAtleti.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").length;
+    const atletiInfortunatiOra = tuttiAtleti.filter((a) => a.stato === "Infortunato").length;
 
     const perTipo = distrib(tuttiInfortuni.map((i) => i.tipo));
     const perMeccanismo = distrib(tuttiInfortuni.map((i) => i.meccanismo));
