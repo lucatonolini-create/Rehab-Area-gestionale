@@ -1208,7 +1208,7 @@ export default function AnalisiPage() {
     };
   });
   const atletiConNtli = atletiDedup.map((a) =>
-    activeNtliNames.has(a.nome.toLowerCase().trim()) ? { ...a, stato: "NTL" as any } : a
+    activeNtliNames.has(a.nome.toLowerCase().trim()) && a.stato !== "Infortunato" ? { ...a, stato: "NTL" as any } : a
   );
   const tuttiAtleti = [...atletiConNtli, ...ntliVirtual];
 
