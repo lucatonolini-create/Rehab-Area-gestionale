@@ -100,28 +100,33 @@ export default function Dashboard() {
       .map((n) => n.athleteName.toLowerCase().trim())
   );
 
-  const ntliVirtual: Atleta[] = ntliList
-    .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
-    .filter((n) => !atleti.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
-    .map((n) => {
-      const rosa = ROSA.find((r) => r.nome.toLowerCase() === n.athleteName.toLowerCase());
-      return {
-        id: `__ntli__${n.id}`,
-        nome: n.athleteName,
-        categoria: (rosa?.categoria ?? "1ª Squadra") as (typeof CATEGORIE)[number],
-        posizione: rosa?.ruolo ?? "",
-        piedeDominante: "Destro" as Atleta["piedeDominante"],
-        infortunio: [n.painLocation, n.bodySide].filter(Boolean).join(" · "),
-        inizioRehab: n.onsetDate ?? "",
-        stato: "NTL" as Stato,
-        progresso: 0,
-        fisioterapista: "",
-        preparatoreAtletico: "",
-        telefono: "",
-        email: "",
-        note: "",
-      };
-    });
+  // One virtual athlete per unique name — multiple NTLI records for the same player must not create duplicates
+  const ntliVirtual: Atleta[] = Array.from(
+    new Map(
+      ntliList
+        .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
+        .filter((n) => !atleti.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
+        .map((n) => [n.athleteName.toLowerCase().trim(), n] as const)
+    ).values()
+  ).map((n) => {
+    const rosa = ROSA.find((r) => r.nome.toLowerCase() === n.athleteName.toLowerCase());
+    return {
+      id: `__ntli__${n.id}`,
+      nome: n.athleteName,
+      categoria: (rosa?.categoria ?? "1ª Squadra") as (typeof CATEGORIE)[number],
+      posizione: rosa?.ruolo ?? "",
+      piedeDominante: "Destro" as Atleta["piedeDominante"],
+      infortunio: [n.painLocation, n.bodySide].filter(Boolean).join(" · "),
+      inizioRehab: n.onsetDate ?? "",
+      stato: "NTL" as Stato,
+      progresso: 0,
+      fisioterapista: "",
+      preparatoreAtletico: "",
+      telefono: "",
+      email: "",
+      note: "",
+    };
+  });
 
   const atletiConNtli = atleti.map((a) =>
     activeNtliNames.has(a.nome.toLowerCase().trim()) && a.stato !== "Infortunato"
