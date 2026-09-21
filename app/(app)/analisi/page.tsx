@@ -151,7 +151,7 @@ function esportaCSVPanoramica(params: {
   trendMensile: { label: string; count: number }[];
 }) {
   const oggi = new Date().toLocaleDateString("it-IT");
-  const attivi = params.atleti.filter(a => a.stato !== "Disponibile").length;
+  const attivi = params.atleti.filter(a => a.stato === "Infortunato").length;
   const guariti = params.atleti.filter(a => a.stato === "Disponibile").length;
 
   const rows: string[][] = [];
@@ -256,7 +256,7 @@ async function esportaPDFPanoramica(params: {
   const dark: [number, number, number] = [43, 43, 43];
   const gray: [number, number, number] = [130, 130, 130];
   const oggi = new Date().toLocaleDateString("it-IT");
-  const attivi = params.atleti.filter((a) => a.stato !== "Disponibile").length;
+  const attivi = params.atleti.filter((a) => a.stato === "Infortunato").length;
   const guariti = params.atleti.filter((a) => a.stato === "Disponibile").length;
   const logoDataUrl = await getLogoDataUrl();
   const M = 14; const W = 297; const H = 210; const HDR = 30;
@@ -1186,7 +1186,7 @@ export default function AnalisiPage() {
   );
   const tuttiAtleti = [...atletiConNtli, ...ntliVirtual];
 
-  const attivi = tuttiAtleti.filter((a) => a.stato !== "Disponibile");
+  const attivi = tuttiAtleti.filter((a) => a.stato === "Infortunato");
   const guariti = tuttiAtleti.filter((a) => a.stato === "Disponibile");
   const programmiReali = programmi.filter((p) => !p.riposo);
 
@@ -1219,7 +1219,7 @@ export default function AnalisiPage() {
     return CATEGORIE.map((cat) => ({
       cat,
       totale: tuttiAtleti.filter((a) => a.categoria === cat).length,
-      attivi: tuttiAtleti.filter((a) => a.categoria === cat && a.stato !== "Disponibile").length,
+      attivi: tuttiAtleti.filter((a) => a.categoria === cat && a.stato === "Infortunato").length,
     })).filter((x) => x.totale > 0);
   }, [tuttiAtleti]);
 
