@@ -438,30 +438,37 @@ export default function EpidemiologiaPage() {
     loadNtli().then(setNtliList);
   }, []);
 
+  const atletiDedup = atleti.filter((a, idx, arr) =>
+    arr.findIndex((b) => b.nome.toLowerCase().trim() === a.nome.toLowerCase().trim()) === idx
+  );
   const activeNtliNames = new Set(
     ntliList
       .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
       .map((n) => n.athleteName.toLowerCase().trim())
   );
-  const ntliVirtual: Atleta[] = ntliList
-    .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
-    .filter((n) => !atleti.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
-    .map((n) => {
-      const rosa = ROSA.find((r) => r.nome.toLowerCase() === n.athleteName.toLowerCase());
-      return {
-        id: `__ntli__${n.id}`,
-        nome: n.athleteName,
-        categoria: (rosa?.categoria ?? "1ª Squadra") as (typeof CATEGORIE)[number],
-        posizione: rosa?.ruolo ?? "",
-        piedeDominante: "Destro" as any,
-        infortunio: [n.painLocation, n.bodySide].filter(Boolean).join(" · "),
-        inizioRehab: n.onsetDate ?? "",
-        stato: "NTL" as any,
-        progresso: 0, fisioterapista: "", preparatoreAtletico: "",
-        telefono: "", email: "", note: "",
-      };
-    });
-  const atletiConNtli = atleti.map((a) =>
+  const ntliVirtual: Atleta[] = Array.from(
+    new Map(
+      ntliList
+        .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
+        .filter((n) => !atletiDedup.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
+        .map((n) => [n.athleteName.toLowerCase().trim(), n] as const)
+    ).values()
+  ).map((n) => {
+    const rosa = ROSA.find((r) => r.nome.toLowerCase() === n.athleteName.toLowerCase());
+    return {
+      id: `__ntli__${n.id}`,
+      nome: n.athleteName,
+      categoria: (rosa?.categoria ?? "1ª Squadra") as (typeof CATEGORIE)[number],
+      posizione: rosa?.ruolo ?? "",
+      piedeDominante: "Destro" as any,
+      infortunio: [n.painLocation, n.bodySide].filter(Boolean).join(" · "),
+      inizioRehab: n.onsetDate ?? "",
+      stato: "NTL" as any,
+      progresso: 0, fisioterapista: "", preparatoreAtletico: "",
+      telefono: "", email: "", note: "",
+    };
+  });
+  const atletiConNtli = atletiDedup.map((a) =>
     activeNtliNames.has(a.nome.toLowerCase().trim()) ? { ...a, stato: "NTL" as any } : a
   );
   const tuttiAtleti = [...atletiConNtli, ...ntliVirtual];
