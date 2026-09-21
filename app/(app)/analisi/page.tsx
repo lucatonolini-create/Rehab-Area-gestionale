@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BarChart2, Users, Activity, TrendingUp, Calendar, Download, FileText } from "lucide-react";
+import { BarChart2, Users, Activity, TrendingUp, Calendar, Download, FileText, ShieldAlert } from "lucide-react";
 import { loadAtleti, loadProgrammi, loadNtli, nd, CATEGORIE, TIPI_INFORTUNIO, type Atleta, type Programma, type NtliRecord } from "@/lib/store";
 import { ROSA } from "@/lib/players";
 
@@ -152,6 +152,7 @@ function esportaCSVPanoramica(params: {
 }) {
   const oggi = new Date().toLocaleDateString("it-IT");
   const attivi = params.atleti.filter(a => a.stato === "Infortunato").length;
+  const inNtl = params.atleti.filter(a => a.stato === "NTL").length;
   const guariti = params.atleti.filter(a => a.stato === "Disponibile").length;
 
   const rows: string[][] = [];
@@ -162,8 +163,9 @@ function esportaCSVPanoramica(params: {
   rows.push(["Indicatore", "Valore"]);
   rows.push(["Atleti totali in gestione", String(params.atleti.length)]);
   rows.push(["In riabilitazione", String(attivi)]);
-  rows.push(["Guariti / Dimessi", String(guariti)]);
-  rows.push(["Programmi riabilitativi creati", String(params.programmi.length)]);
+  rows.push(["In NTLI", String(inNtl)]);
+  rows.push(["Disponibili", String(guariti)]);
+  rows.push(["Sessioni totali", String(params.programmi.length)]);
   rows.push([]);
 
   rows.push(["ATLETI PER CATEGORIA"]);
@@ -257,6 +259,7 @@ async function esportaPDFPanoramica(params: {
   const gray: [number, number, number] = [130, 130, 130];
   const oggi = new Date().toLocaleDateString("it-IT");
   const attivi = params.atleti.filter((a) => a.stato === "Infortunato").length;
+  const inNtl = params.atleti.filter((a) => a.stato === "NTL").length;
   const guariti = params.atleti.filter((a) => a.stato === "Disponibile").length;
   const logoDataUrl = await getLogoDataUrl();
   const M = 14; const W = 297; const H = 210; const HDR = 30;
@@ -298,8 +301,9 @@ async function esportaPDFPanoramica(params: {
     body: [
       ["Atleti totali in gestione", String(params.atleti.length)],
       ["In riabilitazione", String(attivi)],
-      ["Guariti / Dimessi", String(guariti)],
-      ["Programmi riabilitativi creati", String(params.programmi.length)],
+      ["In NTLI", String(inNtl)],
+      ["Disponibili", String(guariti)],
+      ["Sessioni totali", String(params.programmi.length)],
     ],
     theme: "striped",
     styles: { fontSize: 8, cellPadding: 3, overflow: "ellipsize", halign: "left", valign: "middle" },
@@ -1400,11 +1404,12 @@ export default function AnalisiPage() {
 
       {tab === "overview" ? (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
             <StatCard label="Atleti totali" value={tuttiAtleti.length} sub="in gestione" icon={Users} color="bg-[#2B2B2B]" />
-            <StatCard label="In riabilitazione" value={attivi.length} sub="attualmente attivi" icon={Activity} color="bg-orange-500" />
-            <StatCard label="Guariti" value={guariti.length} sub="completato percorso" icon={TrendingUp} color="bg-green-500" />
-            <StatCard label="Programmi totali" value={programmiReali.length} sub="sessioni create" icon={BarChart2} color="bg-[#C8102E]" />
+            <StatCard label="In riabilitazione" value={attivi.length} sub="infortuni attivi" icon={Activity} color="bg-orange-500" />
+            <StatCard label="In NTLI" value={tuttiAtleti.filter((a) => a.stato === "NTL").length} sub="sotto monitoraggio" icon={ShieldAlert} color="bg-amber-500" />
+            <StatCard label="Disponibili" value={guariti.length} sub="atleti guariti" icon={TrendingUp} color="bg-green-500" />
+            <StatCard label="Sessioni totali" value={programmiReali.length} sub="programmi di lavoro" icon={BarChart2} color="bg-[#C8102E]" />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

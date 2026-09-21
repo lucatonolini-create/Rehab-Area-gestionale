@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
-import { Activity, FileText, Upload, Trash2, Users, TrendingUp, Clock, X, AlertTriangle } from "lucide-react";
+import { Activity, FileText, Upload, Trash2, Users, TrendingUp, Clock, X, AlertTriangle, ShieldAlert } from "lucide-react";
 import {
   loadEpiMonthly, upsertEpiMonthly, deleteEpiMonthly,
   loadAtleti, loadNtli,
@@ -139,7 +139,7 @@ async function esportaPDFEpi(params: {
   catData: { cat: string; sessioni: number; presenzaMedia: number; rpeMedia: number; minutiMedi: number }[];
   monthlyData: { label: string; presenzaMedia: number; rpeMedia: number; sessioni: number }[];
   infStats: {
-    totaleInfortuni: number; atletiInfortunatiOra: number; osiicsCount: number; minutoMedio: number | null;
+    totaleInfortuni: number; atletiInfortunatiOra: number; atletiInNtl: number; osiicsCount: number; minutoMedio: number | null;
     fiiccsCount: number; conPalla: number; senzaPalla: number; inPartitiCount: number; inAllenamentoCount: number;
     perTipo: [string, number][]; perMeccanismo: [string, number][]; perLato: [string, number][];
     perCategoria: [string, number][]; perOsiicsCategoria: [string, number][]; perOsiicsCodice: [string, number][];
@@ -276,8 +276,9 @@ async function esportaPDFEpi(params: {
 
   y = drawKpiGrid([
     ["Infortuni totali", String(inf.totaleInfortuni), "Attualmente in rehab", String(inf.atletiInfortunatiOra)],
-    ["Codici OSIICS", String(inf.osiicsCount), "Minuto medio infortunio", inf.minutoMedio != null ? `${inf.minutoMedio}'` : "—"],
-    ["Schede FIICCS", String(inf.fiiccsCount), "Con palla / Senza palla", (inf.conPalla > 0 || inf.senzaPalla > 0) ? `${inf.conPalla} / ${inf.senzaPalla}` : "—"],
+    ["In NTLI", String(inf.atletiInNtl), "Minuto medio infortunio", inf.minutoMedio != null ? `${inf.minutoMedio}'` : "—"],
+    ["Codici OSIICS", String(inf.osiicsCount), "Con palla / Senza palla", (inf.conPalla > 0 || inf.senzaPalla > 0) ? `${inf.conPalla} / ${inf.senzaPalla}` : "—"],
+    ["Schede FIICCS", String(inf.fiiccsCount), "", ""],
   ], y);
 
   if (inf.perTipo.length > 0) {
@@ -554,6 +555,7 @@ export default function EpidemiologiaPage() {
 
     const totaleInfortuni = tuttiInfortuni.length;
     const atletiInfortunatiOra = tuttiAtleti.filter((a) => a.stato === "Infortunato").length;
+    const atletiInNtl = tuttiAtleti.filter((a) => a.stato === "NTL").length;
 
     const perTipo = distrib(tuttiInfortuni.map((i) => i.tipo));
     const perMeccanismo = distrib(tuttiInfortuni.map((i) => i.meccanismo));
@@ -633,7 +635,7 @@ export default function EpidemiologiaPage() {
     const detAllenamento = tuttiDettagli.filter((d) => d.tipoSeduta === "Allenamento");
     const perTerrenoAllenamento = distrib(detAllenamento.map((d) => d.terrenoGioco));
 
-    return { totaleInfortuni, atletiInfortunatiOra, perTipo, perMeccanismo, perLato, perCategoria, perSeduta, perAttivita, perInsorgenza, perTerreno, perFaseGioco, minutoMedio, conPalla, senzaPalla, fiiccsCount: tuttiDettagli.length, perOsiicsCodice, perOsiicsCategoria, osiicsCount: codiciFull.length, perSede, perTempo, inPartitiCount: detPartita.length, perTerrenoPartita, perTerrenoAllenamento, inAllenamentoCount: detAllenamento.length };
+    return { totaleInfortuni, atletiInfortunatiOra, atletiInNtl, perTipo, perMeccanismo, perLato, perCategoria, perSeduta, perAttivita, perInsorgenza, perTerreno, perFaseGioco, minutoMedio, conPalla, senzaPalla, fiiccsCount: tuttiDettagli.length, perOsiicsCodice, perOsiicsCategoria, osiicsCount: codiciFull.length, perSede, perTempo, inPartitiCount: detPartita.length, perTerrenoPartita, perTerrenoAllenamento, inAllenamentoCount: detAllenamento.length };
   }, [tuttiAtleti]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -962,7 +964,7 @@ export default function EpidemiologiaPage() {
           </div>
 
           {/* KPI row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-5">
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <p className="text-2xl font-bold text-[#C8102E]">{infStats.totaleInfortuni}</p>
               <p className="text-sm font-medium text-gray-700 mt-0.5">Infortuni totali</p>
@@ -971,7 +973,12 @@ export default function EpidemiologiaPage() {
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <p className="text-2xl font-bold text-orange-500">{infStats.atletiInfortunatiOra}</p>
               <p className="text-sm font-medium text-gray-700 mt-0.5">In rehab ora</p>
-              <p className="text-xs text-gray-400 mt-0.5">atleti attivi</p>
+              <p className="text-xs text-gray-400 mt-0.5">infortuni attivi</p>
+            </div>
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <p className="text-2xl font-bold text-amber-500">{infStats.atletiInNtl}</p>
+              <p className="text-sm font-medium text-gray-700 mt-0.5">In NTLI</p>
+              <p className="text-xs text-gray-400 mt-0.5">sotto monitoraggio</p>
             </div>
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <p className="text-2xl font-bold text-blue-600">{infStats.osiicsCount}</p>
