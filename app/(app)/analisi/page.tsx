@@ -1401,7 +1401,7 @@ export default function AnalisiPage() {
       {tab === "overview" ? (
         <div className="space-y-6">
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-            <StatCard label="Atleti totali" value={atleti.length} sub="in gestione" icon={Users} color="bg-[#2B2B2B]" />
+            <StatCard label="Atleti totali" value={tuttiAtleti.length} sub="in gestione" icon={Users} color="bg-[#2B2B2B]" />
             <StatCard label="In riabilitazione" value={attivi.length} sub="attualmente attivi" icon={Activity} color="bg-orange-500" />
             <StatCard label="Guariti" value={guariti.length} sub="completato percorso" icon={TrendingUp} color="bg-green-500" />
             <StatCard label="Programmi totali" value={programmiReali.length} sub="sessioni create" icon={BarChart2} color="bg-[#C8102E]" />
