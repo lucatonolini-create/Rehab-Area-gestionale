@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Save, Plus, Trash2, Check, RefreshCw, AlertCircle, Bell, BellOff, Send, Download, GitMerge } from "lucide-react";
-import { loadImpostazioni, saveImpostazioni, pushAllLocalToSupabase, loadAtleti, upsertAtleta, deleteAtleta, loadProgrammi, type Impostazioni, type GiocatoreRosa } from "@/lib/store";
+import { loadImpostazioni, saveImpostazioni, pushAllLocalToSupabase, loadAtleti, upsertAtleta, deleteAtleta, loadProgrammi, loadNtli, deleteNtli, type Impostazioni, type GiocatoreRosa, type NtliRecord } from "@/lib/store";
 import { esportaExcel } from "@/lib/exportExcel";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
@@ -631,6 +631,130 @@ function DeduplicaSection() {
   );
 }
 
+function DeduplicaNtliSection() {
+  const [stato, setStato] = useState<"idle" | "scanning" | "merging" | "ok" | "error">("idle");
+  const [msg, setMsg] = useState("");
+  const [gruppi, setGruppi] = useState<{ chiave: string; label: string; ids: string[] }[]>([]);
+
+  const scansiona = async () => {
+    setStato("scanning");
+    setMsg("");
+    setGruppi([]);
+    try {
+      const ntli = await loadNtli();
+      const mappa = new Map<string, NtliRecord[]>();
+      for (const n of ntli) {
+        const key = [
+          (n.athleteName ?? "").toLowerCase().trim(),
+          (n.painLocation ?? "").toLowerCase().trim(),
+          (n.bodySide ?? "").toLowerCase().trim(),
+        ].join("|");
+        const lista = mappa.get(key) ?? [];
+        lista.push(n);
+        mappa.set(key, lista);
+      }
+      const dupGruppi = Array.from(mappa.entries())
+        .filter(([, records]) => records.length > 1)
+        .map(([chiave, records]) => ({
+          chiave,
+          label: `${records[0].athleteName} — ${records[0].painLocation} (${records[0].bodySide})`,
+          ids: records.map((r) => r.id),
+        }));
+      setGruppi(dupGruppi);
+      if (dupGruppi.length === 0) {
+        setStato("ok");
+        setMsg("Nessun doppione NTLI trovato.");
+      } else {
+        setStato("idle");
+        setMsg(`Trovati ${dupGruppi.length} gruppi con doppioni (${dupGruppi.reduce((s, g) => s + g.ids.length - 1, 0)} record extra).`);
+      }
+    } catch (err) {
+      setStato("error");
+      setMsg(`Errore: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const unisci = async () => {
+    if (gruppi.length === 0) return;
+    setStato("merging");
+    setMsg("");
+    let eliminati = 0;
+    try {
+      const ntli = await loadNtli();
+      for (const g of gruppi) {
+        const records = ntli.filter((n) => g.ids.includes(n.id));
+        if (records.length <= 1) continue;
+        // Keep the most recently updated record, delete the rest
+        const sorted = [...records].sort((a, b) =>
+          new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime()
+        );
+        for (const dup of sorted.slice(1)) {
+          await deleteNtli(dup.id);
+          eliminati++;
+        }
+      }
+      setGruppi([]);
+      setStato("ok");
+      setMsg(`Eliminati ${eliminati} doppioni NTLI.`);
+    } catch (err) {
+      setStato("error");
+      setMsg(`Errore: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+      <h2 className="font-bold text-gray-900 mb-1">Rimuovi doppioni NTLI</h2>
+      <p className="text-sm text-gray-500 mb-4">
+        Scansiona il database e rimuovi le schede NTLI duplicate per lo stesso atleta, sede e lato, tenendo quella più recente.
+      </p>
+      <div className="flex gap-2 flex-wrap">
+        <button
+          onClick={scansiona}
+          disabled={stato === "scanning" || stato === "merging"}
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all ${
+            stato === "ok" && gruppi.length === 0 ? "bg-green-500 text-white" :
+            stato === "error" ? "bg-orange-500 text-white" :
+            "bg-[#2B2B2B] text-white hover:bg-black"
+          }`}>
+          {stato === "scanning"
+            ? <><RefreshCw className="w-4 h-4 animate-spin" /> Scansione…</>
+            : stato === "ok" && gruppi.length === 0
+            ? <><Check className="w-4 h-4" /> Nessun doppione</>
+            : stato === "error"
+            ? <><AlertCircle className="w-4 h-4" /> Errore</>
+            : <><RefreshCw className="w-4 h-4" /> Scansiona</>}
+        </button>
+        {gruppi.length > 0 && (
+          <button
+            onClick={unisci}
+            disabled={stato === "merging"}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium bg-[#C8102E] text-white hover:bg-red-800 transition-all">
+            {stato === "merging"
+              ? <><RefreshCw className="w-4 h-4 animate-spin" /> Eliminazione in corso…</>
+              : <><GitMerge className="w-4 h-4" /> Elimina {gruppi.reduce((s, g) => s + g.ids.length - 1, 0)} doppioni</>}
+          </button>
+        )}
+      </div>
+      {msg && (
+        <p className={`mt-3 text-xs font-medium ${stato === "error" ? "text-orange-600" : "text-green-600"}`}>
+          {msg}
+        </p>
+      )}
+      {gruppi.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {gruppi.map((g) => (
+            <div key={g.chiave} className="flex items-center justify-between bg-orange-50 border border-orange-100 rounded-xl px-4 py-2.5">
+              <span className="text-sm text-gray-900 font-medium">{g.label}</span>
+              <span className="text-xs text-orange-600 font-semibold">{g.ids.length} record</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ImpostazioniPage() {
   const [form, setForm] = useState<Impostazioni>({
     nomeClub: "", nomeStruttura: "", indirizzo: "", fisioterapisti: [], preparatori: [], rosa: [],
@@ -796,8 +920,11 @@ export default function ImpostazioniPage() {
         {/* Esporta Excel */}
         <ExcelSection />
 
-        {/* Doppioni */}
+        {/* Doppioni atleti */}
         <DeduplicaSection />
+
+        {/* Doppioni NTLI */}
+        <DeduplicaNtliSection />
 
         {/* Sincronizzazione */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
