@@ -161,7 +161,9 @@ function esportaCSVPanoramica(params: {
 
   rows.push(["RIEPILOGO GENERALE"]);
   rows.push(["Indicatore", "Valore"]);
+  const totInf = params.atleti.reduce((s, a) => s + (a.stato === "Infortunato" && (a.infortunio || a.tipoInfortunio) ? 1 : 0) + (a.storicoInfortuni?.length ?? 0), 0);
   rows.push(["Atleti totali in gestione", String(params.atleti.length)]);
+  rows.push(["Infortuni totali (attivi + archiviati)", String(totInf)]);
   rows.push(["In riabilitazione", String(attivi)]);
   rows.push(["In NTLI", String(inNtl)]);
   rows.push(["Disponibili", String(guariti)]);
@@ -300,6 +302,7 @@ async function esportaPDFPanoramica(params: {
     startY: y,
     body: [
       ["Atleti totali in gestione", String(params.atleti.length)],
+      ["Infortuni totali (attivi + archiviati)", String(params.atleti.reduce((s, a) => s + (a.stato === "Infortunato" && (a.infortunio || a.tipoInfortunio) ? 1 : 0) + (a.storicoInfortuni?.length ?? 0), 0))],
       ["In riabilitazione", String(attivi)],
       ["In NTLI", String(inNtl)],
       ["Disponibili", String(guariti)],
@@ -1194,6 +1197,11 @@ export default function AnalisiPage() {
   const guariti = tuttiAtleti.filter((a) => a.stato === "Disponibile");
   const programmiReali = programmi.filter((p) => !p.riposo);
 
+  const totaleInfortuni = tuttiAtleti.reduce((sum, a) => {
+    const corrente = a.stato === "Infortunato" && (a.infortunio || a.tipoInfortunio) ? 1 : 0;
+    return sum + corrente + (a.storicoInfortuni?.length ?? 0);
+  }, 0);
+
   const mesiPeriodo: { anno: number; mese: number }[] = (() => {
     if (tipoReport === "mensile") return [{ anno: reportAnno, mese: reportMese }];
     const mesi: { anno: number; mese: number }[] = [];
@@ -1404,12 +1412,13 @@ export default function AnalisiPage() {
 
       {tab === "overview" ? (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <StatCard label="Atleti totali" value={tuttiAtleti.length} sub="in gestione" icon={Users} color="bg-[#2B2B2B]" />
+            <StatCard label="Infortuni totali" value={totaleInfortuni} sub="attivi + archiviati" icon={Activity} color="bg-[#C8102E]" />
             <StatCard label="In riabilitazione" value={attivi.length} sub="infortuni attivi" icon={Activity} color="bg-orange-500" />
             <StatCard label="In NTLI" value={tuttiAtleti.filter((a) => a.stato === "NTL").length} sub="sotto monitoraggio" icon={ShieldAlert} color="bg-amber-500" />
             <StatCard label="Disponibili" value={guariti.length} sub="atleti guariti" icon={TrendingUp} color="bg-green-500" />
-            <StatCard label="Sessioni totali" value={programmiReali.length} sub="programmi di lavoro" icon={BarChart2} color="bg-[#C8102E]" />
+            <StatCard label="Sessioni totali" value={programmiReali.length} sub="programmi di lavoro" icon={BarChart2} color="bg-gray-500" />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
