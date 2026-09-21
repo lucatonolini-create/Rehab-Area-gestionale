@@ -141,12 +141,7 @@ export default function Dashboard() {
   const tuttiAtleti = [...atletiConNtli, ...ntliVirtual];
 
   const inRecupero = atletiConNtli.filter((a) => a.stato === "Infortunato").length;
-  const inNTL      = ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso").length;
   const guariti    = atletiConNtli.filter((a) => a.stato === "Disponibile").length;
-  const totaleInfortuni = tuttiAtleti.reduce((sum, a) => {
-    const corrente = a.stato === "Infortunato" && (a.infortunio || a.tipoInfortunio) ? 1 : 0;
-    return sum + corrente + (a.storicoInfortuni?.length ?? 0);
-  }, 0);
 
   const atletiFiltrati = (filtroCategoria === "Tutti"
     ? tuttiAtleti
@@ -165,10 +160,10 @@ export default function Dashboard() {
   const stats = [
     { label: "Atleti Totali",     value: tuttiAtleti.length,    icon: Users,       color: "bg-gray-400",   href: "/atleti" },
     { label: "Disponibili",       value: guariti,               icon: TrendingUp,  color: "bg-green-500",  href: "/atleti" },
-    { label: "In Rehab",          value: inRecupero,            icon: Activity,    color: "bg-orange-500", href: "/atleti" },
-    { label: "NTLI",              value: inNTL,                 icon: ShieldAlert, color: "bg-amber-500",  href: "/ntli" },
-    { label: "Infortuni totali",  value: totaleInfortuni,       icon: Activity,    color: "bg-[#C8102E]",  href: "/analisi" },
-    { label: "Programmi Attivi",  value: programmiAttivi,       icon: Dumbbell,    color: "bg-[#2B2B2B]",  href: "/esercizi" },
+    { label: "Infortunati (TL)",  value: inRecupero,            icon: Activity,    color: "bg-orange-500", href: "/atleti" },
+    { label: "NTLI",              value: ntliList.length,       icon: ShieldAlert, color: "bg-[#C8102E]",  href: "/ntli" },
+    { label: "Programmi Attivi",  value: programmiAttivi,       icon: Dumbbell,    color: "bg-[#C8102E]",  href: "/esercizi" },
+    { label: "Programmi Totali",  value: programmiReali.length, icon: Dumbbell,    color: "bg-[#2B2B2B]",  href: "/esercizi" },
   ];
 
   return (
