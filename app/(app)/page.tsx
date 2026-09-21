@@ -94,6 +94,10 @@ export default function Dashboard() {
     setMostraModifica(false);
   };
 
+  const atletiDedup = atleti.filter((a, idx, arr) =>
+    arr.findIndex((b) => b.nome.toLowerCase().trim() === a.nome.toLowerCase().trim()) === idx
+  );
+
   const activeNtliNames = new Set(
     ntliList
       .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
@@ -105,7 +109,7 @@ export default function Dashboard() {
     new Map(
       ntliList
         .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
-        .filter((n) => !atleti.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
+        .filter((n) => !atletiDedup.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
         .map((n) => [n.athleteName.toLowerCase().trim(), n] as const)
     ).values()
   ).map((n) => {
@@ -128,7 +132,7 @@ export default function Dashboard() {
     };
   });
 
-  const atletiConNtli = atleti.map((a) =>
+  const atletiConNtli = atletiDedup.map((a) =>
     activeNtliNames.has(a.nome.toLowerCase().trim()) && a.stato !== "Infortunato"
       ? { ...a, stato: "NTL" as Stato }
       : a

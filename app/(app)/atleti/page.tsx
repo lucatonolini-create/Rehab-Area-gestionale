@@ -2109,7 +2109,11 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
       .map((n) => n.athleteName.toLowerCase().trim())
   );
 
-  const atletiConNtli = atleti.map((a) =>
+  const atletiDedup = atleti.filter((a, idx, arr) =>
+    arr.findIndex((b) => b.nome.toLowerCase().trim() === a.nome.toLowerCase().trim()) === idx
+  );
+
+  const atletiConNtli = atletiDedup.map((a) =>
     activeNtliNames.has(a.nome.toLowerCase().trim()) && a.stato !== "Infortunato"
       ? { ...a, stato: "NTL" as Stato }
       : a
