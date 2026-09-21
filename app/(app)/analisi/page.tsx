@@ -94,7 +94,7 @@ function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNel
     return true;
   };
   const result: InfortunioNelMese[] = [];
-  if ((a.stato === "Infortunato" || a.stato === "NTL") && inMese(a.inizioRehab, a.fineRehab) && a.infortunio)
+  if (a.stato === "Infortunato" && inMese(a.inizioRehab, a.fineRehab) && a.infortunio)
     result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined, osiicsCodice: a.osiicsCodice });
   (a.storicoInfortuni ?? []).forEach((s) => {
     if (inMese(s.inizioRehab, s.fineRehab))
@@ -1227,7 +1227,7 @@ export default function AnalisiPage() {
     const map: Record<string, number> = {};
     TIPI_INFORTUNIO.forEach((t) => { map[t] = 0; });
     tuttiAtleti.forEach((a) => {
-      if ((a.stato === "Infortunato" || a.stato === "NTL") && a.tipoInfortunio) map[a.tipoInfortunio] = (map[a.tipoInfortunio] ?? 0) + 1;
+      if (a.stato === "Infortunato" && a.tipoInfortunio) map[a.tipoInfortunio] = (map[a.tipoInfortunio] ?? 0) + 1;
       const seenS = new Set<string>();
       (a.storicoInfortuni ?? []).forEach((s) => {
         const k = `${s.diagnosi}|${s.tipo ?? ""}|${s.inizioRehab ?? ""}|${s.fineRehab ?? ""}`;
@@ -1242,7 +1242,7 @@ export default function AnalisiPage() {
   const perInfortunio = useMemo(() => {
     const map: Record<string, number> = {};
     tuttiAtleti.forEach((a) => {
-      if ((a.stato === "Infortunato" || a.stato === "NTL") && a.infortunio) map[a.infortunio.trim()] = (map[a.infortunio.trim()] ?? 0) + 1;
+      if (a.stato === "Infortunato" && a.infortunio) map[a.infortunio.trim()] = (map[a.infortunio.trim()] ?? 0) + 1;
       const seenS = new Set<string>();
       (a.storicoInfortuni ?? []).forEach((s) => {
         const k = `${s.diagnosi}|${s.tipo ?? ""}|${s.inizioRehab ?? ""}|${s.fineRehab ?? ""}`;
@@ -1417,8 +1417,7 @@ export default function AnalisiPage() {
               ) : (
                 <div className="space-y-3">
                   {perCategoria.map(({ cat, totale, attivi: a }) => {
-                    const totalAttivi = attivi.length;
-                    const pctInf = totalAttivi > 0 ? Math.round((a / totalAttivi) * 100) : 0;
+                    const pctInf = totale > 0 ? Math.round((a / totale) * 100) : 0;
                     const pctTot = atleti.length > 0 ? Math.round((totale / atleti.length) * 100) : 0;
                     return (
                       <div key={cat}>
@@ -1427,7 +1426,7 @@ export default function AnalisiPage() {
                             <span className="font-semibold">{cat}</span>
                             {a > 0 && (
                               <span className="bg-red-50 text-[#C8102E] font-bold px-1.5 py-0.5 rounded-md text-[10px]">
-                                {pctInf}% infortuni
+                                {pctInf}% in rehab
                               </span>
                             )}
                           </div>
