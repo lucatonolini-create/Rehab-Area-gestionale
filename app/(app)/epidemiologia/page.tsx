@@ -5,10 +5,10 @@ import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { Activity, FileText, Upload, Trash2, Users, TrendingUp, Clock, X, AlertTriangle } from "lucide-react";
 import {
   loadEpiMonthly, upsertEpiMonthly, deleteEpiMonthly,
-  loadAtleti, loadAllDettagliSituazionali, loadNtli,
+  loadAtleti, loadNtli,
   CATEGORIE, TIPI_INFORTUNIO,
   type Categoria, type EpiMonthlyRecord, type EpiMonthlyEntry,
-  type Atleta, type NtliRecord, type DettaglioSituazionaleData,
+  type Atleta, type NtliRecord,
 } from "@/lib/store";
 import { ROSA } from "@/lib/players";
 
@@ -413,7 +413,6 @@ export default function EpidemiologiaPage() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [atleti, setAtleti] = useState<Atleta[]>([]);
   const [ntliList, setNtliList] = useState<NtliRecord[]>([]);
-  const [dettagli, setDettagli] = useState<DettaglioSituazionaleData[]>([]);
 
   // Upload modal state
   const [showUpload, setShowUpload] = useState(false);
@@ -436,7 +435,6 @@ export default function EpidemiologiaPage() {
     loadEpiMonthly().then(r => { setRecords(r); setLoading(false); });
     loadAtleti().then(setAtleti);
     loadNtli().then(setNtliList);
-    loadAllDettagliSituazionali().then(setDettagli);
   }, []);
 
   const activeNtliNames = new Set(
@@ -601,16 +599,16 @@ export default function EpidemiologiaPage() {
         tempoPartita: f.tempo_partita || undefined,
       };
     };
-    const tuttiDettagli: FiiccsLike[] = [
-      ...dettagli,
-      ...tuttiAtleti.flatMap((a) => {
-        const fonti: (FiiccsLike | null)[] = [fromForm(a.dettaglioSituazionale)];
-        for (const inf of a.storicoInfortuni ?? []) {
-          fonti.push(fromForm(inf.dettaglioSituazionale as import("@/lib/store").DettaglioSituazionaleForm | undefined));
-        }
-        return fonti.filter((f): f is FiiccsLike => f !== null);
-      }),
-    ];
+    // Fonte unica: JSONB sull'atleta (infortunio corrente) + storico infortuni.
+    // La tabella dettaglio_situazionale non viene usata qui perché è popolata
+    // dalla migration script (copia del JSONB), il che causerebbe doppio conteggio.
+    const tuttiDettagli: FiiccsLike[] = tuttiAtleti.flatMap((a) => {
+      const fonti: (FiiccsLike | null)[] = [fromForm(a.dettaglioSituazionale)];
+      for (const inf of a.storicoInfortuni ?? []) {
+        fonti.push(fromForm(inf.dettaglioSituazionale as import("@/lib/store").DettaglioSituazionaleForm | undefined));
+      }
+      return fonti.filter((f): f is FiiccsLike => f !== null);
+    });
 
     const perSeduta = distrib(tuttiDettagli.map((d) => d.tipoSeduta));
     const perAttivita = distrib(tuttiDettagli.map((d) => d.attivitaFisica));
@@ -633,7 +631,7 @@ export default function EpidemiologiaPage() {
     const perTerrenoAllenamento = distrib(detAllenamento.map((d) => d.terrenoGioco));
 
     return { totaleInfortuni, atletiInfortunatiOra, perTipo, perMeccanismo, perLato, perCategoria, perSeduta, perAttivita, perInsorgenza, perTerreno, perFaseGioco, minutoMedio, conPalla, senzaPalla, fiiccsCount: tuttiDettagli.length, perOsiicsCodice, perOsiicsCategoria, osiicsCount: codiciFull.length, perSede, perTempo, inPartitiCount: detPartita.length, perTerrenoPartita, perTerrenoAllenamento, inAllenamentoCount: detAllenamento.length };
-  }, [tuttiAtleti, dettagli]);
+  }, [tuttiAtleti]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
