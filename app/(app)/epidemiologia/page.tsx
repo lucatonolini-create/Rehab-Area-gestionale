@@ -501,6 +501,10 @@ export default function EpidemiologiaPage() {
   const programmiReali = programmi.filter((p) => !p.riposo);
   const attiviBisognoIds = new Set(atleti.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").map((a) => a.id));
   const programmiAttivi = programmiReali.filter((p) => attiviBisognoIds.has(p.atletaId)).length;
+  const ntliAttivi = ntliList.filter((n) =>
+    n.status !== "Risolto" && n.status !== "Chiuso" &&
+    atletiDedup.find((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim())?.stato !== "Infortunato"
+  ).length;
 
   const filtered = useMemo(() => records.filter(r => {
     if (filtroCat !== "Tutte" && r.categoria !== filtroCat) return false;

@@ -144,6 +144,10 @@ export default function Dashboard() {
 
   const inRecupero = atletiConNtli.filter((a) => a.stato === "Infortunato").length;
   const guariti    = atletiConNtli.filter((a) => a.stato === "Disponibile").length;
+  const ntliAttivi = ntliList.filter((n) =>
+    n.status !== "Risolto" && n.status !== "Chiuso" &&
+    atletiDedup.find((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim())?.stato !== "Infortunato"
+  ).length;
 
   const atletiFiltrati = (filtroCategoria === "Tutti"
     ? tuttiAtleti
@@ -163,7 +167,7 @@ export default function Dashboard() {
     { label: "Atleti Totali",     value: tuttiAtleti.length,    icon: Users,       color: "bg-gray-400",   href: "/atleti" },
     { label: "Disponibili",       value: guariti,               icon: TrendingUp,  color: "bg-green-500",  href: "/atleti" },
     { label: "Infortunati (TL)",  value: inRecupero,            icon: Activity,    color: "bg-orange-500", href: "/atleti" },
-    { label: "NTLI",              value: ntliList.filter((n) => n.status !== "Risolto" && n.status !== "Chiuso").length, icon: ShieldAlert, color: "bg-[#C8102E]", href: "/ntli" },
+    { label: "NTLI",              value: ntliAttivi,    icon: ShieldAlert, color: "bg-[#C8102E]", href: "/ntli" },
     { label: "Programmi Attivi",  value: programmiAttivi,       icon: Dumbbell,    color: "bg-[#C8102E]",  href: "/esercizi" },
     { label: "Programmi Totali",  value: programmiReali.length, icon: Dumbbell,    color: "bg-[#2B2B2B]",  href: "/esercizi" },
   ];
