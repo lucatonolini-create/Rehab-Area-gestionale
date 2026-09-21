@@ -560,8 +560,11 @@ export default function EpidemiologiaPage() {
     const perLato = distrib(tuttiInfortuni.map((i) => i.lato));
     const perCategoria = distrib(tuttiInfortuni.map((i) => i.categoria));
 
-    // OSIICS-specific — conta solo gli infortuni attualmente classificati (atleti infortunati con codice)
-    const codiciFull = tuttiAtleti.filter((a) => a.stato === "Infortunato" && a.osiicsCodice).map((a) => a.osiicsCodice!);
+    // OSIICS — tutti i codici dell'anno: infortunio corrente (qualsiasi stato) + storico infortuni
+    const codiciFull = [
+      ...tuttiAtleti.filter((a) => a.osiicsCodice).map((a) => a.osiicsCodice!),
+      ...tuttiAtleti.flatMap((a) => (a.storicoInfortuni ?? []).filter((i) => i.osiicsCodice).map((i) => i.osiicsCodice!)),
+    ];
     const perOsiicsCodice = distrib(codiciFull);
     const OSIICS_CATEGORIE: Record<string, string> = {
       M: "Muscolo/Tendine",
