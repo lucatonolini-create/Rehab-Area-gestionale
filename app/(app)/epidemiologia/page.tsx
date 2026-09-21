@@ -542,7 +542,8 @@ export default function EpidemiologiaPage() {
 
     // All injuries: current active + archived
     const tuttiInfortuni = tuttiAtleti.flatMap((a) => [
-      ...((a.stato === "Infortunato" || a.stato === "NTL") && (a.infortunio || a.tipoInfortunio)
+      // Solo atleti effettivamente infortunati (non NTL, che sono atleti con monitoraggio carico)
+      ...(a.stato === "Infortunato" && (a.infortunio || a.tipoInfortunio)
         ? [{ tipo: a.tipoInfortunio, meccanismo: a.meccanismo, lato: a.lato, contatto: a.contatto, evento: a.evento, categoria: a.categoria, osiics: a.osiicsCodice }]
         : []),
       ...(a.storicoInfortuni ?? []).map((inf) => ({
@@ -561,8 +562,8 @@ export default function EpidemiologiaPage() {
     const perLato = distrib(tuttiInfortuni.map((i) => i.lato));
     const perCategoria = distrib(tuttiInfortuni.map((i) => i.categoria));
 
-    // OSIICS-specific
-    const codiciFull = tuttiAtleti.filter((a) => a.osiicsCodice).map((a) => a.osiicsCodice!);
+    // OSIICS-specific — conta solo gli infortuni attualmente classificati (atleti infortunati con codice)
+    const codiciFull = tuttiAtleti.filter((a) => a.stato === "Infortunato" && a.osiicsCodice).map((a) => a.osiicsCodice!);
     const perOsiicsCodice = distrib(codiciFull);
     const OSIICS_CATEGORIE: Record<string, string> = {
       M: "Muscolo/Tendine",
