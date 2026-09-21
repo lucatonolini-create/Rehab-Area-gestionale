@@ -1050,8 +1050,9 @@ export default function NtliPage() {
         {tab === "dashboard" && (
           <div className="space-y-6">
             {/* KPI */}
-            <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
               {[
+                { label: "Totale NTLI",     short: "Totale",        value: ntliList.length,         color: "text-gray-700"  },
                 { label: "NTLI attivi",     short: "Attivi",        value: activeNtli.length,       color: "text-blue-600"  },
                 { label: "Da compilare",    short: "Da compilare",  value: toCompileToday.length,   color: "text-yellow-600"},
                 { label: "Compilati oggi",  short: "Compilati",     value: compiledToday.size,      color: "text-green-600" },
