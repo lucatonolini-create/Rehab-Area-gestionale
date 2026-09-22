@@ -844,10 +844,16 @@ export default function NtliPage() {
         const ntli = ntliList.find((n) => n.id === ntliId);
         if (!ntli) continue;
         const existing = dailyAll.find((d) => d.ntliId === ntliId && d.date === monDate);
+        const resolvedAthleteId = ntli.athleteId ||
+          atleti.find((a) => a.nome.trim().toLowerCase() === ntli.athleteName.trim().toLowerCase())?.id;
+        if (!resolvedAthleteId) {
+          console.warn("saveMonitoraggio: athlete_id non trovato per", ntli.athleteName, "— salvataggio saltato");
+          continue;
+        }
         const record: NtliDaily = {
           id: existing?.id ?? uid(),
           ntliId,
-          athleteId: ntli.athleteId,
+          athleteId: resolvedAthleteId as string,
           date: monDate,
           vasStart: patch.vasStart ?? existing?.vasStart ?? null,
           vasEnd: patch.vasEnd ?? existing?.vasEnd ?? null,
