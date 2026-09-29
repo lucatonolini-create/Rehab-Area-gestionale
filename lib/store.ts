@@ -146,6 +146,7 @@ export interface InfortunioStorico {
   id: string;
   tipo?: string;
   diagnosi: string;
+  dataInfortunio?: string; // data evento (può precedere l'inizio rehab)
   inizioRehab: string;
   fineRehab: string;
   note?: string;
@@ -202,6 +203,7 @@ export interface Atleta {
   lato?: string;
   posizioneInfortunio?: string;
   infortunio: string;
+  dataInfortunio?: string;
   inizioRehab: string;
   fineRehab?: string;
   stato: Stato;
@@ -474,6 +476,7 @@ function rowToAtleta(r: Record<string, unknown>): Atleta {
     lato: (r.lato as string) ?? undefined,
     posizioneInfortunio: (r.posizione_infortunio as string) ?? undefined,
     infortunio: (r.infortunio as string) ?? "",
+    dataInfortunio: (r.data_infortunio as string) ?? undefined,
     inizioRehab: (r.inizio_rehab as string) ?? "",
     fineRehab: (r.fine_rehab as string) ?? undefined,
     stato: r.stato as Stato,
@@ -514,6 +517,7 @@ function atletaToRow(a: Atleta): Record<string, unknown> {
     lato: a.lato ?? null,
     posizione_infortunio: a.posizioneInfortunio ?? null,
     infortunio: a.infortunio,
+    data_infortunio: a.dataInfortunio ?? null,
     inizio_rehab: a.inizioRehab,
     fine_rehab: a.fineRehab ?? null,
     stato: a.stato,

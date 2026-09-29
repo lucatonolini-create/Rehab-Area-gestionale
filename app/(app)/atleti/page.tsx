@@ -1650,7 +1650,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [copiatoLink, setCopiatoLink] = useState<1 | 2 | null>(null);
   const [sqlCopiato, setSqlCopiato] = useState(false);
   const [mostraFormInfortBis, setMostraFormInfortBis] = useState(false);
-  const [nuovoInfortBis, setNuovoInfortBis] = useState({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "", osiicsCodice: "", osiicsDescrizione: "", osiicsCodeId: "" });
+  const [nuovoInfortBis, setNuovoInfortBis] = useState({ tipo: "", diagnosi: "", dataInfortunio: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "", osiicsCodice: "", osiicsDescrizione: "", osiicsCodeId: "" });
   const [editDatiConcorrente, setEditDatiConcorrente] = useState<string | null>(null);
   const [editDatiForm, setEditDatiForm] = useState<Partial<InfortunioStorico>>({});
   const editDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
@@ -1754,6 +1754,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
               id: uid(),
               tipo,
               diagnosi: diagnosi || "—",
+              dataInfortunio: dati.dataInfortunio || editAtleta.dataInfortunio || undefined,
               inizioRehab: inizioRehab || "",
               fineRehab,
               note: dati.note || editAtleta.note || undefined,
@@ -1904,7 +1905,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     const detForm = nuovoDettaglioRef.current?.hasData() ? nuovoDettaglioRef.current.getValues() : undefined;
     const inf: InfortunioStorico = {
       id: uid(), tipo: nuovoInfortBis.tipo || undefined,
-      diagnosi: nuovoInfortBis.diagnosi, inizioRehab: nuovoInfortBis.inizioRehab,
+      diagnosi: nuovoInfortBis.diagnosi, dataInfortunio: nuovoInfortBis.dataInfortunio || undefined, inizioRehab: nuovoInfortBis.inizioRehab,
       fineRehab: "", note: nuovoInfortBis.note || undefined, attivo: true,
       evento: nuovoInfortBis.evento || undefined,
       meccanismo: nuovoInfortBis.meccanismo || undefined,
@@ -1921,7 +1922,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     setSelected(aggiornato);
     await upsertAtleta(aggiornato);
     setMostraFormInfortBis(false);
-    setNuovoInfortBis({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "", osiicsCodice: "", osiicsDescrizione: "", osiicsCodeId: "" });
+    setNuovoInfortBis({ tipo: "", diagnosi: "", dataInfortunio: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "", osiicsCodice: "", osiicsDescrizione: "", osiicsCodeId: "" });
   };
 
   const salvaInfortBisDati = async () => {
@@ -3256,6 +3257,12 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                       </select>
                                     </div>
                                     <div>
+                                      <p className="text-xs text-gray-400 mb-0.5">Data infortunio</p>
+                                      <input type="date" className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                                        value={editStoricoForm.dataInfortunio ?? ""}
+                                        onChange={(e) => setEditStoricoForm({ ...editStoricoForm, dataInfortunio: e.target.value || undefined })} />
+                                    </div>
+                                    <div>
                                       <p className="text-xs text-gray-400 mb-0.5">Inizio</p>
                                       <input type="date" className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
                                         value={editStoricoForm.inizioRehab}
@@ -3307,6 +3314,12 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                   <option value="">—</option>
                                   {TIPI_INFORTUNIO.map((t) => <option key={t} value={t}>{t}</option>)}
                                 </select>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-0.5">Data infortunio</p>
+                                <input type="date" className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white"
+                                  value={nuovoInfortBis.dataInfortunio}
+                                  onChange={(e) => setNuovoInfortBis({ ...nuovoInfortBis, dataInfortunio: e.target.value })} />
                               </div>
                               <div>
                                 <p className="text-xs text-gray-500 mb-0.5">Inizio rehab</p>
@@ -3377,7 +3390,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                               <div className="flex gap-2 pt-1">
                                 <button onClick={aggiungiInfortBis}
                                   className="flex-1 bg-[#C8102E] text-white text-xs font-semibold py-1.5 rounded-lg hover:bg-red-800">Salva</button>
-                                <button onClick={() => { setMostraFormInfortBis(false); setNuovoInfortBis({ tipo: "", diagnosi: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "", osiicsCodice: "", osiicsDescrizione: "", osiicsCodeId: "" }); nuovoDettaglioRef.current?.reset(); }}
+                                <button onClick={() => { setMostraFormInfortBis(false); setNuovoInfortBis({ tipo: "", diagnosi: "", dataInfortunio: "", inizioRehab: new Date().toISOString().slice(0, 10), note: "", evento: "", meccanismo: "", contatto: "", lato: "", posizioneInfortunio: "", osiicsCodice: "", osiicsDescrizione: "", osiicsCodeId: "" }); nuovoDettaglioRef.current?.reset(); }}
                                   className="flex-1 border border-gray-200 text-gray-500 text-xs font-semibold py-1.5 rounded-lg hover:bg-white">Annulla</button>
                               </div>
                             </div>

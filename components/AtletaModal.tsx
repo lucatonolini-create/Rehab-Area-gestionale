@@ -14,7 +14,7 @@ const STATI: Stato[] = ["Infortunato", "NTL", "Disponibile"];
 const atletaVuoto: Omit<Atleta, "id"> = {
   nome: "", categoria: "" as Categoria,
   posizione: "", piedeDominante: "" as Piede,
-  infortunio: "", inizioRehab: new Date().toISOString().slice(0, 10),
+  infortunio: "", dataInfortunio: undefined, inizioRehab: new Date().toISOString().slice(0, 10),
   stato: "Infortunato", progresso: 0,
   fisioterapista: "", preparatoreAtletico: "",
   telefono: "", email: "", note: "",
@@ -231,6 +231,11 @@ export default function AtletaModal({ atletaIniziale, initialDettaglio, onSalva,
                 }
               }}
             />
+          </div>
+
+          <div>
+            <Label>Data Infortunio</Label>
+            <Input className="mt-1" type="date" value={form.dataInfortunio ?? ""} onChange={(e) => f("dataInfortunio", e.target.value || undefined)} />
           </div>
 
           <div>

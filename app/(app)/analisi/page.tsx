@@ -47,40 +47,67 @@ function StatCard({ label, value, icon: Icon, color }: {
 type AnalisiTab = "overview" | "report";
 type TipoReport = "mensile" | "bimestrale" | "trimestrale" | "semestrale" | "annuale" | "stagione";
 
-function atletaAttivoInMese(a: Atleta, anno: number, mese: number): boolean {
+function atletaAttivoInMese(a: Atleta, anno: number, mese: number, mode: "rehab" | "infortunio" = "rehab"): boolean {
   const meseStart = new Date(anno, mese, 1);
   const meseEnd = new Date(anno, mese + 1, 0, 23, 59, 59);
-  // I mesi futuri non contano: un infortunio aperto non proietta atleti nel futuro
   if (meseStart > new Date()) return false;
+  if (mode === "infortunio") {
+    // Conta se la DATA INFORTUNIO (o inizioRehab come fallback) cade in questo mese
+    const dataInMese = (dataInf?: string, inizioStr?: string): boolean => {
+      const dateStr = dataInf || inizioStr;
+      if (!dateStr) return false;
+      const d = new Date(dateStr + "T12:00");
+      return d >= meseStart && d <= meseEnd;
+    };
+    if ((a.stato === "Infortunato" || a.stato === "NTL" || a.fineRehab) && dataInMese(a.dataInfortunio, a.inizioRehab)) return true;
+    return (a.storicoInfortuni ?? []).some((s) => dataInMese(s.dataInfortunio, s.inizioRehab));
+  }
   const periodoAttivo = (inizioStr?: string, fineStr?: string): boolean => {
     if (!inizioStr) return false;
     const inizio = new Date(inizioStr + "T12:00");
-    if (inizio > meseEnd) return false; // not yet started this month
+    if (inizio > meseEnd) return false;
     if (fineStr) return new Date(fineStr + "T12:00") >= meseStart;
-    return true; // still ongoing
+    return true;
   };
-  // Infortunio attivo corrente (per Disponibile richiede fineRehab settata, altrimenti usa solo storico)
   if ((a.stato === "Infortunato" || a.stato === "NTL" || a.fineRehab) && periodoAttivo(a.inizioRehab, a.fineRehab)) return true;
-  // Infortuni passati archiviati (atleta guarito): contano nei mesi in cui si è svolta la riabilitazione
   return (a.storicoInfortuni ?? []).some((s) => periodoAttivo(s.inizioRehab, s.fineRehab));
 }
 
 type InfortunioNelMese = { diagnosi: string; tipo?: string; inizio: string; fine?: string; meccanismo?: string; note?: string; osiicsCodice?: string };
 
-function infortunitNelPeriodo(a: Atleta, mesi: { anno: number; mese: number }[]): InfortunioNelMese[] {
+function infortunitNelPeriodo(a: Atleta, mesi: { anno: number; mese: number }[], mode: "rehab" | "infortunio" = "rehab"): InfortunioNelMese[] {
   const seen = new Set<string>();
   const result: InfortunioNelMese[] = [];
   for (const { anno, mese } of mesi)
-    infortunitNelMese(a, anno, mese).forEach((inf) => {
+    infortunitNelMese(a, anno, mese, mode).forEach((inf) => {
       const key = `${inf.diagnosi}|${inf.inizio ?? ""}`;
       if (!seen.has(key)) { seen.add(key); result.push(inf); }
     });
   return result;
 }
 
-function infortunitNelMese(a: Atleta, anno: number, mese: number): InfortunioNelMese[] {
+function infortunitNelMese(a: Atleta, anno: number, mese: number, mode: "rehab" | "infortunio" = "rehab"): InfortunioNelMese[] {
   const meseStart = new Date(anno, mese, 1);
   const meseEnd = new Date(anno, mese + 1, 0, 23, 59, 59);
+  if (mode === "infortunio") {
+    // Conta infortuni per DATA INFORTUNIO (o inizioRehab come fallback) nel mese
+    const dataInMese = (dataInf?: string, inizioStr?: string): boolean => {
+      const dateStr = dataInf || inizioStr;
+      if (!dateStr) return false;
+      const d = new Date(dateStr + "T12:00");
+      return d >= meseStart && d <= meseEnd;
+    };
+    const result: InfortunioNelMese[] = [];
+    if (a.stato === "Infortunato" && dataInMese(a.dataInfortunio, a.inizioRehab) && a.infortunio)
+      result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.dataInfortunio || a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined, osiicsCodice: a.osiicsCodice });
+    (a.storicoInfortuni ?? []).forEach((s) => {
+      if (dataInMese(s.dataInfortunio, s.inizioRehab))
+        result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.dataInfortunio || s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note, osiicsCodice: s.osiicsCodice });
+    });
+    const fmtK = (d?: string) => { if (!d) return ""; const p = new Date(d + "T12:00"); return isNaN(p.getTime()) ? d : p.toLocaleDateString("it-IT"); };
+    const seen = new Set<string>();
+    return result.filter((inf) => { const key = `${inf.diagnosi}|${inf.tipo ?? ""}|${fmtK(inf.inizio)}|${fmtK(inf.fine)}`; if (seen.has(key)) return false; seen.add(key); return true; });
+  }
   const inMese = (inizioStr?: string, fineStr?: string): boolean => {
     if (!inizioStr) return false;
     const inizio = new Date(inizioStr + "T12:00");
@@ -1150,6 +1177,7 @@ export default function AnalisiPage() {
   const [tipoReport, setTipoReport] = useState<TipoReport>("mensile");
   const [stagioneMeseInizio, setStagioneMeseInizio] = useState(6);
   const [stagioneMeseFine, setStagioneMeseFine] = useState(5);
+  const [modalitaStatistiche, setModalitaStatistiche] = useState<"rehab" | "infortunio">("rehab");
 
   useEffect(() => {
     const reloadAtleti = async () => {
@@ -1296,7 +1324,7 @@ export default function AnalisiPage() {
       const d = new Date(stagionAnno, 6 + i, 1);
       const anno = d.getFullYear();
       const mese = d.getMonth();
-      const all = tuttiAtleti.filter((a) => atletaAttivoInMese(a, anno, mese));
+      const all = tuttiAtleti.filter((a) => atletaAttivoInMese(a, anno, mese, modalitaStatistiche));
       const countTL = all.filter((a) => a.stato === "Infortunato").length;
       const countNTL = all.filter((a) => a.stato === "NTL").length;
       return {
@@ -1308,7 +1336,7 @@ export default function AnalisiPage() {
         countNTL,
       };
     });
-  }, [tuttiAtleti, stagionAnno]);
+  }, [tuttiAtleti, stagionAnno, modalitaStatistiche]);
 
   const maxTrend = Math.max(...trendMensile.map((t) => t.count), 1);
   const maxCat = Math.max(...perCategoria.map((x) => x.totale), 1);
@@ -1345,12 +1373,12 @@ export default function AnalisiPage() {
       const d = new Date(stagionAnno, 6 + i, 1);
       const anno = d.getFullYear(); const mese = d.getMonth();
       const label = MESI[mese] + (anno !== stagionAnno ? ` ${anno}` : "");
-      const attv = tuttiAtleti.filter((a) => atletaAttivoInMese(a, anno, mese));
+      const attv = tuttiAtleti.filter((a) => atletaAttivoInMese(a, anno, mese, modalitaStatistiche));
       const perCat: Record<string, number> = {};
       const perTipo: Record<string, number> = {};
       attv.forEach((a) => {
         if (a.categoria) perCat[a.categoria] = (perCat[a.categoria] ?? 0) + 1;
-        const infs = infortunitNelMese(a, anno, mese);
+        const infs = infortunitNelMese(a, anno, mese, modalitaStatistiche);
         infs.forEach((inf) => { if (inf.tipo) perTipo[inf.tipo] = (perTipo[inf.tipo] ?? 0) + 1; });
       });
       return { label, nomeMese: MESI[mese], total: attv.length, perCat, perTipo };
@@ -1363,11 +1391,11 @@ export default function AnalisiPage() {
     tipiPresenti.forEach((tipo, i) => { tipoColorMap[tipo] = TIPO_PALETTE[i % TIPO_PALETTE.length]; });
     const maxVal = Math.max(...months.map((t) => t.total), 1);
     return { months, catPresenti, tipiPresenti, catColorMap, tipoColorMap, maxVal };
-  }, [tuttiAtleti]);
+  }, [tuttiAtleti, modalitaStatistiche]);
 
   const anni = Array.from({ length: 5 }, (_, i) => oggi.getFullYear() - 2 + i);
   const atletiMese = tuttiAtleti.filter((a) => {
-    if (!mesiPeriodo.some(({ anno, mese }) => atletaAttivoInMese(a, anno, mese))) return false;
+    if (!mesiPeriodo.some(({ anno, mese }) => atletaAttivoInMese(a, anno, mese, modalitaStatistiche))) return false;
     if (filtroCat !== "Tutte" && a.categoria !== filtroCat) return false;
     if (filtroTipoInf !== "Tutti") {
       const tipoAttivo = a.tipoInfortunio === filtroTipoInf;
@@ -1814,6 +1842,18 @@ export default function AnalisiPage() {
                 </button>
               ))}
             </div>
+            {/* Modalità statistica */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide self-center mr-1">Modalità:</span>
+              {(["rehab", "infortunio"] as const).map((m) => (
+                <button key={m} onClick={() => setModalitaStatistiche(m)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                    modalitaStatistiche === m ? "bg-[#2B2B2B] text-white border-[#2B2B2B]" : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}>
+                  {m === "rehab" ? "Per periodo in rehab" : "Per data infortunio"}
+                </button>
+              ))}
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {tipoReport === "mensile" && (
                 <div>
@@ -1908,7 +1948,7 @@ export default function AnalisiPage() {
                 </div>
                 <div className="divide-y divide-gray-50">
                   {atletiMese.map((a) => {
-                    const infortuni = infortunitNelPeriodo(a, mesiPeriodo);
+                    const infortuni = infortunitNelPeriodo(a, mesiPeriodo, modalitaStatistiche);
                     return (
                       <div key={a.id} className="grid grid-cols-1 md:grid-cols-4 items-start px-5 py-4 hover:bg-gray-50 gap-2">
                         <div className="col-span-2 flex items-center gap-3">
