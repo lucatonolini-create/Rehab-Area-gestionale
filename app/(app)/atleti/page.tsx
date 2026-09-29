@@ -3504,6 +3504,9 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                     {inf.tipo && (
                                       <p className="text-xs text-gray-400">{inf.tipo}</p>
                                     )}
+                                    {inf.dataInfortunio && (
+                                      <p className="text-xs text-gray-400">Infortunio: {fmtData(inf.dataInfortunio)}</p>
+                                    )}
                                     <p className="text-xs text-gray-400">
                                       {fmtData(inf.inizioRehab)} → {fmtData(inf.fineRehab)}
                                     </p>
