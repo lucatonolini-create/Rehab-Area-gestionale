@@ -2394,6 +2394,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                 {[
                   ["Piede dominante", selected.piedeDominante || "—"],
                   ["Diagnosi / Infortunio", selected.infortunio || "—"],
+                  ...(selected.dataInfortunio ? [["Data infortunio", new Date(selected.dataInfortunio + "T12:00").toLocaleDateString("it-IT")]] : []),
                   ["Inizio riabilitazione", selected.inizioRehab ? new Date(selected.inizioRehab + "T12:00").toLocaleDateString("it-IT") : "—"],
                   ...(selected.fineRehab ? [["Fine riabilitazione", new Date(selected.fineRehab + "T12:00").toLocaleDateString("it-IT")]] : []),
                 ].map(([label, value]) => (
@@ -3202,6 +3203,9 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                             </div>
                             {selected.tipoInfortunio && (
                               <p className="text-xs text-gray-400">{selected.tipoInfortunio}</p>
+                            )}
+                            {selected.dataInfortunio && (
+                              <p className="text-xs text-gray-400">Infortunio: {fmtData(selected.dataInfortunio)}</p>
                             )}
                             <p className="text-xs text-gray-400">
                               Dal {fmtData(selected.inizioRehab)} <span className="text-orange-400 font-medium">· in corso</span>
