@@ -3437,6 +3437,12 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                                         }}
                                       />
                                     </div>
+                                    <div>
+                                      <p className="text-xs text-gray-400 mb-0.5">Data infortunio</p>
+                                      <input type="date" className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                                        value={editStoricoForm.dataInfortunio ?? ""}
+                                        onChange={(e) => setEditStoricoForm({ ...editStoricoForm, dataInfortunio: e.target.value || undefined })} />
+                                    </div>
                                     <div className="grid grid-cols-2 gap-2">
                                       <div>
                                         <p className="text-xs text-gray-400 mb-0.5">Inizio</p>
