@@ -73,7 +73,7 @@ function atletaAttivoInMese(a: Atleta, anno: number, mese: number, mode: "rehab"
   return (a.storicoInfortuni ?? []).some((s) => periodoAttivo(s.inizioRehab, s.fineRehab));
 }
 
-type InfortunioNelMese = { diagnosi: string; tipo?: string; inizio: string; fine?: string; meccanismo?: string; note?: string; osiicsCodice?: string };
+type InfortunioNelMese = { diagnosi: string; tipo?: string; dataInfortunio?: string; inizio: string; fine?: string; meccanismo?: string; note?: string; osiicsCodice?: string };
 
 function infortunitNelPeriodo(a: Atleta, mesi: { anno: number; mese: number }[], mode: "rehab" | "infortunio" = "rehab"): InfortunioNelMese[] {
   const seen = new Set<string>();
@@ -99,10 +99,10 @@ function infortunitNelMese(a: Atleta, anno: number, mese: number, mode: "rehab" 
     };
     const result: InfortunioNelMese[] = [];
     if (a.stato === "Infortunato" && dataInMese(a.dataInfortunio, a.inizioRehab) && a.infortunio)
-      result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.dataInfortunio || a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined, osiicsCodice: a.osiicsCodice });
+      result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, dataInfortunio: a.dataInfortunio, inizio: a.dataInfortunio || a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined, osiicsCodice: a.osiicsCodice });
     (a.storicoInfortuni ?? []).forEach((s) => {
       if (dataInMese(s.dataInfortunio, s.inizioRehab))
-        result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.dataInfortunio || s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note, osiicsCodice: s.osiicsCodice });
+        result.push({ diagnosi: s.diagnosi, tipo: s.tipo, dataInfortunio: s.dataInfortunio, inizio: s.dataInfortunio || s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note, osiicsCodice: s.osiicsCodice });
     });
     const fmtK = (d?: string) => { if (!d) return ""; const p = new Date(d + "T12:00"); return isNaN(p.getTime()) ? d : p.toLocaleDateString("it-IT"); };
     const seen = new Set<string>();
@@ -117,10 +117,10 @@ function infortunitNelMese(a: Atleta, anno: number, mese: number, mode: "rehab" 
   };
   const result: InfortunioNelMese[] = [];
   if (a.stato === "Infortunato" && inMese(a.inizioRehab, a.fineRehab) && a.infortunio)
-    result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined, osiicsCodice: a.osiicsCodice });
+    result.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, dataInfortunio: a.dataInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined, osiicsCodice: a.osiicsCodice });
   (a.storicoInfortuni ?? []).forEach((s) => {
     if (inMese(s.inizioRehab, s.fineRehab))
-      result.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note, osiicsCodice: s.osiicsCodice });
+      result.push({ diagnosi: s.diagnosi, tipo: s.tipo, dataInfortunio: s.dataInfortunio, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note, osiicsCodice: s.osiicsCodice });
   });
   const fmtK = (d?: string) => {
     if (!d) return "";
@@ -242,15 +242,15 @@ function esportaCSVReport(
   rows.push([`U.S. CREMONESE – REHAB AREA – Report ${subtitle}`]);
   rows.push([`Totale atleti: ${atletiMese.length}`, "", `Generato il ${oggi}`]);
   rows.push([]);
-  rows.push(["Nome", "Categoria", "Infortunio", "Tipo", "Codice OSIICS", "Inizio", "Fine", "Giorni", "Stato"]);
+  rows.push(["Nome", "Categoria", "Infortunio", "Tipo", "Codice OSIICS", "Data infortunio", "Inizio rehab", "Fine rehab", "Giorni", "Stato"]);
 
   atletiMese.forEach(a => {
     const infortuni = infortunitNelPeriodo(a, mesiP ?? [{ anno, mese }]);
     if (infortuni.length === 0) {
-      rows.push([nd(a), a.categoria ?? "—", "—", "—", "—", "—", "—", "—", a.stato]);
+      rows.push([nd(a), a.categoria ?? "—", "—", "—", "—", "—", "—", "—", "—", a.stato]);
     } else {
       infortuni.forEach(inf => {
-        rows.push([nd(a), a.categoria ?? "—", inf.diagnosi, inf.tipo ?? "—", inf.osiicsCodice ?? "—", inf.inizio ? fmt(inf.inizio) : "—", inf.fine ? fmt(inf.fine) : "—", inf.inizio ? gg(inf.inizio, inf.fine) : "—", inf.fine ? "Recuperato" : a.stato]);
+        rows.push([nd(a), a.categoria ?? "—", inf.diagnosi, inf.tipo ?? "—", inf.osiicsCodice ?? "—", inf.dataInfortunio ? fmt(inf.dataInfortunio) : "—", inf.inizio ? fmt(inf.inizio) : "—", inf.fine ? fmt(inf.fine) : "—", inf.inizio ? gg(inf.inizio, inf.fine) : "—", inf.fine ? "Recuperato" : a.stato]);
       });
     }
   });
@@ -587,17 +587,17 @@ async function esportaPDFPanoramica(params: {
   const athleteForRowT: number[] = [];
 
   atletiOrdinati.forEach((a, athleteIdx) => {
-    const infortuni: Array<{ diagnosi: string; tipo?: string; inizio?: string; fine?: string; meccanismo?: string; note?: string; osiicsCodice?: string }> = [];
+    const infortuni: Array<{ diagnosi: string; tipo?: string; dataInfortunio?: string; inizio?: string; fine?: string; meccanismo?: string; note?: string; osiicsCodice?: string }> = [];
     if (a.infortunio || a.inizioRehab)
-      infortuni.push({ diagnosi: a.infortunio || "—", tipo: a.tipoInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined, osiicsCodice: a.osiicsCodice });
+      infortuni.push({ diagnosi: a.infortunio || "—", tipo: a.tipoInfortunio, dataInfortunio: a.dataInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, meccanismo: a.meccanismo, note: a.note || undefined, osiicsCodice: a.osiicsCodice });
     (a.storicoInfortuni ?? []).forEach((s) =>
-      infortuni.push({ diagnosi: s.diagnosi, tipo: s.tipo, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note, osiicsCodice: s.osiicsCodice })
+      infortuni.push({ diagnosi: s.diagnosi, tipo: s.tipo, dataInfortunio: s.dataInfortunio, inizio: s.inizioRehab, fine: s.fineRehab, meccanismo: s.meccanismo, note: s.note, osiicsCodice: s.osiicsCodice })
     );
 
     const n = infortuni.length;
     const nomeDataStyle = { fontStyle: "bold" as const };
     if (n === 0) {
-      tuttiRows.push([{ content: nd(a), styles: nomeDataStyle }, a.categoria, "—", "—", a.meccanismo || "—", a.note || "—", a.stato, "—", "—"]);
+      tuttiRows.push([{ content: nd(a), styles: nomeDataStyle }, a.categoria, "—", "—", "—", a.meccanismo || "—", a.note || "—", a.stato, "—", "—"]);
       athleteForRowT.push(athleteIdx);
     } else {
       infortuni.forEach((inf, infIdx) => {
@@ -608,13 +608,14 @@ async function esportaPDFPanoramica(params: {
             { content: a.categoria, rowSpan: n, styles: { valign: "middle" } },
             inf.osiicsCodice ? `${inf.diagnosi} [${inf.osiicsCodice}]` : inf.diagnosi,
             (inf.tipo || "—").replace(/\//g, "/ "),
+            fmtD(inf.dataInfortunio),
             inf.meccanismo || "—",
             inf.note || "—",
             statoInf,
             fmtD(inf.inizio), fmtD(inf.fine),
           ]);
         } else {
-          tuttiRows.push([inf.osiicsCodice ? `${inf.diagnosi} [${inf.osiicsCodice}]` : inf.diagnosi, (inf.tipo || "—").replace(/\//g, "/ "), inf.meccanismo || "—", inf.note || "—", statoInf, fmtD(inf.inizio), fmtD(inf.fine)]);
+          tuttiRows.push([inf.osiicsCodice ? `${inf.diagnosi} [${inf.osiicsCodice}]` : inf.diagnosi, (inf.tipo || "—").replace(/\//g, "/ "), fmtD(inf.dataInfortunio), inf.meccanismo || "—", inf.note || "—", statoInf, fmtD(inf.inizio), fmtD(inf.fine)]);
         }
         athleteForRowT.push(athleteIdx);
       });
@@ -628,21 +629,22 @@ async function esportaPDFPanoramica(params: {
     yL = secTitle("Lista completa atleti", yL);
     autoTable(doc, {
       startY: yL,
-      head: [["Atleta", "Categoria", "Diagnosi", "Tipo", "Meccanismo", "Note", "Stato", "Inizio", "Fine"]],
+      head: [["Atleta", "Categoria", "Diagnosi", "Tipo", "Data inf.", "Meccanismo", "Note", "Stato", "Inizio", "Fine"]],
       body: tuttiRows,
       headStyles: { fillColor: dark, textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
       bodyStyles: { fontSize: 6.5, cellPadding: 2, overflow: "linebreak", halign: "left", valign: "middle" },
       margin: { left: M, right: M, top: HDR + 8 },
       columnStyles: {
         0: { cellWidth: 26 },
-        1: { cellWidth: 20 },
-        2: { cellWidth: 60 },
-        3: { cellWidth: 36 },
-        4: { cellWidth: 33 },
-        5: { cellWidth: 40 },
-        6: { cellWidth: 22 },
-        7: { cellWidth: 16 },
-        8: { cellWidth: 16 },
+        1: { cellWidth: 18 },
+        2: { cellWidth: 54 },
+        3: { cellWidth: 32 },
+        4: { cellWidth: 14 },
+        5: { cellWidth: 28 },
+        6: { cellWidth: 36 },
+        7: { cellWidth: 20 },
+        8: { cellWidth: 15 },
+        9: { cellWidth: 15 },
       },
       didParseCell: (data: any) => {
         if (data.section === "body") {
@@ -1029,7 +1031,7 @@ async function esportaPDFReport(
       : tuttiInf;
     const count = Math.max(infortuni.length, 1);
     if (infortuni.length === 0) {
-      analisiRows.push([{ content: nd(a), styles: { fontStyle: "bold" } }, a.categoria, "—", "—", a.meccanismo || "—", a.note || "—", "—", "—", "—", a.stato]);
+      analisiRows.push([{ content: nd(a), styles: { fontStyle: "bold" } }, a.categoria, "—", "—", "—", a.meccanismo || "—", a.note || "—", "—", "—", "—", a.stato]);
       athleteForRowA.push(athleteIdx);
     } else {
       infortuni.forEach((inf, i) => {
@@ -1043,6 +1045,7 @@ async function esportaPDFReport(
         row.push(
           inf.osiicsCodice ? `${inf.diagnosi} [${inf.osiicsCodice}]` : inf.diagnosi,
           (inf.tipo ?? "—").replace(/\//g, "/ "),
+          inf.dataInfortunio ? fmtDPdf(inf.dataInfortunio) : "—",
           inf.meccanismo || "—",
           inf.note || "—",
           inf.inizio ? fmtDPdf(inf.inizio) : "—",
@@ -1058,15 +1061,15 @@ async function esportaPDFReport(
 
   autoTable(doc, {
     startY: y,
-    head: [["Atleta", "Categoria", "Infortunio", "Tipo", "Meccanismo", "Note", "Inizio", "Fine", "Giorni", "Stato"]],
+    head: [["Atleta", "Categoria", "Infortunio", "Tipo", "Data inf.", "Meccanismo", "Note", "Inizio", "Fine", "Giorni", "Stato"]],
     body: analisiRows,
     headStyles: { fillColor: dark, textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
     bodyStyles: { fontSize: 7, cellPadding: 2.5, halign: "left", valign: "middle" },
     margin: { left: M, right: M, top: HDR + 8 },
     columnStyles: {
-      0: { cellWidth: 26 }, 1: { cellWidth: 18 }, 2: { cellWidth: 44 },
-      3: { cellWidth: 42 }, 4: { cellWidth: 26 }, 5: { cellWidth: 41 },
-      6: { cellWidth: 17 }, 7: { cellWidth: 15 }, 8: { cellWidth: 14 }, 9: { cellWidth: 26 },
+      0: { cellWidth: 24 }, 1: { cellWidth: 16 }, 2: { cellWidth: 40 },
+      3: { cellWidth: 36 }, 4: { cellWidth: 14 }, 5: { cellWidth: 24 }, 6: { cellWidth: 36 },
+      7: { cellWidth: 15 }, 8: { cellWidth: 13 }, 9: { cellWidth: 12 }, 10: { cellWidth: 22 },
     },
     didParseCell: (data: any) => {
       if (data.section === "body") {
