@@ -7,7 +7,7 @@ import {
   loadEpiMonthly, upsertEpiMonthly, deleteEpiMonthly,
   loadAtleti, loadNtli, loadProgrammi,
   subscribeToAtleti, subscribeToProgrammi, subscribeToNtli,
-  CATEGORIE, TIPI_INFORTUNIO,
+  CATEGORIE, TIPI_INFORTUNIO, nd,
   type Categoria, type EpiMonthlyRecord, type EpiMonthlyEntry,
   type Atleta, type NtliRecord, type Programma,
 } from "@/lib/store";
@@ -149,6 +149,7 @@ async function esportaPDFEpi(params: {
     perTempo: [string, number][]; perTerrenoPartita: [string, number][]; perTerrenoAllenamento: [string, number][];
   };
   atletiMap: Map<string, string>;
+  atleti: Atleta[];
 }) {
   const { default: jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
@@ -372,8 +373,94 @@ async function esportaPDFEpi(params: {
     if (inf.perCategoria.length > 0) y = drawHBars(inf.perCategoria, y, inf.perCategoria[0][1], "Per Categoria");
   }
 
+  // ── Lista infortuni dettagliata ────────────────────────────────────────────
+  const fmtD = (d?: string) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
+  const ggD = (inizio?: string, fine?: string) => {
+    if (!inizio) return "—";
+    const end = fine ? new Date(fine + "T12:00") : new Date();
+    return String(Math.round((end.getTime() - new Date(inizio + "T12:00").getTime()) / 86400000));
+  };
+  type InfListRow = string | { content: string; rowSpan?: number; styles?: object };
+  const listaRows: InfListRow[][] = [];
+  const athleteForRowL: number[] = [];
+  let atletaIdxL = 0;
+  const sortedAtleti = [...params.atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it"));
+  for (const a of sortedAtleti) {
+    type IItem = { diagnosi: string; tipo?: string; dataInfortunio?: string; inizio?: string; fine?: string; stato: string };
+    const infortuni: IItem[] = [];
+    if (a.stato === "Infortunato" && a.infortunio)
+      infortuni.push({ diagnosi: a.infortunio, tipo: a.tipoInfortunio, dataInfortunio: a.dataInfortunio, inizio: a.inizioRehab, fine: a.fineRehab, stato: "In rehab" });
+    for (const s of a.storicoInfortuni ?? [])
+      infortuni.push({ diagnosi: s.diagnosi, tipo: s.tipo, dataInfortunio: s.dataInfortunio, inizio: s.inizioRehab, fine: s.fineRehab, stato: s.fineRehab ? "Recuperato" : "In rehab" });
+    if (infortuni.length === 0) continue;
+    const count = infortuni.length;
+    infortuni.forEach((inf, i) => {
+      const row: InfListRow[] = [];
+      if (i === 0) {
+        row.push({ content: nd(a), rowSpan: count, styles: { valign: "middle", fontStyle: "bold" } });
+        row.push({ content: a.categoria, rowSpan: count, styles: { valign: "middle" } });
+      }
+      row.push(inf.diagnosi, inf.tipo ?? "—", fmtD(inf.dataInfortunio), fmtD(inf.inizio), fmtD(inf.fine), ggD(inf.inizio, inf.fine), inf.stato);
+      listaRows.push(row);
+      athleteForRowL.push(atletaIdxL);
+    });
+    atletaIdxL++;
+  }
+  if (listaRows.length > 0) {
+    doc.addPage();
+    addHeader();
+    let yL = HDR + 10;
+    yL = secTitle("Lista infortuni", yL);
+    autoTable(doc, {
+      startY: yL,
+      head: [["Atleta", "Cat", "Diagnosi", "Tipo", "Data inf.", "Inizio", "Fine", "Giorni", "Stato"]],
+      body: listaRows,
+      headStyles: { fillColor: dark, textColor: 255, fontSize: 7, halign: "center", valign: "middle" },
+      bodyStyles: { fontSize: 6.5, cellPadding: 2, overflow: "linebreak", halign: "left", valign: "middle" },
+      margin: { left: M, right: M, top: HDR + 8 },
+      columnStyles: {
+        0: { cellWidth: 30 }, 1: { cellWidth: 12 }, 2: { cellWidth: 38 },
+        3: { cellWidth: 24 }, 4: { cellWidth: 16 }, 5: { cellWidth: 16 },
+        6: { cellWidth: 16 }, 7: { cellWidth: 12 }, 8: { cellWidth: 18 },
+      },
+      didParseCell: (data: any) => {
+        if (data.section === "body") {
+          const ai = athleteForRowL[data.row.index];
+          data.cell.styles.fillColor = ai % 2 !== 0 ? [248, 248, 248] : [255, 255, 255];
+        }
+      },
+      didDrawPage: () => { addHeader(); },
+    });
+  }
+
   addFooter();
   doc.save(`USC_Epidemiologia_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+// ── CSV Export ────────────────────────────────────────────────────────────────
+function esportaCSVEpi(atleti: Atleta[]) {
+  const fmt = (d?: string) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT") : "";
+  const gg = (inizio?: string, fine?: string) => {
+    if (!inizio) return "";
+    const end = fine ? new Date(fine + "T12:00") : new Date();
+    return String(Math.round((end.getTime() - new Date(inizio + "T12:00").getTime()) / 86400000));
+  };
+  const esc = (s: string) => `"${(s ?? "").replace(/"/g, '""')}"`;
+  const rows: string[] = ["Nome,Categoria,Diagnosi,Tipo,Data infortunio,Inizio rehab,Fine rehab,Giorni,Stato"];
+  for (const a of [...atleti].sort((x, y) => nd(x).localeCompare(nd(y), "it"))) {
+    const nome = esc(nd(a));
+    if (a.stato === "Infortunato" && a.infortunio)
+      rows.push([nome, a.categoria, esc(a.infortunio), esc(a.tipoInfortunio ?? ""), fmt(a.dataInfortunio), fmt(a.inizioRehab), fmt(a.fineRehab), gg(a.inizioRehab, a.fineRehab), "In rehab"].join(","));
+    for (const s of a.storicoInfortuni ?? [])
+      rows.push([nome, a.categoria, esc(s.diagnosi), esc(s.tipo ?? ""), fmt(s.dataInfortunio), fmt(s.inizioRehab), fmt(s.fineRehab), gg(s.inizioRehab, s.fineRehab), s.fineRehab ? "Recuperato" : "In rehab"].join(","));
+  }
+  const blob = new Blob(["﻿" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `USC_Epi_Infortuni_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -739,11 +826,15 @@ export default function EpidemiologiaPage() {
           <p className="text-sm text-gray-500 mt-1">Presenze, carichi di lavoro e RPE mensile</p>
         </div>
         <div className="flex gap-2 shrink-0">
+          <button onClick={() => esportaCSVEpi(tuttiAtleti)}
+            className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-gray-50 transition-colors">
+            <FileText className="w-3.5 h-3.5" /> CSV
+          </button>
           <button onClick={async () => {
             setPdfLoading(true);
             try {
               const atletiMap = new Map(atleti.filter(a => a.osiicsCodice).map(a => [a.osiicsCodice!, a.osiicsDescrizione ?? ""]));
-              await esportaPDFEpi({ filtroCat, filtroAnno, filtroMese, kpi, catData, monthlyData, infStats, atletiMap });
+              await esportaPDFEpi({ filtroCat, filtroAnno, filtroMese, kpi, catData, monthlyData, infStats, atletiMap, atleti: tuttiAtleti });
             } finally { setPdfLoading(false); }
           }}
             disabled={pdfLoading}
