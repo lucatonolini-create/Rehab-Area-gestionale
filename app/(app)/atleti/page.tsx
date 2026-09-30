@@ -2287,8 +2287,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
           <div className="fixed inset-0 z-40 md:hidden bg-black/40" onClick={() => setSelected(null)} />
           <div
             ref={detailPanelRef as React.RefObject<HTMLDivElement>}
-            className="fixed bottom-0 left-3 right-3 z-50 md:relative md:bottom-auto md:left-auto md:right-auto md:z-auto md:w-96 bg-white rounded-2xl md:rounded-none md:border-l md:border-gray-100 flex flex-col overflow-hidden"
-            style={{ maxHeight: "90dvh" }}
+            className="fixed bottom-0 left-3 right-3 z-50 md:relative md:bottom-auto md:left-auto md:right-auto md:z-auto md:w-96 bg-white rounded-2xl md:rounded-none md:border-l md:border-gray-100 flex flex-col overflow-hidden max-h-[90dvh] md:h-full md:max-h-none"
           >
           {/* Drag handle — mobile only */}
           <div className="md:hidden flex-shrink-0 flex justify-center pt-3 pb-1">
