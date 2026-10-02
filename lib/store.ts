@@ -1414,6 +1414,10 @@ export interface NtliDaily {
   date: string;
   vasStart?: number | null;
   vasEnd?: number | null;
+  vasStartDx?: number | null;
+  vasStartSx?: number | null;
+  vasEndDx?: number | null;
+  vasEndSx?: number | null;
   trainingModification: TrainingModification;
   note?: string;
   esercizi?: Esercizio[];
@@ -1457,6 +1461,10 @@ function ntliDailyRowToRecord(r: Record<string, unknown>): NtliDaily {
     date: r.date as string,
     vasStart: r.vas_start_training as number | null,
     vasEnd: r.vas_end_training as number | null,
+    vasStartDx: r.vas_start_dx as number | null ?? null,
+    vasStartSx: r.vas_start_sx as number | null ?? null,
+    vasEndDx: r.vas_end_dx as number | null ?? null,
+    vasEndSx: r.vas_end_sx as number | null ?? null,
     trainingModification: r.training_modification as TrainingModification,
     note: (r.note as string) || undefined,
     esercizi: Array.isArray(r.esercizi_palestra) ? (r.esercizi_palestra as Esercizio[]) : [],
@@ -1525,6 +1533,10 @@ export async function upsertNtliDaily(d: NtliDaily): Promise<void> {
     date: d.date,
     vas_start_training: d.vasStart ?? null,
     vas_end_training: d.vasEnd ?? null,
+    vas_start_dx: d.vasStartDx ?? null,
+    vas_start_sx: d.vasStartSx ?? null,
+    vas_end_dx: d.vasEndDx ?? null,
+    vas_end_sx: d.vasEndSx ?? null,
     training_modification: d.trainingModification,
     note: d.note ?? null,
     esercizi_palestra: d.esercizi?.length ? d.esercizi : null,
