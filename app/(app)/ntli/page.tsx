@@ -1312,35 +1312,6 @@ export default function NtliPage() {
                           )
                         )}
 
-                        {/* Programmi del giorno (da sezione Programmi) */}
-                        {(() => {
-                          const atletaMatch = atleti.find((a) => a.nome.trim().toLowerCase() === ntli.athleteName.trim().toLowerCase());
-                          const progs = (ntliProgrammi[atletaMatch?.id ?? ""] ?? []).filter(
-                            (p) => p.data === monDate && !p.assente && !p.riposo && !p.squadra
-                          );
-                          if (progs.length === 0) return null;
-                          return (
-                            <div>
-                              <Lbl>Programmi del giorno</Lbl>
-                              <div className="mt-2 space-y-2">
-                                {progs.map((p) => (
-                                  <div key={p.id} className="bg-blue-50 border border-blue-100 rounded-xl p-3">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="font-semibold text-sm text-gray-900">{p.nome}</span>
-                                      {p.fase && <span className="text-xs bg-white border border-blue-200 text-blue-600 px-2 py-0.5 rounded-full">{p.fase}</span>}
-                                    </div>
-                                    <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                                      {p.esercizi.length > 0 && <span>{p.esercizi.length} esercizi palestra</span>}
-                                      {(p.esercizicampo?.length ?? 0) > 0 && <span>· {p.esercizicampo!.length} in campo</span>}
-                                      {(p.tests?.length ?? 0) > 0 && <span>· {p.tests.length} test</span>}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })()}
-
                         <div className="space-y-3">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="border border-gray-100 rounded-xl p-3">
