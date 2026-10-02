@@ -152,31 +152,50 @@ function VasChart({ days, dailyMap }: { days: string[]; dailyMap: Map<string, Nt
   const xPos = (i: number) => PAD.left + (i / 6) * innerW;
   const yPos = (v: number) => PAD.top + innerH - (v / 10) * innerH;
 
-  const startPoints = days.map((d, i) => {
+  type Pt = { x: number; y: number } | null;
+  const pts = (field: keyof NtliDaily) => days.map((d, i): Pt => {
     const rec = dailyMap.get(d);
-    if (!rec || rec.vasStart == null) return null;
-    return { x: xPos(i), y: yPos(rec.vasStart), v: rec.vasStart };
-  });
-  const endPoints = days.map((d, i) => {
-    const rec = dailyMap.get(d);
-    if (!rec || rec.vasEnd == null) return null;
-    return { x: xPos(i), y: yPos(rec.vasEnd), v: rec.vasEnd };
+    if (!rec) return null;
+    const v = rec[field] as number | null | undefined;
+    if (v == null) return null;
+    return { x: xPos(i), y: yPos(v) };
   });
 
-  function buildPath(points: (null | { x: number; y: number })[]) {
+  const startDxPts = pts("vasStartDx");
+  const startSxPts = pts("vasStartSx");
+  const endDxPts   = pts("vasEndDx");
+  const endSxPts   = pts("vasEndSx");
+  // legacy fallback for records that only have vasStart/vasEnd
+  const startPts   = pts("vasStart");
+  const endPts     = pts("vasEnd");
+
+  const hasDxSx = startDxPts.some(Boolean) || startSxPts.some(Boolean) || endDxPts.some(Boolean) || endSxPts.some(Boolean);
+
+  function buildPath(points: Pt[]) {
     let d = "";
     for (let i = 0; i < points.length; i++) {
       const p = points[i];
       if (!p) { d += " "; continue; }
-      const prev = points.slice(0, i).reverse().find(Boolean);
-      if (!prev || d.trim() === "") d += `M ${p.x} ${p.y}`;
+      if (!d.trim() || !points.slice(0, i).find(Boolean)) d += `M ${p.x} ${p.y}`;
       else if (i > 0 && points[i - 1]) d += ` L ${p.x} ${p.y}`;
       else d += ` M ${p.x} ${p.y}`;
     }
     return d;
   }
 
-  const hasData = startPoints.some(Boolean) || endPoints.some(Boolean);
+  const hasData = hasDxSx || startPts.some(Boolean) || endPts.some(Boolean);
+
+  const series = hasDxSx
+    ? [
+        { pts: startDxPts, stroke: "#1D4ED8", label: "Inizio DX" },
+        { pts: startSxPts, stroke: "#60A5FA", label: "Inizio SX" },
+        { pts: endDxPts,   stroke: "#C8102E", label: "Fine DX" },
+        { pts: endSxPts,   stroke: "#FCA5A5", label: "Fine SX" },
+      ]
+    : [
+        { pts: startPts, stroke: "#2563EB", label: "VAS inizio" },
+        { pts: endPts,   stroke: "#C8102E", label: "VAS fine" },
+      ];
 
   return (
     <div className="relative">
@@ -186,18 +205,15 @@ function VasChart({ days, dailyMap }: { days: string[]; dailyMap: Map<string, Nt
         <line x1={PAD.left} x2={W - PAD.right} y1={yPos(5)} y2={yPos(5)} stroke="#EF4444" strokeWidth={1} strokeDasharray="4,4" />
         <text x={PAD.left - 4} y={yPos(3) + 4} textAnchor="end" fontSize={9} fill="#F59E0B">3</text>
         <text x={PAD.left - 4} y={yPos(5) + 4} textAnchor="end" fontSize={9} fill="#EF4444">5</text>
-        {/* Y axis labels */}
         {[0, 5, 10].map((v) => (
           <g key={v}>
             <line x1={PAD.left - 3} x2={PAD.left} y1={yPos(v)} y2={yPos(v)} stroke="#9CA3AF" strokeWidth={1} />
             <text x={PAD.left - 5} y={yPos(v) + 4} textAnchor="end" fontSize={9} fill="#9CA3AF">{v}</text>
           </g>
         ))}
-        {/* X axis labels */}
         {days.map((_, i) => (
           <text key={i} x={xPos(i)} y={H - 4} textAnchor="middle" fontSize={10} fill="#6B7280">{GIORNI_BREVI[i]}</text>
         ))}
-        {/* Axes */}
         <line x1={PAD.left} x2={PAD.left} y1={PAD.top} y2={H - PAD.bottom} stroke="#E5E7EB" strokeWidth={1} />
         <line x1={PAD.left} x2={W - PAD.right} y1={H - PAD.bottom} y2={H - PAD.bottom} stroke="#E5E7EB" strokeWidth={1} />
 
@@ -205,21 +221,19 @@ function VasChart({ days, dailyMap }: { days: string[]; dailyMap: Map<string, Nt
           <text x={W / 2} y={H / 2} textAnchor="middle" fontSize={13} fill="#9CA3AF">Nessun dato questa settimana</text>
         )}
 
-        {/* Lines */}
-        <path d={buildPath(startPoints)} fill="none" stroke="#2563EB" strokeWidth={2} strokeLinejoin="round" />
-        <path d={buildPath(endPoints)} fill="none" stroke="#C8102E" strokeWidth={2} strokeLinejoin="round" />
-
-        {/* Points */}
-        {startPoints.map((p, i) => p && (
-          <circle key={`s${i}`} cx={p.x} cy={p.y} r={4} fill="#2563EB" />
-        ))}
-        {endPoints.map((p, i) => p && (
-          <circle key={`e${i}`} cx={p.x} cy={p.y} r={4} fill="#C8102E" />
+        {series.map(({ pts: sp, stroke }) => (
+          <>
+            <path key={`path-${stroke}`} d={buildPath(sp)} fill="none" stroke={stroke} strokeWidth={2} strokeLinejoin="round" />
+            {sp.map((p, i) => p && <circle key={`dot-${stroke}-${i}`} cx={p.x} cy={p.y} r={3.5} fill={stroke} />)}
+          </>
         ))}
       </svg>
-      <div className="flex gap-4 text-xs text-gray-500 mt-1 justify-center">
-        <span className="flex items-center gap-1"><span className="inline-block w-4 h-0.5 bg-[#2563EB]" /> VAS inizio</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-4 h-0.5 bg-[#C8102E]" /> VAS fine</span>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-1 justify-center">
+        {series.map(({ stroke, label }) => (
+          <span key={label} className="flex items-center gap-1">
+            <span className="inline-block w-4 h-0.5" style={{ background: stroke }} /> {label}
+          </span>
+        ))}
         <span className="flex items-center gap-1"><span className="inline-block w-4 h-0.5 bg-yellow-400" style={{ borderTop: "1px dashed" }} /> Soglia 3</span>
         <span className="flex items-center gap-1"><span className="inline-block w-4 h-0.5 bg-red-400" style={{ borderTop: "1px dashed" }} /> Soglia 5</span>
       </div>
@@ -850,13 +864,21 @@ export default function NtliPage() {
           console.warn("saveMonitoraggio: athlete_id non trovato per", ntli.athleteName, "— salvataggio saltato");
           continue;
         }
+        const vStartDx = patch.vasStartDx !== undefined ? patch.vasStartDx : existing?.vasStartDx ?? null;
+        const vStartSx = patch.vasStartSx !== undefined ? patch.vasStartSx : existing?.vasStartSx ?? null;
+        const vEndDx   = patch.vasEndDx   !== undefined ? patch.vasEndDx   : existing?.vasEndDx   ?? null;
+        const vEndSx   = patch.vasEndSx   !== undefined ? patch.vasEndSx   : existing?.vasEndSx   ?? null;
         const record: NtliDaily = {
           id: existing?.id ?? uid(),
           ntliId,
           athleteId: resolvedAthleteId as string,
           date: monDate,
-          vasStart: patch.vasStart ?? existing?.vasStart ?? null,
-          vasEnd: patch.vasEnd ?? existing?.vasEnd ?? null,
+          vasStart: vStartDx ?? vStartSx ?? existing?.vasStart ?? null,
+          vasEnd: vEndDx ?? vEndSx ?? existing?.vasEnd ?? null,
+          vasStartDx: vStartDx,
+          vasStartSx: vStartSx,
+          vasEndDx: vEndDx,
+          vasEndSx: vEndSx,
           trainingModification: patch.trainingModification ?? existing?.trainingModification ?? "Nessuna modifica",
           note: patch.note ?? existing?.note ?? "",
           esercizi: patch.esercizi ?? existing?.esercizi ?? [],
@@ -1290,19 +1312,78 @@ export default function NtliPage() {
                           )
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Lbl>VAS Inizio allenamento {noAllenamento ? "(opzionale)" : ""}</Lbl>
-                            <div className="mt-2">
-                              <VasInput value={row.vasStart ?? null} disabled={false}
-                                onChange={(v) => setMonRow(ntli.id, { vasStart: v })} />
+                        {/* Programmi del giorno (da sezione Programmi) */}
+                        {(() => {
+                          const atletaMatch = atleti.find((a) => a.nome.trim().toLowerCase() === ntli.athleteName.trim().toLowerCase());
+                          const progs = (ntliProgrammi[atletaMatch?.id ?? ""] ?? []).filter(
+                            (p) => p.data === monDate && !p.assente && !p.riposo && !p.squadra
+                          );
+                          if (progs.length === 0) return null;
+                          return (
+                            <div>
+                              <Lbl>Programmi del giorno</Lbl>
+                              <div className="mt-2 space-y-2">
+                                {progs.map((p) => (
+                                  <div key={p.id} className="bg-blue-50 border border-blue-100 rounded-xl p-3">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="font-semibold text-sm text-gray-900">{p.nome}</span>
+                                      {p.fase && <span className="text-xs bg-white border border-blue-200 text-blue-600 px-2 py-0.5 rounded-full">{p.fase}</span>}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+                                      {p.esercizi.length > 0 && <span>{p.esercizi.length} esercizi palestra</span>}
+                                      {(p.esercizicampo?.length ?? 0) > 0 && <span>· {p.esercizicampo!.length} in campo</span>}
+                                      {(p.tests?.length ?? 0) > 0 && <span>· {p.tests.length} test</span>}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                          <div>
-                            <Lbl>VAS Fine allenamento {noAllenamento ? "(opzionale)" : ""}</Lbl>
-                            <div className="mt-2">
-                              <VasInput value={row.vasEnd ?? null} disabled={false}
-                                onChange={(v) => setMonRow(ntli.id, { vasEnd: v })} />
+                          );
+                        })()}
+
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="border border-gray-100 rounded-xl p-3">
+                              <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-2">
+                                VAS Inizio {noAllenamento ? <span className="font-normal text-gray-400">(opzionale)</span> : ""}
+                              </p>
+                              <div className="space-y-2">
+                                <div>
+                                  <Lbl>Arto DX</Lbl>
+                                  <div className="mt-1">
+                                    <VasInput value={row.vasStartDx ?? null} disabled={false}
+                                      onChange={(v) => setMonRow(ntli.id, { vasStartDx: v })} />
+                                  </div>
+                                </div>
+                                <div>
+                                  <Lbl>Arto SX</Lbl>
+                                  <div className="mt-1">
+                                    <VasInput value={row.vasStartSx ?? null} disabled={false}
+                                      onChange={(v) => setMonRow(ntli.id, { vasStartSx: v })} />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="border border-gray-100 rounded-xl p-3">
+                              <p className="text-xs font-bold text-[#C8102E] uppercase tracking-wide mb-2">
+                                VAS Fine {noAllenamento ? <span className="font-normal text-gray-400">(opzionale)</span> : ""}
+                              </p>
+                              <div className="space-y-2">
+                                <div>
+                                  <Lbl>Arto DX</Lbl>
+                                  <div className="mt-1">
+                                    <VasInput value={row.vasEndDx ?? null} disabled={false}
+                                      onChange={(v) => setMonRow(ntli.id, { vasEndDx: v })} />
+                                  </div>
+                                </div>
+                                <div>
+                                  <Lbl>Arto SX</Lbl>
+                                  <div className="mt-1">
+                                    <VasInput value={row.vasEndSx ?? null} disabled={false}
+                                      onChange={(v) => setMonRow(ntli.id, { vasEndSx: v })} />
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
