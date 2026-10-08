@@ -10,7 +10,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <BottomNavProvider>
       <div
-className="flex bg-white"
+className="flex bg-[#F5F5F7]"
         style={{ position: "fixed", inset: 0 }}
       >
         <Sidebar />
@@ -29,7 +29,7 @@ className="flex bg-white"
           right: 0,
           top: 0,
           height: 24,
-          background: "linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%)",
+          background: "linear-gradient(to bottom, rgba(245,245,247,1) 0%, rgba(245,245,247,0) 100%)",
           zIndex: 45,
         }}
       />
