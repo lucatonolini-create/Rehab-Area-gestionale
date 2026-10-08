@@ -10,6 +10,22 @@
 
 html, body {
   @apply bg-white text-gray-900;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography hierarchy */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.015em;
+  font-weight: 600;
+}
+
+h1 { font-weight: 700; letter-spacing: -0.025em; }
+h2 { font-weight: 700; letter-spacing: -0.02em; }
+
+/* Label / caption polish */
+label {
+  letter-spacing: 0.01em;
 }
 
 /* Mobile: page titles are centered, so no offset needed for the hamburger */

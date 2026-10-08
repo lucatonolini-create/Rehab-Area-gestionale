@@ -100,9 +100,9 @@ function SidebarContent({
               title={collapsed ? label : undefined}
               className={`flex items-center rounded-xl transition-all duration-150 text-sm font-medium relative ${
                 collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
-              } ${isActive ? "text-[#C8102E] bg-[#C8102E]/10" : "text-gray-600 hover:text-gray-900 hover:bg-black/5"}`}>
+              } ${isActive ? "text-[#003087] bg-[#003087]/8" : "text-gray-600 hover:text-gray-900 hover:bg-black/5"}`}>
               {isActive && !collapsed && (
-                <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#C8102E] rounded-r" />
+                <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#003087] rounded-r" />
               )}
               <div className="relative shrink-0">
                 <Icon className="w-5 h-5" />
@@ -180,7 +180,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      style={{ background: "rgba(232,232,232,1)", position: "relative" }}
+      style={{ background: "rgba(255,255,255,1)", position: "relative", borderRight: "1px solid rgba(0,0,0,0.07)" }}
       className={`hidden md:flex flex-col text-gray-800 shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}
     >
       {/* Right-edge fade */}
@@ -192,7 +192,7 @@ export default function Sidebar() {
           right: 0,
           bottom: 0,
           width: collapsed ? 16 : 48,
-          background: "linear-gradient(to right, rgba(232,232,232,0) 0%, rgba(255,255,255,0.90) 100%)",
+          background: "linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.90) 100%)",
           pointerEvents: "none",
           zIndex: 1,
         }}
