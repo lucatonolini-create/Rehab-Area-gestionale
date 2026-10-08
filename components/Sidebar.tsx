@@ -180,23 +180,9 @@ export default function Sidebar() {
 
   return (
     <aside
-      style={{ background: "rgba(255,255,255,1)", position: "relative", borderRight: "1px solid rgba(0,0,0,0.07)" }}
+      style={{ background: "rgba(255,255,255,1)", position: "relative" }}
       className={`hidden md:flex flex-col text-gray-800 shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}
     >
-      {/* Right-edge fade */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: collapsed ? 16 : 48,
-          background: "linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.90) 100%)",
-          pointerEvents: "none",
-          zIndex: 1,
-        }}
-      />
       <SidebarContent
         collapsed={collapsed}
         setCollapsed={setCollapsed}
