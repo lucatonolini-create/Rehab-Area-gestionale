@@ -23,10 +23,20 @@ const navItems = [
   { href: "/impostazioni", label: "Impostazioni",  icon: Settings },
 ];
 
+function getScale(hoveredIdx: number | null, thisIdx: number): number {
+  if (hoveredIdx === null) return 1;
+  const dist = Math.abs(hoveredIdx - thisIdx);
+  if (dist === 0) return 1.45;
+  if (dist === 1) return 1.18;
+  if (dist === 2) return 1.06;
+  return 1;
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [intakeBadge, setIntakeBadge] = useState(0);
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [tooltip, setTooltip] = useState<{ label: string; y: number } | null>(null);
 
   useEffect(() => {
@@ -45,9 +55,17 @@ export default function Sidebar() {
     router.push("/login");
   };
 
-  const showTooltip = (e: React.MouseEvent, label: string) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTooltip({ label, y: rect.top + rect.height / 2 });
+  const onEnter = (e: React.MouseEvent, idx: number, label: string, isActive: boolean) => {
+    setHoveredIdx(idx);
+    if (!isActive) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setTooltip({ label, y: rect.top + rect.height / 2 });
+    }
+  };
+
+  const onLeave = () => {
+    setHoveredIdx(null);
+    setTooltip(null);
   };
 
   return (
@@ -72,31 +90,35 @@ export default function Sidebar() {
           backdropFilter: "blur(20px) saturate(1.4)",
           WebkitBackdropFilter: "blur(20px) saturate(1.4)",
           boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
+          overflow: "visible",
         }}
       >
         <nav
           className="sb-pill flex-1 flex flex-col items-center overflow-y-auto py-2"
-          style={{ scrollbarWidth: "none" } as React.CSSProperties}
+          style={{ scrollbarWidth: "none", overflow: "visible" } as React.CSSProperties}
         >
-          {navItems.map(({ href, icon: Icon, label }) => {
+          {navItems.map(({ href, icon: Icon, label }, idx) => {
             const isActive = pathname === href;
             const showBadge = href === "/segnalazioni" && intakeBadge > 0;
+            const scale = getScale(hoveredIdx, idx);
             return (
               <Link
                 key={href}
                 href={href}
-                className="flex items-center justify-center flex-shrink-0 active:opacity-50 transition-opacity"
+                className="flex items-center justify-center flex-shrink-0"
                 style={{ width: 66, height: 52 }}
-                onMouseEnter={(e) => { if (!isActive) showTooltip(e, label); }}
-                onMouseLeave={() => setTooltip(null)}
+                onMouseEnter={(e) => onEnter(e, idx, label, isActive)}
+                onMouseLeave={onLeave}
               >
                 <div
-                  className="relative flex items-center justify-center transition-all duration-200"
+                  className="relative flex items-center justify-center"
                   style={{
                     width: 50,
                     height: 44,
                     borderRadius: 22,
                     background: isActive ? "rgba(200,16,46,0.12)" : "transparent",
+                    transform: `scale(${scale})`,
+                    transition: "transform 0.2s cubic-bezier(0.34,1.56,0.64,1)",
                   }}
                 >
                   <Icon
@@ -115,33 +137,45 @@ export default function Sidebar() {
 
         <button
           onClick={handleLogout}
-          className="flex-shrink-0 flex items-center justify-center active:opacity-50 transition-opacity"
+          className="flex-shrink-0 flex items-center justify-center"
           style={{ width: 66, height: 52 }}
-          onMouseEnter={(e) => showTooltip(e, "Esci")}
-          onMouseLeave={() => setTooltip(null)}
+          onMouseEnter={(e) => {
+            setHoveredIdx(navItems.length);
+            const rect = e.currentTarget.getBoundingClientRect();
+            setTooltip({ label: "Esci", y: rect.top + rect.height / 2 });
+          }}
+          onMouseLeave={onLeave}
         >
-          <LogOut className="w-[22px] h-[22px] text-red-400 stroke-[1.5px]" />
+          <div
+            style={{
+              transform: `scale(${hoveredIdx === navItems.length ? 1.45 : 1})`,
+              transition: "transform 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+            }}
+          >
+            <LogOut className="w-[22px] h-[22px] text-red-400 stroke-[1.5px]" />
+          </div>
         </button>
       </div>
 
-      {/* Floating label tooltip */}
+      {/* Tooltip staccato */}
       {tooltip && (
         <div
-          className="fixed pointer-events-none z-[49] hidden md:flex items-center"
+          className="fixed pointer-events-none z-[60] hidden md:flex items-center"
           style={{
-            left: 58,
+            left: 92,
             top: tooltip.y,
             transform: "translateY(-50%)",
-            background: "rgba(213,213,213,0.97)",
-            color: "rgba(0,0,0,0.72)",
-            paddingLeft: 30,
-            paddingRight: 18,
-            height: 44,
-            borderRadius: 22,
+            background: "rgba(28,28,30,0.88)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            color: "white",
+            padding: "0 14px",
+            height: 34,
+            borderRadius: 17,
             fontSize: 13,
             fontWeight: 500,
             whiteSpace: "nowrap",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.18)",
             animation: "sb-label-in 0.15s ease-out forwards",
           }}
         >
