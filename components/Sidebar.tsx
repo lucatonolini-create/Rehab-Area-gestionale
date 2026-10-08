@@ -127,23 +127,21 @@ export default function Sidebar() {
       {/* Floating label tooltip */}
       {tooltip && (
         <div
-          className="fixed pointer-events-none z-[60] hidden md:flex items-center"
+          className="fixed pointer-events-none z-[49] hidden md:flex items-center"
           style={{
-            left: 80,
+            left: 58,
             top: tooltip.y,
             transform: "translateY(-50%)",
-            background: "rgba(210,210,210,0.88)",
-            backdropFilter: "blur(20px) saturate(1.4)",
-            WebkitBackdropFilter: "blur(20px) saturate(1.4)",
-            color: "rgba(0,0,0,0.75)",
-            paddingLeft: 10,
+            background: "rgba(213,213,213,0.97)",
+            color: "rgba(0,0,0,0.72)",
+            paddingLeft: 30,
             paddingRight: 18,
             height: 44,
-            borderRadius: "0 22px 22px 0",
+            borderRadius: 22,
             fontSize: 13,
             fontWeight: 500,
             whiteSpace: "nowrap",
-            boxShadow: "4px 4px 24px rgba(0,0,0,0.10)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
             animation: "sb-label-in 0.15s ease-out forwards",
           }}
         >
