@@ -87,7 +87,7 @@ export default function Sidebar() {
                 href={href}
                 className="flex items-center justify-center flex-shrink-0 active:opacity-50 transition-opacity"
                 style={{ width: 66, height: 52 }}
-                onMouseEnter={(e) => showTooltip(e, label)}
+                onMouseEnter={(e) => { if (!isActive) showTooltip(e, label); }}
                 onMouseLeave={() => setTooltip(null)}
               >
                 <div
