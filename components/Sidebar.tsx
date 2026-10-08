@@ -180,7 +180,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      style={{ background: "#001F5B", position: "relative" }}
+      style={{ background: "#3a3d42", position: "relative" }}
       className={`hidden md:flex flex-col shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}
     >
       <SidebarContent
