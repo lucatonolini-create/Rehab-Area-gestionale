@@ -100,21 +100,21 @@ function SidebarContent({
               title={collapsed ? label : undefined}
               className={`flex items-center rounded-xl transition-all duration-150 text-sm font-medium relative ${
                 collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
-              } ${isActive ? "text-[#C8102E] bg-[#C8102E]/15" : "text-white/50 hover:text-white hover:bg-white/7"}`}>
+              } ${isActive ? "text-white bg-white/20" : "text-white/60 hover:text-white hover:bg-white/10"}`}>
               {isActive && !collapsed && (
-                <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#C8102E] rounded-r" />
+                <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-white rounded-r" />
               )}
               <div className="relative shrink-0">
                 <Icon className="w-5 h-5" />
                 {showBadge && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-[#C8102E] rounded-full text-white text-[9px] font-bold flex items-center justify-center px-0.5 border border-[#1C1C1E]">
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-white rounded-full text-[#C8102E] text-[9px] font-bold flex items-center justify-center px-0.5">
                     {intakeBadge > 9 ? "9+" : intakeBadge}
                   </span>
                 )}
               </div>
               {!collapsed && <span className="flex-1">{label}</span>}
               {!collapsed && showBadge && (
-                <span className="ml-auto bg-[#C8102E] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                <span className="ml-auto bg-white text-[#C8102E] text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {intakeBadge > 9 ? "9+" : intakeBadge}
                 </span>
               )}
@@ -134,8 +134,8 @@ function SidebarContent({
           </button>
         ) : (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-              style={{ backgroundColor: RED }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-[#C8102E] shrink-0"
+              style={{ backgroundColor: "rgba(255,255,255,0.9)" }}>
               {userEmail ? userEmail[0].toUpperCase() : "S"}
             </div>
             <div className="flex-1 min-w-0">
@@ -180,7 +180,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      style={{ background: "#1C1C1E", position: "relative" }}
+      style={{ background: "#C8102E", position: "relative" }}
       className={`hidden md:flex flex-col shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}
     >
       <SidebarContent
