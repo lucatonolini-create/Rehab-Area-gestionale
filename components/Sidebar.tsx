@@ -60,30 +60,30 @@ function SidebarContent({
     <>
       {/* Header */}
       <div
-        className={`border-b border-black/8 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}
+        className={`border-b border-white/8 flex items-center shrink-0 ${collapsed ? "p-3 justify-center" : "p-5 justify-between"}`}
         style={{ paddingTop: `calc(env(safe-area-inset-top, 0px) + ${collapsed ? "0.75rem" : "1.25rem"})` }}
       >
         {!collapsed && (
           <div className="flex items-center gap-3">
             <AppLogo className="w-10 h-10 rounded-xl shrink-0" />
             <div>
-              <h1 className="font-bold text-sm text-gray-900 leading-tight">Rehab Area</h1>
+              <h1 className="font-bold text-sm text-white leading-tight">Rehab Area</h1>
             </div>
           </div>
         )}
         {setCollapsed && (
           collapsed ? (
-            <button onClick={() => setCollapsed(false)} className="text-gray-500 hover:text-gray-900" title="Espandi menu">
+            <button onClick={() => setCollapsed(false)} className="text-white/40 hover:text-white" title="Espandi menu">
               <Menu className="w-5 h-5" />
             </button>
           ) : (
-            <button onClick={() => setCollapsed(true)} className="text-gray-500 hover:text-gray-900 ml-2" title="Nascondi menu">
+            <button onClick={() => setCollapsed(true)} className="text-white/40 hover:text-white ml-2" title="Nascondi menu">
               <ChevronLeft className="w-5 h-5" />
             </button>
           )
         )}
         {onNavClick && !setCollapsed && (
-          <button onClick={onNavClick} className="text-gray-500 hover:text-gray-900 ml-auto">
+          <button onClick={onNavClick} className="text-white/40 hover:text-white ml-auto">
             <X className="w-5 h-5" />
           </button>
         )}
@@ -100,14 +100,14 @@ function SidebarContent({
               title={collapsed ? label : undefined}
               className={`flex items-center rounded-xl transition-all duration-150 text-sm font-medium relative ${
                 collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
-              } ${isActive ? "text-[#C8102E] bg-[#C8102E]/10" : "text-gray-600 hover:text-gray-900 hover:bg-black/5"}`}>
+              } ${isActive ? "text-[#C8102E] bg-[#C8102E]/15" : "text-white/50 hover:text-white hover:bg-white/7"}`}>
               {isActive && !collapsed && (
                 <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#C8102E] rounded-r" />
               )}
               <div className="relative shrink-0">
                 <Icon className="w-5 h-5" />
                 {showBadge && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-[#C8102E] rounded-full text-white text-[9px] font-bold flex items-center justify-center px-0.5 border border-[#B8B8B8]">
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-[#C8102E] rounded-full text-white text-[9px] font-bold flex items-center justify-center px-0.5 border border-[#1C1C1E]">
                     {intakeBadge > 9 ? "9+" : intakeBadge}
                   </span>
                 )}
@@ -125,11 +125,11 @@ function SidebarContent({
 
       {/* Footer */}
       <div
-        className={`border-t border-black/8 shrink-0 ${collapsed ? "p-2 flex justify-center" : "p-4"}`}
+        className={`border-t border-white/8 shrink-0 ${collapsed ? "p-2 flex justify-center" : "p-4"}`}
         style={{ paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${collapsed ? "0.5rem" : "1rem"})` }}
       >
         {collapsed ? (
-          <button onClick={handleLogout} title="Esci" className="text-gray-500 hover:text-gray-900 transition-colors p-1">
+          <button onClick={handleLogout} title="Esci" className="text-white/40 hover:text-white transition-colors p-1">
             <LogOut className="w-4 h-4" />
           </button>
         ) : (
@@ -139,9 +139,9 @@ function SidebarContent({
               {userEmail ? userEmail[0].toUpperCase() : "S"}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{userEmail ?? "Staff Medico"}</p>
+              <p className="text-sm font-medium text-white/80 truncate">{userEmail ?? "Staff Medico"}</p>
             </div>
-            <button onClick={handleLogout} title="Esci" className="text-gray-500 hover:text-gray-900 transition-colors shrink-0">
+            <button onClick={handleLogout} title="Esci" className="text-white/40 hover:text-white transition-colors shrink-0">
               <LogOut className="w-4 h-4" />
             </button>
           </div>
@@ -180,23 +180,9 @@ export default function Sidebar() {
 
   return (
     <aside
-      style={{ background: "rgba(232,232,232,1)", position: "relative" }}
-      className={`hidden md:flex flex-col text-gray-800 shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}
+      style={{ background: "#1C1C1E", position: "relative" }}
+      className={`hidden md:flex flex-col shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}
     >
-      {/* Right-edge fade */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: collapsed ? 16 : 48,
-          background: "linear-gradient(to right, rgba(232,232,232,0) 0%, rgba(255,255,255,0.90) 100%)",
-          pointerEvents: "none",
-          zIndex: 1,
-        }}
-      />
       <SidebarContent
         collapsed={collapsed}
         setCollapsed={setCollapsed}
