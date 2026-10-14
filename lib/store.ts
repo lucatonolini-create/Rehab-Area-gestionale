@@ -282,6 +282,7 @@ export interface Esercizio {
   rir: string;
   vas: string;
   note: string;
+  gruppoMuscolare?: string;
 }
 
 export const TIPI_ESERCIZIO_CAMPO = [

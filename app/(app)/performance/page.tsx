@@ -449,7 +449,11 @@ export default function PerformancePage() {
   // Athletes who have ≥1 session with GPS/RPE data OR test data
   const atletiConDati = useMemo(() => {
     const ids = new Set(
-      programmi.filter((p) => toSession(p) !== null || (p.tests?.length ?? 0) > 0).map((p) => p.atletaId)
+      programmi.filter((p) =>
+        toSession(p) !== null ||
+        (p.tests?.length ?? 0) > 0 ||
+        (p.esercizi?.some((e) => e.nome.trim()) ?? false)
+      ).map((p) => p.atletaId)
     );
     return atleti
       .filter((a) => ids.has(a.id))
@@ -557,6 +561,50 @@ export default function PerformancePage() {
     if (last.dx != null) p.push(`Dx ${last.dx}`);
     return (p.join(" / ") + (tl.unit ? ` ${tl.unit}` : "")) || "—";
   }
+
+  // ── Gym analytics ─────────────────────────────────────────────────────────
+  const gymStats = useMemo(() => {
+    if (!selectedId) return null;
+    const progs = programmi
+      .filter((p) => p.atletaId === selectedId && !p.assente && !p.riposo && !p.squadra && (p.esercizi?.length ?? 0) > 0)
+      .sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""));
+
+    if (!progs.length) return null;
+
+    // Per-session volume & tonnage
+    const sessioni = progs.map((p) => {
+      let volume = 0, tonnaggio = 0;
+      const gruppi: Record<string, number> = {};
+      (p.esercizi ?? []).forEach((e) => {
+        const s = parseInt(e.serie) || 0;
+        const r = parseInt(e.reps) || 0;
+        const c = parseFloat(e.carico) || 0;
+        volume += s * r;
+        tonnaggio += s * r * c;
+        const g = e.gruppoMuscolare?.trim();
+        if (g) gruppi[g] = (gruppi[g] ?? 0) + s;
+      });
+      const dateLabel = p.data ? new Date(p.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) : "";
+      return { data: p.data ?? "", dateLabel, nome: p.nome ?? "", volume, tonnaggio, gruppi };
+    });
+
+    // Aggregate muscle group totals (by series)
+    const gruppiTotali: Record<string, number> = {};
+    sessioni.forEach((s) => Object.entries(s.gruppi).forEach(([g, v]) => { gruppiTotali[g] = (gruppiTotali[g] ?? 0) + v; }));
+
+    const totaleSerie = Object.values(gruppiTotali).reduce((a, b) => a + b, 0);
+    const sliceGruppi = Object.entries(gruppiTotali)
+      .sort((a, b) => b[1] - a[1])
+      .map(([g, v]) => ({ gruppo: g, serie: v, pct: totaleSerie > 0 ? Math.round((v / totaleSerie) * 100) : 0 }));
+
+    // Last 7 days totals
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+    const ultimaSettimana = sessioni.filter((s) => s.data >= cutoff.toISOString().slice(0, 10));
+    const tonnSettimana = ultimaSettimana.reduce((a, s) => a + s.tonnaggio, 0);
+    const volSettimana = ultimaSettimana.reduce((a, s) => a + s.volume, 0);
+
+    return { sessioni, sliceGruppi, tonnSettimana, volSettimana };
+  }, [programmi, selectedId]);
 
   function avgTestVal(tl: TestTimeline, nome?: string): string {
     if (nome === "Drop Jump") {
@@ -1450,6 +1498,153 @@ export default function PerformancePage() {
               </div>
             )}
           </>
+        )}
+
+        {/* ── Sezione Palestra ─────────────────────────────────────────────── */}
+        {gymStats && selectedId && (
+          <div className="mt-8">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Lavoro in Palestra</p>
+
+            {/* KPI strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
+                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Tonnellaggio (7gg)</p>
+                <p className="text-2xl font-bold text-gray-900">{gymStats.tonnSettimana > 0 ? `${Math.round(gymStats.tonnSettimana).toLocaleString("it-IT")} kg` : "—"}</p>
+                <p className="text-xs text-gray-400 mt-1">serie × reps × carico</p>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
+                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Volume (7gg)</p>
+                <p className="text-2xl font-bold text-gray-900">{gymStats.volSettimana > 0 ? gymStats.volSettimana.toLocaleString("it-IT") : "—"}</p>
+                <p className="text-xs text-gray-400 mt-1">serie × reps totali</p>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
+                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Sessioni totali</p>
+                <p className="text-2xl font-bold text-gray-900">{gymStats.sessioni.length}</p>
+                <p className="text-xs text-gray-400 mt-1">con esercizi registrati</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+              {/* Donut gruppi muscolari */}
+              {gymStats.sliceGruppi.length > 0 && (
+                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Distribuzione Gruppi Muscolari</p>
+                  <div className="flex items-center gap-4">
+                    {/* Donut SVG */}
+                    <svg viewBox="0 0 120 120" className="w-32 h-32 shrink-0">
+                      {(() => {
+                        const R = 44, r = 26, cx = 60, cy = 60;
+                        let startAngle = -Math.PI / 2;
+                        const colors: Record<string, string> = { "Quadricipiti": "#2563eb","Glutei": "#7c3aed","Ischiocrurali": "#059669","Core": "#d97706","Polpacci": "#0891b2","Spalle": "#ea580c","Petto": "#dc2626","Dorsali": "#6d28d9","Bicipiti": "#0d9488","Tricipiti": "#64748b","Mobilità": "#16a34a" };
+                        const defaultColors = ["#94a3b8","#cbd5e1","#e2e8f0","#f1f5f9"];
+                        return gymStats.sliceGruppi.map((sl, idx) => {
+                          const angle = (sl.pct / 100) * 2 * Math.PI;
+                          const endAngle = startAngle + angle;
+                          const x1 = cx + R * Math.cos(startAngle), y1 = cy + R * Math.sin(startAngle);
+                          const x2 = cx + R * Math.cos(endAngle), y2 = cy + R * Math.sin(endAngle);
+                          const xi1 = cx + r * Math.cos(startAngle), yi1 = cy + r * Math.sin(startAngle);
+                          const xi2 = cx + r * Math.cos(endAngle), yi2 = cy + r * Math.sin(endAngle);
+                          const large = angle > Math.PI ? 1 : 0;
+                          const d = `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${r} ${r} 0 ${large} 0 ${xi1} ${yi1} Z`;
+                          const fill = colors[sl.gruppo] ?? defaultColors[idx % defaultColors.length];
+                          startAngle = endAngle;
+                          return <path key={sl.gruppo} d={d} fill={fill} stroke="white" strokeWidth="1.5" />;
+                        });
+                      })()}
+                    </svg>
+                    {/* Legend */}
+                    <div className="flex flex-col gap-1.5 min-w-0">
+                      {gymStats.sliceGruppi.slice(0, 8).map((sl) => {
+                        const colors: Record<string, string> = { "Quadricipiti": "#2563eb","Glutei": "#7c3aed","Ischiocrurali": "#059669","Core": "#d97706","Polpacci": "#0891b2","Spalle": "#ea580c","Petto": "#dc2626","Dorsali": "#6d28d9","Bicipiti": "#0d9488","Tricipiti": "#64748b","Mobilità": "#16a34a" };
+                        return (
+                          <div key={sl.gruppo} className="flex items-center gap-1.5 min-w-0">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: colors[sl.gruppo] ?? "#94a3b8" }} />
+                            <span className="text-xs text-gray-600 truncate">{sl.gruppo}</span>
+                            <span className="text-xs font-semibold text-gray-800 ml-auto pl-2 shrink-0">{sl.pct}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tonnage bar chart per session */}
+              {gymStats.sessioni.some((s) => s.tonnaggio > 0) && (
+                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Tonnellaggio per Sessione</p>
+                  {(() => {
+                    const dati = gymStats.sessioni.filter((s) => s.tonnaggio > 0).slice(-20);
+                    const maxT = Math.max(...dati.map((s) => s.tonnaggio));
+                    const W = 320, H = 120, PAD = { left: 40, right: 8, top: 8, bottom: 28 };
+                    const bw = Math.max(4, (W - PAD.left - PAD.right) / dati.length - 2);
+                    const step = dati.length <= 10 ? 1 : dati.length <= 16 ? 2 : 3;
+                    return (
+                      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 140 }} preserveAspectRatio="none">
+                        {[0, 0.25, 0.5, 0.75, 1].map((t, i) => {
+                          const y = PAD.top + t * (H - PAD.top - PAD.bottom);
+                          const lbl = Math.round(maxT * (1 - t));
+                          return (
+                            <g key={i}>
+                              <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="#e5e7eb" strokeWidth="0.6" />
+                              <text x={PAD.left - 4} y={y + 3.5} textAnchor="end" fontSize="8" fill="#9ca3af">{lbl > 0 ? (lbl >= 1000 ? `${Math.round(lbl / 100) / 10}k` : String(lbl)) : ""}</text>
+                            </g>
+                          );
+                        })}
+                        {dati.map((s, i) => {
+                          const plotW = W - PAD.left - PAD.right;
+                          const x = PAD.left + (i + 0.5) * (plotW / dati.length);
+                          const barH = maxT > 0 ? (s.tonnaggio / maxT) * (H - PAD.top - PAD.bottom) : 0;
+                          const y = H - PAD.bottom - barH;
+                          return (
+                            <g key={i}>
+                              <rect x={x - bw / 2} y={y} width={bw} height={barH} fill="#C8102E" opacity="0.85" rx="2" />
+                              {i % step === 0 && <text x={x} y={H - PAD.bottom + 11} textAnchor="middle" fontSize="7.5" fill="#9ca3af">{s.dateLabel}</text>}
+                            </g>
+                          );
+                        })}
+                      </svg>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+
+            {/* Volume table per session */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Dettaglio sessioni palestra</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      {["Data", "Programma", "Volume (s×r)", "Tonnellaggio (kg)"].map((h) => (
+                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...gymStats.sessioni].reverse().slice(0, 20).map((s, i) => (
+                      <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
+                        <td className="px-4 py-2.5 text-xs font-mono text-gray-600 whitespace-nowrap">{s.data ? new Date(s.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-800 max-w-[160px] truncate">{s.nome || "—"}</td>
+                        <td className="px-4 py-2.5 text-xs font-mono text-gray-700 text-center">{s.volume > 0 ? s.volume.toLocaleString("it-IT") : "—"}</td>
+                        <td className="px-4 py-2.5 text-xs font-mono text-gray-700 text-center">{s.tonnaggio > 0 ? Math.round(s.tonnaggio).toLocaleString("it-IT") : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-gray-200 bg-gray-50">
+                      <td colSpan={2} className="px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Totale</td>
+                      <td className="px-4 py-2.5 text-xs font-semibold text-center text-gray-700">{gymStats.sessioni.reduce((a, s) => a + s.volume, 0).toLocaleString("it-IT")}</td>
+                      <td className="px-4 py-2.5 text-xs font-semibold text-center text-gray-700">{Math.round(gymStats.sessioni.reduce((a, s) => a + s.tonnaggio, 0)).toLocaleString("it-IT")}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
