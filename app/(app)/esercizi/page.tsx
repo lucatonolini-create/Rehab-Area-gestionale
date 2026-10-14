@@ -808,6 +808,57 @@ function parseGpsCsv(text: string): Partial<Carico> {
 
 type FormSection = "esercizi" | "campo" | "test" | "carico" | "fisioterapia";
 
+function ExerciseAutocomplete({
+  value, onChange, placeholder, suggestions, className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  suggestions: string[];
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const filtered = value.trim()
+    ? suggestions.filter((s) => s.toLowerCase().includes(value.toLowerCase())).slice(0, 8)
+    : [];
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative flex-1">
+      <input
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder={placeholder}
+        className={className}
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute left-0 top-full mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+          {filtered.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); onChange(s); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-red-50 hover:text-[#C8102E] transition-colors"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SortableRow({ id, children }: { id: string; children: (handle: React.ReactNode) => React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const handle = (
@@ -1107,6 +1158,21 @@ export default function EserciziPage() {
   const fasiUniche = Array.from(new Set(fontePerSuggerimenti.map((p) => p.fase).filter(Boolean)));
   const nomiFiltrati = nomiUnici.filter((n) => !form.nome.trim() || n.toLowerCase().includes(form.nome.toLowerCase())).slice(0, 6);
   const fasiFiltrate = fasiUniche.filter((f) => !form.fase.trim() || f.toLowerCase().includes(form.fase.toLowerCase())).slice(0, 6);
+
+  const suggerimentiPalestra = useMemo(() =>
+    Array.from(new Set(
+      Object.values(programmiPerAtleta).flat()
+        .flatMap((p) => (p.esercizi ?? []).map((e) => e.nome).filter(Boolean))
+    )).sort(),
+    [programmiPerAtleta]
+  );
+  const suggerimentiCampo = useMemo(() =>
+    Array.from(new Set(
+      Object.values(programmiPerAtleta).flat()
+        .flatMap((p) => (p.esercizicampo ?? []).map((e) => e.tipo).filter(Boolean))
+    )).sort(),
+    [programmiPerAtleta]
+  );
 
   return (
     <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "1.5rem" }}>
@@ -1874,9 +1940,13 @@ export default function EserciziPage() {
                                 {/* Nome + handle + cestino */}
                                 <div className="flex items-center gap-2">
                                   <span className="w-6 h-6 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">{i + 1}</span>
-                                  <input value={es.nome} onChange={(e) => aggiornaEs(i, "nome", e.target.value)}
+                                  <ExerciseAutocomplete
+                                    value={es.nome}
+                                    onChange={(v) => aggiornaEs(i, "nome", v)}
                                     placeholder="Nome esercizio"
-                                    className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
+                                    suggestions={suggerimentiPalestra}
+                                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]"
+                                  />
                                   {handle}
                                   <button onClick={() => rimuoviEs(i)} className="text-gray-300 hover:text-red-400 shrink-0">
                                     <Trash2 className="w-4 h-4" />
@@ -1964,9 +2034,13 @@ export default function EserciziPage() {
                                   <div className="bg-gray-50 rounded-xl p-4 space-y-3">
                                     <div className="flex items-center gap-2">
                                       <span className="w-6 h-6 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">{i + 1}</span>
-                                      <input value={c.tipo} onChange={(e) => aggiornaCampo(i, "tipo", e.target.value)}
+                                      <ExerciseAutocomplete
+                                        value={c.tipo}
+                                        onChange={(v) => aggiornaCampo(i, "tipo", v)}
                                         placeholder="Nome esercizio (es. Sprint, RSA, Metabolico...)"
-                                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white" />
+                                        suggestions={suggerimentiCampo}
+                                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white"
+                                      />
                                       {handle}
                                       <button onClick={() => rimuoviCampo(i)} className="text-gray-300 hover:text-red-400 shrink-0">
                                         <Trash2 className="w-4 h-4" />
