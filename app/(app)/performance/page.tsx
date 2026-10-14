@@ -580,7 +580,7 @@ export default function PerformancePage() {
         const r = parseInt(e.reps) || 0;
         const c = parseFloat(e.carico) || 0;
         volume += s * r;
-        tonnaggio += s * r * c;
+        tonnaggio += c;
         const g = e.gruppoMuscolare?.trim();
         if (g) gruppi[g] = (gruppi[g] ?? 0) + s;
       });
