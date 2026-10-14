@@ -89,7 +89,8 @@ const MUSCLE_COLORS: Record<string, string> = {
   "Quadricipiti": "#2563eb", "Glutei": "#7c3aed", "Ischiocrurali": "#059669",
   "Core": "#d97706", "Polpacci": "#0891b2", "Spalle": "#ea580c",
   "Petto": "#dc2626", "Dorsali": "#6d28d9", "Bicipiti": "#0d9488",
-  "Tricipiti": "#64748b", "Adduttori": "#be185d", "Abduttori": "#0369a1", "Mobilità": "#16a34a",
+  "Tricipiti": "#64748b", "Adduttori": "#be185d", "Abduttori": "#0369a1",
+  "Upper body": "#9333ea", "Lower body": "#1d4ed8", "Mobilità": "#16a34a",
 };
 
 const MUSCLE_KEYWORD_MAP: Array<{ chiavi: string[]; gruppo: string }> = [

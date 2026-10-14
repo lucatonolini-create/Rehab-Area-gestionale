@@ -37,22 +37,24 @@ const GRUPPI_MUSCOLARI_MAP: Array<{ chiavi: string[]; gruppo: string }> = [
 ];
 
 const GRUPPI_COLORI: Record<string, string> = {
-  "Quadricipiti": "#2563eb",
-  "Glutei": "#7c3aed",
+  "Abduttori":   "#0369a1",
+  "Adduttori":   "#be185d",
+  "Bicipiti":    "#0d9488",
+  "Core":        "#d97706",
+  "Dorsali":     "#6d28d9",
+  "Glutei":      "#7c3aed",
   "Ischiocrurali": "#059669",
-  "Core": "#d97706",
-  "Polpacci": "#0891b2",
-  "Spalle": "#ea580c",
-  "Petto": "#dc2626",
-  "Dorsali": "#6d28d9",
-  "Bicipiti": "#0d9488",
-  "Tricipiti": "#64748b",
-  "Adduttori": "#be185d",
-  "Abduttori": "#0369a1",
-  "Mobilità": "#16a34a",
+  "Lower body":  "#1d4ed8",
+  "Mobilità":    "#16a34a",
+  "Petto":       "#dc2626",
+  "Polpacci":    "#0891b2",
+  "Quadricipiti":"#2563eb",
+  "Spalle":      "#ea580c",
+  "Tricipiti":   "#64748b",
+  "Upper body":  "#9333ea",
 };
 
-const TUTTI_GRUPPI = Object.keys(GRUPPI_COLORI);
+const TUTTI_GRUPPI = Object.keys(GRUPPI_COLORI).sort((a, b) => a.localeCompare(b, "it"));
 
 function rilevGruppoMuscolare(nome: string): string {
   const lower = nome.toLowerCase();
@@ -863,7 +865,7 @@ function ExerciseAutocomplete({
   const ref = useRef<HTMLDivElement>(null);
 
   const filtered = value.trim()
-    ? suggestions.filter((s) => s.toLowerCase().includes(value.toLowerCase())).slice(0, 8)
+    ? suggestions.filter((s) => s.toLowerCase().startsWith(value.toLowerCase())).slice(0, 10)
     : [];
 
   useEffect(() => {
@@ -1322,24 +1324,29 @@ export default function EserciziPage() {
   const nomiFiltrati = nomiUnici.filter((n) => !form.nome.trim() || n.toLowerCase().includes(form.nome.toLowerCase())).slice(0, 6);
   const fasiFiltrate = fasiUniche.filter((f) => !form.fase.trim() || f.toLowerCase().includes(form.fase.toLowerCase())).slice(0, 6);
 
-  const suggerimentiPalestra = useMemo(() =>
-    Array.from(new Set([
+  const suggerimentiPalestra = useMemo(() => {
+    const raw = [
       ...ESERCIZI_BASE_PALESTRA,
       ...catalogoPalestra,
       ...Object.values(programmiPerAtleta).flat()
         .flatMap((p) => (p.esercizi ?? []).map((e) => e.nome).filter(Boolean)),
-    ])).sort((a, b) => a.localeCompare(b, "it")),
-    [catalogoPalestra, programmiPerAtleta]
-  );
-  const suggerimentiCampo = useMemo(() =>
-    Array.from(new Set([
+    ];
+    const seen = new Map<string, string>();
+    for (const s of raw) { const k = s.toLowerCase().trim(); if (s.trim() && !seen.has(k)) seen.set(k, s.trim()); }
+    return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "it"));
+  }, [catalogoPalestra, programmiPerAtleta]);
+
+  const suggerimentiCampo = useMemo(() => {
+    const raw = [
       ...ESERCIZI_BASE_CAMPO,
       ...catalogoCampo,
       ...Object.values(programmiPerAtleta).flat()
         .flatMap((p) => (p.esercizicampo ?? []).map((e) => e.tipo).filter(Boolean)),
-    ])).sort((a, b) => a.localeCompare(b, "it")),
-    [catalogoCampo, programmiPerAtleta]
-  );
+    ];
+    const seen = new Map<string, string>();
+    for (const s of raw) { const k = s.toLowerCase().trim(); if (s.trim() && !seen.has(k)) seen.set(k, s.trim()); }
+    return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "it"));
+  }, [catalogoCampo, programmiPerAtleta]);
 
   return (
     <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "1.5rem" }}>
