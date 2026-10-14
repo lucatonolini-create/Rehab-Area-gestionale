@@ -230,17 +230,59 @@ interface MetricDef {
 
 const METRICS: MetricDef[] = [
   { key: "rpe",      label: "RPE",                shortLabel: "RPE",        unit: "",     color: "#C8102E", dec: 1 },
-  { key: "durata",   label: "Durata",             shortLabel: "Durata",     unit: "min",  color: "#4B5563", dec: 0 },
-  { key: "interno",  label: "Carico Interno",      shortLabel: "TL",         unit: "UA",   color: "#4B5563", dec: 0 },
-  { key: "distanza", label: "Distanza Totale",     shortLabel: "Dist. Tot.", unit: "m",    color: "#C8102E", dec: 0 },
-  { key: "hsr",      label: "D>16 km/h",          shortLabel: "D>16 km/h",  unit: "m",    color: "#4B5563", dec: 0 },
-  { key: "vel21",    label: "D>20 km/h",          shortLabel: "D>20 km/h",  unit: "m",    color: "#C8102E", dec: 0 },
-  { key: "vel25",    label: "D>25 km/h",          shortLabel: "D>25 km/h",  unit: "m",    color: "#4B5563", dec: 0 },
-  { key: "velMax",   label: "Velocità Max",        shortLabel: "Vel. Max",   unit: "km/h", color: "#C8102E", dec: 1 },
-  { key: "acc",      label: "Accelerazioni",       shortLabel: "N. Acc.",    unit: "",     color: "#4B5563", dec: 0 },
-  { key: "dec",      label: "Decelerazioni",       shortLabel: "N. Dec.",    unit: "",     color: "#C8102E", dec: 0 },
-  { key: "sprint",   label: "Sprint",              shortLabel: "N. Sprint",  unit: "",     color: "#4B5563", dec: 0 },
-  { key: "potenza",  label: "Potenza Metabolica",  shortLabel: "Potenza",    unit: "W/kg", color: "#C8102E", dec: 1 },
+  { key: "durata",   label: "Durata",             shortLabel: "Durata",     unit: "min",  color: "#64748b", dec: 0 },
+  { key: "interno",  label: "Carico Interno",      shortLabel: "TL",         unit: "UA",   color: "#7c3aed", dec: 0 },
+  { key: "distanza", label: "Distanza Totale",     shortLabel: "Dist. Tot.", unit: "m",    color: "#2563eb", dec: 0 },
+  { key: "hsr",      label: "D>16 km/h",          shortLabel: "D>16 km/h",  unit: "m",    color: "#0891b2", dec: 0 },
+  { key: "vel21",    label: "D>20 km/h",          shortLabel: "D>20 km/h",  unit: "m",    color: "#059669", dec: 0 },
+  { key: "vel25",    label: "D>25 km/h",          shortLabel: "D>25 km/h",  unit: "m",    color: "#d97706", dec: 0 },
+  { key: "velMax",   label: "Velocità Max",        shortLabel: "Vel. Max",   unit: "km/h", color: "#ea580c", dec: 1 },
+  { key: "acc",      label: "Accelerazioni",       shortLabel: "N. Acc.",    unit: "",     color: "#6d28d9", dec: 0 },
+  { key: "dec",      label: "Decelerazioni",       shortLabel: "N. Dec.",    unit: "",     color: "#db2777", dec: 0 },
+  { key: "sprint",   label: "Sprint",              shortLabel: "N. Sprint",  unit: "",     color: "#C8102E", dec: 0 },
+  { key: "potenza",  label: "Potenza Metabolica",  shortLabel: "Potenza",    unit: "W/kg", color: "#0d9488", dec: 1 },
+];
+
+const GPS_GROUPS: Array<{ label: string; keys: string[]; color: string }> = [
+  { label: "Carico Interno",  keys: ["rpe", "interno", "durata"],               color: "#7c3aed" },
+  { label: "Volume",          keys: ["distanza", "hsr", "vel21", "vel25"],      color: "#2563eb" },
+  { label: "Velocità",        keys: ["velMax", "sprint"],                        color: "#ea580c" },
+  { label: "Intensità",       keys: ["acc", "dec", "potenza"],                  color: "#6d28d9" },
+];
+
+const TEST_CATEGORIES: Array<{ label: string; keys: string[] }> = [
+  {
+    label: "Salto Verticale e Orizzontale",
+    keys: [
+      "CMJ – Counter Movement Jump", "CMJ braccia libere", "Squat Jump",
+      "SL CMJ", "Drop Jump", "SL Drop Jump",
+      "Broad Jump", "Single Leg Hop Test", "Triple Hop Test",
+      "6m Timed Hop Test", "Crossover Hop Test", "Side Hop Test",
+    ],
+  },
+  {
+    label: "Forza",
+    keys: [
+      "Forza hamstring (dinamometro)", "Forza hamstring HHD 30°", "Forza hamstring HHD 90°",
+      "Forza quadricipite (dinamometro)", "Isokinetic 60°/s", "Isokinetic 180°/s", "Isokinetic 240°/s",
+      "Jurdan", "McCall 90º/20º", "McCall 60º/60º", "Rapporto H/Q",
+      "Limb Symmetry Index", "Single Leg Press", "Squeeze",
+    ],
+  },
+  {
+    label: "Mobilità e Qualità del Movimento",
+    keys: [
+      "Dorsiflexion Lunge Test", "FMS", "Heel Rise Test", "Lunge test", "MHFAKE", "PKE",
+      "ROM anca – flessione", "ROM caviglia – dorsiflessione",
+      "ROM ginocchio – estensione", "ROM ginocchio – flessione",
+      "SEBT", "SLR", "Single Leg Squat", "QSLS",
+      "Y-Balance Test – Anteriore", "Y-Balance Test – Posterolaterale", "Y-Balance Test – Posteromediale",
+    ],
+  },
+  {
+    label: "Velocità e Agilità",
+    keys: ["Sprint 10m", "Sprint 20m", "Sprint 30m", "505 Agility Test", "Illinois Agility Test", "IFT 30-15", "Gacon", "10x100m"],
+  },
 ];
 
 // ── SVG Chart ────────────────────────────────────────────────────────────────
@@ -1133,35 +1175,49 @@ export default function PerformancePage() {
                   })}
                 </div>
 
-                {/* Charts grid — clickable to expand */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {activeMetrics.map((m) => {
-                    const t = trend(m.key);
-                    const isExpanded = expandedKey === m.key;
+                {/* Charts grouped by section */}
+                <div className="space-y-5">
+                  {GPS_GROUPS.map((grp) => {
+                    const grpMetrics = grp.keys.map((k) => activeMetrics.find((m) => m.key === k)).filter(Boolean) as MetricDef[];
+                    if (!grpMetrics.length) return null;
                     return (
-                      <div
-                        key={m.key}
-                        className={`bg-white rounded-2xl border border-gray-200 p-4 cursor-pointer transition-all hover:border-gray-300 ${isExpanded ? "lg:col-span-2" : ""}`}
-                        onClick={() => setExpandedKey(isExpanded ? null : m.key)}
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: m.color }} />
-                            <span className="font-semibold text-gray-800 text-sm">{m.label}</span>
-                            {m.unit && (
-                              <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{m.unit}</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3 text-xs">
-                            <span className="text-gray-400">Ult. <span className="font-bold text-gray-800">{lastVal(m.key, m.dec)}</span></span>
-                            <TrendIcon t={t} />
-                            <span className="text-gray-300">|</span>
-                            <span className="text-gray-400">Med. <span className="font-semibold text-gray-700">{avgVal(m.key, m.dec)}</span></span>
-                            <span className="text-gray-300">|</span>
-                            <span className="text-gray-400">Max <span className="font-semibold text-gray-700">{maxVal(m.key, m.dec)}</span></span>
-                          </div>
+                      <div key={grp.label}>
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: grp.color }} />
+                          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{grp.label}</p>
                         </div>
-                        <MetricChart sessions={sessions} metric={m} />
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                          {grpMetrics.map((m) => {
+                            const t = trend(m.key);
+                            const isExpanded = expandedKey === m.key;
+                            return (
+                              <div
+                                key={m.key}
+                                className={`bg-white rounded-2xl border border-gray-200 p-4 cursor-pointer transition-all hover:border-gray-300 ${isExpanded ? "lg:col-span-2" : ""}`}
+                                onClick={() => setExpandedKey(isExpanded ? null : m.key)}
+                              >
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: m.color }} />
+                                    <span className="font-semibold text-gray-800 text-sm">{m.label}</span>
+                                    {m.unit && (
+                                      <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{m.unit}</span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-3 text-xs">
+                                    <span className="text-gray-400">Ult. <span className="font-bold text-gray-800">{lastVal(m.key, m.dec)}</span></span>
+                                    <TrendIcon t={t} />
+                                    <span className="text-gray-300">|</span>
+                                    <span className="text-gray-400">Med. <span className="font-semibold text-gray-700">{avgVal(m.key, m.dec)}</span></span>
+                                    <span className="text-gray-300">|</span>
+                                    <span className="text-gray-400">Max <span className="font-semibold text-gray-700">{maxVal(m.key, m.dec)}</span></span>
+                                  </div>
+                                </div>
+                                <MetricChart sessions={sessions} metric={m} />
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     );
                   })}
@@ -1237,19 +1293,21 @@ export default function PerformancePage() {
               </div>
             )}
             {hasTests && (
-              <div className="space-y-3">
-                {Array.from(testTimelines.entries()).map(([nome, tl]) => {
-                  const t = testTrend(tl);
-                  const lastPt = tl.points[tl.points.length - 1];
-                  const isExpanded = expandedTestKey === nome;
-                  const asymPct =
-                    tl.isBilateral && nome !== "QSLS" &&
-                    lastPt?.sx != null && lastPt?.dx != null &&
-                    Math.max(lastPt.sx, lastPt.dx) > 0
-                      ? ((Math.abs(lastPt.sx - lastPt.dx) / Math.max(lastPt.sx, lastPt.dx)) * 100).toFixed(1)
-                      : null;
-
-                  return (
+              <div className="space-y-5">
+                {(() => {
+                  const allEntries = Array.from(testTimelines.entries());
+                  const categorized = new Set<string>();
+                  const renderTestCard = (nome: string, tl: typeof testTimelines extends Map<string, infer V> ? V : never) => {
+                    const t = testTrend(tl);
+                    const lastPt = tl.points[tl.points.length - 1];
+                    const isExpanded = expandedTestKey === nome;
+                    const asymPct =
+                      tl.isBilateral && nome !== "QSLS" &&
+                      lastPt?.sx != null && lastPt?.dx != null &&
+                      Math.max(lastPt.sx, lastPt.dx) > 0
+                        ? ((Math.abs(lastPt.sx - lastPt.dx) / Math.max(lastPt.sx, lastPt.dx)) * 100).toFixed(1)
+                        : null;
+                    return (
                     <div key={nome} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                       {/* Row — always visible, click to expand */}
                       <div
@@ -1386,7 +1444,34 @@ export default function PerformancePage() {
                       )}
                     </div>
                   );
-                })}
+                  };
+                  return (
+                    <>
+                      {TEST_CATEGORIES.map((cat) => {
+                        const catEntries = allEntries.filter(([n]) => cat.keys.includes(n));
+                        if (!catEntries.length) return null;
+                        catEntries.forEach(([n]) => categorized.add(n));
+                        return (
+                          <div key={cat.label}>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-0.5">{cat.label}</p>
+                            <div className="space-y-3">
+                              {catEntries.map(([nome, tl]) => renderTestCard(nome, tl))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {/* Uncategorized tests */}
+                      {allEntries.filter(([n]) => !categorized.has(n)).length > 0 && (
+                        <div>
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-0.5">Altri Test</p>
+                          <div className="space-y-3">
+                            {allEntries.filter(([n]) => !categorized.has(n)).map(([nome, tl]) => renderTestCard(nome, tl))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
           </>
