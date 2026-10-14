@@ -918,7 +918,7 @@ const CATALOGO_KEY_CAMPO    = "usc_catalogo_esercizi_campo";
 const ESERCIZI_BASE_PALESTRA: string[] = [
   // Quadricipiti
   "Squat", "Squat goblet", "Front squat", "Hack squat", "Leg press", "Leg extension",
-  "Affondi", "Bulgarian split squat", "Split squat", "Step up", "Step up crossover", "Pistol squat",
+  "Affondi", "Bulgarian split squat", "Split squat", "Step up", "Step up crossover", "Step down", "Step down crossover", "Pistol squat",
   "Lunge camminato", "Reverse lunge",
   // Ischiocrurali
   "RDL", "Romanian deadlift", "Stacchi da terra", "Stacchi sumo", "Nordic curl",
