@@ -918,7 +918,7 @@ const CATALOGO_KEY_CAMPO    = "usc_catalogo_esercizi_campo";
 const ESERCIZI_BASE_PALESTRA: string[] = [
   // Quadricipiti
   "Squat", "Back squat", "Goblet squat", "Goblet squat con medball", "Goblet squat con dumbbell", "Goblet squat con barbell", "Front squat", "Hack squat", "Leg press", "Leg extension",
-  "Affondi", "Bulgarian split squat", "Split squat", "Split squat con medball", "Split squat con dumbbell", "Split squat con barbell",
+  "Affondi", "Bulgarian split squat", "Split squat", "Split squat con medball", "Split squat con dumbbell", "Split squat con barbell", "Split squat con kettlebell",
   "Step up", "Step up crossover", "Step down", "Step down crossover", "Pistol squat",
   "Lunge camminato", "Reverse lunge",
   // Ischiocrurali
