@@ -1186,9 +1186,9 @@ export default function PerformancePage() {
                     if (!grpMetrics.length) return null;
                     return (
                       <div key={grp.label}>
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2 mb-3 px-0.5">
                           <span className="w-2 h-2 rounded-full shrink-0" style={{ background: grp.color }} />
-                          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{grp.label}</p>
+                          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: grp.color }}>{grp.label}</p>
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                           {grpMetrics.map((m) => {
@@ -1202,7 +1202,7 @@ export default function PerformancePage() {
                               >
                                 <div className="flex items-center justify-between mb-3">
                                   <div className="flex items-center gap-2">
-                                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: m.color }} />
+                                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: grp.color }} />
                                     <span className="font-semibold text-gray-800 text-sm">{m.label}</span>
                                     {m.unit && (
                                       <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{m.unit}</span>
@@ -1217,7 +1217,7 @@ export default function PerformancePage() {
                                     <span className="text-gray-400">Max <span className="font-semibold text-gray-700">{maxVal(m.key, m.dec)}</span></span>
                                   </div>
                                 </div>
-                                <MetricChart sessions={sessions} metric={m} />
+                                <MetricChart sessions={sessions} metric={{ ...m, color: grp.color }} />
                               </div>
                             );
                           })}
