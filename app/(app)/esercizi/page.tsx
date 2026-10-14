@@ -18,7 +18,45 @@ import {
   type Atleta, type Programma, type Esercizio, type TestFisiometrico, type Carico, type EsercizioCampo, type InfortunioStorico,
 } from "@/lib/store";
 
-const esVuoto: Esercizio = { nome: "", serie: "", reps: "", durata: "", carico: "", rir: "", vas: "", note: "" };
+const esVuoto: Esercizio = { nome: "", serie: "", reps: "", durata: "", carico: "", rir: "", vas: "", note: "", gruppoMuscolare: "" };
+
+const GRUPPI_MUSCOLARI_MAP: Array<{ chiavi: string[]; gruppo: string }> = [
+  { chiavi: ["squat","leg press","pressa","affondi","lunge","leg extension","front squat","hack squat","step up","bulgaro","pistol","split squat"], gruppo: "Quadricipiti" },
+  { chiavi: ["hip thrust","glute bridge","bridge","glutei","abductor","abduttori","kickback","fire hydrant","clamshell"], gruppo: "Glutei" },
+  { chiavi: ["leg curl","nordic","hamstring","ischiocrurali","rdl","romanian","stiff","good morning","deadlift","stacchi","ghr","nordic curl"], gruppo: "Ischiocrurali" },
+  { chiavi: ["plank","core","addome","crunch","sit up","russian twist","pallof","dead bug","bird dog","addominali","hollow","v-up","mountain climber"], gruppo: "Core" },
+  { chiavi: ["calf","polpacci","soleus","soleo","gastrocnemio","calf raise"], gruppo: "Polpacci" },
+  { chiavi: ["shoulder","spalle","deltoide","lateral raise","alzate laterali","overhead press","military press","arnold","upright row","face pull","alzate"], gruppo: "Spalle" },
+  { chiavi: ["panca","bench","petto","pettorali","push up","chest","fly","pec deck","dips petto"], gruppo: "Petto" },
+  { chiavi: ["trazioni","pull up","pulldown","lat machine","lat pull","rematore","rowing","dorsali","back","seated row","t-bar","cable row","chest supported"], gruppo: "Dorsali" },
+  { chiavi: ["curl","bicipiti","bicep","concentration","preacher","hammer curl","spider curl"], gruppo: "Bicipiti" },
+  { chiavi: ["tricipiti","tricep","french press","skull crusher","pushdown","dips tricipiti","overhead tricep"], gruppo: "Tricipiti" },
+  { chiavi: ["elastici","band","propriocettivo","proprioception","balance","bosu","flessibilità","stretching","mobilità","mobilization","foam roll","massaggio"], gruppo: "Mobilità" },
+];
+
+const GRUPPI_COLORI: Record<string, string> = {
+  "Quadricipiti": "#2563eb",
+  "Glutei": "#7c3aed",
+  "Ischiocrurali": "#059669",
+  "Core": "#d97706",
+  "Polpacci": "#0891b2",
+  "Spalle": "#ea580c",
+  "Petto": "#dc2626",
+  "Dorsali": "#6d28d9",
+  "Bicipiti": "#0d9488",
+  "Tricipiti": "#64748b",
+  "Mobilità": "#16a34a",
+};
+
+const TUTTI_GRUPPI = Object.keys(GRUPPI_COLORI);
+
+function rilevGruppoMuscolare(nome: string): string {
+  const lower = nome.toLowerCase();
+  for (const { chiavi, gruppo } of GRUPPI_MUSCOLARI_MAP) {
+    if (chiavi.some((k) => lower.includes(k))) return gruppo;
+  }
+  return "";
+}
 const testVuoto: TestFisiometrico = { nome: "", risultatoSx: "", risultatoDx: "", risultato: "", unita: "", note: "" };
 const caricoVuoto: Carico = { rpe: "", interno: "", durata: "", distanzaTotale: "", velocitaMax: "", hsr: "", velocita21: "", velocita25: "", accelerazioni: "", decelerazioni: "", sprint: "", potenzaMetabolica: "", note: "" };
 const campoVuoto: EsercizioCampo = { tipo: "", serie: "", durata: "", descrizione: "", vas: "" };
@@ -1974,7 +2012,12 @@ export default function EserciziPage() {
                                   <span className="w-6 h-6 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">{i + 1}</span>
                                   <ExerciseAutocomplete
                                     value={es.nome}
-                                    onChange={(v) => aggiornaEs(i, "nome", v)}
+                                    onChange={(v) => {
+                                      const gruppo = rilevGruppoMuscolare(v);
+                                      const nuovi = [...form.esercizi];
+                                      nuovi[i] = { ...nuovi[i], nome: v, gruppoMuscolare: gruppo || nuovi[i].gruppoMuscolare || "" };
+                                      setForm({ ...form, esercizi: nuovi });
+                                    }}
                                     placeholder="Nome esercizio"
                                     suggestions={suggerimentiPalestra}
                                     className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]"
@@ -1983,6 +2026,21 @@ export default function EserciziPage() {
                                   <button onClick={() => rimuoviEs(i)} className="text-gray-300 hover:text-red-400 shrink-0">
                                     <Trash2 className="w-4 h-4" />
                                   </button>
+                                </div>
+                                {/* Gruppo muscolare */}
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                                    style={{ background: GRUPPI_COLORI[es.gruppoMuscolare ?? ""] ?? "#d1d5db" }}
+                                  />
+                                  <select
+                                    value={es.gruppoMuscolare ?? ""}
+                                    onChange={(e) => aggiornaEs(i, "gruppoMuscolare", e.target.value)}
+                                    className="flex-1 bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#C8102E] text-gray-600"
+                                  >
+                                    <option value="">Gruppo muscolare…</option>
+                                    {TUTTI_GRUPPI.map((g) => <option key={g} value={g}>{g}</option>)}
+                                  </select>
                                 </div>
                                 {/* Metriche: 5 colonne compatte */}
                                 <div className="grid grid-cols-5 gap-1.5">
