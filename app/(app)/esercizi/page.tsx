@@ -874,9 +874,21 @@ function SortableRow({ id, children }: { id: string; children: (handle: React.Re
   );
 }
 
+const CATALOGO_KEY_PALESTRA = "usc_catalogo_esercizi_palestra";
+const CATALOGO_KEY_CAMPO    = "usc_catalogo_esercizi_campo";
+
+function leggiCatalogo(key: string): string[] {
+  try { return JSON.parse(localStorage.getItem(key) ?? "[]"); } catch { return []; }
+}
+function salvaCatalogo(key: string, nomi: string[]) {
+  try { localStorage.setItem(key, JSON.stringify(nomi)); } catch {}
+}
+
 export default function EserciziPage() {
   const [atleti, setAtleti] = useState<Atleta[]>([]);
   const [programmiPerAtleta, setProgrammiPerAtleta] = useState<Record<string, Programma[]>>({});
+  const [catalogoPalestra, setCatalogoPalestra] = useState<string[]>(() => leggiCatalogo(CATALOGO_KEY_PALESTRA));
+  const [catalogoCampo, setCatalogoCampo] = useState<string[]>(() => leggiCatalogo(CATALOGO_KEY_CAMPO));
   const [atletaAperto, setAtletaAperto] = useState<string | null>(null);
   const [caricandoAtleta, setCaricandoAtleta] = useState(false);
   const [aperto, setAperto] = useState<string | null>(null);
@@ -988,6 +1000,24 @@ export default function EserciziPage() {
       const lista = prev[id];
       return { ...prev, [id]: editId ? lista.map((p) => p.id === editId ? prog : p) : [...lista, prog] };
     });
+
+    // Aggiorna il catalogo locale con i nuovi nomi
+    const nuoviPalestra = (prog.esercizi ?? []).map((e) => e.nome).filter(Boolean);
+    const nuoviCampo = (prog.esercizicampo ?? []).map((e) => e.tipo).filter(Boolean);
+    if (nuoviPalestra.length) {
+      setCatalogoPalestra((prev) => {
+        const aggiornato = Array.from(new Set([...prev, ...nuoviPalestra])).sort();
+        salvaCatalogo(CATALOGO_KEY_PALESTRA, aggiornato);
+        return aggiornato;
+      });
+    }
+    if (nuoviCampo.length) {
+      setCatalogoCampo((prev) => {
+        const aggiornato = Array.from(new Set([...prev, ...nuoviCampo])).sort();
+        salvaCatalogo(CATALOGO_KEY_CAMPO, aggiornato);
+        return aggiornato;
+      });
+    }
 
     // Quando si registra "Squadra", porta automaticamente l'atleta a Disponibile
     if (form.squadra) {
@@ -1160,18 +1190,20 @@ export default function EserciziPage() {
   const fasiFiltrate = fasiUniche.filter((f) => !form.fase.trim() || f.toLowerCase().includes(form.fase.toLowerCase())).slice(0, 6);
 
   const suggerimentiPalestra = useMemo(() =>
-    Array.from(new Set(
-      Object.values(programmiPerAtleta).flat()
-        .flatMap((p) => (p.esercizi ?? []).map((e) => e.nome).filter(Boolean))
-    )).sort(),
-    [programmiPerAtleta]
+    Array.from(new Set([
+      ...catalogoPalestra,
+      ...Object.values(programmiPerAtleta).flat()
+        .flatMap((p) => (p.esercizi ?? []).map((e) => e.nome).filter(Boolean)),
+    ])).sort(),
+    [catalogoPalestra, programmiPerAtleta]
   );
   const suggerimentiCampo = useMemo(() =>
-    Array.from(new Set(
-      Object.values(programmiPerAtleta).flat()
-        .flatMap((p) => (p.esercizicampo ?? []).map((e) => e.tipo).filter(Boolean))
-    )).sort(),
-    [programmiPerAtleta]
+    Array.from(new Set([
+      ...catalogoCampo,
+      ...Object.values(programmiPerAtleta).flat()
+        .flatMap((p) => (p.esercizicampo ?? []).map((e) => e.tipo).filter(Boolean)),
+    ])).sort(),
+    [catalogoCampo, programmiPerAtleta]
   );
 
   return (
