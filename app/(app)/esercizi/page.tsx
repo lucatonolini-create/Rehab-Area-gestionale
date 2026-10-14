@@ -31,6 +31,8 @@ const GRUPPI_MUSCOLARI_MAP: Array<{ chiavi: string[]; gruppo: string }> = [
   { chiavi: ["trazioni","pull up","pulldown","lat machine","lat pull","rematore","rowing","dorsali","back","seated row","t-bar","cable row","chest supported"], gruppo: "Dorsali" },
   { chiavi: ["curl","bicipiti","bicep","concentration","preacher","hammer curl","spider curl"], gruppo: "Bicipiti" },
   { chiavi: ["tricipiti","tricep","french press","skull crusher","pushdown","dips tricipiti","overhead tricep"], gruppo: "Tricipiti" },
+  { chiavi: ["adduttori","adductor","copenaghen","copenhagen","squeeze","adduction"], gruppo: "Adduttori" },
+  { chiavi: ["abduttori","abductor","monster walk","lateral band walk","side step","clamshell aperto"], gruppo: "Abduttori" },
   { chiavi: ["elastici","band","propriocettivo","proprioception","balance","bosu","flessibilità","stretching","mobilità","mobilization","foam roll","massaggio"], gruppo: "Mobilità" },
 ];
 
@@ -45,6 +47,8 @@ const GRUPPI_COLORI: Record<string, string> = {
   "Dorsali": "#6d28d9",
   "Bicipiti": "#0d9488",
   "Tricipiti": "#64748b",
+  "Adduttori": "#be185d",
+  "Abduttori": "#0369a1",
   "Mobilità": "#16a34a",
 };
 

@@ -89,7 +89,7 @@ const MUSCLE_COLORS: Record<string, string> = {
   "Quadricipiti": "#2563eb", "Glutei": "#7c3aed", "Ischiocrurali": "#059669",
   "Core": "#d97706", "Polpacci": "#0891b2", "Spalle": "#ea580c",
   "Petto": "#dc2626", "Dorsali": "#6d28d9", "Bicipiti": "#0d9488",
-  "Tricipiti": "#64748b", "Mobilità": "#16a34a",
+  "Tricipiti": "#64748b", "Adduttori": "#be185d", "Abduttori": "#0369a1", "Mobilità": "#16a34a",
 };
 
 const MUSCLE_KEYWORD_MAP: Array<{ chiavi: string[]; gruppo: string }> = [
@@ -103,6 +103,8 @@ const MUSCLE_KEYWORD_MAP: Array<{ chiavi: string[]; gruppo: string }> = [
   { chiavi: ["trazioni","pull up","pulldown","lat machine","lat pull","rematore","rowing","dorsali","back","seated row","t-bar","cable row"], gruppo: "Dorsali" },
   { chiavi: ["curl","bicipiti","bicep","concentration","preacher","hammer curl","spider curl"], gruppo: "Bicipiti" },
   { chiavi: ["tricipiti","tricep","french press","skull crusher","pushdown","overhead tricep"], gruppo: "Tricipiti" },
+  { chiavi: ["adduttori","adductor","copenaghen","copenhagen","squeeze","adduction"], gruppo: "Adduttori" },
+  { chiavi: ["abduttori","abductor","monster walk","lateral band walk","side step"], gruppo: "Abduttori" },
   { chiavi: ["elastici","band","propriocettivo","balance","bosu","stretching","mobilità","foam roll","mobilizzazione","tkе","tke","slr"], gruppo: "Mobilità" },
 ];
 
