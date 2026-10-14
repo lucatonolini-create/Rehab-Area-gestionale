@@ -1556,7 +1556,6 @@ export default function PerformancePage() {
                               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: MUSCLE_COLORS[sl.gruppo] ?? "#94a3b8" }} />
                               <span className="text-xs text-gray-600 flex-1 truncate">{sl.gruppo}</span>
                               <span className="text-xs font-bold text-gray-800 shrink-0">{sl.pct}%</span>
-                              <span className="text-[10px] text-gray-400 shrink-0 w-8 text-right">{sl.serie}s</span>
                             </div>
                           ))}
                         </div>
