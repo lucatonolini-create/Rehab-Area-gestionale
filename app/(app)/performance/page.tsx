@@ -92,6 +92,28 @@ const MUSCLE_COLORS: Record<string, string> = {
   "Tricipiti": "#64748b", "Mobilità": "#16a34a",
 };
 
+const MUSCLE_KEYWORD_MAP: Array<{ chiavi: string[]; gruppo: string }> = [
+  { chiavi: ["squat","leg press","pressa","affondi","lunge","leg extension","front squat","hack squat","step up","step down","bulgaro","bulgarian","pistol","split squat","goblet"], gruppo: "Quadricipiti" },
+  { chiavi: ["hip thrust","glute bridge","bridge","glutei","abductor","abduttori","kickback","fire hydrant","clamshell","frog pump","hip abduction"], gruppo: "Glutei" },
+  { chiavi: ["leg curl","nordic","hamstring","ischiocrurali","rdl","romanian","stiff","good morning","deadlift","stacchi","ghr","nordic curl","reverse nordic"], gruppo: "Ischiocrurali" },
+  { chiavi: ["plank","core","addome","crunch","sit up","russian twist","pallof","dead bug","bird dog","addominali","hollow","v-up","mountain climber","hyperextension","back extension"], gruppo: "Core" },
+  { chiavi: ["calf","polpacci","soleus","soleo","gastrocnemio"], gruppo: "Polpacci" },
+  { chiavi: ["shoulder","spalle","deltoide","lateral raise","alzate laterali","overhead press","military press","arnold","upright row","face pull","alzate"], gruppo: "Spalle" },
+  { chiavi: ["panca","bench","petto","pettorali","push up","chest","fly","pec deck","dips"], gruppo: "Petto" },
+  { chiavi: ["trazioni","pull up","pulldown","lat machine","lat pull","rematore","rowing","dorsali","back","seated row","t-bar","cable row"], gruppo: "Dorsali" },
+  { chiavi: ["curl","bicipiti","bicep","concentration","preacher","hammer curl","spider curl"], gruppo: "Bicipiti" },
+  { chiavi: ["tricipiti","tricep","french press","skull crusher","pushdown","overhead tricep"], gruppo: "Tricipiti" },
+  { chiavi: ["elastici","band","propriocettivo","balance","bosu","stretching","mobilità","foam roll","mobilizzazione","tkе","tke","slr"], gruppo: "Mobilità" },
+];
+
+function rilevGruppoPerf(nome: string): string {
+  const lower = nome.toLowerCase();
+  for (const { chiavi, gruppo } of MUSCLE_KEYWORD_MAP) {
+    if (chiavi.some((k) => lower.includes(k))) return gruppo;
+  }
+  return "";
+}
+
 function formatTestResult(t: TestFisiometrico): string {
   return [
     t.risultato,
@@ -614,7 +636,7 @@ export default function PerformancePage() {
         const c = parseFloat(e.carico) || 0;
         volume += s * r;
         tonnaggio += c;
-        const g = e.gruppoMuscolare?.trim();
+        const g = e.gruppoMuscolare?.trim() || rilevGruppoPerf(e.nome ?? "");
         if (g) gruppi[g] = (gruppi[g] ?? 0) + s;
       });
       const dateLabel = p.data ? new Date(p.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) : "";
