@@ -922,7 +922,7 @@ const ESERCIZI_BASE_PALESTRA: string[] = [
   "Step up", "Step up crossover", "Step down", "Step down crossover", "Pistol squat",
   "Lunge camminato", "Reverse lunge",
   // Ischiocrurali
-  "RDL", "Romanian deadlift", "Stacchi da terra", "Stacchi sumo", "Nordic curl",
+  "RDL", "RDL con kettlebell", "Romanian deadlift", "Stacchi da terra", "Stacchi sumo", "Nordic curl",
   "Nordic hamstring", "Leg curl sdraiato", "Leg curl seduto", "Leg curl in piedi",
   "Good morning", "GHR", "Hamstring curl con swiss ball",
   // Glutei
