@@ -979,7 +979,7 @@ const ESERCIZI_BASE_PALESTRA: string[] = [
   "Salto verticale", "Salto orizzontale", "Hop monopodalico",
   "Corsa sul posto", "Skipping", "Calciata", "Corsa con ginocchia alte",
   "Esercizi pliometrici", "Affondi laterali", "Affondi rotazionali",
-  "Monster walk con elastico", "Medball – tiro", "Medball – squat",
+  "Monster walk con elastico",
   // Rinforzo funzionale
   "Copenhagen adduction", "Adductor squeeze isometrico",
   "Single leg press", "Single leg romanian deadlift",
