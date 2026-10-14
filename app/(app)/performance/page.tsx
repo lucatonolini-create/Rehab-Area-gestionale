@@ -466,7 +466,7 @@ export default function PerformancePage() {
       ).map((p) => p.atletaId)
     );
     return atleti
-      .filter((a) => ids.has(a.id))
+      .filter((a) => ids.has(a.id) && (a.stato === "Infortunato" || a.stato === "NTL"))
       .sort((a, b) => nd(a).localeCompare(nd(b)));
   }, [atleti, programmi]);
 
@@ -1085,8 +1085,8 @@ export default function PerformancePage() {
         {atletiConDati.length === 0 && (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <Activity className="w-12 h-12 text-gray-200 mb-3" />
-            <p className="text-gray-500 font-medium">Nessun dato disponibile</p>
-            <p className="text-gray-400 text-sm mt-1">Inserisci dati GPS, test o esercizi nella sezione Programmi</p>
+            <p className="text-gray-500 font-medium">Nessun atleta infortunato con dati</p>
+            <p className="text-gray-400 text-sm mt-1">La sezione Performance mostra solo gli atleti attualmente Infortunati o NTL</p>
           </div>
         )}
 
