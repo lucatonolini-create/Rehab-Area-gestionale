@@ -250,9 +250,10 @@ const GPS_GROUPS: Array<{ label: string; keys: string[]; color: string }> = [
   { label: "Intensità",       keys: ["acc", "dec", "potenza"],                  color: "#6d28d9" },
 ];
 
-const TEST_CATEGORIES: Array<{ label: string; keys: string[] }> = [
+const TEST_CATEGORIES: Array<{ label: string; keys: string[]; color: string }> = [
   {
     label: "Salto Verticale e Orizzontale",
+    color: "#7c3aed",
     keys: [
       "CMJ – Counter Movement Jump", "CMJ braccia libere", "Squat Jump",
       "SL CMJ", "Drop Jump", "SL Drop Jump",
@@ -262,6 +263,7 @@ const TEST_CATEGORIES: Array<{ label: string; keys: string[] }> = [
   },
   {
     label: "Forza",
+    color: "#C8102E",
     keys: [
       "Forza hamstring (dinamometro)", "Forza hamstring HHD 30°", "Forza hamstring HHD 90°",
       "Forza quadricipite (dinamometro)", "Isokinetic 60°/s", "Isokinetic 180°/s", "Isokinetic 240°/s",
@@ -271,6 +273,7 @@ const TEST_CATEGORIES: Array<{ label: string; keys: string[] }> = [
   },
   {
     label: "Mobilità e Qualità del Movimento",
+    color: "#059669",
     keys: [
       "Dorsiflexion Lunge Test", "FMS", "Heel Rise Test", "Lunge test", "MHFAKE", "PKE",
       "ROM anca – flessione", "ROM caviglia – dorsiflessione",
@@ -281,6 +284,7 @@ const TEST_CATEGORIES: Array<{ label: string; keys: string[] }> = [
   },
   {
     label: "Velocità e Agilità",
+    color: "#ea580c",
     keys: ["Sprint 10m", "Sprint 20m", "Sprint 30m", "505 Agility Test", "Illinois Agility Test", "IFT 30-15", "Gacon", "10x100m"],
   },
 ];
@@ -1297,7 +1301,8 @@ export default function PerformancePage() {
                 {(() => {
                   const allEntries = Array.from(testTimelines.entries());
                   const categorized = new Set<string>();
-                  const renderTestCard = (nome: string, tl: typeof testTimelines extends Map<string, infer V> ? V : never) => {
+                  const renderTestCard = (nome: string, tl: typeof testTimelines extends Map<string, infer V> ? V : never, catColor?: string) => {
+                    const accentColor = catColor ?? tl.color;
                     const t = testTrend(tl);
                     const lastPt = tl.points[tl.points.length - 1];
                     const isExpanded = expandedTestKey === nome;
@@ -1315,7 +1320,7 @@ export default function PerformancePage() {
                         onClick={() => setExpandedTestKey(isExpanded ? null : nome)}
                       >
                         {/* Color accent bar */}
-                        <div className="w-[3px] self-stretch rounded-full shrink-0" style={{ background: tl.color }} />
+                        <div className="w-[3px] self-stretch rounded-full shrink-0" style={{ background: accentColor }} />
 
                         {/* Name + meta */}
                         <div className="flex-1 min-w-0">
@@ -1340,7 +1345,7 @@ export default function PerformancePage() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="text-lg font-bold" style={{ color: tl.color }}>{lastTestVal(tl, nome)}</span>
+                            <span className="text-lg font-bold" style={{ color: accentColor }}>{lastTestVal(tl, nome)}</span>
                             <TrendIcon t={t} />
                           </div>
                         )}
@@ -1356,7 +1361,7 @@ export default function PerformancePage() {
                           {/* Mini chart */}
                           {tl.points.length >= 2 && (
                             <div className="mb-4 -mx-1">
-                              <TestLineChart points={tl.points} color={tl.color} isBilateral={tl.isBilateral} unit={tl.unit} />
+                              <TestLineChart points={tl.points} color={accentColor} isBilateral={tl.isBilateral} unit={tl.unit} />
                             </div>
                           )}
 
@@ -1453,9 +1458,12 @@ export default function PerformancePage() {
                         catEntries.forEach(([n]) => categorized.add(n));
                         return (
                           <div key={cat.label}>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-0.5">{cat.label}</p>
+                            <div className="flex items-center gap-2 mb-2 px-0.5">
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cat.color }} />
+                              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: cat.color }}>{cat.label}</p>
+                            </div>
                             <div className="space-y-3">
-                              {catEntries.map(([nome, tl]) => renderTestCard(nome, tl))}
+                              {catEntries.map(([nome, tl]) => renderTestCard(nome, tl, cat.color))}
                             </div>
                           </div>
                         );
