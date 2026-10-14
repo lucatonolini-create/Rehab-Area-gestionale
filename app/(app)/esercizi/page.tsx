@@ -915,6 +915,96 @@ function SortableRow({ id, children }: { id: string; children: (handle: React.Re
 const CATALOGO_KEY_PALESTRA = "usc_catalogo_esercizi_palestra";
 const CATALOGO_KEY_CAMPO    = "usc_catalogo_esercizi_campo";
 
+const ESERCIZI_BASE_PALESTRA: string[] = [
+  // Quadricipiti
+  "Squat", "Squat goblet", "Front squat", "Hack squat", "Leg press", "Leg extension",
+  "Affondi", "Affondi bulgari", "Split squat", "Step up", "Pistol squat",
+  "Lunge camminato", "Reverse lunge",
+  // Ischiocrurali
+  "RDL", "Romanian deadlift", "Stacchi da terra", "Stacchi sumo", "Nordic curl",
+  "Nordic hamstring", "Leg curl sdraiato", "Leg curl seduto", "Leg curl in piedi",
+  "Good morning", "GHR", "Hamstring curl con swiss ball",
+  // Glutei
+  "Hip thrust", "Hip thrust monopodalico", "Glute bridge", "Glute bridge monopodalico",
+  "Kickback al cavo", "Abduttori alla macchina", "Clamshell", "Fire hydrant",
+  "Hip abduction elastico", "Frog pump",
+  // Core
+  "Plank", "Plank laterale", "Dead bug", "Bird dog", "Hollow body",
+  "Crunch", "Crunch inverso", "Sit up", "Russian twist", "Pallof press",
+  "Rollout con ruota", "Ab wheel", "Leg raise", "Hanging knee raise",
+  "Mountain climber", "V-up", "Hyperextension", "Back extension",
+  // Polpacci
+  "Calf raise in piedi", "Calf raise seduto", "Calf raise monopodalico",
+  "Calf press alla pressa", "Soleus raise",
+  // Petto
+  "Panca piana", "Panca inclinata", "Panca declinata",
+  "Push up", "Push up inclinato", "Push up con manubri",
+  "Fly con manubri", "Cable fly", "Pec deck", "Dips",
+  "Chest press con manubri",
+  // Dorsali
+  "Trazioni", "Pull up", "Chin up", "Lat machine presa larga", "Lat machine presa stretta",
+  "Rematore con bilanciere", "Rematore con manubrio", "Rematore al cavo",
+  "Seated row", "T-bar row", "Chest supported row", "Face pull",
+  "Pulley basso", "Straight arm pulldown",
+  // Spalle
+  "Overhead press con bilanciere", "Overhead press con manubri", "Military press",
+  "Arnold press", "Alzate laterali", "Alzate frontali", "Alzate posteriori",
+  "Upright row", "Cuban press", "Band pull apart",
+  // Bicipiti
+  "Curl con bilanciere", "Curl con manubri", "Hammer curl", "Concentration curl",
+  "Preacher curl", "Spider curl", "Incline curl", "Curl al cavo",
+  // Tricipiti
+  "Tricep pushdown", "Pushdown al cavo presa inversa", "French press",
+  "Skull crusher", "Dips ai paralleli", "Overhead tricep extension",
+  "Kickback tricipiti", "Close grip bench press",
+  // Riabilitazione / Mobilità
+  "Ponte glutei", "Ponte glutei monopodalico", "Wall squat isometrico",
+  "Terminal knee extension", "TKE con elastico", "Quad set isometrico",
+  "SLR – Straight leg raise", "Hip abduction sdraiato", "Clamshell con elastico",
+  "Side lying hip abduction", "Side stepping con elastico",
+  "Esercizio propriocettivo su tavoletta", "Balance su un arto",
+  "Single leg balance", "Single leg squat su bosu",
+  "Stretching quadricipiti", "Stretching ischiocrurali", "Stretching polpacci",
+  "Stretching flessori anca", "Stretching IT band", "Stretching piriforme",
+  "Foam rolling quadricipiti", "Foam rolling ischiocrurali", "Foam rolling polpacci",
+  "Foam rolling dorsali", "Foam rolling IT band",
+  "Mobilizzazione caviglia", "Mobilizzazione anca", "Mobilizzazione toracica",
+  "Esercizi rotatori cuffia", "External rotation con elastico",
+  "Internal rotation con elastico", "Scarecrow con elastico",
+  "Y-T-W con elastico", "Scapular retraction",
+  // Full body / Funzionale
+  "Stacco rumeno", "Trap bar deadlift", "Zercher squat",
+  "Farmer walk", "Suitcase carry", "Overhead carry",
+  "Box squat", "Box jump", "Depth jump", "Drop jump",
+  "Salto verticale", "Salto orizzontale", "Hop monopodalico",
+  "Corsa sul posto", "Skipping", "Calciata", "Corsa con ginocchia alte",
+  "Esercizi pliometrici", "Affondi laterali", "Affondi rotazionali",
+  "Monster walk con elastico", "Pallone medico – tiro", "Pallone medico – squat",
+  // Rinforzo funzionale
+  "Copenhagen adduction", "Adductor squeeze isometrico",
+  "Single leg press", "Single leg romanian deadlift",
+  "Stacchi monopodalici", "Single leg squat", "Reverse nordic curl",
+  "Sissy squat", "Leg press monopodalico",
+];
+
+const ESERCIZI_BASE_CAMPO: string[] = [
+  "Corsa continua", "Corsa a intensità variabile", "Corsa a navetta",
+  "Sprint 10m", "Sprint 20m", "Sprint 30m", "Sprint 40m",
+  "Accelerazione progressiva", "Decelerazione progressiva",
+  "Cambi di direzione 5-0-5", "Corsa a zig-zag", "Slalom tra coni",
+  "Corsa laterale", "Corsa all'indietro", "Carioca",
+  "Esercizi tecnici individuali", "Esercizi tecnici con palla",
+  "Possesso palla", "Rondo", "Partitella ridotta",
+  "Esercizi di reattività", "Agility ladder", "Corsa su ostacoli bassi",
+  "Lavoro con ostacoli", "Tecnica di corsa", "Skip A", "Skip B",
+  "Balzi orizzontali", "Balzi verticali", "Hop su un piede",
+  "Cambio di direzione reattivo", "Decelerazione reattiva",
+  "Jog di riscaldamento", "Allungamento in progressione",
+  "Esercizi propriocettivi in campo", "Lavoro tecnico specifico ruolo",
+  "Allenamento forza in campo", "Circuit training in campo",
+  "Cooling down", "Defaticamento attivo",
+];
+
 function leggiCatalogo(key: string): string[] {
   try { return JSON.parse(localStorage.getItem(key) ?? "[]"); } catch { return []; }
 }
@@ -1229,18 +1319,20 @@ export default function EserciziPage() {
 
   const suggerimentiPalestra = useMemo(() =>
     Array.from(new Set([
+      ...ESERCIZI_BASE_PALESTRA,
       ...catalogoPalestra,
       ...Object.values(programmiPerAtleta).flat()
         .flatMap((p) => (p.esercizi ?? []).map((e) => e.nome).filter(Boolean)),
-    ])).sort(),
+    ])).sort((a, b) => a.localeCompare(b, "it")),
     [catalogoPalestra, programmiPerAtleta]
   );
   const suggerimentiCampo = useMemo(() =>
     Array.from(new Set([
+      ...ESERCIZI_BASE_CAMPO,
       ...catalogoCampo,
       ...Object.values(programmiPerAtleta).flat()
         .flatMap((p) => (p.esercizicampo ?? []).map((e) => e.tipo).filter(Boolean)),
-    ])).sort(),
+    ])).sort((a, b) => a.localeCompare(b, "it")),
     [catalogoCampo, programmiPerAtleta]
   );
 
