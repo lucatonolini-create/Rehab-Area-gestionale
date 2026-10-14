@@ -1671,6 +1671,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const [nuovoReferto, setNuovoReferto] = useState({ data: new Date().toISOString().slice(0, 10), tipo: "", esito: "", descrizione: "", note: "" });
   const [refertoSaving, setRefertoSaving] = useState(false);
   const [refertoSalvato, setRefertoSalvato] = useState(false);
+  const [editingRefertoId, setEditingRefertoId] = useState<string | null>(null);
+  const [editReferto, setEditReferto] = useState({ data: "", tipo: "", esito: "", descrizione: "", note: "" });
 
   useEffect(() => {
     loadAtleti().then(setAtleti);
@@ -1977,6 +1979,25 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     setSelected(aggiornato);
     await upsertAtleta(aggiornato);
     await patchRefertiClinici(selected.id, nuoviReferti);
+  };
+
+  const aggiornaReferto = async () => {
+    if (!selected || !editingRefertoId || !editReferto.tipo || !editReferto.esito || refertoSaving) return;
+    setRefertoSaving(true);
+    const nuoviReferti = (selected.refertiClinici ?? []).map((r) =>
+      r.id === editingRefertoId
+        ? { ...r, data: editReferto.data, tipo: editReferto.tipo as TipoReferto, esito: editReferto.esito as EsitoReferto, descrizione: editReferto.descrizione || undefined, note: editReferto.note || undefined }
+        : r
+    );
+    const aggiornato = { ...selected, refertiClinici: nuoviReferti };
+    setAtleti((prev) => prev.map((a) => a.id === selected.id ? aggiornato : a));
+    setSelected(aggiornato);
+    await upsertAtleta(aggiornato);
+    await patchRefertiClinici(selected.id, nuoviReferti);
+    setRefertoSaving(false);
+    setEditingRefertoId(null);
+    setRefertoSalvato(true);
+    setTimeout(() => setRefertoSalvato(false), 2000);
   };
 
   const chiudiInfortBis = async (id: string) => {
@@ -3056,20 +3077,65 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
                           "In miglioramento": "bg-yellow-100 text-yellow-700",
                           "Negativo": "bg-green-100 text-green-700",
                         };
+                        const isEditing = editingRefertoId === r.id;
                         return (
-                          <div key={r.id} className="bg-white border border-gray-100 rounded-xl px-3.5 py-3 flex items-start gap-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                                <span className="text-xs font-semibold text-gray-800">{r.tipo}</span>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ESITO_STYLE[r.esito] ?? "bg-gray-100 text-gray-600"}`}>{r.esito}</span>
-                                <span className="text-[10px] text-gray-400">{new Date(r.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                          <div key={r.id} className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+                            <div className="px-3.5 py-3 flex items-start gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                  <span className="text-xs font-semibold text-gray-800">{r.tipo}</span>
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ESITO_STYLE[r.esito] ?? "bg-gray-100 text-gray-600"}`}>{r.esito}</span>
+                                  <span className="text-[10px] text-gray-400">{new Date(r.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                                </div>
+                                {r.descrizione && <p className="text-xs text-gray-700 mt-1 leading-relaxed whitespace-pre-wrap">{r.descrizione}</p>}
+                                {r.note && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{r.note}</p>}
                               </div>
-                              {r.descrizione && <p className="text-xs text-gray-700 mt-1 leading-relaxed whitespace-pre-wrap">{r.descrizione}</p>}
-                              {r.note && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{r.note}</p>}
+                              <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                                <button
+                                  onClick={() => {
+                                    if (isEditing) { setEditingRefertoId(null); return; }
+                                    setEditingRefertoId(r.id);
+                                    setEditReferto({ data: r.data, tipo: r.tipo, esito: r.esito, descrizione: r.descrizione ?? "", note: r.note ?? "" });
+                                  }}
+                                  className={`transition-colors ${isEditing ? "text-[#C8102E]" : "text-gray-300 hover:text-gray-500"}`}>
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button onClick={() => eliminaReferto(r.id)} className="text-gray-300 hover:text-red-400 transition-colors">
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
-                            <button onClick={() => eliminaReferto(r.id)} className="text-gray-300 hover:text-red-400 transition-colors shrink-0 mt-0.5">
-                              <X className="w-3.5 h-3.5" />
-                            </button>
+                            {isEditing && (
+                              <div className="border-t border-gray-100 bg-gray-50 px-3.5 py-3 space-y-2">
+                                <input type="date" value={editReferto.data} onChange={(e) => setEditReferto({ ...editReferto, data: e.target.value })}
+                                  className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]" />
+                                <select value={editReferto.tipo} onChange={(e) => setEditReferto({ ...editReferto, tipo: e.target.value })}
+                                  className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]">
+                                  <option value="">Tipo referto *</option>
+                                  {TIPI_REFERTO.map((t) => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                                <select value={editReferto.esito} onChange={(e) => setEditReferto({ ...editReferto, esito: e.target.value })}
+                                  className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]">
+                                  <option value="">Esito *</option>
+                                  {ESITI_REFERTO.map((e) => <option key={e} value={e}>{e}</option>)}
+                                </select>
+                                <textarea placeholder="Descrizione / Referto (opzionale)" value={editReferto.descrizione}
+                                  onChange={(e) => setEditReferto({ ...editReferto, descrizione: e.target.value })}
+                                  rows={3}
+                                  className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E] resize-none" />
+                                <input placeholder="Note (opzionale)" value={editReferto.note}
+                                  onChange={(e) => setEditReferto({ ...editReferto, note: e.target.value })}
+                                  className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#C8102E]" />
+                                <div className="flex gap-2 justify-end">
+                                  <button onClick={() => setEditingRefertoId(null)} disabled={refertoSaving}
+                                    className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-200 bg-white disabled:opacity-40">Annulla</button>
+                                  <button onClick={aggiornaReferto} disabled={!editReferto.tipo || !editReferto.esito || refertoSaving}
+                                    className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg bg-[#C8102E] hover:bg-[#a50d26] disabled:opacity-40 min-w-[64px]">
+                                    {refertoSaving ? "Salvataggio…" : "Salva"}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
