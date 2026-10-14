@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import {
-  Activity, Table2, BarChart3, FileDown, ChevronLeft, ChevronRight,
-  TrendingUp, TrendingDown, Minus,
+  Activity, BarChart3, FileDown, ChevronLeft, ChevronRight,
+  TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp, Dumbbell,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -85,6 +85,13 @@ const TEST_COLORS: Record<string, string> = {
   "Jurdan": "#db2777",
 };
 
+const MUSCLE_COLORS: Record<string, string> = {
+  "Quadricipiti": "#2563eb", "Glutei": "#7c3aed", "Ischiocrurali": "#059669",
+  "Core": "#d97706", "Polpacci": "#0891b2", "Spalle": "#ea580c",
+  "Petto": "#dc2626", "Dorsali": "#6d28d9", "Bicipiti": "#0d9488",
+  "Tricipiti": "#64748b", "Mobilità": "#16a34a",
+};
+
 function formatTestResult(t: TestFisiometrico): string {
   return [
     t.risultato,
@@ -128,7 +135,7 @@ interface TestPoint {
   single?: number;
   sx?: number;
   dx?: number;
-  altezza?: number; // Drop Jump: altezza salto (single = RSI)
+  altezza?: number;
 }
 
 interface TestTimeline {
@@ -200,18 +207,18 @@ interface MetricDef {
 }
 
 const METRICS: MetricDef[] = [
-  { key: "rpe",      label: "RPE",                 shortLabel: "RPE",       unit: "",        color: "#C8102E", dec: 1 },
-  { key: "durata",   label: "Durata",              shortLabel: "Durata",    unit: "min",     color: "#4B5563", dec: 0 },
-  { key: "interno",  label: "Carico Interno",       shortLabel: "TL",        unit: "UA",      color: "#4B5563", dec: 0 },
-  { key: "distanza", label: "Distanza Totale",      shortLabel: "Dist. Tot.", unit: "m",       color: "#C8102E", dec: 0 },
-  { key: "hsr",      label: "D>16 km/h",           shortLabel: "D>16 km/h", unit: "m",       color: "#4B5563", dec: 0 },
-  { key: "vel21",    label: "D>20 km/h",           shortLabel: "D>20 km/h", unit: "m",       color: "#C8102E", dec: 0 },
-  { key: "vel25",    label: "D>25 km/h",           shortLabel: "D>25 km/h", unit: "m",       color: "#4B5563", dec: 0 },
-  { key: "velMax",   label: "Velocità Max",         shortLabel: "Vel. Max",  unit: "km/h",    color: "#C8102E", dec: 1 },
-  { key: "acc",      label: "Accelerazioni",        shortLabel: "N. Acc.",   unit: "",        color: "#4B5563", dec: 0 },
-  { key: "dec",      label: "Decelerazioni",        shortLabel: "N. Dec.",   unit: "",        color: "#C8102E", dec: 0 },
-  { key: "sprint",   label: "Sprint",               shortLabel: "N. Sprint", unit: "",        color: "#4B5563", dec: 0 },
-  { key: "potenza",  label: "Potenza Metabolica",   shortLabel: "Potenza",   unit: "W/kg",    color: "#C8102E", dec: 1 },
+  { key: "rpe",      label: "RPE",                shortLabel: "RPE",        unit: "",     color: "#C8102E", dec: 1 },
+  { key: "durata",   label: "Durata",             shortLabel: "Durata",     unit: "min",  color: "#4B5563", dec: 0 },
+  { key: "interno",  label: "Carico Interno",      shortLabel: "TL",         unit: "UA",   color: "#4B5563", dec: 0 },
+  { key: "distanza", label: "Distanza Totale",     shortLabel: "Dist. Tot.", unit: "m",    color: "#C8102E", dec: 0 },
+  { key: "hsr",      label: "D>16 km/h",          shortLabel: "D>16 km/h",  unit: "m",    color: "#4B5563", dec: 0 },
+  { key: "vel21",    label: "D>20 km/h",          shortLabel: "D>20 km/h",  unit: "m",    color: "#C8102E", dec: 0 },
+  { key: "vel25",    label: "D>25 km/h",          shortLabel: "D>25 km/h",  unit: "m",    color: "#4B5563", dec: 0 },
+  { key: "velMax",   label: "Velocità Max",        shortLabel: "Vel. Max",   unit: "km/h", color: "#C8102E", dec: 1 },
+  { key: "acc",      label: "Accelerazioni",       shortLabel: "N. Acc.",    unit: "",     color: "#4B5563", dec: 0 },
+  { key: "dec",      label: "Decelerazioni",       shortLabel: "N. Dec.",    unit: "",     color: "#C8102E", dec: 0 },
+  { key: "sprint",   label: "Sprint",              shortLabel: "N. Sprint",  unit: "",     color: "#4B5563", dec: 0 },
+  { key: "potenza",  label: "Potenza Metabolica",  shortLabel: "Potenza",    unit: "W/kg", color: "#C8102E", dec: 1 },
 ];
 
 // ── SVG Chart ────────────────────────────────────────────────────────────────
@@ -269,38 +276,20 @@ function MetricChart({ sessions, metric }: { sessions: Session[]; metric: Metric
           <stop offset="100%" stopColor={metric.color} stopOpacity="0.01" />
         </linearGradient>
       </defs>
-
-      {/* Y grid + labels */}
       {yTicks.map((t, i) => (
         <g key={i}>
           <line x1={PAD.left} y1={t.y} x2={W - PAD.right} y2={t.y} stroke="#e5e7eb" strokeWidth="0.8" />
           <text x={PAD.left - 4} y={t.y + 3.5} textAnchor="end" fontSize="9" fill="#9ca3af">{t.label}</text>
         </g>
       ))}
-
-      {/* Average dashed */}
-      <line
-        x1={PAD.left} y1={toY(avg)} x2={W - PAD.right} y2={toY(avg)}
-        stroke={metric.color} strokeWidth="0.9" strokeDasharray="5,4" opacity="0.4"
-      />
-
-      {/* Area */}
+      <line x1={PAD.left} y1={toY(avg)} x2={W - PAD.right} y2={toY(avg)}
+        stroke={metric.color} strokeWidth="0.9" strokeDasharray="5,4" opacity="0.4" />
       <polygon points={areaPts} fill={`url(#${gradId})`} />
-
-      {/* Line */}
-      <polyline
-        points={linePts} fill="none"
-        stroke={metric.color} strokeWidth="2.5"
-        strokeLinecap="round" strokeLinejoin="round"
-      />
-
-      {/* Dots + x labels */}
+      <polyline points={linePts} fill="none" stroke={metric.color} strokeWidth="2.5"
+        strokeLinecap="round" strokeLinejoin="round" />
       {pts.map((p, i) => (
         <g key={i}>
-          <circle
-            cx={toX(p.i)} cy={toY(p.v)} r="4"
-            fill={metric.color} stroke="white" strokeWidth="1.5"
-          />
+          <circle cx={toX(p.i)} cy={toY(p.v)} r="4" fill={metric.color} stroke="white" strokeWidth="1.5" />
           {i % step === 0 && (
             <text x={toX(p.i)} y={H - PAD.bottom + 14} textAnchor="middle" fontSize="8.5" fill="#6b7280">
               {p.label}
@@ -369,7 +358,6 @@ function TestLineChart({ points, color, isBilateral, unit: _unit }: { points: Te
     );
   }
 
-  // Bilateral
   const SX_COL = "#2563eb", DX_COL = "#dc2626";
   const allVals: number[] = [];
   points.forEach((p) => { if (p.sx != null) allVals.push(p.sx); if (p.dx != null) allVals.push(p.dx); });
@@ -432,8 +420,9 @@ export default function PerformancePage() {
   const [programmi, setProgrammi] = useState<Programma[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [view, setView] = useState<"grafici" | "tabella">("grafici");
+  const [tab, setTab] = useState<"gps" | "test" | "palestra">("gps");
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [expandedTestKey, setExpandedTestKey] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([loadAtleti(), loadProgrammi()]).then(([a, p]) => {
@@ -446,7 +435,6 @@ export default function PerformancePage() {
     return () => { ua(); up(); };
   }, []);
 
-  // Athletes who have ≥1 session with GPS/RPE data OR test data
   const atletiConDati = useMemo(() => {
     const ids = new Set(
       programmi.filter((p) =>
@@ -476,10 +464,8 @@ export default function PerformancePage() {
   const selectedAtleta = atleti.find((a) => a.id === selectedId) ?? null;
   const idx = atletiConDati.findIndex((a) => a.id === selectedId);
 
-  // Metrics that have ≥1 non-null value for this athlete
   const activeMetrics = METRICS.filter((m) => sessions.some((s) => s[m.key] != null));
 
-  // ── Stat helpers ────────────────────────────────────────────────────────────
   function lastVal(key: keyof Session, dec: number): string {
     const vals = sessions.map((s) => s[key] as number | null).filter((v) => v != null) as number[];
     return vals.length ? fv(vals[vals.length - 1], dec) : "—";
@@ -505,7 +491,6 @@ export default function PerformancePage() {
     return fv(Math.max(...vals), dec);
   }
 
-  // ── Test timelines ──────────────────────────────────────────────────────────
   const testTimelines = useMemo((): Map<string, TestTimeline> => {
     if (!selectedId) return new Map();
     const map = new Map<string, TestTimeline>();
@@ -562,50 +547,6 @@ export default function PerformancePage() {
     return (p.join(" / ") + (tl.unit ? ` ${tl.unit}` : "")) || "—";
   }
 
-  // ── Gym analytics ─────────────────────────────────────────────────────────
-  const gymStats = useMemo(() => {
-    if (!selectedId) return null;
-    const progs = programmi
-      .filter((p) => p.atletaId === selectedId && !p.assente && !p.riposo && !p.squadra && (p.esercizi?.length ?? 0) > 0)
-      .sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""));
-
-    if (!progs.length) return null;
-
-    // Per-session volume & tonnage
-    const sessioni = progs.map((p) => {
-      let volume = 0, tonnaggio = 0;
-      const gruppi: Record<string, number> = {};
-      (p.esercizi ?? []).forEach((e) => {
-        const s = parseInt(e.serie) || 0;
-        const r = parseInt(e.reps) || 0;
-        const c = parseFloat(e.carico) || 0;
-        volume += s * r;
-        tonnaggio += c;
-        const g = e.gruppoMuscolare?.trim();
-        if (g) gruppi[g] = (gruppi[g] ?? 0) + s;
-      });
-      const dateLabel = p.data ? new Date(p.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) : "";
-      return { data: p.data ?? "", dateLabel, nome: p.nome ?? "", volume, tonnaggio, gruppi };
-    });
-
-    // Aggregate muscle group totals (by series)
-    const gruppiTotali: Record<string, number> = {};
-    sessioni.forEach((s) => Object.entries(s.gruppi).forEach(([g, v]) => { gruppiTotali[g] = (gruppiTotali[g] ?? 0) + v; }));
-
-    const totaleSerie = Object.values(gruppiTotali).reduce((a, b) => a + b, 0);
-    const sliceGruppi = Object.entries(gruppiTotali)
-      .sort((a, b) => b[1] - a[1])
-      .map(([g, v]) => ({ gruppo: g, serie: v, pct: totaleSerie > 0 ? Math.round((v / totaleSerie) * 100) : 0 }));
-
-    // Last 7 days totals
-    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
-    const ultimaSettimana = sessioni.filter((s) => s.data >= cutoff.toISOString().slice(0, 10));
-    const tonnSettimana = ultimaSettimana.reduce((a, s) => a + s.tonnaggio, 0);
-    const volSettimana = ultimaSettimana.reduce((a, s) => a + s.volume, 0);
-
-    return { sessioni, sliceGruppi, tonnSettimana, volSettimana };
-  }, [programmi, selectedId]);
-
   function avgTestVal(tl: TestTimeline, nome?: string): string {
     if (nome === "Drop Jump") {
       const rsi = tl.points.map((p) => p.single).filter((v): v is number => v != null);
@@ -641,6 +582,61 @@ export default function PerformancePage() {
     return diff > 0 ? "up" : "down";
   }
 
+  function calcPointTrend(pt: TestPoint, prev: TestPoint | undefined, isBilateral: boolean): "up" | "down" | "flat" | "none" {
+    if (!prev) return "none";
+    const getVal = (p: TestPoint) => {
+      if (!isBilateral) return p.single;
+      const vs = [p.sx, p.dx].filter((v): v is number => v != null);
+      return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : undefined;
+    };
+    const cv = getVal(pt), pv = getVal(prev);
+    if (cv == null || pv == null) return "none";
+    const diff = ((cv - pv) / (Math.abs(pv) || 1)) * 100;
+    if (Math.abs(diff) < 3) return "flat";
+    return diff > 0 ? "up" : "down";
+  }
+
+  // ── Gym analytics ─────────────────────────────────────────────────────────
+  const gymStats = useMemo(() => {
+    if (!selectedId) return null;
+    const progs = programmi
+      .filter((p) => p.atletaId === selectedId && !p.assente && !p.riposo && !p.squadra && (p.esercizi?.length ?? 0) > 0)
+      .sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""));
+
+    if (!progs.length) return null;
+
+    const sessioni = progs.map((p) => {
+      let volume = 0, tonnaggio = 0;
+      const gruppi: Record<string, number> = {};
+      (p.esercizi ?? []).forEach((e) => {
+        const s = parseInt(e.serie) || 0;
+        const r = parseInt(e.reps) || 0;
+        const c = parseFloat(e.carico) || 0;
+        volume += s * r;
+        tonnaggio += c;
+        const g = e.gruppoMuscolare?.trim();
+        if (g) gruppi[g] = (gruppi[g] ?? 0) + s;
+      });
+      const dateLabel = p.data ? new Date(p.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) : "";
+      return { data: p.data ?? "", dateLabel, nome: p.nome ?? "", volume, tonnaggio, gruppi };
+    });
+
+    const gruppiTotali: Record<string, number> = {};
+    sessioni.forEach((s) => Object.entries(s.gruppi).forEach(([g, v]) => { gruppiTotali[g] = (gruppiTotali[g] ?? 0) + v; }));
+
+    const totaleSerie = Object.values(gruppiTotali).reduce((a, b) => a + b, 0);
+    const sliceGruppi = Object.entries(gruppiTotali)
+      .sort((a, b) => b[1] - a[1])
+      .map(([g, v]) => ({ gruppo: g, serie: v, pct: totaleSerie > 0 ? Math.round((v / totaleSerie) * 100) : 0 }));
+
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+    const ultimaSettimana = sessioni.filter((s) => s.data >= cutoff.toISOString().slice(0, 10));
+    const tonnSettimana = ultimaSettimana.reduce((a, s) => a + s.tonnaggio, 0);
+    const volSettimana = ultimaSettimana.reduce((a, s) => a + s.volume, 0);
+
+    return { sessioni, sliceGruppi, tonnSettimana, volSettimana };
+  }, [programmi, selectedId]);
+
   // ── PDF ─────────────────────────────────────────────────────────────────────
   function exportPdf() {
     if (!selectedAtleta || !sessions.length) return;
@@ -652,8 +648,6 @@ export default function PerformancePage() {
       return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
     }
 
-    // Full header (first page), compact header (continuation pages)
-    // Returns the y position where content can start
     const addHeader = (compact?: boolean): number => {
       if (compact) {
         doc.setFontSize(7.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...RED_RGB);
@@ -673,7 +667,6 @@ export default function PerformancePage() {
       return 32;
     };
 
-    // Draw a single line chart for metric m at position (cx, cy) with size (cw × ch)
     function drawChart(m: MetricDef, cx: number, cy: number, cw: number, ch: number) {
       const pts = sessions
         .map((s) => ({ label: s.dateLabel, v: s[m.key] as number | null }))
@@ -685,63 +678,39 @@ export default function PerformancePage() {
       const iW = cw - PAD.left - PAD.right;
       const iH = ch - PAD.top - PAD.bottom;
       const n = pts.length;
-
       const vals = pts.map((p) => p.v);
-      const dMin = Math.min(...vals);
-      const dMax = Math.max(...vals);
+      const dMin = Math.min(...vals), dMax = Math.max(...vals);
       const dAvg = vals.reduce((a, b) => a + b, 0) / n;
       const dSpan = (dMax - dMin) * 0.12 || dMax * 0.1 || 1;
-      const vMin = dMin - dSpan;
-      const vMax = dMax + dSpan;
-      const vRange = vMax - vMin;
-
+      const vMin = dMin - dSpan, vMax = dMax + dSpan, vRange = vMax - vMin;
       const px = (i: number) => cx + PAD.left + (i / Math.max(n - 1, 1)) * iW;
       const py = (v: number) => cy + PAD.top + (1 - (v - vMin) / vRange) * iH;
       const botY = cy + PAD.top + iH;
-
       const GRID_C: [number, number, number] = [232, 234, 238];
       const AXIS_C: [number, number, number] = [140, 145, 155];
       const AVG_C: [number, number, number] = [185, 190, 200];
 
-      // White card with light border
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(cx, cy, cw, ch, 1.5, 1.5, "F");
-      doc.setDrawColor(225, 227, 232);
-      doc.setLineWidth(0.25);
+      doc.setDrawColor(225, 227, 232); doc.setLineWidth(0.25);
       doc.roundedRect(cx, cy, cw, ch, 1.5, 1.5, "S");
-
-      // Colored left accent stripe
       doc.setFillColor(cr, cg, cb);
       doc.roundedRect(cx, cy, 2, ch, 1, 1, "F");
       doc.setFillColor(255, 255, 255);
       doc.rect(cx + 1, cy, 1.5, ch, "F");
-
-      // Title in metric color
-      doc.setFontSize(6.5);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(cr, cg, cb);
+      doc.setFontSize(6.5); doc.setFont("helvetica", "bold"); doc.setTextColor(cr, cg, cb);
       doc.text(`${m.label}${m.unit ? ` (${m.unit})` : ""}`, cx + PAD.left, cy + 5.5);
+      doc.setFontSize(5); doc.setFont("helvetica", "normal"); doc.setTextColor(...AXIS_C);
+      doc.text(`Ult: ${fv(vals[n-1], m.dec)}  ·  Med: ${fv(dAvg, m.dec)}  ·  Max: ${fv(dMax, m.dec)}`, cx + cw - PAD.right, cy + 5.5, { align: "right" });
 
-      // Stats top-right
-      doc.setFontSize(5);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...AXIS_C);
-      const statStr = `Ult: ${fv(vals[n-1], m.dec)}  ·  Med: ${fv(dAvg, m.dec)}  ·  Max: ${fv(dMax, m.dec)}`;
-      doc.text(statStr, cx + cw - PAD.right, cy + 5.5, { align: "right" });
-
-      // Y grid + tick labels
       [0, 0.25, 0.5, 0.75, 1].forEach((t) => {
         const gy = cy + PAD.top + t * iH;
-        doc.setDrawColor(...GRID_C);
-        doc.setLineWidth(0.15);
+        doc.setDrawColor(...GRID_C); doc.setLineWidth(0.15);
         doc.line(cx + PAD.left, gy, cx + cw - PAD.right, gy);
-        doc.setFontSize(4.5);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(...AXIS_C);
+        doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...AXIS_C);
         doc.text((vMax - t * vRange).toFixed(m.dec), cx + PAD.left - 1, gy + 1.5, { align: "right" });
       });
 
-      // Catmull-Rom → Bezier control points for smooth curve
       const tension = 0.25;
       const smoothCp = (i: number) => {
         const xi = (k: number) => px(Math.max(0, Math.min(n - 1, k)));
@@ -754,30 +723,22 @@ export default function PerformancePage() {
         };
       };
 
-      // Area fill (light tint, smooth curve)
       const ar = Math.round(cr * 0.10 + 255 * 0.90);
       const ag = Math.round(cg * 0.10 + 255 * 0.90);
       const ab = Math.round(cb * 0.10 + 255 * 0.90);
       doc.setFillColor(ar, ag, ab);
-      doc.moveTo(px(0), botY);
-      doc.lineTo(px(0), py(pts[0].v));
+      doc.moveTo(px(0), botY); doc.lineTo(px(0), py(pts[0].v));
       for (let i = 0; i < n - 1; i++) {
         const { cp1x, cp1y, cp2x, cp2y } = smoothCp(i);
         doc.curveTo(cp1x, cp1y, cp2x, cp2y, px(i + 1), py(pts[i + 1].v));
       }
-      doc.lineTo(px(n - 1), botY);
-      doc.fill();
+      doc.lineTo(px(n - 1), botY); doc.fill();
 
-      // Average dashed line (light gray)
-      doc.setDrawColor(...AVG_C);
-      doc.setLineWidth(0.4);
-      doc.setLineDashPattern([1.5, 1.5], 0);
+      doc.setDrawColor(...AVG_C); doc.setLineWidth(0.4); doc.setLineDashPattern([1.5, 1.5], 0);
       doc.line(cx + PAD.left, py(dAvg), cx + cw - PAD.right, py(dAvg));
       doc.setLineDashPattern([], 0);
 
-      // Main smooth line
-      doc.setDrawColor(cr, cg, cb);
-      doc.setLineWidth(0.85);
+      doc.setDrawColor(cr, cg, cb); doc.setLineWidth(0.85);
       doc.moveTo(px(0), py(pts[0].v));
       for (let i = 0; i < n - 1; i++) {
         const { cp1x, cp1y, cp2x, cp2y } = smoothCp(i);
@@ -785,55 +746,34 @@ export default function PerformancePage() {
       }
       doc.stroke();
 
-      // Dots (colored fill, white border)
-      doc.setFillColor(cr, cg, cb);
-      doc.setDrawColor(255, 255, 255);
-      doc.setLineWidth(0.35);
+      doc.setFillColor(cr, cg, cb); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.35);
       const dotStep = n <= 30 ? 1 : 2;
-      pts.forEach((p, i) => {
-        if (i % dotStep === 0) doc.circle(px(i), py(p.v), 0.9, "FD");
-      });
+      pts.forEach((p, i) => { if (i % dotStep === 0) doc.circle(px(i), py(p.v), 0.9, "FD"); });
 
-      // X-axis date labels
       const lblStep = n <= 12 ? 1 : n <= 24 ? 2 : Math.ceil(n / 12);
-      doc.setFontSize(4.5);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...AXIS_C);
-      pts.forEach((p, i) => {
-        if (i % lblStep === 0) doc.text(p.label, px(i), cy + ch - 1, { align: "center" });
-      });
+      doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...AXIS_C);
+      pts.forEach((p, i) => { if (i % lblStep === 0) doc.text(p.label, px(i), cy + ch - 1, { align: "center" }); });
     }
 
-    // ── Pagina 1: header + tabella sessioni + tabella riepilogo ───────────────
     let y = addHeader();
 
-    // Tabella sessioni (inizia nella pagina 1, può andare in overflow)
     const tblGps = activeMetrics.filter((m) => m.key !== "rpe" && m.key !== "interno" && m.key !== "durata");
     const tblBase = [METRICS.find((m) => m.key === "rpe")!, METRICS.find((m) => m.key === "interno")!]
       .filter(Boolean).filter((m) => activeMetrics.includes(m));
     const tblMetrics = [...tblBase, ...tblGps];
-    // Data=18 + Infortunio=28 + Programma=38 + Fase=12 = 96 fixed
     const tblFixedW = 96;
     const tblMW = tblMetrics.length ? Math.floor((269 - tblFixedW) / tblMetrics.length) : 0;
     const tblCols: Record<number, any> = {
-      0: { cellWidth: 18 },
-      1: { cellWidth: 28, halign: "left" },
-      2: { cellWidth: 38, halign: "left" },
-      3: { cellWidth: 12, halign: "left" },
+      0: { cellWidth: 18 }, 1: { cellWidth: 28, halign: "left" },
+      2: { cellWidth: 38, halign: "left" }, 3: { cellWidth: 12, halign: "left" },
     };
     tblMetrics.forEach((_, i) => { tblCols[i + 4] = { cellWidth: tblMW }; });
 
     const sessionRows = sessions.map((s) => [
-      s.dateLabel || s.data,
-      s.infortunio || "—",
-      s.nome || "—",
-      s.fase || "—",
+      s.dateLabel || s.data, s.infortunio || "—", s.nome || "—", s.fase || "—",
       ...tblMetrics.map((m) => fv(s[m.key] as number | null, m.dec)),
     ]);
-    const avgRow = [
-      "Valori medi", "", "", "",
-      ...tblMetrics.map((m) => avgVal(m.key, m.dec)),
-    ];
+    const avgRow = ["Valori medi", "", "", "", ...tblMetrics.map((m) => avgVal(m.key, m.dec))];
 
     autoTable(doc, {
       startY: y,
@@ -844,10 +784,7 @@ export default function PerformancePage() {
       columnStyles: tblCols,
       alternateRowStyles: { fillColor: [249, 249, 249] },
       margin: { left: M, right: M, top: 18 },
-      didDrawPage: (() => {
-        let first = true;
-        return () => { if (first) { first = false; } else { addHeader(true); } };
-      })(),
+      didDrawPage: (() => { let first = true; return () => { if (first) { first = false; } else { addHeader(true); } }; })(),
       didParseCell: (data: any) => {
         if (data.section === "body" && data.row.index === sessionRows.length) {
           data.cell.styles.fontStyle = "bolditalic";
@@ -858,7 +795,6 @@ export default function PerformancePage() {
     });
     y = (doc as any).lastAutoTable.finalY + 6;
 
-    // ── Grafici — pagine successive alle tabelle ───────────────────────────
     const CHART_W = (269 - 6) / 2;
     const CHART_H = 48;
     const GAP_Y = 5;
@@ -866,199 +802,134 @@ export default function PerformancePage() {
     doc.addPage();
     y = addHeader(true);
 
-    // ── Grafico carico interno (dual-axis: barre TL sinistra, linea RPE destra) ──
-    const tlSessions = sessions.filter(
-      (s) => s.rpe !== null || s.interno !== null
-    );
+    const tlSessions = sessions.filter((s) => s.rpe !== null || s.interno !== null);
     if (tlSessions.length >= 1) {
       const n = tlSessions.length;
-      const cX = M;
-      const cW = PW - 2 * M;
-      const cH = 62;
-      const cY = y;
-
+      const cX = M, cW = PW - 2 * M, cH = 62, cY = y;
       const PAD = { top: 8, right: 20, bottom: 12, left: 22 };
-      const plotW = cW - PAD.left - PAD.right;
-      const plotH = cH - PAD.top - PAD.bottom;
-
+      const plotW = cW - PAD.left - PAD.right, plotH = cH - PAD.top - PAD.bottom;
       const tlVals = tlSessions.map((s) => s.interno).filter((v): v is number => v !== null);
       const rawMaxTL = tlVals.length ? Math.max(...tlVals) : 400;
       const maxTL = Math.ceil(rawMaxTL / 100) * 100 || 100;
       const maxRPE = 10;
-
       const bX = (i: number) => cX + PAD.left + (i + 0.5) * (plotW / n);
       const barW = Math.min((plotW / n) * 0.6, 16);
-      const tlY  = (v: number) => cY + PAD.top + (1 - v / maxTL)  * plotH;
+      const tlY = (v: number) => cY + PAD.top + (1 - v / maxTL) * plotH;
       const rpeY = (v: number) => cY + PAD.top + (1 - v / maxRPE) * plotH;
 
-      // Card background
       doc.setFillColor(249, 250, 251);
       doc.roundedRect(cX, cY, cW, cH, 1.5, 1.5, "F");
-      doc.setDrawColor(229, 231, 235);
-      doc.setLineWidth(0.15);
+      doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.15);
       doc.roundedRect(cX, cY, cW, cH, 1.5, 1.5, "S");
-
-      // Title
-      doc.setFontSize(7);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...DARK_RGB);
+      doc.setFontSize(7); doc.setFont("helvetica", "bold"); doc.setTextColor(...DARK_RGB);
       doc.text("Andamento Training Load", cX + PAD.left, cY + 5.5);
 
-      // Y grid lines
       [0, 0.25, 0.5, 0.75, 1].forEach((t) => {
         const gy = cY + PAD.top + t * plotH;
-        doc.setDrawColor(229, 231, 235);
-        doc.setLineWidth(0.12);
+        doc.setDrawColor(229, 231, 235); doc.setLineWidth(0.12);
         doc.line(cX + PAD.left, gy, cX + cW - PAD.right, gy);
       });
-
-      // Left Y-axis: Training Load (dark)
       for (let t = 0; t <= 4; t++) {
-        const tlv = Math.round((maxTL / 4) * t);
-        const gy = tlY(tlv);
-        doc.setFontSize(4.5);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(...DARK_RGB);
+        const tlv = Math.round((maxTL / 4) * t), gy = tlY(tlv);
+        doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...DARK_RGB);
         doc.text(String(tlv), cX + PAD.left - 1.5, gy + 1.2, { align: "right" });
       }
       doc.setFontSize(4.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...DARK_RGB);
       doc.text("TL (UA)", cX + PAD.left - 1.5, cY + PAD.top - 1, { align: "right" });
-
-      // Right Y-axis: RPE (red, 0-10)
       [0, 2, 4, 6, 8, 10].forEach((v) => {
         const gy = rpeY(v);
-        doc.setFontSize(4.5);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(...RED_RGB);
+        doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...RED_RGB);
         doc.text(String(v), cX + cW - PAD.right + 1.5, gy + 1.2);
       });
       doc.setFontSize(4.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...RED_RGB);
       doc.text("RPE", cX + cW - PAD.right + 1.5, cY + PAD.top - 1);
 
-      // Bars: Training Load (dark navy/slate)
       tlSessions.forEach((s, i) => {
         if (s.interno === null) return;
         const bh = (s.interno / maxTL) * plotH;
-        const bx = bX(i) - barW / 2;
-        const by = cY + PAD.top + plotH - bh;
+        const bx = bX(i) - barW / 2, by = cY + PAD.top + plotH - bh;
         const r = Math.min(1.0, barW / 2, bh / 2);
-        doc.setFillColor(55, 65, 81);
-        doc.setDrawColor(37, 47, 63);
-        doc.setLineWidth(0.15);
+        doc.setFillColor(55, 65, 81); doc.setDrawColor(37, 47, 63); doc.setLineWidth(0.15);
         doc.roundedRect(bx, by, barW, bh, r, r, "FD");
       });
 
-      // RPE line (right axis, red solid) + dots + value labels – smooth Catmull-Rom
-      doc.setDrawColor(...RED_RGB);
-      doc.setLineWidth(0.6);
-      doc.setLineDashPattern([], 0);
-      const rpePts = tlSessions
-        .map((s, i) => s.rpe !== null ? { i, v: s.rpe } : null)
-        .filter((p): p is { i: number; v: number } => p !== null);
+      doc.setDrawColor(...RED_RGB); doc.setLineWidth(0.6); doc.setLineDashPattern([], 0);
+      const rpePts = tlSessions.map((s, i) => s.rpe !== null ? { i, v: s.rpe } : null).filter((p): p is { i: number; v: number } => p !== null);
       if (rpePts.length >= 2) {
         const tension = 0.25;
         const rx = (k: number) => bX(rpePts[Math.max(0, Math.min(rpePts.length - 1, k))].i);
         const ry = (k: number) => rpeY(rpePts[Math.max(0, Math.min(rpePts.length - 1, k))].v);
         doc.moveTo(rx(0), ry(0));
         for (let k = 0; k < rpePts.length - 1; k++) {
-          doc.curveTo(
-            rx(k)   + (rx(k + 1) - rx(k - 1)) * tension,
-            ry(k)   + (ry(k + 1) - ry(k - 1)) * tension,
-            rx(k+1) - (rx(k + 2) - rx(k))     * tension,
-            ry(k+1) - (ry(k + 2) - ry(k))     * tension,
-            rx(k + 1), ry(k + 1)
-          );
+          doc.curveTo(rx(k) + (rx(k+1) - rx(k-1)) * tension, ry(k) + (ry(k+1) - ry(k-1)) * tension,
+            rx(k+1) - (rx(k+2) - rx(k)) * tension, ry(k+1) - (ry(k+2) - ry(k)) * tension, rx(k+1), ry(k+1));
         }
         doc.stroke();
       }
       tlSessions.forEach((s, i) => {
         if (s.rpe === null) return;
-        doc.setFillColor(...RED_RGB);
-        doc.setDrawColor(255, 255, 255);
-        doc.setLineWidth(0.35);
+        doc.setFillColor(...RED_RGB); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.35);
         doc.circle(bX(i), rpeY(s.rpe), 0.8, "FD");
         const barTopP = s.interno !== null ? cY + PAD.top + (1 - s.interno / maxTL) * plotH : cY + PAD.top;
         const insideBarP = rpeY(s.rpe) - 2 >= barTopP;
-        doc.setFontSize(4.5);
-        doc.setFont("helvetica", "bold");
+        doc.setFontSize(4.5); doc.setFont("helvetica", "bold");
         doc.setTextColor(...(insideBarP ? ([255, 255, 255] as [number, number, number]) : RED_RGB));
         doc.text(s.rpe.toFixed(1), bX(i), rpeY(s.rpe) - 2, { align: "center" });
       });
 
-      // X-axis date labels
       const lblStep = n <= 20 ? 1 : Math.ceil(n / 20);
       tlSessions.forEach((s, i) => {
         if (i % lblStep !== 0) return;
-        doc.setFontSize(4.5);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(120, 120, 120);
+        doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(120, 120, 120);
         doc.text(s.dateLabel || s.data, bX(i), cY + cH - 1, { align: "center" });
       });
 
-      // Legend
-      const legY = cY + cH - 5;
-      const legX = cX + PAD.left;
-      // TL bar swatch
+      const legY = cY + cH - 5, legX = cX + PAD.left;
       doc.setFillColor(55, 65, 81); doc.setDrawColor(37, 47, 63); doc.setLineWidth(0.15);
       doc.roundedRect(legX, legY - 2.5, 4, 2.5, 0.6, 0.6, "FD");
       doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(60, 60, 60);
       doc.text("Training Load (UA)", legX + 5.5, legY);
-      // RPE line swatch
       doc.setDrawColor(...RED_RGB); doc.setLineWidth(0.6); doc.setLineDashPattern([], 0);
       doc.line(legX + 46, legY - 1.2, legX + 50, legY - 1.2);
       doc.setFillColor(...RED_RGB); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.35);
       doc.circle(legX + 48, legY - 1.2, 0.7, "FD");
       doc.setFontSize(4.5); doc.setFont("helvetica", "normal"); doc.setTextColor(60, 60, 60);
       doc.text("RPE (scala 0-10)", legX + 51.5, legY);
-
       y = cY + cH + GAP_Y;
     }
 
     const chartMetrics = activeMetrics.filter((m) => m.key !== "rpe" && m.key !== "interno" && m.key !== "durata");
     for (let i = 0; i < chartMetrics.length; i += 2) {
-      if (y + CHART_H > PH - M) {
-        doc.addPage();
-        y = addHeader(true);
-      }
+      if (y + CHART_H > PH - M) { doc.addPage(); y = addHeader(true); }
       drawChart(chartMetrics[i], M, y, CHART_W, CHART_H);
-      if (i + 1 < chartMetrics.length) {
-        drawChart(chartMetrics[i + 1], M + CHART_W + 6, y, CHART_W, CHART_H);
-      }
+      if (i + 1 < chartMetrics.length) drawChart(chartMetrics[i + 1], M + CHART_W + 6, y, CHART_W, CHART_H);
       y += CHART_H + GAP_Y;
     }
 
-    // ── Test table ─────────────────────────────────────────────────────────────
     if (testTableRows.length > 0) {
       doc.addPage();
       let ty = addHeader(true);
       doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...DARK_RGB);
-      doc.text("Test", M, ty + 2);
-      ty += 7;
-      // Group by session to compute rowSpan counts
-      const sessions: { dateLabel: string; infortunio: string; tests: { nome: string; risultato: string }[] }[] = [];
+      doc.text("Test", M, ty + 2); ty += 7;
+      const pdfSessions: { dateLabel: string; infortunio: string; tests: { nome: string; risultato: string }[] }[] = [];
       let lastSessionKey = "";
       testTableRows.forEach((r) => {
         const key = r.data + "||" + r.infortunio;
-        if (key !== lastSessionKey) { lastSessionKey = key; sessions.push({ dateLabel: r.dateLabel, infortunio: r.infortunio, tests: [] }); }
-        sessions[sessions.length - 1].tests.push({ nome: r.nomeTest, risultato: r.risultato });
+        if (key !== lastSessionKey) { lastSessionKey = key; pdfSessions.push({ dateLabel: r.dateLabel, infortunio: r.infortunio, tests: [] }); }
+        pdfSessions[pdfSessions.length - 1].tests.push({ nome: r.nomeTest, risultato: r.risultato });
       });
-
       const groupedBody: any[] = [];
-      sessions.forEach((s) => {
+      pdfSessions.forEach((s) => {
         s.tests.forEach((t, i) => {
           if (i === 0) {
             groupedBody.push([
               { content: s.dateLabel, rowSpan: s.tests.length, styles: { valign: "middle" as const, halign: "center" as const } },
               { content: s.infortunio, rowSpan: s.tests.length, styles: { valign: "middle" as const } },
-              t.nome,
-              t.risultato,
+              t.nome, t.risultato,
             ]);
-          } else {
-            groupedBody.push([t.nome, t.risultato]);
-          }
+          } else { groupedBody.push([t.nome, t.risultato]); }
         });
       });
-
       autoTable(doc, {
         startY: ty,
         head: [["Data", "Infortunio", "Test", "Risultato"]],
@@ -1067,32 +938,25 @@ export default function PerformancePage() {
         bodyStyles: { fontSize: 6.5, cellPadding: 1.8, overflow: "linebreak" as const, valign: "middle" as const },
         alternateRowStyles: { fillColor: [249, 249, 249] },
         margin: { left: M, right: M, top: 18 },
-        columnStyles: {
-          0: { cellWidth: 18, halign: "center" as const },
-          1: { cellWidth: 55 },
-          2: { cellWidth: 80 },
-          3: { cellWidth: "auto" as any },
-        },
+        columnStyles: { 0: { cellWidth: 18, halign: "center" as const }, 1: { cellWidth: 55 }, 2: { cellWidth: 80 }, 3: { cellWidth: "auto" as any } },
         didDrawPage: (() => { let first = true; return () => { if (first) first = false; else addHeader(true); }; })(),
       });
     }
 
-    // Page numbers
     const pages = (doc as any).internal.getNumberOfPages();
     for (let p = 1; p <= pages; p++) {
       doc.setPage(p);
       doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(...GRAY_RGB);
       doc.text(`${p} / ${pages}`, PW - M, 205, { align: "right" });
     }
-
     doc.save(`performance_${nd(selectedAtleta!).replace(/ /g, "_")}.pdf`);
   }
 
   // ── Trend icon ───────────────────────────────────────────────────────────────
-  function TrendIcon({ t }: { t: ReturnType<typeof trend> }) {
-    if (t === "up") return <TrendingUp className="w-4 h-4 text-green-500 shrink-0" />;
-    if (t === "down") return <TrendingDown className="w-4 h-4 text-red-400 shrink-0" />;
-    if (t === "flat") return <Minus className="w-4 h-4 text-gray-400 shrink-0" />;
+  function TrendIcon({ t }: { t: "up" | "down" | "flat" | "none" }) {
+    if (t === "up") return <TrendingUp className="w-3.5 h-3.5 text-green-500 shrink-0" />;
+    if (t === "down") return <TrendingDown className="w-3.5 h-3.5 text-red-400 shrink-0" />;
+    if (t === "flat") return <Minus className="w-3.5 h-3.5 text-gray-400 shrink-0" />;
     return null;
   }
 
@@ -1105,57 +969,45 @@ export default function PerformancePage() {
     );
   }
 
-  return (
-    <div className="h-full flex flex-col overflow-hidden bg-gray-50">
+  const hasGps = sessions.length > 0;
+  const hasTests = testTimelines.size > 0;
+  const hasPalestra = !!gymStats;
+  const hasAny = hasGps || hasTests || hasPalestra;
 
-      {/* ── Top bar ─────────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-200 px-4 md:px-6 shrink-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)", paddingBottom: "1rem" }}>
-        <div className="flex items-center justify-between">
-          <div className="text-left">
-            <h1 className="text-2xl font-bold text-gray-900">Performance</h1>
-            <p className="text-sm text-gray-500 mt-1">Test, andamento GPS e carico</p>
+  const tabs = [
+    { key: "gps" as const,      label: "GPS & Carico",  show: hasGps },
+    { key: "test" as const,     label: "Test Fisici",   show: hasTests },
+    { key: "palestra" as const, label: "Palestra",      show: hasPalestra },
+  ].filter((t) => t.show);
+
+  return (
+    <div className="h-full flex flex-col overflow-hidden bg-[#f5f5f7]">
+
+      {/* ── Top bar ───────────────────────────────────────────────────────── */}
+      <div
+        className="bg-white border-b border-gray-200 px-4 md:px-6 shrink-0"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)", paddingBottom: "0.875rem" }}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 leading-tight">Performance</h1>
+            <p className="text-xs text-gray-400 mt-0.5">GPS · Test Fisici · Palestra</p>
           </div>
-          <div className="flex flex-col items-end gap-1.5">
-            {/* PDF */}
-            <button
-              onClick={exportPdf}
-              disabled={!selectedAtleta || sessions.length === 0}
-              className="flex items-center gap-1 border border-red-200 text-[#C8102E] px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors"
-            >
-              <FileDown className="w-3.5 h-3.5" />
-              PDF
-            </button>
-            {/* View toggle */}
-            <div className="flex rounded-lg border border-gray-200 overflow-hidden">
-              <button
-                onClick={() => setView("grafici")}
-                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
-                  view === "grafici" ? "text-white" : "text-gray-600 hover:bg-gray-50"
-                }`}
-                style={view === "grafici" ? { backgroundColor: RED } : {}}
-              >
-                <BarChart3 className="w-4 h-4" />
-                Grafici
-              </button>
-              <button
-                onClick={() => setView("tabella")}
-                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
-                  view === "tabella" ? "text-white" : "text-gray-600 hover:bg-gray-50"
-                }`}
-                style={view === "tabella" ? { backgroundColor: RED } : {}}
-              >
-                <Table2 className="w-4 h-4" />
-                Tabella
-              </button>
-            </div>
-          </div>
+          <button
+            onClick={exportPdf}
+            disabled={!selectedAtleta || sessions.length === 0}
+            className="flex items-center gap-1.5 border border-red-200 text-[#C8102E] px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-50 disabled:opacity-40 transition-colors shrink-0"
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            PDF
+          </button>
         </div>
       </div>
 
-      {/* ── Athlete selector ─────────────────────────────────────────────────── */}
+      {/* ── Athlete selector ─────────────────────────────────────────────── */}
       {atletiConDati.length > 0 && (
-        <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 shrink-0">
-          <div className="flex items-center gap-2 max-w-md">
+        <div className="bg-white border-b border-gray-100 px-4 md:px-6 py-2.5 shrink-0">
+          <div className="flex items-center gap-2 max-w-sm">
             <button
               onClick={() => idx > 0 && setSelectedId(atletiConDati[idx - 1].id)}
               disabled={idx <= 0}
@@ -1163,20 +1015,16 @@ export default function PerformancePage() {
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-
             <select
               value={selectedId ?? ""}
               onChange={(e) => setSelectedId(e.target.value || null)}
-              className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-400 cursor-pointer"
+              className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-400 cursor-pointer"
             >
               <option value="">— Seleziona atleta —</option>
               {atletiConDati.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {nd(a)}{a.categoria ? ` — ${a.categoria}` : ""}
-                </option>
+                <option key={a.id} value={a.id}>{nd(a)}{a.categoria ? ` — ${a.categoria}` : ""}</option>
               ))}
             </select>
-
             <button
               onClick={() => idx < atletiConDati.length - 1 && setSelectedId(atletiConDati[idx + 1].id)}
               disabled={idx >= atletiConDati.length - 1}
@@ -1188,464 +1036,509 @@ export default function PerformancePage() {
         </div>
       )}
 
-      {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "1.5rem" }}>
+      {/* ── Tab bar ──────────────────────────────────────────────────────── */}
+      {hasAny && selectedId && tabs.length > 1 && (
+        <div className="bg-white border-b border-gray-200 px-4 md:px-6 shrink-0">
+          <div className="flex -mb-px">
+            {tabs.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  tab === key
+                    ? "border-[#C8102E] text-[#C8102E]"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-        {/* Empty states */}
+      {/* ── Content ──────────────────────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto overscroll-none px-4 md:px-6 py-5">
+
         {atletiConDati.length === 0 && (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <Activity className="w-12 h-12 text-gray-200 mb-3" />
-            <p className="text-gray-500 font-medium">Nessun dato GPS disponibile</p>
-            <p className="text-gray-400 text-sm mt-1">Inserisci i dati GPS nella sezione Programmi</p>
+            <p className="text-gray-500 font-medium">Nessun dato disponibile</p>
+            <p className="text-gray-400 text-sm mt-1">Inserisci dati GPS, test o esercizi nella sezione Programmi</p>
           </div>
         )}
 
-        {atletiConDati.length > 0 && sessions.length === 0 && testTimelines.size === 0 && (
+        {selectedId && !hasAny && (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <Activity className="w-12 h-12 text-gray-200 mb-3" />
             <p className="text-gray-500 font-medium">Nessun dato per questo atleta</p>
           </div>
         )}
 
-        {(sessions.length > 0 || testTimelines.size > 0) && (
+        {/* ── GPS & Carico tab ─────────────────────────────────────────── */}
+        {tab === "gps" && (
           <>
-            {/* ── GPS KPI strip ──────────────────────────────────────────────── */}
-            {sessions.length > 0 && (
-              <>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">GPS e Carico</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-5">
-                  <div className="bg-white rounded-xl border border-gray-200 p-4">
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Sessioni</p>
-                    <p className="text-2xl font-bold text-gray-900">{sessions.length}</p>
+            {!hasGps && (
+              <div className="flex flex-col items-center justify-center h-48 text-center">
+                <BarChart3 className="w-10 h-10 text-gray-200 mb-3" />
+                <p className="text-gray-400 text-sm">Nessun dato GPS per questo atleta</p>
+              </div>
+            )}
+            {hasGps && (
+              <div className="space-y-4">
+
+                {/* KPI strip */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Sessioni</p>
+                    <p className="text-3xl font-bold text-gray-900">{sessions.length}</p>
+                    <p className="text-[10px] text-gray-400 mt-1">registrate</p>
                   </div>
                   {activeMetrics.map((m) => {
                     const t = trend(m.key);
                     return (
-                      <div key={m.key} className="bg-white rounded-xl border border-gray-200 p-4">
-                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
-                          {m.shortLabel}{m.unit && ` (${m.unit})`}
+                      <div key={m.key} className="bg-white rounded-2xl border border-gray-200 p-4">
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">
+                          {m.shortLabel}{m.unit ? ` (${m.unit})` : ""}
                         </p>
                         <div className="flex items-end gap-1.5">
                           <span className="text-2xl font-bold text-gray-900">{lastVal(m.key, m.dec)}</span>
                           <TrendIcon t={t} />
                         </div>
-                        <p className="text-xs text-gray-400 mt-0.5">media {avgVal(m.key, m.dec)}</p>
+                        <p className="text-[10px] text-gray-400 mt-1">media {avgVal(m.key, m.dec)}</p>
                       </div>
                     );
                   })}
                 </div>
-              </>
-            )}
 
-            {/* ── Test KPI strip ─────────────────────────────────────────────── */}
-            {testTimelines.size > 0 && (
-              <>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-1">Test</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-5">
-                  {Array.from(testTimelines.entries()).map(([nome, tl]) => {
-                    const t = testTrend(tl);
-                    const last = tl.points[tl.points.length - 1];
-                    const showBilateral = tl.isBilateral && nome !== "Drop Jump";
-                    const asymPct = showBilateral && nome !== "QSLS" && last?.sx != null && last?.dx != null && Math.max(last.sx, last.dx) > 0
-                      ? ((Math.abs(last.sx - last.dx) / Math.max(last.sx, last.dx)) * 100).toFixed(1)
-                      : null;
+                {/* Charts grid — clickable to expand */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {activeMetrics.map((m) => {
+                    const t = trend(m.key);
+                    const isExpanded = expandedKey === m.key;
                     return (
-                      <div key={nome} className="bg-white rounded-xl border border-gray-200 p-4">
-                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1 truncate" title={nome}>{nome}</p>
-                        {showBilateral ? (
-                          <div>
-                            <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                              {last?.sx != null && <span className="text-base font-bold text-blue-600">Sx {last.sx}</span>}
-                              {last?.dx != null && <span className="text-base font-bold text-red-500">Dx {last.dx}</span>}
-                              {tl.unit && (last?.sx != null || last?.dx != null) && <span className="text-xs text-gray-400">{tl.unit}</span>}
-                              <TrendIcon t={t} />
-                            </div>
-                            {asymPct && <p className="text-xs font-semibold text-orange-500">Δ {asymPct}%</p>}
+                      <div
+                        key={m.key}
+                        className={`bg-white rounded-2xl border border-gray-200 p-4 cursor-pointer transition-all hover:border-gray-300 ${isExpanded ? "lg:col-span-2" : ""}`}
+                        onClick={() => setExpandedKey(isExpanded ? null : m.key)}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: m.color }} />
+                            <span className="font-semibold text-gray-800 text-sm">{m.label}</span>
+                            {m.unit && (
+                              <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{m.unit}</span>
+                            )}
                           </div>
-                        ) : (
-                          <div className="flex items-end gap-1.5 flex-wrap">
-                            <span className="text-lg font-bold text-gray-900 leading-tight">{lastTestVal(tl, nome)}</span>
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className="text-gray-400">Ult. <span className="font-bold text-gray-800">{lastVal(m.key, m.dec)}</span></span>
                             <TrendIcon t={t} />
+                            <span className="text-gray-300">|</span>
+                            <span className="text-gray-400">Med. <span className="font-semibold text-gray-700">{avgVal(m.key, m.dec)}</span></span>
+                            <span className="text-gray-300">|</span>
+                            <span className="text-gray-400">Max <span className="font-semibold text-gray-700">{maxVal(m.key, m.dec)}</span></span>
                           </div>
-                        )}
-                        <p className="text-xs text-gray-400 mt-0.5">media {avgTestVal(tl, nome)}</p>
+                        </div>
+                        <MetricChart sessions={sessions} metric={m} />
                       </div>
                     );
                   })}
                 </div>
-              </>
-            )}
 
-            {/* ── GRAFICI ────────────────────────────────────────────────────── */}
-            {view === "grafici" && (
-              <>
-                {sessions.length > 0 && (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                    {activeMetrics.map((m) => {
-                      const t = trend(m.key);
-                      const isExpanded = expandedKey === m.key;
-                      return (
-                        <div
-                          key={m.key}
-                          className={`bg-white rounded-xl border border-gray-200 p-4 ${isExpanded ? "lg:col-span-2" : ""}`}
-                        >
-                          <div className="mb-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: m.color }} />
-                                <span className="font-semibold text-gray-800 text-sm">{m.label}</span>
-                                {m.unit && (
-                                  <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{m.unit}</span>
-                                )}
-                              </div>
-                              <button
-                                onClick={() => setExpandedKey(isExpanded ? null : m.key)}
-                                className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 px-2 py-1 rounded transition-colors"
-                              >
-                                {isExpanded ? "Riduci ↙" : "Espandi ↗"}
-                              </button>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Ultimo</span>
-                                <span className="text-base font-bold" style={{ color: m.color }}>{lastVal(m.key, m.dec)}</span>
-                                <TrendIcon t={t} />
-                              </div>
-                              <div className="w-px h-4 bg-gray-200" />
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs text-gray-400">Media</span>
-                                <span className="text-sm font-semibold text-gray-700">{avgVal(m.key, m.dec)}</span>
-                              </div>
-                              <div className="w-px h-4 bg-gray-200" />
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs text-gray-400">Max</span>
-                                <span className="text-sm font-semibold text-gray-700">{maxVal(m.key, m.dec)}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <MetricChart sessions={sessions} metric={m} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {testTimelines.size > 0 && (
-                  <>
-                    {sessions.length > 0 && <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Grafici Test</p>}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {Array.from(testTimelines.entries()).filter(([n]) => n !== "Gacon" && n !== "IFT 30-15").map(([nome, tl]) => {
-                        const t = testTrend(tl);
-                        const ek = `test-${nome}`;
-                        const isExpanded = expandedKey === ek;
-                        const lastPt = tl.points[tl.points.length - 1];
-                        const showBilG = tl.isBilateral && nome !== "Drop Jump";
-                        const asymPctG = showBilG && nome !== "QSLS" && lastPt?.sx != null && lastPt?.dx != null && Math.max(lastPt.sx, lastPt.dx) > 0
-                          ? ((Math.abs(lastPt.sx - lastPt.dx) / Math.max(lastPt.sx, lastPt.dx)) * 100).toFixed(1)
-                          : null;
-                        return (
-                          <div key={nome} className={`bg-white rounded-xl border border-gray-200 p-4 ${isExpanded ? "lg:col-span-2" : ""}`}>
-                            <div className="mb-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: tl.color }} />
-                                  <span className="font-semibold text-gray-800 text-sm">{nome}</span>
-                                  {tl.unit && nome !== "Drop Jump" && <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{tl.unit}</span>}
-                                  {tl.isBilateral && <span className="text-xs text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">Sx / Dx</span>}
-                                  {asymPctG && <span className="text-xs font-semibold text-orange-500">Δ {asymPctG}%</span>}
-                                </div>
-                                <button
-                                  onClick={() => setExpandedKey(isExpanded ? null : ek)}
-                                  className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 px-2 py-1 rounded transition-colors"
-                                >
-                                  {isExpanded ? "Riduci ↙" : "Espandi ↗"}
-                                </button>
-                              </div>
-                              <div className="flex items-center gap-4 flex-wrap">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Ultimo</span>
-                                  <span className="text-base font-bold" style={{ color: tl.color }}>{lastTestVal(tl, nome)}</span>
-                                  <TrendIcon t={t} />
-                                </div>
-                                <div className="w-px h-4 bg-gray-200" />
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs text-gray-400">Media</span>
-                                  <span className="text-sm font-semibold text-gray-700">{avgTestVal(tl, nome)}</span>
-                                </div>
-                                <div className="w-px h-4 bg-gray-200" />
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs text-gray-400">N.</span>
-                                  <span className="text-sm font-semibold text-gray-700">{tl.points.length}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <TestLineChart points={tl.points} color={tl.color} isBilateral={tl.isBilateral} unit={tl.unit} />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-
-            {/* ── TABELLA ────────────────────────────────────────────────────── */}
-            {view === "tabella" && (
-              <div className="space-y-4">
-              {sessions.length > 0 && <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">GPS e Carico</p>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        {["Data", "Infortunio", "Programma", "Fase"].map((h) => (
-                          <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                            {h}
-                          </th>
-                        ))}
-                        {activeMetrics.map((m) => (
-                          <th key={m.key} className="text-center px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                            {m.shortLabel}
-                            {m.unit && <span className="text-gray-400 lowercase font-normal"> {m.unit}</span>}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[...sessions].reverse().map((s, i) => (
-                        <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
-                          <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap text-xs font-mono">
-                            {s.data ? new Date(s.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"}
-                          </td>
-                          <td className="px-4 py-2.5 text-gray-500 text-xs max-w-[120px] truncate">{s.infortunio || "—"}</td>
-                          <td className="px-4 py-2.5 text-gray-800 font-medium max-w-[160px] truncate">{s.nome || "—"}</td>
-                          <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{s.fase || "—"}</td>
-                          {activeMetrics.map((m) => {
-                            const v = s[m.key] as number | null;
-                            return (
-                              <td key={m.key} className="px-3 py-2.5 text-center whitespace-nowrap">
-                                {v != null ? (
-                                  <span className="font-mono text-gray-800 text-xs">{fv(v, m.dec)}</span>
-                                ) : (
-                                  <span className="text-gray-300 text-xs">—</span>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-
-                    {/* Footer: averages */}
-                    <tfoot>
-                      <tr className="border-t border-gray-200 bg-gray-50">
-                        <td className="px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide" colSpan={4}>
-                          Media
-                        </td>
-                        {activeMetrics.map((m) => (
-                          <td key={m.key} className="px-3 py-2.5 text-center">
-                            <span className="text-xs font-semibold text-gray-600">{avgVal(m.key, m.dec)}</span>
-                          </td>
-                        ))}
-                      </tr>
-                      <tr className="bg-gray-50">
-                        <td className="px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide" colSpan={4}>
-                          Massimo
-                        </td>
-                        {activeMetrics.map((m) => (
-                          <td key={m.key} className="px-3 py-2.5 text-center">
-                            <span className="text-xs font-semibold text-gray-600">{maxVal(m.key, m.dec)}</span>
-                          </td>
-                        ))}
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </div>}
-
-              {testTableRows.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Test</p>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
-                          {["Data", "Infortunio", "Test", "Risultato"].map((h) => (
-                            <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                              {h}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[...testTableRows].reverse().map((r, i) => (
-                          <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
-                            <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap text-xs font-mono">{r.dateLabel}</td>
-                            <td className="px-4 py-2.5 text-gray-500 text-xs max-w-[140px] truncate">{r.infortunio}</td>
-                            <td className="px-4 py-2.5 text-gray-800 font-medium text-xs whitespace-nowrap">{r.nomeTest}</td>
-                            <td className="px-4 py-2.5 text-gray-600 text-xs">{r.risultato}</td>
+                {/* Collapsible data table */}
+                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                  <button
+                    className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors"
+                    onClick={() => setExpandedKey(expandedKey === "__gps_table__" ? null : "__gps_table__")}
+                  >
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tabella storico sessioni</p>
+                    {expandedKey === "__gps_table__" ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                  </button>
+                  {expandedKey === "__gps_table__" && (
+                    <div className="border-t border-gray-100 overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-gray-50 border-b border-gray-200">
+                            {["Data", "Programma", "Fase"].map((h) => (
+                              <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                            ))}
+                            {activeMetrics.map((m) => (
+                              <th key={m.key} className="text-center px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
+                                {m.shortLabel}{m.unit && <span className="font-normal lowercase text-gray-400"> {m.unit}</span>}
+                              </th>
+                            ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          {[...sessions].reverse().map((s, i) => (
+                            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
+                              <td className="px-4 py-2 text-xs font-mono text-gray-500 whitespace-nowrap">
+                                {s.data ? new Date(s.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"}
+                              </td>
+                              <td className="px-4 py-2 text-xs text-gray-700 max-w-[140px] truncate">{s.nome || "—"}</td>
+                              <td className="px-4 py-2 text-xs text-gray-500 whitespace-nowrap">{s.fase || "—"}</td>
+                              {activeMetrics.map((m) => {
+                                const v = s[m.key] as number | null;
+                                return (
+                                  <td key={m.key} className="px-3 py-2 text-center whitespace-nowrap">
+                                    {v != null ? <span className="font-mono text-xs text-gray-800">{fv(v, m.dec)}</span> : <span className="text-gray-300 text-xs">—</span>}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="border-t border-gray-200 bg-gray-50">
+                            <td colSpan={3} className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Media</td>
+                            {activeMetrics.map((m) => (
+                              <td key={m.key} className="px-3 py-2 text-center text-xs font-semibold text-gray-600">{avgVal(m.key, m.dec)}</td>
+                            ))}
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )}
                 </div>
-              )}
               </div>
             )}
           </>
         )}
 
-        {/* ── Sezione Palestra ─────────────────────────────────────────────── */}
-        {gymStats && selectedId && (
-          <div className="mt-8">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Lavoro in Palestra</p>
+        {/* ── Test Fisici tab ───────────────────────────────────────────── */}
+        {tab === "test" && (
+          <>
+            {!hasTests && (
+              <div className="flex flex-col items-center justify-center h-48 text-center">
+                <Activity className="w-10 h-10 text-gray-200 mb-3" />
+                <p className="text-gray-400 text-sm">Nessun test registrato per questo atleta</p>
+              </div>
+            )}
+            {hasTests && (
+              <div className="space-y-3">
+                {Array.from(testTimelines.entries()).map(([nome, tl]) => {
+                  const t = testTrend(tl);
+                  const lastPt = tl.points[tl.points.length - 1];
+                  const isExpanded = expandedTestKey === nome;
+                  const asymPct =
+                    tl.isBilateral && nome !== "QSLS" &&
+                    lastPt?.sx != null && lastPt?.dx != null &&
+                    Math.max(lastPt.sx, lastPt.dx) > 0
+                      ? ((Math.abs(lastPt.sx - lastPt.dx) / Math.max(lastPt.sx, lastPt.dx)) * 100).toFixed(1)
+                      : null;
 
-            {/* KPI strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Tonnellaggio (7gg)</p>
-                <p className="text-2xl font-bold text-gray-900">{gymStats.tonnSettimana > 0 ? `${Math.round(gymStats.tonnSettimana).toLocaleString("it-IT")} kg` : "—"}</p>
-                <p className="text-xs text-gray-400 mt-1">serie × reps × carico</p>
-              </div>
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Volume (7gg)</p>
-                <p className="text-2xl font-bold text-gray-900">{gymStats.volSettimana > 0 ? gymStats.volSettimana.toLocaleString("it-IT") : "—"}</p>
-                <p className="text-xs text-gray-400 mt-1">serie × reps totali</p>
-              </div>
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Sessioni totali</p>
-                <p className="text-2xl font-bold text-gray-900">{gymStats.sessioni.length}</p>
-                <p className="text-xs text-gray-400 mt-1">con esercizi registrati</p>
-              </div>
-            </div>
+                  return (
+                    <div key={nome} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                      {/* Row — always visible, click to expand */}
+                      <div
+                        className="flex items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-gray-50/60 transition-colors select-none"
+                        onClick={() => setExpandedTestKey(isExpanded ? null : nome)}
+                      >
+                        {/* Color accent bar */}
+                        <div className="w-[3px] self-stretch rounded-full shrink-0" style={{ background: tl.color }} />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-              {/* Donut gruppi muscolari */}
-              {gymStats.sliceGruppi.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Distribuzione Gruppi Muscolari</p>
-                  <div className="flex items-center gap-4">
-                    {/* Donut SVG */}
-                    <svg viewBox="0 0 120 120" className="w-32 h-32 shrink-0">
-                      {(() => {
-                        const R = 44, r = 26, cx = 60, cy = 60;
-                        let startAngle = -Math.PI / 2;
-                        const colors: Record<string, string> = { "Quadricipiti": "#2563eb","Glutei": "#7c3aed","Ischiocrurali": "#059669","Core": "#d97706","Polpacci": "#0891b2","Spalle": "#ea580c","Petto": "#dc2626","Dorsali": "#6d28d9","Bicipiti": "#0d9488","Tricipiti": "#64748b","Mobilità": "#16a34a" };
-                        const defaultColors = ["#94a3b8","#cbd5e1","#e2e8f0","#f1f5f9"];
-                        return gymStats.sliceGruppi.map((sl, idx) => {
-                          const angle = (sl.pct / 100) * 2 * Math.PI;
-                          const endAngle = startAngle + angle;
-                          const x1 = cx + R * Math.cos(startAngle), y1 = cy + R * Math.sin(startAngle);
-                          const x2 = cx + R * Math.cos(endAngle), y2 = cy + R * Math.sin(endAngle);
-                          const xi1 = cx + r * Math.cos(startAngle), yi1 = cy + r * Math.sin(startAngle);
-                          const xi2 = cx + r * Math.cos(endAngle), yi2 = cy + r * Math.sin(endAngle);
-                          const large = angle > Math.PI ? 1 : 0;
-                          const d = `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${r} ${r} 0 ${large} 0 ${xi1} ${yi1} Z`;
-                          const fill = colors[sl.gruppo] ?? defaultColors[idx % defaultColors.length];
-                          startAngle = endAngle;
-                          return <path key={sl.gruppo} d={d} fill={fill} stroke="white" strokeWidth="1.5" />;
-                        });
-                      })()}
-                    </svg>
-                    {/* Legend */}
-                    <div className="flex flex-col gap-1.5 min-w-0">
-                      {gymStats.sliceGruppi.slice(0, 8).map((sl) => {
-                        const colors: Record<string, string> = { "Quadricipiti": "#2563eb","Glutei": "#7c3aed","Ischiocrurali": "#059669","Core": "#d97706","Polpacci": "#0891b2","Spalle": "#ea580c","Petto": "#dc2626","Dorsali": "#6d28d9","Bicipiti": "#0d9488","Tricipiti": "#64748b","Mobilità": "#16a34a" };
-                        return (
-                          <div key={sl.gruppo} className="flex items-center gap-1.5 min-w-0">
-                            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: colors[sl.gruppo] ?? "#94a3b8" }} />
-                            <span className="text-xs text-gray-600 truncate">{sl.gruppo}</span>
-                            <span className="text-xs font-semibold text-gray-800 ml-auto pl-2 shrink-0">{sl.pct}%</span>
+                        {/* Name + meta */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-800 text-sm truncate">{nome}</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">
+                            {tl.points.length} {tl.points.length === 1 ? "rilevazione" : "rilevazioni"} · ultima: {lastPt?.dateLabel ?? "—"}
+                          </p>
+                        </div>
+
+                        {/* Latest value */}
+                        {tl.isBilateral ? (
+                          <div className="text-right shrink-0">
+                            <div className="flex items-center gap-2 justify-end">
+                              {lastPt?.sx != null && <span className="text-sm font-bold text-blue-600">Sx {lastPt.sx}</span>}
+                              {lastPt?.dx != null && <span className="text-sm font-bold text-red-500">Dx {lastPt.dx}</span>}
+                              {tl.unit && <span className="text-[10px] text-gray-400">{tl.unit}</span>}
+                              <TrendIcon t={t} />
+                            </div>
+                            {asymPct && (
+                              <p className="text-[10px] font-semibold text-orange-500 text-right mt-0.5">Δ {asymPct}%</p>
+                            )}
                           </div>
-                        );
-                      })}
+                        ) : (
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-lg font-bold" style={{ color: tl.color }}>{lastTestVal(tl, nome)}</span>
+                            <TrendIcon t={t} />
+                          </div>
+                        )}
+
+                        {isExpanded
+                          ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" />
+                          : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}
+                      </div>
+
+                      {/* Expanded detail */}
+                      {isExpanded && (
+                        <div className="border-t border-gray-100 px-4 pb-4 pt-3">
+                          {/* Mini chart */}
+                          {tl.points.length >= 2 && (
+                            <div className="mb-4 -mx-1">
+                              <TestLineChart points={tl.points} color={tl.color} isBilateral={tl.isBilateral} unit={tl.unit} />
+                            </div>
+                          )}
+
+                          {/* History table */}
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="border-b border-gray-100">
+                                  <th className="text-left pb-2 pr-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Data</th>
+                                  {tl.isBilateral ? (
+                                    <>
+                                      <th className="text-center pb-2 px-3 text-[10px] font-semibold text-blue-400 uppercase tracking-wide whitespace-nowrap">
+                                        Sx {tl.unit ? `(${tl.unit})` : ""}
+                                      </th>
+                                      <th className="text-center pb-2 px-3 text-[10px] font-semibold text-red-400 uppercase tracking-wide whitespace-nowrap">
+                                        Dx {tl.unit ? `(${tl.unit})` : ""}
+                                      </th>
+                                      <th className="text-center pb-2 px-3 text-[10px] font-semibold text-orange-400 uppercase tracking-wide whitespace-nowrap">Δ Asim.</th>
+                                    </>
+                                  ) : (
+                                    <th className="text-center pb-2 px-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">
+                                      Valore {tl.unit ? `(${tl.unit})` : ""}
+                                    </th>
+                                  )}
+                                  <th className="text-center pb-2 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Trend</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {[...tl.points].reverse().map((pt, i, arr) => {
+                                  const prevPt = arr[i + 1];
+                                  const rowTrend = calcPointTrend(pt, prevPt, tl.isBilateral);
+                                  return (
+                                    <tr key={i} className={i % 2 === 0 ? "" : "bg-gray-50/60"}>
+                                      <td className="py-2 pr-4 text-xs font-mono text-gray-500 whitespace-nowrap">{pt.dateLabel || pt.data}</td>
+                                      {tl.isBilateral ? (
+                                        <>
+                                          <td className="py-2 px-3 text-center text-xs font-bold text-blue-700">
+                                            {pt.sx != null ? pt.sx : <span className="text-gray-300 font-normal">—</span>}
+                                          </td>
+                                          <td className="py-2 px-3 text-center text-xs font-bold text-red-600">
+                                            {pt.dx != null ? pt.dx : <span className="text-gray-300 font-normal">—</span>}
+                                          </td>
+                                          <td className="py-2 px-3 text-center text-xs font-medium text-orange-500">
+                                            {pt.sx != null && pt.dx != null && Math.max(pt.sx, pt.dx) > 0
+                                              ? `${((Math.abs(pt.sx - pt.dx) / Math.max(pt.sx, pt.dx)) * 100).toFixed(1)}%`
+                                              : <span className="text-gray-300">—</span>}
+                                          </td>
+                                        </>
+                                      ) : (
+                                        <td className="py-2 px-3 text-center text-xs font-bold text-gray-800">
+                                          {nome === "Drop Jump" ? (
+                                            <span>
+                                              {pt.single != null ? `RSI ${pt.single}` : ""}
+                                              {pt.altezza != null ? ` · Alt ${pt.altezza}cm` : ""}
+                                            </span>
+                                          ) : (
+                                            pt.single != null ? pt.single : <span className="text-gray-300 font-normal">—</span>
+                                          )}
+                                        </td>
+                                      )}
+                                      <td className="py-2 text-center">
+                                        <div className="flex justify-center">
+                                          <TrendIcon t={rowTrend} />
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Summary stats */}
+                          <div className="flex gap-5 mt-3 pt-3 border-t border-gray-100">
+                            <div>
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Media</p>
+                              <p className="text-sm font-semibold text-gray-700 mt-0.5">{avgTestVal(tl, nome)}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Rilevazioni</p>
+                              <p className="text-sm font-semibold text-gray-700 mt-0.5">{tl.points.length}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── Palestra tab ─────────────────────────────────────────────── */}
+        {tab === "palestra" && (
+          <>
+            {!hasPalestra && (
+              <div className="flex flex-col items-center justify-center h-48 text-center">
+                <Dumbbell className="w-10 h-10 text-gray-200 mb-3" />
+                <p className="text-gray-400 text-sm">Nessuna sessione in palestra registrata</p>
+              </div>
+            )}
+            {hasPalestra && gymStats && (
+              <div className="space-y-4">
+
+                {/* KPI strip */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Tonnellaggio (7gg)</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {gymStats.tonnSettimana > 0
+                        ? `${Math.round(gymStats.tonnSettimana).toLocaleString("it-IT")} kg`
+                        : "—"}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-1">somma kg sollevati</p>
+                  </div>
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Volume (7gg)</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {gymStats.volSettimana > 0 ? gymStats.volSettimana.toLocaleString("it-IT") : "—"}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-1">serie × reps</p>
+                  </div>
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Sessioni palestra</p>
+                    <p className="text-2xl font-bold text-gray-900">{gymStats.sessioni.length}</p>
+                    <p className="text-[10px] text-gray-400 mt-1">totali</p>
                   </div>
                 </div>
-              )}
 
-              {/* Tonnage bar chart per session */}
-              {gymStats.sessioni.some((s) => s.tonnaggio > 0) && (
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Tonnellaggio per Sessione</p>
-                  {(() => {
-                    const dati = gymStats.sessioni.filter((s) => s.tonnaggio > 0).slice(-20);
-                    const maxT = Math.max(...dati.map((s) => s.tonnaggio));
-                    const W = 320, H = 120, PAD = { left: 40, right: 8, top: 8, bottom: 28 };
-                    const bw = Math.max(4, (W - PAD.left - PAD.right) / dati.length - 2);
-                    const step = dati.length <= 10 ? 1 : dati.length <= 16 ? 2 : 3;
-                    return (
-                      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 140 }} preserveAspectRatio="none">
-                        {[0, 0.25, 0.5, 0.75, 1].map((t, i) => {
-                          const y = PAD.top + t * (H - PAD.top - PAD.bottom);
-                          const lbl = Math.round(maxT * (1 - t));
-                          return (
-                            <g key={i}>
-                              <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="#e5e7eb" strokeWidth="0.6" />
-                              <text x={PAD.left - 4} y={y + 3.5} textAnchor="end" fontSize="8" fill="#9ca3af">{lbl > 0 ? (lbl >= 1000 ? `${Math.round(lbl / 100) / 10}k` : String(lbl)) : ""}</text>
-                            </g>
-                          );
-                        })}
-                        {dati.map((s, i) => {
-                          const plotW = W - PAD.left - PAD.right;
-                          const x = PAD.left + (i + 0.5) * (plotW / dati.length);
-                          const barH = maxT > 0 ? (s.tonnaggio / maxT) * (H - PAD.top - PAD.bottom) : 0;
-                          const y = H - PAD.bottom - barH;
-                          return (
-                            <g key={i}>
-                              <rect x={x - bw / 2} y={y} width={bw} height={barH} fill="#C8102E" opacity="0.85" rx="2" />
-                              {i % step === 0 && <text x={x} y={H - PAD.bottom + 11} textAnchor="middle" fontSize="7.5" fill="#9ca3af">{s.dateLabel}</text>}
-                            </g>
-                          );
-                        })}
-                      </svg>
-                    );
-                  })()}
+                {/* Charts */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  {/* Donut — muscle group distribution */}
+                  {gymStats.sliceGruppi.length > 0 && (
+                    <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Distribuzione Muscolare</p>
+                      <div className="flex items-center gap-5">
+                        <svg viewBox="0 0 120 120" className="w-36 h-36 shrink-0">
+                          {(() => {
+                            const R = 46, r = 28, cx = 60, cy = 60;
+                            let sa = -Math.PI / 2;
+                            const dc = ["#94a3b8", "#cbd5e1", "#e2e8f0"];
+                            return gymStats.sliceGruppi.map((sl, didx) => {
+                              const angle = (sl.pct / 100) * 2 * Math.PI;
+                              const ea = sa + angle;
+                              const x1 = cx + R * Math.cos(sa), y1 = cy + R * Math.sin(sa);
+                              const x2 = cx + R * Math.cos(ea), y2 = cy + R * Math.sin(ea);
+                              const xi1 = cx + r * Math.cos(sa), yi1 = cy + r * Math.sin(sa);
+                              const xi2 = cx + r * Math.cos(ea), yi2 = cy + r * Math.sin(ea);
+                              const lg = angle > Math.PI ? 1 : 0;
+                              const d = `M ${x1} ${y1} A ${R} ${R} 0 ${lg} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${r} ${r} 0 ${lg} 0 ${xi1} ${yi1} Z`;
+                              const fill = MUSCLE_COLORS[sl.gruppo] ?? dc[didx % dc.length];
+                              sa = ea;
+                              return <path key={sl.gruppo} d={d} fill={fill} stroke="white" strokeWidth="1.5" />;
+                            });
+                          })()}
+                        </svg>
+                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                          {gymStats.sliceGruppi.map((sl) => (
+                            <div key={sl.gruppo} className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: MUSCLE_COLORS[sl.gruppo] ?? "#94a3b8" }} />
+                              <span className="text-xs text-gray-600 flex-1 truncate">{sl.gruppo}</span>
+                              <span className="text-xs font-bold text-gray-800 shrink-0">{sl.pct}%</span>
+                              <span className="text-[10px] text-gray-400 shrink-0 w-8 text-right">{sl.serie}s</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tonnage bar chart */}
+                  {gymStats.sessioni.some((s) => s.tonnaggio > 0) && (
+                    <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Tonnellaggio per Sessione</p>
+                      {(() => {
+                        const dati = gymStats.sessioni.filter((s) => s.tonnaggio > 0).slice(-20);
+                        const maxT = Math.max(...dati.map((s) => s.tonnaggio));
+                        const W = 320, H = 120, PAD = { left: 42, right: 8, top: 8, bottom: 28 };
+                        const bw = Math.max(4, (W - PAD.left - PAD.right) / dati.length - 2);
+                        const step = dati.length <= 10 ? 1 : dati.length <= 16 ? 2 : 3;
+                        return (
+                          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 140 }} preserveAspectRatio="none">
+                            {[0, 0.25, 0.5, 0.75, 1].map((t, i) => {
+                              const y = PAD.top + t * (H - PAD.top - PAD.bottom);
+                              const lbl = Math.round(maxT * (1 - t));
+                              return (
+                                <g key={i}>
+                                  <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="#f3f4f6" strokeWidth="0.8" />
+                                  <text x={PAD.left - 3} y={y + 3.5} textAnchor="end" fontSize="8" fill="#9ca3af">
+                                    {lbl > 0 ? (lbl >= 1000 ? `${(lbl / 1000).toFixed(1)}k` : String(lbl)) : ""}
+                                  </text>
+                                </g>
+                              );
+                            })}
+                            {dati.map((s, i) => {
+                              const plotW = W - PAD.left - PAD.right;
+                              const x = PAD.left + (i + 0.5) * (plotW / dati.length);
+                              const barH = maxT > 0 ? (s.tonnaggio / maxT) * (H - PAD.top - PAD.bottom) : 0;
+                              const y = H - PAD.bottom - barH;
+                              return (
+                                <g key={i}>
+                                  <rect x={x - bw / 2} y={y} width={bw} height={barH} fill="#C8102E" opacity="0.82" rx="2" />
+                                  {i % step === 0 && (
+                                    <text x={x} y={H - PAD.bottom + 11} textAnchor="middle" fontSize="7.5" fill="#9ca3af">{s.dateLabel}</text>
+                                  )}
+                                </g>
+                              );
+                            })}
+                          </svg>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Volume table per session */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Dettaglio sessioni palestra</p>
+                {/* Session detail table */}
+                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                  <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/60">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Storico sessioni palestra</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                          {["Data", "Programma", "Volume (s×r)", "Tonnellaggio (kg)"].map((h) => (
+                            <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...gymStats.sessioni].reverse().slice(0, 20).map((s, i) => (
+                          <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
+                            <td className="px-4 py-2.5 text-xs font-mono text-gray-500 whitespace-nowrap">
+                              {s.data ? new Date(s.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"}
+                            </td>
+                            <td className="px-4 py-2.5 text-xs text-gray-700 max-w-[180px] truncate">{s.nome || "—"}</td>
+                            <td className="px-4 py-2.5 text-xs font-mono text-gray-700 text-right">{s.volume > 0 ? s.volume.toLocaleString("it-IT") : "—"}</td>
+                            <td className="px-4 py-2.5 text-xs font-mono text-gray-700 text-right">{s.tonnaggio > 0 ? Math.round(s.tonnaggio).toLocaleString("it-IT") : "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t border-gray-200 bg-gray-50">
+                          <td colSpan={2} className="px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Totale</td>
+                          <td className="px-4 py-2.5 text-xs font-semibold text-right text-gray-700">
+                            {gymStats.sessioni.reduce((a, s) => a + s.volume, 0).toLocaleString("it-IT")}
+                          </td>
+                          <td className="px-4 py-2.5 text-xs font-semibold text-right text-gray-700">
+                            {Math.round(gymStats.sessioni.reduce((a, s) => a + s.tonnaggio, 0)).toLocaleString("it-IT")}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      {["Data", "Programma", "Volume (s×r)", "Tonnellaggio (kg)"].map((h) => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[...gymStats.sessioni].reverse().slice(0, 20).map((s, i) => (
-                      <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
-                        <td className="px-4 py-2.5 text-xs font-mono text-gray-600 whitespace-nowrap">{s.data ? new Date(s.data + "T12:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"}</td>
-                        <td className="px-4 py-2.5 text-xs text-gray-800 max-w-[160px] truncate">{s.nome || "—"}</td>
-                        <td className="px-4 py-2.5 text-xs font-mono text-gray-700 text-center">{s.volume > 0 ? s.volume.toLocaleString("it-IT") : "—"}</td>
-                        <td className="px-4 py-2.5 text-xs font-mono text-gray-700 text-center">{s.tonnaggio > 0 ? Math.round(s.tonnaggio).toLocaleString("it-IT") : "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t border-gray-200 bg-gray-50">
-                      <td colSpan={2} className="px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Totale</td>
-                      <td className="px-4 py-2.5 text-xs font-semibold text-center text-gray-700">{gymStats.sessioni.reduce((a, s) => a + s.volume, 0).toLocaleString("it-IT")}</td>
-                      <td className="px-4 py-2.5 text-xs font-semibold text-center text-gray-700">{Math.round(gymStats.sessioni.reduce((a, s) => a + s.tonnaggio, 0)).toLocaleString("it-IT")}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
+
       </div>
     </div>
   );
