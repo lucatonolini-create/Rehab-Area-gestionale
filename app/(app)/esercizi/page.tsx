@@ -2932,7 +2932,7 @@ export default function EserciziPage() {
                                 <div className="flex-1 min-w-0">
                                   <span className="text-gray-900 text-xs font-semibold">{e.nome}</span>
                                   {[e.serie, e.reps, e.durata, e.carico].some(Boolean) && (
-                                    <span className="text-gray-500 text-[10px] ml-1">
+                                    <span className="block text-gray-500 text-[10px]">
                                       {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico].filter(Boolean).join(" · ")}
                                     </span>
                                   )}
