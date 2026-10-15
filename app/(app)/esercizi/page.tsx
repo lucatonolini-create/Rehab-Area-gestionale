@@ -2728,16 +2728,20 @@ export default function EserciziPage() {
       {mostraWhiteboard && (() => {
         const oggiStr = dataGiorno;
         const tuttiProg = Object.values(programmiPerAtleta).flat().filter((p) => p.data === oggiStr && !p.assente && !p.riposo);
-        // One card per athlete: collect all programs per athlete
-        const perAtleta = new Map<string, { atleta: Atleta; programmi: Programma[] }>();
+        // Group by program name+fase: one card per unique program, multiple athletes per card
+        const gruppiProg = new Map<string, { programma: Programma; atleti: Atleta[] }>();
         for (const prog of tuttiProg) {
           const atleta = atleti.find((a) => a.id === prog.atletaId);
           if (!atleta) continue;
-          if (!perAtleta.has(atleta.id)) perAtleta.set(atleta.id, { atleta, programmi: [] });
-          perAtleta.get(atleta.id)!.programmi.push(prog);
+          const chiave = (prog.nome?.trim() || "—") + (prog.fase ? `|${prog.fase}` : "");
+          if (!gruppiProg.has(chiave)) gruppiProg.set(chiave, { programma: prog, atleti: [] });
+          if (!gruppiProg.get(chiave)!.atleti.find((a) => a.id === atleta.id))
+            gruppiProg.get(chiave)!.atleti.push(atleta);
         }
         const assenti = Object.values(programmiPerAtleta).flat().filter((p) => p.data === oggiStr && (p.assente || p.riposo));
-        const cardsArr = Array.from(perAtleta.values()).sort((a, b) => nd(a.atleta).localeCompare(nd(b.atleta), "it"));
+        const cardsArr = Array.from(gruppiProg.values()).sort((a, b) =>
+          (a.programma.nome || "").localeCompare(b.programma.nome || "", "it")
+        );
         const CARD_COLORS = ["#C8102E","#2563eb","#7c3aed","#059669","#d97706","#0891b2","#ea580c","#6d28d9","#0d9488","#be185d"];
         return (
           <div className="fixed inset-0 z-50 flex flex-col bg-white">
@@ -2747,7 +2751,7 @@ export default function EserciziPage() {
                 <h1 className="text-gray-900 text-xl font-bold tracking-tight">Whiteboard</h1>
                 <p className="text-gray-400 text-xs mt-0.5">
                   {new Date(oggiStr + "T12:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
-                  {" · "}{cardsArr.length} atleti · {tuttiProg.length} programmi
+                  {" · "}{tuttiProg.length} atleti · {cardsArr.length} programmi
                 </p>
               </div>
               <button onClick={() => setMostraWhiteboard(false)} className="text-gray-400 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-colors">
@@ -2764,68 +2768,60 @@ export default function EserciziPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {cardsArr.map(({ atleta, programmi }, idx) => {
+                  {cardsArr.map(({ programma: prog, atleti: gruppo }, idx) => {
                     const color = CARD_COLORS[idx % CARD_COLORS.length];
-                    const nomeAtleta = nd(atleta);
+                    const nomiAtleti = gruppo.map((a) => nd(a)).join("  ·  ");
+                    const esercizi = (prog.esercizi ?? []).filter((e) => e.nome?.trim());
+                    const campo = (prog.esercizicampo ?? []).filter((e) => e.tipo?.trim());
                     return (
-                      <div key={atleta.id} className="bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-                        {/* Header: athlete name */}
+                      <div key={prog.id ?? idx} className="bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+                        {/* Header: athlete name(s) + program subtitle */}
                         <div className="px-4 py-3.5" style={{ borderLeft: `4px solid ${color}` }}>
-                          <p className="text-gray-900 font-bold text-base leading-tight">{nomeAtleta}</p>
+                          <p className="text-gray-900 font-bold text-base leading-tight">{nomiAtleti}</p>
+                          {prog.nome?.trim() && (
+                            <p className="text-xs text-gray-500 mt-0.5 font-medium">
+                              {prog.nome}{prog.fase ? ` · ${prog.fase}` : ""}
+                            </p>
+                          )}
                         </div>
 
-                        {/* Programs */}
-                        {programmi.map((prog, pi) => {
-                          const esercizi = (prog.esercizi ?? []).filter((e) => e.nome?.trim());
-                          const campo = (prog.esercizicampo ?? []).filter((e) => e.tipo?.trim());
-                          return (
-                            <div key={prog.id ?? pi} className={pi > 0 ? "border-t border-gray-300" : ""}>
-                              {/* Program label */}
-                              {prog.nome?.trim() && (
-                                <div className="px-4 pt-3 pb-1">
-                                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                                    {prog.nome}{prog.fase ? ` · ${prog.fase}` : ""}
-                                  </p>
+                        {/* Exercises */}
+                        {(esercizi.length > 0 || campo.length > 0) && (
+                          <div className="border-t border-gray-200 px-4 py-3 space-y-2.5">
+                            {esercizi.map((e, i) => (
+                              <div key={i} className="flex items-start gap-2.5">
+                                <span className="text-gray-400 text-xs font-mono shrink-0 w-5 text-right mt-0.5">{i + 1}.</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-gray-900 text-sm font-semibold leading-tight">{e.nome}</p>
+                                  {[e.serie, e.reps, e.durata, e.carico].some(Boolean) && (
+                                    <p className="text-gray-600 text-xs mt-0.5 font-medium">
+                                      {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico].filter(Boolean).join("  ·  ")}
+                                    </p>
+                                  )}
                                 </div>
-                              )}
-                              {(esercizi.length > 0 || campo.length > 0) && (
-                                <div className="border-t border-gray-200 px-4 py-3 space-y-2.5">
-                                  {esercizi.map((e, i) => (
-                                    <div key={i} className="flex items-start gap-2.5">
-                                      <span className="text-gray-400 text-xs font-mono shrink-0 w-5 text-right mt-0.5">{i + 1}.</span>
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-gray-900 text-sm font-semibold leading-tight">{e.nome}</p>
-                                        {[e.serie, e.reps, e.durata, e.carico].some(Boolean) && (
-                                          <p className="text-gray-600 text-xs mt-0.5 font-medium">
-                                            {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico].filter(Boolean).join("  ·  ")}
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                  {campo.map((c, i) => (
-                                    <div key={`c${i}`} className="flex items-start gap-2.5">
-                                      <span className="text-gray-400 text-xs font-mono shrink-0 w-5 text-right mt-0.5">{esercizi.length + i + 1}.</span>
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-gray-900 text-sm font-semibold leading-tight">{c.tipo}</p>
-                                        {[c.serie, c.durata].some(Boolean) && (
-                                          <p className="text-gray-600 text-xs mt-0.5 font-medium">
-                                            {[c.serie && `${c.serie} serie`, c.durata && c.durata].filter(Boolean).join("  ·  ")}
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
+                              </div>
+                            ))}
+                            {campo.map((c, i) => (
+                              <div key={`c${i}`} className="flex items-start gap-2.5">
+                                <span className="text-gray-400 text-xs font-mono shrink-0 w-5 text-right mt-0.5">{esercizi.length + i + 1}.</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-gray-900 text-sm font-semibold leading-tight">{c.tipo}</p>
+                                  {[c.serie, c.durata].some(Boolean) && (
+                                    <p className="text-gray-600 text-xs mt-0.5 font-medium">
+                                      {[c.serie && `${c.serie} serie`, c.durata && c.durata].filter(Boolean).join("  ·  ")}
+                                    </p>
+                                  )}
                                 </div>
-                              )}
-                              {prog.noteFisioterapia && (
-                                <div className="border-t border-gray-200 px-4 py-2">
-                                  <p className="text-gray-400 text-xs italic">{prog.noteFisioterapia}</p>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {prog.noteFisioterapia && (
+                          <div className="border-t border-gray-200 px-4 py-2">
+                            <p className="text-gray-400 text-xs italic">{prog.noteFisioterapia}</p>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
