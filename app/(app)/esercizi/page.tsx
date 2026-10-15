@@ -2914,17 +2914,9 @@ export default function EserciziPage() {
                           </div>
                         )}
 
-                        {((prog.obiettiviPalestra ?? []).length > 0 || (prog.obiettiviCampo ?? []).length > 0 || prog.noteFisioterapia) && (
-                          <div className="border-t border-gray-200 px-4 py-3 space-y-1.5">
-                            {(prog.obiettiviPalestra ?? []).map((o, i) => (
-                              <p key={`op${i}`} className="text-gray-500 text-xs">🎯 {o}</p>
-                            ))}
-                            {(prog.obiettiviCampo ?? []).map((o, i) => (
-                              <p key={`oc${i}`} className="text-gray-500 text-xs">⚽ {o}</p>
-                            ))}
-                            {prog.noteFisioterapia && (
-                              <p className="text-gray-400 text-xs italic">{prog.noteFisioterapia}</p>
-                            )}
+                        {prog.noteFisioterapia && (
+                          <div className="border-t border-gray-200 px-4 py-2">
+                            <p className="text-gray-400 text-xs italic">{prog.noteFisioterapia}</p>
                           </div>
                         )}
                       </div>
