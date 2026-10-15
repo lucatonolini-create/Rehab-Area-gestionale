@@ -2895,6 +2895,9 @@ export default function EserciziPage() {
                                       {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico].filter(Boolean).join("  ·  ")}
                                     </p>
                                   )}
+                                  {e.descrizione && (
+                                    <p className="text-gray-400 text-xs mt-0.5 italic">{e.descrizione}</p>
+                                  )}
                                 </div>
                               </div>
                             ))}
@@ -2914,11 +2917,6 @@ export default function EserciziPage() {
                           </div>
                         )}
 
-                        {prog.noteFisioterapia && (
-                          <div className="border-t border-gray-200 px-4 py-2">
-                            <p className="text-gray-400 text-xs italic">{prog.noteFisioterapia}</p>
-                          </div>
-                        )}
                       </div>
                     );
                   })}
