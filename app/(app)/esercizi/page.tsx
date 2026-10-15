@@ -2832,14 +2832,7 @@ export default function EserciziPage() {
         return (
           <div className="fixed inset-0 z-50 flex flex-col bg-white" style={{ zoom: zoomWB }}>
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
-              <div>
-                <h1 className="text-gray-900 text-xl font-bold tracking-tight">Whiteboard</h1>
-                <p className="text-gray-400 text-xs mt-0.5">
-                  {new Date(oggiStr + "T12:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
-                  {" · "}{tuttiProg.length} atleti · {cardsArr.length} programmi
-                </p>
-              </div>
+            <div className="flex items-center justify-end px-4 py-2 border-b border-gray-200 shrink-0">
               <div className="flex items-center gap-2">
                 {/* Zoom controls */}
                 <div className="flex items-center gap-1 border border-gray-200 rounded-xl px-1 py-1 bg-gray-50">
@@ -2872,7 +2865,7 @@ export default function EserciziPage() {
             </div>
 
             {/* Cards */}
-            <div className="flex-1 overflow-auto p-5">
+            <div className="flex-1 overflow-auto p-2">
               {caricandoWhiteboard ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <p className="text-gray-400 text-sm">Caricamento programmi…</p>
@@ -2883,7 +2876,7 @@ export default function EserciziPage() {
                   <p className="text-gray-400 text-sm">Nessun programma per oggi</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {cardsArr.map(({ programma: prog, atleti: gruppo }, idx) => {
                     const color = CARD_COLORS[idx % CARD_COLORS.length];
                     const nomiAtleti = gruppo.map((a) => nd(a)).join("  ·  ");
