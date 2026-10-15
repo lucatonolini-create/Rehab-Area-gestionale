@@ -2899,7 +2899,7 @@ export default function EserciziPage() {
                                   <span className="text-gray-900 text-xs font-semibold">{e.nome}</span>
                                   {[e.serie, e.reps, e.durata, e.carico].some(Boolean) && (
                                     <span className="text-gray-500 text-[10px] ml-1">
-                                      {[e.serie && `${e.serie}s`, e.reps && `${e.reps}r`, e.durata && e.durata, e.carico && e.carico].filter(Boolean).join(" · ")}
+                                      {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico].filter(Boolean).join(" · ")}
                                     </span>
                                   )}
                                   {e.note && <p className="text-gray-400 text-[10px] italic leading-none mt-0.5">{e.note}</p>}
