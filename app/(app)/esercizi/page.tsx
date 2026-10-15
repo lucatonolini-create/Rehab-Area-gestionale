@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
-import { Plus, Trash2, X, ChevronDown, Edit2, Gauge, Upload, AlertTriangle, Footprints, CalendarX2, Users, BatteryFull, FileText, FileDown, ShieldPlus, TrendingUp, Dumbbell, GripVertical, LayoutGrid } from "lucide-react";
+import { Plus, Trash2, X, ChevronDown, Edit2, Gauge, Upload, AlertTriangle, Footprints, CalendarX2, Users, BatteryFull, FileText, FileDown, ShieldPlus, TrendingUp, Dumbbell, GripVertical, LayoutGrid, RefreshCw } from "lucide-react";
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, KeyboardSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -2852,6 +2852,21 @@ export default function EserciziPage() {
                     className="w-28 accent-gray-700 cursor-pointer"
                   />
                 </div>
+                <button
+                  onClick={async () => {
+                    setCaricandoWhiteboard(true);
+                    await Promise.all(Array.from(atletiSelezionatiWB).map((id) =>
+                      loadProgrammi(id).then((progs) =>
+                        setProgrammiPerAtleta((prev) => ({ ...prev, [id]: progs }))
+                      )
+                    ));
+                    setCaricandoWhiteboard(false);
+                  }}
+                  className="flex items-center gap-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-xl border border-gray-200 hover:bg-gray-50 bg-white transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Aggiorna
+                </button>
                 <button onClick={() => { setMostraWhiteboard(false); setMostraSelettoreWB(true); }} className="text-gray-400 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-colors" title="Cambia giocatori">
                   <LayoutGrid className="w-4 h-4" />
                 </button>
