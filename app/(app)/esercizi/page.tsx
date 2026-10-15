@@ -2895,8 +2895,8 @@ export default function EserciziPage() {
                                       {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico].filter(Boolean).join("  ·  ")}
                                     </p>
                                   )}
-                                  {e.descrizione && (
-                                    <p className="text-gray-400 text-xs mt-0.5 italic">{e.descrizione}</p>
+                                  {e.note && (
+                                    <p className="text-gray-400 text-xs mt-0.5 italic">{e.note}</p>
                                   )}
                                 </div>
                               </div>
