@@ -2740,24 +2740,27 @@ export default function EserciziPage() {
         const gruppiArr = Array.from(gruppi.entries()).sort((a, b) => a[0].localeCompare(b[0], "it"));
         const CARD_COLORS = ["#C8102E","#2563eb","#7c3aed","#059669","#d97706","#0891b2","#ea580c","#6d28d9","#0d9488","#be185d"];
         return (
-          <div className="fixed inset-0 z-50 flex flex-col bg-gray-950">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 shrink-0">
+          <div className="fixed inset-0 z-50 flex flex-col bg-white">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
               <div>
-                <h1 className="text-white text-xl font-bold tracking-tight">Whiteboard</h1>
+                <h1 className="text-gray-900 text-xl font-bold tracking-tight">Whiteboard</h1>
                 <p className="text-gray-400 text-xs mt-0.5">
                   {new Date(oggiStr + "T12:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
                   {" · "}{gruppiArr.reduce((n, [, g]) => n + g.atleti.length, 0)} atleti · {gruppiArr.length} programmi
                 </p>
               </div>
-              <button onClick={() => setMostraWhiteboard(false)} className="text-gray-400 hover:text-white p-2 rounded-xl hover:bg-gray-800 transition-colors">
+              <button onClick={() => setMostraWhiteboard(false)} className="text-gray-400 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Cards */}
             <div className="flex-1 overflow-auto p-5">
               {gruppiArr.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
-                  <LayoutGrid className="w-12 h-12 text-gray-700 mb-3" />
-                  <p className="text-gray-500 text-sm">Nessun programma per oggi</p>
+                  <LayoutGrid className="w-12 h-12 text-gray-200 mb-3" />
+                  <p className="text-gray-400 text-sm">Nessun programma per oggi</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -2766,48 +2769,50 @@ export default function EserciziPage() {
                     const prog = gruppo.programma;
                     const esercizi = (prog.esercizi ?? []).filter((e) => e.nome?.trim());
                     const campo = (prog.esercizicampo ?? []).filter((e) => e.tipo?.trim());
+                    const nomiAtleti = gruppo.atleti.map((a) => nd(a)).join(", ");
                     return (
-                      <div key={nomeProg} className="bg-gray-900 rounded-2xl overflow-hidden border border-gray-800">
-                        <div className="px-4 py-3" style={{ borderLeft: `4px solid ${color}` }}>
-                          <p className="text-white font-bold text-base leading-tight">{nomeProg}</p>
-                          {prog.fase && <p className="text-xs mt-0.5" style={{ color }}>{prog.fase}</p>}
+                      <div key={nomeProg} className="bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+                        {/* Header: athlete name(s) */}
+                        <div className="px-4 py-3.5" style={{ borderLeft: `4px solid ${color}` }}>
+                          <p className="text-gray-900 font-bold text-base leading-tight">{nomiAtleti}</p>
+                          <p className="text-xs text-gray-500 mt-0.5 font-medium">{nomeProg}{prog.fase ? ` · ${prog.fase}` : ""}</p>
                         </div>
-                        <div className="px-4 pb-3 flex flex-wrap gap-1.5">
-                          {gruppo.atleti.map((a) => (
-                            <span key={a.id} className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-800 text-gray-200 border border-gray-700">
-                              {nd(a)}
-                            </span>
-                          ))}
-                        </div>
+
+                        {/* Exercises */}
                         {(esercizi.length > 0 || campo.length > 0) && (
-                          <div className="border-t border-gray-800 px-4 py-3 space-y-1.5">
+                          <div className="border-t border-gray-200 px-4 py-3 space-y-2.5">
                             {esercizi.map((e, i) => (
-                              <div key={i} className="flex items-start gap-2">
-                                <span className="text-gray-600 text-xs font-mono shrink-0 w-4 text-right mt-0.5">{i + 1}.</span>
+                              <div key={i} className="flex items-start gap-2.5">
+                                <span className="text-gray-400 text-xs font-mono shrink-0 w-5 text-right mt-0.5">{i + 1}.</span>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-gray-200 text-xs font-medium">{e.nome}</p>
-                                  <p className="text-gray-500 text-[10px]">
-                                    {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && `${e.carico}`].filter(Boolean).join(" · ")}
-                                  </p>
+                                  <p className="text-gray-900 text-sm font-semibold leading-tight">{e.nome}</p>
+                                  {[e.serie, e.reps, e.durata, e.carico].some(Boolean) && (
+                                    <p className="text-gray-600 text-xs mt-0.5 font-medium">
+                                      {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico].filter(Boolean).join("  ·  ")}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                             ))}
                             {campo.map((c, i) => (
-                              <div key={`c${i}`} className="flex items-start gap-2">
-                                <span className="text-gray-600 text-xs font-mono shrink-0 w-4 text-right mt-0.5">{esercizi.length + i + 1}.</span>
+                              <div key={`c${i}`} className="flex items-start gap-2.5">
+                                <span className="text-gray-400 text-xs font-mono shrink-0 w-5 text-right mt-0.5">{esercizi.length + i + 1}.</span>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-gray-200 text-xs font-medium">{c.tipo}</p>
-                                  <p className="text-gray-500 text-[10px]">
-                                    {[c.serie && `${c.serie} serie`, c.durata && c.durata].filter(Boolean).join(" · ")}
-                                  </p>
+                                  <p className="text-gray-900 text-sm font-semibold leading-tight">{c.tipo}</p>
+                                  {[c.serie, c.durata].some(Boolean) && (
+                                    <p className="text-gray-600 text-xs mt-0.5 font-medium">
+                                      {[c.serie && `${c.serie} serie`, c.durata && c.durata].filter(Boolean).join("  ·  ")}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                             ))}
                           </div>
                         )}
+
                         {prog.noteFisioterapia && (
-                          <div className="border-t border-gray-800 px-4 py-2">
-                            <p className="text-gray-500 text-[10px] italic">{prog.noteFisioterapia}</p>
+                          <div className="border-t border-gray-200 px-4 py-2">
+                            <p className="text-gray-400 text-xs italic">{prog.noteFisioterapia}</p>
                           </div>
                         )}
                       </div>
@@ -2815,14 +2820,15 @@ export default function EserciziPage() {
                   })}
                 </div>
               )}
+
               {assenti.length > 0 && (
-                <div className="mt-6 border-t border-gray-800 pt-4">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Assenti / Riposo</p>
+                <div className="mt-6 border-t border-gray-200 pt-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Assenti / Riposo</p>
                   <div className="flex flex-wrap gap-2">
                     {assenti.map((p) => {
                       const a = atleti.find((x) => x.id === p.atletaId);
                       return a ? (
-                        <span key={p.id} className="text-xs px-3 py-1 rounded-full bg-gray-800 text-gray-400 border border-gray-700">
+                        <span key={p.id} className="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
                           {nd(a)} · {p.assente ? "Assente" : "Riposo"}
                         </span>
                       ) : null;
