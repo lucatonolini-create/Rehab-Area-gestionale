@@ -2931,12 +2931,11 @@ export default function EserciziPage() {
                                 <span className="text-gray-400 text-[10px] font-mono shrink-0 w-4 text-right">{i + 1}.</span>
                                 <div className="flex-1 min-w-0">
                                   <span className="text-gray-900 text-xs font-semibold">{e.nome}</span>
-                                  {[e.serie, e.reps, e.durata, e.carico].some(Boolean) && (
+                                  {([e.serie, e.reps, e.durata, e.carico].some(Boolean) || e.note) && (
                                     <span className="block text-gray-500 text-[10px]">
-                                      {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico].filter(Boolean).join(" · ")}
+                                      {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico, e.note && <span key="note" className="italic text-gray-400">{e.note}</span>].filter(Boolean).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, " · ", el], [])}
                                     </span>
                                   )}
-                                  {e.note && <p className="text-gray-400 text-[10px] italic leading-none mt-0.5">{e.note}</p>}
                                 </div>
                               </div>
                             ))}
