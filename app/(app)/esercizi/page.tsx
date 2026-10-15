@@ -2883,47 +2883,44 @@ export default function EserciziPage() {
                     const esercizi = (prog.esercizi ?? []).filter((e) => e.nome?.trim());
                     const campo = (prog.esercizicampo ?? []).filter((e) => e.tipo?.trim());
                     return (
-                      <div key={prog.id ?? idx} className="bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-                        {/* Header: athlete name(s) + program subtitle */}
-                        <div className="px-4 py-3.5" style={{ borderLeft: `4px solid ${color}` }}>
-                          <p className="text-gray-900 font-bold text-base leading-tight">{nomiAtleti}</p>
+                      <div key={prog.id ?? idx} className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                        {/* Header */}
+                        <div className="px-3 py-2" style={{ borderLeft: `3px solid ${color}` }}>
+                          <p className="text-gray-900 font-bold text-sm leading-tight">{nomiAtleti}</p>
                         </div>
 
                         {/* Exercises */}
                         {(esercizi.length > 0 || campo.length > 0) && (
-                          <div className="border-t border-gray-200 px-4 py-3 space-y-2.5">
+                          <div className="border-t border-gray-200 px-3 py-1.5 space-y-1">
                             {esercizi.map((e, i) => (
-                              <div key={i} className="flex items-start gap-2.5">
-                                <span className="text-gray-400 text-xs font-mono shrink-0 w-5 text-right mt-0.5">{i + 1}.</span>
+                              <div key={i} className="flex items-baseline gap-1.5">
+                                <span className="text-gray-400 text-[10px] font-mono shrink-0 w-4 text-right">{i + 1}.</span>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-gray-900 text-sm font-semibold leading-tight">{e.nome}</p>
+                                  <span className="text-gray-900 text-xs font-semibold">{e.nome}</span>
                                   {[e.serie, e.reps, e.durata, e.carico].some(Boolean) && (
-                                    <p className="text-gray-600 text-xs mt-0.5 font-medium">
-                                      {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico].filter(Boolean).join("  ·  ")}
-                                    </p>
+                                    <span className="text-gray-500 text-[10px] ml-1">
+                                      {[e.serie && `${e.serie}s`, e.reps && `${e.reps}r`, e.durata && e.durata, e.carico && e.carico].filter(Boolean).join(" · ")}
+                                    </span>
                                   )}
-                                  {e.note && (
-                                    <p className="text-gray-400 text-xs mt-0.5 italic">{e.note}</p>
-                                  )}
+                                  {e.note && <p className="text-gray-400 text-[10px] italic leading-none mt-0.5">{e.note}</p>}
                                 </div>
                               </div>
                             ))}
                             {campo.map((c, i) => (
-                              <div key={`c${i}`} className="flex items-start gap-2.5">
-                                <span className="text-gray-400 text-xs font-mono shrink-0 w-5 text-right mt-0.5">{esercizi.length + i + 1}.</span>
+                              <div key={`c${i}`} className="flex items-baseline gap-1.5">
+                                <span className="text-gray-400 text-[10px] font-mono shrink-0 w-4 text-right">{esercizi.length + i + 1}.</span>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-gray-900 text-sm font-semibold leading-tight">{c.tipo}</p>
+                                  <span className="text-gray-900 text-xs font-semibold">{c.tipo}</span>
                                   {[c.serie, c.durata].some(Boolean) && (
-                                    <p className="text-gray-600 text-xs mt-0.5 font-medium">
-                                      {[c.serie && `${c.serie} serie`, c.durata && c.durata].filter(Boolean).join("  ·  ")}
-                                    </p>
+                                    <span className="text-gray-500 text-[10px] ml-1">
+                                      {[c.serie && `${c.serie}s`, c.durata && c.durata].filter(Boolean).join(" · ")}
+                                    </span>
                                   )}
                                 </div>
                               </div>
                             ))}
                           </div>
                         )}
-
                       </div>
                     );
                   })}
