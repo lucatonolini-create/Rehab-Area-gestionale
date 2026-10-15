@@ -1044,6 +1044,7 @@ export default function EserciziPage() {
   const [mostraWhiteboard, setMostraWhiteboard] = useState(false);
   const [mostraSelettoreWB, setMostraSelettoreWB] = useState(false);
   const [atletiSelezionatiWB, setAtletiSelezionatiWB] = useState<Set<string>>(new Set());
+  const [atletiWBRicerca, setAtletiWBRicerca] = useState("");
   const [zoomWB, setZoomWB] = useState(1);
   const [caricandoWhiteboard, setCaricandoWhiteboard] = useState(false);
 
@@ -1440,7 +1441,8 @@ export default function EserciziPage() {
           </button>
           <button
             onClick={() => {
-              setAtletiSelezionatiWB(new Set(atleti.map((a) => a.id)));
+              setAtletiSelezionatiWB(new Set(atleti.filter((a) => a.stato === "Infortunato").map((a) => a.id)));
+              setAtletiWBRicerca("");
               setMostraSelettoreWB(true);
             }}
             className="flex items-center gap-1 border border-gray-200 text-gray-600 px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 shrink-0 whitespace-nowrap bg-white">
@@ -2748,48 +2750,64 @@ export default function EserciziPage() {
       )}
 
       {/* ── Selettore giocatori Whiteboard ───────────────────────────── */}
-      {mostraSelettoreWB && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h2 className="text-gray-900 font-bold text-base">Seleziona giocatori</h2>
-              <button onClick={() => setMostraSelettoreWB(false)} className="text-gray-400 hover:text-gray-700 p-1 rounded-lg">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="flex gap-2 px-5 pt-3">
-              <button onClick={() => setAtletiSelezionatiWB(new Set(atleti.map((a) => a.id)))} className="text-xs text-blue-600 hover:underline">Tutti</button>
-              <span className="text-gray-300">·</span>
-              <button onClick={() => setAtletiSelezionatiWB(new Set())} className="text-xs text-blue-600 hover:underline">Nessuno</button>
-            </div>
-            <div className="px-5 py-3 max-h-72 overflow-y-auto space-y-1">
-              {[...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")).map((a) => (
-                <label key={a.id} className="flex items-center gap-3 py-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={atletiSelezionatiWB.has(a.id)}
-                    onChange={(e) => {
-                      const next = new Set(atletiSelezionatiWB);
-                      e.target.checked ? next.add(a.id) : next.delete(a.id);
-                      setAtletiSelezionatiWB(next);
-                    }}
-                    className="w-4 h-4 accent-red-600 shrink-0"
-                  />
-                  <span className="text-gray-800 text-sm">{nd(a)}</span>
-                </label>
-              ))}
-            </div>
-            <div className="px-5 py-4 border-t border-gray-100">
-              <button
-                onClick={() => { setMostraSelettoreWB(false); setZoomWB(1); setMostraWhiteboard(true); }}
-                disabled={atletiSelezionatiWB.size === 0}
-                className="w-full bg-gray-900 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-gray-700 disabled:opacity-40 transition-colors">
-                Apri Whiteboard ({atletiSelezionatiWB.size})
-              </button>
+      {mostraSelettoreWB && (() => {
+        const infortunati = [...atleti].filter((a) => a.stato === "Infortunato").sort((a, b) => nd(a).localeCompare(nd(b), "it"));
+        const [ricercaWB, setRicercaWB] = [atletiWBRicerca, setAtletiWBRicerca];
+        const visibili = ricercaWB.trim() ? infortunati.filter((a) => nd(a).toLowerCase().includes(ricercaWB.toLowerCase())) : infortunati;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <h2 className="text-gray-900 font-bold text-base">Seleziona giocatori</h2>
+                <button onClick={() => setMostraSelettoreWB(false)} className="text-gray-400 hover:text-gray-700 p-1 rounded-lg">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Search */}
+              <div className="px-5 pt-3">
+                <input
+                  type="text"
+                  placeholder="Cerca giocatore…"
+                  value={ricercaWB}
+                  onChange={(e) => setRicercaWB(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 bg-gray-50"
+                />
+              </div>
+              <div className="flex gap-2 px-5 pt-2">
+                <button onClick={() => setAtletiSelezionatiWB(new Set(infortunati.map((a) => a.id)))} className="text-xs text-blue-600 hover:underline">Tutti</button>
+                <span className="text-gray-300">·</span>
+                <button onClick={() => setAtletiSelezionatiWB(new Set())} className="text-xs text-blue-600 hover:underline">Nessuno</button>
+              </div>
+              <div className="px-5 py-3 max-h-72 overflow-y-auto space-y-1">
+                {visibili.length === 0 && <p className="text-gray-400 text-sm py-2">Nessun giocatore infortunato</p>}
+                {visibili.map((a) => (
+                  <label key={a.id} className="flex items-center gap-3 py-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={atletiSelezionatiWB.has(a.id)}
+                      onChange={(e) => {
+                        const next = new Set(atletiSelezionatiWB);
+                        e.target.checked ? next.add(a.id) : next.delete(a.id);
+                        setAtletiSelezionatiWB(next);
+                      }}
+                      className="w-4 h-4 accent-red-600 shrink-0"
+                    />
+                    <span className="text-gray-800 text-sm">{nd(a)}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="px-5 py-4 border-t border-gray-100">
+                <button
+                  onClick={() => { setMostraSelettoreWB(false); setAtletiWBRicerca(""); setZoomWB(1); setMostraWhiteboard(true); }}
+                  disabled={atletiSelezionatiWB.size === 0}
+                  className="w-full bg-gray-900 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-gray-700 disabled:opacity-40 transition-colors">
+                  Apri Whiteboard ({atletiSelezionatiWB.size})
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Whiteboard modal ─────────────────────────────────────────── */}
       {mostraWhiteboard && (() => {
@@ -2813,7 +2831,7 @@ export default function EserciziPage() {
         );
         const CARD_COLORS = ["#C8102E","#2563eb","#7c3aed","#059669","#d97706","#0891b2","#ea580c","#6d28d9","#0d9488","#be185d"];
         return (
-          <div className="fixed inset-0 z-50 flex flex-col bg-white">
+          <div className="fixed inset-0 z-50 flex flex-col bg-white" style={{ zoom: zoomWB }}>
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
               <div>
@@ -2851,7 +2869,7 @@ export default function EserciziPage() {
                   <p className="text-gray-400 text-sm">Nessun programma per oggi</p>
                 </div>
               ) : (
-                <div style={{ zoom: zoomWB }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {cardsArr.map(({ programma: prog, atleti: gruppo }, idx) => {
                     const color = CARD_COLORS[idx % CARD_COLORS.length];
                     const nomiAtleti = gruppo.map((a) => nd(a)).join("  ·  ");
