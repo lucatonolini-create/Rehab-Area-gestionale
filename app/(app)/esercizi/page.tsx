@@ -1047,6 +1047,11 @@ export default function EserciziPage() {
   const [atletiWBRicerca, setAtletiWBRicerca] = useState("");
   const [zoomWB, setZoomWB] = useState(1);
   const [caricandoWhiteboard, setCaricandoWhiteboard] = useState(false);
+  const [oraWB, setOraWB] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setOraWB(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     if (!mostraSelettoreWB && !mostraWhiteboard) return;
@@ -2832,8 +2837,14 @@ export default function EserciziPage() {
         return (
           <div className="fixed inset-0 z-50 flex flex-col bg-white" style={{ zoom: zoomWB }}>
             {/* Header */}
-            <div className="flex items-center justify-end px-4 py-2 border-b border-gray-200 shrink-0">
-              <div className="flex items-center gap-2">
+            <div className="grid grid-cols-3 items-center px-4 py-2 border-b border-gray-200 shrink-0">
+              <div />
+              <div className="flex justify-center">
+                <span className="font-mono text-3xl font-bold text-gray-900 tracking-widest tabular-nums">
+                  {oraWB.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 justify-end">
                 {/* Zoom controls */}
                 <div className="flex items-center gap-1 border border-gray-200 rounded-xl px-1 py-1 bg-gray-50">
                   <button onClick={() => setZoomWB((z) => Math.max(0.3, +(z - 0.05).toFixed(2)))} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-lg text-lg font-bold transition-colors">−</button>
