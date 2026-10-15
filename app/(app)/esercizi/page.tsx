@@ -1153,8 +1153,7 @@ export default function EserciziPage() {
     await upsertProgramma(prog);
     setProgrammiPerAtleta((prev) => {
       const id = prog.atletaId;
-      if (!(id in prev)) return prev;
-      const lista = prev[id];
+      const lista = prev[id] ?? [];
       return { ...prev, [id]: editId ? lista.map((p) => p.id === editId ? prog : p) : [...lista, prog] };
     });
 
@@ -2842,11 +2841,16 @@ export default function EserciziPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {/* Zoom controls */}
-                <div className="flex items-center gap-1 border border-gray-200 rounded-xl px-1 py-1 bg-gray-50">
-                  <button onClick={() => setZoomWB((z) => Math.max(0.3, +(z - 0.1).toFixed(1)))} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-lg text-lg font-bold transition-colors">−</button>
-                  <span className="text-xs text-gray-500 font-mono w-9 text-center">{Math.round(zoomWB * 100)}%</span>
-                  <button onClick={() => setZoomWB((z) => Math.min(2, +(z + 0.1).toFixed(1)))} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-lg text-lg font-bold transition-colors">+</button>
+                {/* Zoom slider */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400 font-mono w-8 text-right">{Math.round(zoomWB * 100)}%</span>
+                  <input
+                    type="range"
+                    min={30} max={150} step={5}
+                    value={Math.round(zoomWB * 100)}
+                    onChange={(e) => setZoomWB(+e.target.value / 100)}
+                    className="w-28 accent-gray-700 cursor-pointer"
+                  />
                 </div>
                 <button onClick={() => { setMostraWhiteboard(false); setMostraSelettoreWB(true); }} className="text-gray-400 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-colors" title="Cambia giocatori">
                   <LayoutGrid className="w-4 h-4" />
