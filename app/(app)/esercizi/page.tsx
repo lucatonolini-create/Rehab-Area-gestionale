@@ -2846,7 +2846,7 @@ export default function EserciziPage() {
                   <span className="text-xs text-gray-400 font-mono w-8 text-right">{Math.round(zoomWB * 100)}%</span>
                   <input
                     type="range"
-                    min={30} max={150} step={5}
+                    min={30} max={150} step={1}
                     value={Math.round(zoomWB * 100)}
                     onChange={(e) => setZoomWB(+e.target.value / 100)}
                     className="w-28 accent-gray-700 cursor-pointer"
