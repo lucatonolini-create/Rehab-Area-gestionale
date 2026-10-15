@@ -1042,10 +1042,13 @@ export default function EserciziPage() {
   const [esportandoCSVIntervallo, setEsportandoCSVIntervallo] = useState(false);
   const [atletaFiltroExport, setAtletaFiltroExport] = useState<string>("tutti");
   const [mostraWhiteboard, setMostraWhiteboard] = useState(false);
+  const [mostraSelettoreWB, setMostraSelettoreWB] = useState(false);
+  const [atletiSelezionatiWB, setAtletiSelezionatiWB] = useState<Set<string>>(new Set());
+  const [zoomWB, setZoomWB] = useState(1);
   const [caricandoWhiteboard, setCaricandoWhiteboard] = useState(false);
 
   useEffect(() => {
-    if (!mostraWhiteboard) return;
+    if (!mostraSelettoreWB && !mostraWhiteboard) return;
     const atletiDaCaricare = atleti.filter((a) => !(a.id in programmiPerAtleta));
     if (!atletiDaCaricare.length) return;
     setCaricandoWhiteboard(true);
@@ -1436,7 +1439,10 @@ export default function EserciziPage() {
             {esportandoCSVGiorno ? "…" : "CSV"}
           </button>
           <button
-            onClick={() => setMostraWhiteboard(true)}
+            onClick={() => {
+              setAtletiSelezionatiWB(new Set(atleti.map((a) => a.id)));
+              setMostraSelettoreWB(true);
+            }}
             className="flex items-center gap-1 border border-gray-200 text-gray-600 px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 shrink-0 whitespace-nowrap bg-white">
             <LayoutGrid className="w-3.5 h-3.5" />
             Whiteboard
@@ -2741,10 +2747,56 @@ export default function EserciziPage() {
         </div>
       )}
 
+      {/* ── Selettore giocatori Whiteboard ───────────────────────────── */}
+      {mostraSelettoreWB && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h2 className="text-gray-900 font-bold text-base">Seleziona giocatori</h2>
+              <button onClick={() => setMostraSelettoreWB(false)} className="text-gray-400 hover:text-gray-700 p-1 rounded-lg">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex gap-2 px-5 pt-3">
+              <button onClick={() => setAtletiSelezionatiWB(new Set(atleti.map((a) => a.id)))} className="text-xs text-blue-600 hover:underline">Tutti</button>
+              <span className="text-gray-300">·</span>
+              <button onClick={() => setAtletiSelezionatiWB(new Set())} className="text-xs text-blue-600 hover:underline">Nessuno</button>
+            </div>
+            <div className="px-5 py-3 max-h-72 overflow-y-auto space-y-1">
+              {[...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")).map((a) => (
+                <label key={a.id} className="flex items-center gap-3 py-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={atletiSelezionatiWB.has(a.id)}
+                    onChange={(e) => {
+                      const next = new Set(atletiSelezionatiWB);
+                      e.target.checked ? next.add(a.id) : next.delete(a.id);
+                      setAtletiSelezionatiWB(next);
+                    }}
+                    className="w-4 h-4 accent-red-600 shrink-0"
+                  />
+                  <span className="text-gray-800 text-sm">{nd(a)}</span>
+                </label>
+              ))}
+            </div>
+            <div className="px-5 py-4 border-t border-gray-100">
+              <button
+                onClick={() => { setMostraSelettoreWB(false); setZoomWB(1); setMostraWhiteboard(true); }}
+                disabled={atletiSelezionatiWB.size === 0}
+                className="w-full bg-gray-900 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-gray-700 disabled:opacity-40 transition-colors">
+                Apri Whiteboard ({atletiSelezionatiWB.size})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Whiteboard modal ─────────────────────────────────────────── */}
       {mostraWhiteboard && (() => {
         const oggiStr = dataGiorno;
-        const tuttiProg = Object.values(programmiPerAtleta).flat().filter((p) => p.data === oggiStr && !p.assente && !p.riposo);
+        const tuttiProg = Object.values(programmiPerAtleta).flat().filter((p) =>
+          p.data === oggiStr && !p.assente && !p.riposo && atletiSelezionatiWB.has(p.atletaId)
+        );
         // Group by program name+fase: one card per unique program, multiple athletes per card
         const gruppiProg = new Map<string, { programma: Programma; atleti: Atleta[] }>();
         for (const prog of tuttiProg) {
@@ -2755,7 +2807,7 @@ export default function EserciziPage() {
           if (!gruppiProg.get(chiave)!.atleti.find((a) => a.id === atleta.id))
             gruppiProg.get(chiave)!.atleti.push(atleta);
         }
-        const assenti = Object.values(programmiPerAtleta).flat().filter((p) => p.data === oggiStr && (p.assente || p.riposo));
+        const assenti = Object.values(programmiPerAtleta).flat().filter((p) => p.data === oggiStr && (p.assente || p.riposo) && atletiSelezionatiWB.has(p.atletaId));
         const cardsArr = Array.from(gruppiProg.values()).sort((a, b) =>
           (a.programma.nome || "").localeCompare(b.programma.nome || "", "it")
         );
@@ -2771,9 +2823,20 @@ export default function EserciziPage() {
                   {" · "}{tuttiProg.length} atleti · {cardsArr.length} programmi
                 </p>
               </div>
-              <button onClick={() => setMostraWhiteboard(false)} className="text-gray-400 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-colors">
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Zoom controls */}
+                <div className="flex items-center gap-1 border border-gray-200 rounded-xl px-1 py-1 bg-gray-50">
+                  <button onClick={() => setZoomWB((z) => Math.max(0.3, +(z - 0.1).toFixed(1)))} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-lg text-lg font-bold transition-colors">−</button>
+                  <span className="text-xs text-gray-500 font-mono w-9 text-center">{Math.round(zoomWB * 100)}%</span>
+                  <button onClick={() => setZoomWB((z) => Math.min(2, +(z + 0.1).toFixed(1)))} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-lg text-lg font-bold transition-colors">+</button>
+                </div>
+                <button onClick={() => { setMostraWhiteboard(false); setMostraSelettoreWB(true); }} className="text-gray-400 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-colors" title="Cambia giocatori">
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button onClick={() => setMostraWhiteboard(false)} className="text-gray-400 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Cards */}
@@ -2788,7 +2851,7 @@ export default function EserciziPage() {
                   <p className="text-gray-400 text-sm">Nessun programma per oggi</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div style={{ zoom: zoomWB }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {cardsArr.map(({ programma: prog, atleti: gruppo }, idx) => {
                     const color = CARD_COLORS[idx % CARD_COLORS.length];
                     const nomiAtleti = gruppo.map((a) => nd(a)).join("  ·  ");
