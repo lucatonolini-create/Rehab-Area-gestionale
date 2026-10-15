@@ -1149,6 +1149,29 @@ export default function EserciziPage() {
     }
   };
 
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-save on form changes (debounced 700ms) — solo upsert, senza side-effect squadra→Disponibile
+  useEffect(() => {
+    if (!form.atletaId) return;
+    const nomeEffettivo = form.assente ? (form.nome.trim() || "Assenza") : form.riposo ? (form.nome.trim() || "Riposo") : form.squadra ? (form.nome.trim() || "Squadra") : form.nome;
+    if (!nomeEffettivo.trim()) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(async () => {
+      const pulito = { ...form, nome: nomeEffettivo, esercizi: form.esercizi.filter((e) => e.nome.trim()), esercizicampo: (form.esercizicampo ?? []).filter((c) => c.tipo), tests: (form.tests ?? []).filter((t) => t.nome.trim()) };
+      const prog: Programma = editId ? { ...pulito, id: editId } : { ...pulito, id: uid() };
+      await upsertProgramma(prog);
+      setProgrammiPerAtleta((prev) => {
+        const id = prog.atletaId;
+        const lista = prev[id] ?? [];
+        return { ...prev, [id]: editId ? lista.map((p) => p.id === editId ? prog : p) : lista.some((p) => p.id === prog.id) ? lista.map((p) => p.id === prog.id ? prog : p) : [...lista, prog] };
+      });
+      if (!editId) setEditId(prog.id);
+    }, 700);
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
+
   const salvaProgramma = async () => {
     if (!form.atletaId) return;
     const nomeEffettivo = form.assente && !form.nome.trim() ? "Assenza" : form.riposo && !form.nome.trim() ? "Riposo" : form.squadra && !form.nome.trim() ? "Squadra" : form.nome;
