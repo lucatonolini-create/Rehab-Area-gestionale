@@ -2778,9 +2778,6 @@ export default function EserciziPage() {
                         {/* Header: athlete name(s) + program subtitle */}
                         <div className="px-4 py-3.5" style={{ borderLeft: `4px solid ${color}` }}>
                           <p className="text-gray-900 font-bold text-base leading-tight">{nomiAtleti}</p>
-                          {prog.nome?.trim() && (
-                            <p className="text-xs text-gray-500 mt-0.5 font-medium">{prog.nome}</p>
-                          )}
                         </div>
 
                         {/* Exercises */}
