@@ -1042,6 +1042,23 @@ export default function EserciziPage() {
   const [esportandoCSVIntervallo, setEsportandoCSVIntervallo] = useState(false);
   const [atletaFiltroExport, setAtletaFiltroExport] = useState<string>("tutti");
   const [mostraWhiteboard, setMostraWhiteboard] = useState(false);
+  const [caricandoWhiteboard, setCaricandoWhiteboard] = useState(false);
+
+  useEffect(() => {
+    if (!mostraWhiteboard) return;
+    const atletiDaCaricare = atleti.filter((a) => !(a.id in programmiPerAtleta));
+    if (!atletiDaCaricare.length) return;
+    setCaricandoWhiteboard(true);
+    Promise.all(atletiDaCaricare.map((a) => loadProgrammi(a.id).then((progs) => ({ id: a.id, progs }))))
+      .then((results) => {
+        setProgrammiPerAtleta((prev) => {
+          const next = { ...prev };
+          for (const { id, progs } of results) next[id] = progs;
+          return next;
+        });
+      })
+      .finally(() => setCaricandoWhiteboard(false));
+  }, [mostraWhiteboard]);
   const [atletiAggiuntivi, setAtletiAggiuntivi] = useState<string[]>([]);
   const [applicaDropAperto, setApplicaDropAperto] = useState(false);
   const [applicaRicerca, setApplicaRicerca] = useState("");
@@ -2761,7 +2778,11 @@ export default function EserciziPage() {
 
             {/* Cards */}
             <div className="flex-1 overflow-auto p-5">
-              {cardsArr.length === 0 ? (
+              {caricandoWhiteboard ? (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <p className="text-gray-400 text-sm">Caricamento programmi…</p>
+                </div>
+              ) : cardsArr.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <LayoutGrid className="w-12 h-12 text-gray-200 mb-3" />
                   <p className="text-gray-400 text-sm">Nessun programma per oggi</p>
@@ -2823,7 +2844,7 @@ export default function EserciziPage() {
                 </div>
               )}
 
-              {assenti.length > 0 && (
+              {!caricandoWhiteboard && assenti.length > 0 && (
                 <div className="mt-6 border-t border-gray-200 pt-4">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Assenti / Riposo</p>
                   <div className="flex flex-wrap gap-2">
