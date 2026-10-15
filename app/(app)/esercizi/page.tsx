@@ -2844,13 +2844,6 @@ export default function EserciziPage() {
                 {/* Zoom controls */}
                 <div className="flex items-center gap-1 border border-gray-200 rounded-xl px-1 py-1 bg-gray-50">
                   <button onClick={() => setZoomWB((z) => Math.max(0.3, +(z - 0.05).toFixed(2)))} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-lg text-lg font-bold transition-colors">−</button>
-                  <input
-                    type="range"
-                    min={30} max={150} step={1}
-                    value={Math.round(zoomWB * 100)}
-                    onChange={(e) => setZoomWB(+e.target.value / 100)}
-                    className="w-24 accent-gray-700 cursor-pointer"
-                  />
                   <button onClick={() => setZoomWB((z) => Math.min(1.5, +(z + 0.05).toFixed(2)))} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-lg text-lg font-bold transition-colors">+</button>
                   <span className="text-xs text-gray-400 font-mono w-8 text-center">{Math.round(zoomWB * 100)}%</span>
                 </div>
