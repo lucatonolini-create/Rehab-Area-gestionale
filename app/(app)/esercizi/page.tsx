@@ -19,7 +19,7 @@ import {
 } from "@/lib/store";
 import { MACRO_OBJ, getObiettiviForDate } from "@/components/CalendarioSettimanale";
 
-const esVuoto: Esercizio = { nome: "", serie: "", reps: "", durata: "", carico: "", rir: "", vas: "", note: "", gruppoMuscolare: "" };
+const esVuoto: Esercizio = { nome: "", serie: "", reps: "", durata: "", carico: "", rir: "", vas: "", note: "", gruppoMuscolare: "", macroObiettivo: "" };
 
 const GRUPPI_MUSCOLARI_MAP: Array<{ chiavi: string[]; gruppo: string }> = [
   { chiavi: ["squat","leg press","pressa","affondi","lunge","leg extension","front squat","hack squat","step up","bulgaro","pistol","split squat"], gruppo: "Quadricipiti" },
@@ -2216,6 +2216,22 @@ export default function EserciziPage() {
                                     {TUTTI_GRUPPI.map((g) => <option key={g} value={g}>{g}</option>)}
                                   </select>
                                 </div>
+                                {/* Macro obiettivo */}
+                                <div className="flex flex-wrap gap-1">
+                                  {MACRO_OBJ.filter((o) => o.code !== "R").map((o) => {
+                                    const sel = es.macroObiettivo === o.code;
+                                    return (
+                                      <button key={o.code} type="button"
+                                        onClick={() => aggiornaEs(i, "macroObiettivo", sel ? "" : o.code)}
+                                        className="text-[10px] font-bold px-1.5 py-0.5 rounded transition-opacity"
+                                        style={{ backgroundColor: sel ? o.hex : "#f3f4f6", color: sel ? "#fff" : "#6b7280", border: `1px solid ${sel ? o.hex : "#e5e7eb"}` }}
+                                        title={o.label}
+                                      >
+                                        {o.code}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                                 {/* Metriche: 5 colonne compatte */}
                                 <div className="grid grid-cols-5 gap-1.5">
                                   {([ ["Serie", "serie"], ["Reps", "reps"], ["Durata", "durata"], ["Carico", "carico"], ["RIR", "rir"] ] as const).map(([label, key]) => (
@@ -2325,6 +2341,22 @@ export default function EserciziPage() {
                                       <p className="text-xs text-gray-500 mb-1">Descrizione</p>
                                       <input value={c.descrizione} onChange={(e) => aggiornaCampo(i, "descrizione", e.target.value)}
                                         placeholder="Es. 3×10'' lavoro a 90% VMax con recupero 30''" className={inp} />
+                                    </div>
+                                    {/* Macro obiettivo */}
+                                    <div className="flex flex-wrap gap-1">
+                                      {MACRO_OBJ.filter((o) => o.code !== "R").map((o) => {
+                                        const sel = c.macroObiettivo === o.code;
+                                        return (
+                                          <button key={o.code} type="button"
+                                            onClick={() => aggiornaCampo(i, "macroObiettivo", sel ? "" : o.code)}
+                                            className="text-[10px] font-bold px-1.5 py-0.5 rounded transition-opacity"
+                                            style={{ backgroundColor: sel ? o.hex : "#f3f4f6", color: sel ? "#fff" : "#6b7280", border: `1px solid ${sel ? o.hex : "#e5e7eb"}` }}
+                                            title={o.label}
+                                          >
+                                            {o.code}
+                                          </button>
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 )}
@@ -2973,32 +3005,38 @@ export default function EserciziPage() {
                         {/* Exercises */}
                         {(esercizi.length > 0 || campo.length > 0) && (
                           <div className="border-t border-gray-200 px-3 py-1.5 space-y-1">
-                            {esercizi.map((e, i) => (
-                              <div key={i} className="flex items-baseline gap-1.5">
-                                <span className="text-gray-400 text-[10px] font-mono shrink-0 w-4 text-right">{i + 1}.</span>
-                                <div className="flex-1 min-w-0">
-                                  <span className="text-gray-900 text-xs font-semibold">{e.nome}</span>
-                                  {([e.serie, e.reps, e.durata, e.carico].some(Boolean) || e.note) && (
-                                    <span className="block text-gray-500 text-[10px]">
-                                      {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico, e.note && <span key="note" className="italic text-gray-400">{e.note}</span>].filter(Boolean).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, " · ", el], [])}
-                                    </span>
-                                  )}
+                            {esercizi.map((e, i) => {
+                              const macro = e.macroObiettivo ? MACRO_OBJ.find((o) => o.code === e.macroObiettivo) : undefined;
+                              return (
+                                <div key={i} className="flex items-baseline gap-1.5" style={macro ? { borderLeft: `2px solid ${macro.hex}`, paddingLeft: "4px" } : {}}>
+                                  <span className="text-[10px] font-mono shrink-0 w-4 text-right" style={{ color: macro?.hex ?? "#9ca3af" }}>{i + 1}.</span>
+                                  <div className="flex-1 min-w-0">
+                                    <span className="text-gray-900 text-xs font-semibold">{e.nome}</span>
+                                    {([e.serie, e.reps, e.durata, e.carico].some(Boolean) || e.note) && (
+                                      <span className="block text-gray-500 text-[10px]">
+                                        {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico, e.note && <span key="note" className="italic text-gray-400">{e.note}</span>].filter(Boolean).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, " · ", el], [])}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
-                            {campo.map((c, i) => (
-                              <div key={`c${i}`} className="flex items-baseline gap-1.5">
-                                <span className="text-gray-400 text-[10px] font-mono shrink-0 w-4 text-right">{esercizi.length + i + 1}.</span>
-                                <div className="flex-1 min-w-0">
-                                  <span className="text-gray-900 text-xs font-semibold">{c.tipo}</span>
-                                  {([c.serie, c.durata].some(Boolean) || c.descrizione) && (
-                                    <span className="block text-gray-500 text-[10px]">
-                                      {[c.serie && `${c.serie} serie`, c.durata && c.durata, c.descrizione && <span key="desc" className="italic text-gray-400">{c.descrizione}</span>].filter(Boolean).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, " · ", el], [])}
-                                    </span>
-                                  )}
+                              );
+                            })}
+                            {campo.map((c, i) => {
+                              const macro = c.macroObiettivo ? MACRO_OBJ.find((o) => o.code === c.macroObiettivo) : undefined;
+                              return (
+                                <div key={`c${i}`} className="flex items-baseline gap-1.5" style={macro ? { borderLeft: `2px solid ${macro.hex}`, paddingLeft: "4px" } : {}}>
+                                  <span className="text-[10px] font-mono shrink-0 w-4 text-right" style={{ color: macro?.hex ?? "#9ca3af" }}>{esercizi.length + i + 1}.</span>
+                                  <div className="flex-1 min-w-0">
+                                    <span className="text-gray-900 text-xs font-semibold">{c.tipo}</span>
+                                    {([c.serie, c.durata].some(Boolean) || c.descrizione) && (
+                                      <span className="block text-gray-500 text-[10px]">
+                                        {[c.serie && `${c.serie} serie`, c.durata && c.durata, c.descrizione && <span key="desc" className="italic text-gray-400">{c.descrizione}</span>].filter(Boolean).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, " · ", el], [])}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>

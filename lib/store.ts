@@ -283,6 +283,7 @@ export interface Esercizio {
   vas: string;
   note: string;
   gruppoMuscolare?: string;
+  macroObiettivo?: string;
 }
 
 export const TIPI_ESERCIZIO_CAMPO = [
@@ -305,6 +306,7 @@ export interface EsercizioCampo {
   durata: string;
   descrizione: string;
   vas: string;
+  macroObiettivo?: string;
 }
 
 export const TESTS_PREDEFINITI = [
