@@ -858,7 +858,14 @@ export default function NtliPage() {
         const existing = dailyAll.find((d) => d.ntliId === ntliId && d.date === monDate);
         const resolvedAthleteId = ntli.athleteId ||
           atleti.find((a) => a.nome.trim().toLowerCase() === ntli.athleteName.trim().toLowerCase())?.id ||
+          atleti.find((a) => a.nome.trim().toLowerCase().includes(ntli.athleteName.trim().toLowerCase()) ||
+            ntli.athleteName.trim().toLowerCase().includes(a.nome.trim().toLowerCase()))?.id ||
           null;
+        if (!resolvedAthleteId) {
+          setMonMsg(`Errore: ID atleta non trovato per "${ntli.athleteName}". Apri il record NTLI in Gestione e salvalo di nuovo per collegare l'atleta.`);
+          setMonSaving(false);
+          return;
+        }
         const vStartDx = patch.vasStartDx !== undefined ? patch.vasStartDx : existing?.vasStartDx ?? null;
         const vStartSx = patch.vasStartSx !== undefined ? patch.vasStartSx : existing?.vasStartSx ?? null;
         const vEndDx   = patch.vasEndDx   !== undefined ? patch.vasEndDx   : existing?.vasEndDx   ?? null;
@@ -908,9 +915,14 @@ export default function NtliPage() {
       }
     }
     const now = new Date().toISOString();
+    const resolvedId = data.athleteId ||
+      atleti.find((a) => a.nome.trim().toLowerCase() === data.athleteName.trim().toLowerCase())?.id ||
+      atleti.find((a) => a.nome.trim().toLowerCase().includes(data.athleteName.trim().toLowerCase()) ||
+        data.athleteName.trim().toLowerCase().includes(a.nome.trim().toLowerCase()))?.id ||
+      editNtli?.athleteId || "";
     const rec: NtliRecord = {
       id: editNtli?.id ?? uid(),
-      athleteId: data.athleteId,
+      athleteId: resolvedId,
       athleteName: data.athleteName,
       onsetDate: data.onsetDate,
       osiicsCode: data.osiicsCode || undefined,
