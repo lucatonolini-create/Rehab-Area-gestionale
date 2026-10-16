@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, TrendingUp, Dumbbell, Settings,
-  BarChart2, LogOut, HeartPulse, Link2, Activity, ShieldAlert, Sparkles,
+  BarChart2, LogOut, HeartPulse, Link2, Activity, ShieldAlert,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
@@ -13,7 +13,6 @@ import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifi
 const navItems = [
   { href: "/",             label: "Dashboard",    icon: LayoutDashboard },
   { href: "/atleti",       label: "Atleti",        icon: Users },
-  { href: "/ai",           label: "AI",            icon: Sparkles },
   { href: "/esercizi",     label: "Programmi",     icon: Dumbbell },
   { href: "/progressi",    label: "Progressi",     icon: TrendingUp },
   { href: "/analisi",      label: "Analisi",       icon: BarChart2 },

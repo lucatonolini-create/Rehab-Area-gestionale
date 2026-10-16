@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, Dumbbell, ShieldAlert,
-  TrendingUp, BarChart2, Activity, HeartPulse, Link2, Settings, LogOut, Sparkles,
+  TrendingUp, BarChart2, Activity, HeartPulse, Link2, Settings, LogOut,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
@@ -14,7 +14,6 @@ import { useBottomNav } from "@/lib/bottom-nav-context";
 const allTabs = [
   { href: "/",             label: "Dashboard",  icon: LayoutDashboard },
   { href: "/atleti",       label: "Atleti",     icon: Users },
-  { href: "/ai",           label: "AI",         icon: Sparkles },
   { href: "/esercizi",     label: "Programmi",  icon: Dumbbell },
   { href: "/ntli",         label: "NTLI",       icon: ShieldAlert },
   { href: "/progressi",    label: "Progressi",  icon: TrendingUp },
