@@ -1210,7 +1210,15 @@ export default function NtliPage() {
                         </div>
                       </div>
 
-                      {/* One section per injury — visually separated */}
+                      {/* Infortunio dal sistema Atleti — mostrato solo se stato è Infortunato */}
+                      {statoCorrente === "Infortunato" && atletaMatch?.infortunio && (
+                        <div className="mb-4 px-3 py-2.5 rounded-xl bg-orange-50 border border-orange-100 flex items-start gap-2">
+                          <span className="text-xs font-bold text-orange-600 uppercase tracking-wide shrink-0 mt-0.5">Infortuno</span>
+                          <span className="text-xs text-orange-700 leading-snug">{atletaMatch.infortunio}</span>
+                        </div>
+                      )}
+
+                      {/* One section per NTLI record — visually separated */}
                       <div className="space-y-5">
                         {ntlis.map((ntli, ntliIdx) => {
                           const row = getMonRow(ntli.id);
