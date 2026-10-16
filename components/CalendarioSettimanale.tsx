@@ -126,6 +126,8 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   const [settimana, setSettimana] = useState(currentIsoWeek);
   const [piano, setPiano] = useState<PianoGiorni>({ ...EMPTY_PIANO });
   const [editGiorno, setEditGiorno] = useState<GiornoKey | null>(null);
+  const [appliedDays, setAppliedDays] = useState<Set<GiornoKey>>(new Set());
+  const pianoSnapshotRef = useRef<PianoGiorni>({ ...EMPTY_PIANO });
 
   // Chiudi dropdown cliccando fuori
   useEffect(() => {
@@ -282,6 +284,15 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   }, [settimana, atletaId]);
 
   useEffect(() => () => { if (animRef.current) clearTimeout(animRef.current); }, []);
+
+  // Snapshot piano quando si apre la finestra, reset applied days
+  useEffect(() => {
+    if (editGiorno) {
+      pianoSnapshotRef.current = JSON.parse(JSON.stringify(piano));
+      setAppliedDays(new Set());
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editGiorno]);
 
   if (atletiAttivi.length === 0) return null;
 
@@ -464,21 +475,32 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                   <div className="flex gap-1.5 flex-wrap">
                     {GIORNI_KEYS.filter((k) => k !== editGiorno).map((key) => {
                       const idx = GIORNI_KEYS.indexOf(key);
-                      const alreadySame = JSON.stringify(piano[key]) === JSON.stringify(piano[editGiorno]);
+                      const isApplied = appliedDays.has(key);
                       return (
                         <button
                           key={key}
-                          disabled={alreadySame}
                           onClick={() => {
-                            setPiano((prev) => {
-                              const updated = { ...prev, [key]: [...prev[editGiorno!]] };
-                              atletaIds.forEach((id) => lsSave(id, settimana, updated));
-                              return updated;
-                            });
+                            if (isApplied) {
+                              // Deseleziona: ripristina il valore originale
+                              setPiano((prev) => {
+                                const updated = { ...prev, [key]: [...pianoSnapshotRef.current[key]] };
+                                atletaIds.forEach((id) => lsSave(id, settimana, updated));
+                                return updated;
+                              });
+                              setAppliedDays((prev) => { const s = new Set(prev); s.delete(key); return s; });
+                            } else {
+                              // Applica: copia obiettivi del giorno corrente
+                              setPiano((prev) => {
+                                const updated = { ...prev, [key]: [...prev[editGiorno!]] };
+                                atletaIds.forEach((id) => lsSave(id, settimana, updated));
+                                return updated;
+                              });
+                              setAppliedDays((prev) => new Set(prev).add(key));
+                            }
                           }}
                           className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                            alreadySame
-                              ? "bg-gray-50 border-gray-100 text-gray-300 cursor-default"
+                            isApplied
+                              ? "bg-[#C8102E] border-[#C8102E] text-white"
                               : "bg-white border-gray-200 text-gray-600 hover:border-[#C8102E] hover:text-[#C8102E] active:bg-red-50"
                           }`}
                         >
