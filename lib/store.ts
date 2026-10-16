@@ -1485,7 +1485,7 @@ export async function upsertNtli(n: NtliRecord): Promise<void> {
   const sb = ntliSbClient();
   const row = {
     id: n.id,
-    athlete_id: n.athleteId,
+    athlete_id: n.athleteId || n.id,
     athlete_name: n.athleteName,
     onset_date: n.onsetDate,
     end_date: n.endDate ?? null,

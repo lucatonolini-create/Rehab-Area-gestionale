@@ -914,13 +914,14 @@ export default function NtliPage() {
       }
     }
     const now = new Date().toISOString();
+    const recordId = editNtli?.id ?? uid();
     const resolvedId = data.athleteId ||
       atleti.find((a) => a.nome.trim().toLowerCase() === data.athleteName.trim().toLowerCase())?.id ||
       atleti.find((a) => a.nome.trim().toLowerCase().includes(data.athleteName.trim().toLowerCase()) ||
         data.athleteName.trim().toLowerCase().includes(a.nome.trim().toLowerCase()))?.id ||
-      editNtli?.athleteId || "";
+      editNtli?.athleteId || recordId;
     const rec: NtliRecord = {
-      id: editNtli?.id ?? uid(),
+      id: recordId,
       athleteId: resolvedId,
       athleteName: data.athleteName,
       onsetDate: data.onsetDate,
