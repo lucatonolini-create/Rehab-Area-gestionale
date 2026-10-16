@@ -329,7 +329,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
 
       {/* Legenda */}
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {MACRO_OBJ.map((obj) => (
+        {[...MACRO_OBJ].sort((a, b) => a.label.localeCompare(b.label, "it")).map((obj) => (
           <span key={obj.code} className={`${obj.bg} text-white text-[9px] font-semibold rounded px-1.5 py-0.5 flex items-center gap-1`}>
             <span className="font-bold">{obj.code}</span>
             <span className="opacity-80 font-normal">{obj.label}</span>
