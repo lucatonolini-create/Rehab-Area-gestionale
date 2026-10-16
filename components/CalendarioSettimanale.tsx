@@ -86,8 +86,14 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   const [settimana, setSettimana] = useState(currentIsoWeek);
   const [piano, setPiano] = useState<PianoGiorni>({ ...EMPTY_PIANO });
   const [editGiorno, setEditGiorno] = useState<GiornoKey | null>(null);
+  const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
 
   const touchStartX = useRef<number | null>(null);
+
+  const goWeek = useCallback((delta: number) => {
+    setSlideDir(delta > 0 ? "left" : "right");
+    setSettimana((w) => shiftWeek(w, delta));
+  }, []);
 
   useEffect(() => {
     if (atletaId) setPiano(lsLoad(atletaId, settimana));
@@ -111,7 +117,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
     if (touchStartX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     if (Math.abs(dx) > 50) {
-      setSettimana((w) => shiftWeek(w, dx < 0 ? 1 : -1));
+      goWeek(dx < 0 ? 1 : -1);
     }
     touchStartX.current = null;
   };
@@ -146,7 +152,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
 
         <div className="flex items-center gap-0.5 shrink-0">
           <button
-            onClick={() => setSettimana((w) => shiftWeek(w, -1))}
+            onClick={() => goWeek(-1)}
             className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100"
           >
             <ChevronLeft className="w-4 h-4 text-gray-500" />
@@ -155,7 +161,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
             {fmt(weekDates[0])} – {fmt(weekDates[6])}.{weekDates[6].slice(2, 4)}
           </span>
           <button
-            onClick={() => setSettimana((w) => shiftWeek(w, 1))}
+            onClick={() => goWeek(1)}
             className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100"
           >
             <ChevronRight className="w-4 h-4 text-gray-500" />
@@ -164,8 +170,15 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
       </div>
 
       {/* Griglia settimanale — swipe per cambiare settimana */}
+      <style>{`
+        @keyframes slideInFromRight { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideInFromLeft  { from { transform: translateX(-40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .cal-slide-left  { animation: slideInFromRight 0.22s ease-out; }
+        .cal-slide-right { animation: slideInFromLeft  0.22s ease-out; }
+      `}</style>
       <div
-        className="grid grid-cols-7 gap-1 select-none"
+        key={settimana}
+        className={`grid grid-cols-7 gap-1 select-none overflow-hidden ${slideDir === "left" ? "cal-slide-left" : slideDir === "right" ? "cal-slide-right" : ""}`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
