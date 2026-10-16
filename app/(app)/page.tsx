@@ -5,6 +5,7 @@ import { useBottomNav } from "@/lib/bottom-nav-context";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useRouter } from "next/navigation";
 import { Users, Activity, TrendingUp, Dumbbell, ChevronRight, X, ShieldAlert } from "lucide-react";
+import CalendarioSettimanale from "@/components/CalendarioSettimanale";
 
 function AppLogo({ className }: { className?: string }) {
   return (
@@ -196,6 +197,8 @@ export default function Dashboard() {
           );
         })}
       </div>
+
+      <CalendarioSettimanale atleti={tuttiAtleti} />
 
       {/* Filtro per categoria */}
       <div className="mb-5">
