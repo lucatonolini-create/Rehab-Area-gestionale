@@ -3008,7 +3008,7 @@ export default function EserciziPage() {
                             {esercizi.map((e, i) => {
                               const macro = e.macroObiettivo ? MACRO_OBJ.find((o) => o.code === e.macroObiettivo) : undefined;
                               return (
-                                <div key={i} className="flex items-baseline gap-1.5" style={macro ? { borderLeft: `2px solid ${macro.hex}`, paddingLeft: "4px" } : {}}>
+                                <div key={i} className="flex items-baseline gap-1.5 rounded-sm" style={macro ? { borderLeft: `2px solid ${macro.hex}`, paddingLeft: "4px", background: `linear-gradient(to right, ${macro.hex}22 0%, ${macro.hex}08 60%, transparent 100%)` } : {}}>
                                   <span className="text-[10px] font-mono shrink-0 w-4 text-right" style={{ color: macro?.hex ?? "#9ca3af" }}>{i + 1}.</span>
                                   <div className="flex-1 min-w-0">
                                     <span className="text-gray-900 text-xs font-semibold">{e.nome}</span>
@@ -3024,7 +3024,7 @@ export default function EserciziPage() {
                             {campo.map((c, i) => {
                               const macro = c.macroObiettivo ? MACRO_OBJ.find((o) => o.code === c.macroObiettivo) : undefined;
                               return (
-                                <div key={`c${i}`} className="flex items-baseline gap-1.5" style={macro ? { borderLeft: `2px solid ${macro.hex}`, paddingLeft: "4px" } : {}}>
+                                <div key={`c${i}`} className="flex items-baseline gap-1.5 rounded-sm" style={macro ? { borderLeft: `2px solid ${macro.hex}`, paddingLeft: "4px", background: `linear-gradient(to right, ${macro.hex}22 0%, ${macro.hex}08 60%, transparent 100%)` } : {}}>
                                   <span className="text-[10px] font-mono shrink-0 w-4 text-right" style={{ color: macro?.hex ?? "#9ca3af" }}>{esercizi.length + i + 1}.</span>
                                   <div className="flex-1 min-w-0">
                                     <span className="text-gray-900 text-xs font-semibold">{c.tipo}</span>
