@@ -2779,17 +2779,18 @@ export default function EserciziPage() {
       {/* ── Selettore giocatori Whiteboard ───────────────────────────── */}
       {mostraSelettoreWB && (() => {
         const oggiSel = dataGiorno;
-        const infortunati = [...atleti].filter((a) => {
-          if (a.stato === "Infortunato") return true;
-          if (a.stato === "NTL") {
-            // Se i programmi sono ancora in caricamento, mostra tutti gli NTL
-            if (caricandoWhiteboard || !(a.id in programmiPerAtleta)) return true;
-            return (programmiPerAtleta[a.id] ?? []).some(
-              (p) => p.data === oggiSel && !p.assente && !p.riposo && (p.esercizi ?? []).some((e) => e.nome?.trim())
-            );
-          }
-          return false;
-        }).sort((a, b) => nd(a).localeCompare(nd(b), "it"));
+        const infortunati = [...atleti]
+          .filter((a, _, arr) => arr.findIndex((x) => x.id === a.id) === arr.indexOf(a))
+          .filter((a) => {
+            if (a.stato === "Infortunato") return true;
+            if (a.stato === "NTL") {
+              if (caricandoWhiteboard || !(a.id in programmiPerAtleta)) return true;
+              return (programmiPerAtleta[a.id] ?? []).some(
+                (p) => p.data === oggiSel && !p.assente && !p.riposo && (p.esercizi ?? []).some((e) => e.nome?.trim())
+              );
+            }
+            return false;
+          }).sort((a, b) => nd(a).localeCompare(nd(b), "it"));
         const [ricercaWB, setRicercaWB] = [atletiWBRicerca, setAtletiWBRicerca];
         const visibili = ricercaWB.trim() ? infortunati.filter((a) => nd(a).toLowerCase().includes(ricercaWB.toLowerCase())) : infortunati;
         return (
