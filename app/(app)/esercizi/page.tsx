@@ -1468,7 +1468,7 @@ export default function EserciziPage() {
           </button>
           <button
             onClick={() => {
-              setAtletiSelezionatiWB(new Set(atleti.filter((a) => a.stato === "Infortunato").map((a) => a.id)));
+              setAtletiSelezionatiWB(new Set(atleti.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").map((a) => a.id)));
               setAtletiWBRicerca("");
               setMostraSelettoreWB(true);
             }}
@@ -2778,7 +2778,7 @@ export default function EserciziPage() {
 
       {/* ── Selettore giocatori Whiteboard ───────────────────────────── */}
       {mostraSelettoreWB && (() => {
-        const infortunati = [...atleti].filter((a) => a.stato === "Infortunato").sort((a, b) => nd(a).localeCompare(nd(b), "it"));
+        const infortunati = [...atleti].filter((a) => a.stato === "Infortunato" || a.stato === "NTL").sort((a, b) => nd(a).localeCompare(nd(b), "it"));
         const [ricercaWB, setRicercaWB] = [atletiWBRicerca, setAtletiWBRicerca];
         const visibili = ricercaWB.trim() ? infortunati.filter((a) => nd(a).toLowerCase().includes(ricercaWB.toLowerCase())) : infortunati;
         return (
