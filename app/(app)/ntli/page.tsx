@@ -1557,15 +1557,16 @@ export default function NtliPage() {
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto">
+              <table className="text-sm" style={{ minWidth: "600px" }}>
                 <thead>
                   <tr className="border-b border-gray-100 text-xs text-gray-500 uppercase">
-                    <th className="text-left px-4 py-3">Atleta</th>
-                    <th className="text-left px-4 py-3">Sede</th>
-                    <th className="text-left px-4 py-3">Lato</th>
-                    <th className="text-left px-4 py-3">Insorgenza</th>
-                    <th className="text-left px-4 py-3">Stato</th>
-                    <th className="text-left px-4 py-3">Azioni</th>
+                    <th className="text-left px-4 py-3 sticky left-0 bg-white z-10">Atleta</th>
+                    <th className="text-left px-4 py-3 whitespace-nowrap">Sede</th>
+                    <th className="text-left px-4 py-3 whitespace-nowrap">Lato</th>
+                    <th className="text-left px-4 py-3 whitespace-nowrap">Insorgenza</th>
+                    <th className="text-left px-4 py-3 whitespace-nowrap">Stato</th>
+                    <th className="text-left px-4 py-3 whitespace-nowrap">Azioni</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1574,14 +1575,14 @@ export default function NtliPage() {
                     .sort((a, b) => a.athleteName.localeCompare(b.athleteName, "it"))
                     .map((n) => (
                       <tr key={n.id} className="border-b border-gray-50 hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium">{n.athleteName}</td>
-                        <td className="px-4 py-3 text-gray-600">{n.painLocation}</td>
-                        <td className="px-4 py-3 text-gray-500">{n.bodySide}</td>
-                        <td className="px-4 py-3 text-gray-500">{n.onsetDate}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 font-medium sticky left-0 bg-white z-10 shadow-[1px_0_0_0_#f3f4f6]">{n.athleteName}</td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{n.painLocation}</td>
+                        <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{n.bodySide}</td>
+                        <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{n.onsetDate}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor[n.status]}`}>{n.status}</span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <button onClick={() => { setEditNtli(n); setShowForm(true); }}
                               className="text-xs text-blue-600 hover:underline">Modifica</button>
@@ -1605,6 +1606,7 @@ export default function NtliPage() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         )}
