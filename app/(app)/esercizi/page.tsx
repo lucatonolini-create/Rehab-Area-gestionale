@@ -1047,6 +1047,10 @@ export default function EserciziPage() {
   const [atletiSelezionatiWB, setAtletiSelezionatiWB] = useState<Set<string>>(new Set());
   const [atletiWBRicerca, setAtletiWBRicerca] = useState("");
   const [zoomWB, setZoomWB] = useState(1);
+  const [sugNascosti, setSugNascosti] = useState<{ nomi: string[]; fasi: string[] }>(() => {
+    try { return JSON.parse(localStorage.getItem("sug_nascosti") ?? "null") || { nomi: [], fasi: [] }; }
+    catch { return { nomi: [], fasi: [] }; }
+  });
   const [caricandoWhiteboard, setCaricandoWhiteboard] = useState(false);
   const [oraWB, setOraWB] = useState(() => new Date());
   useEffect(() => {
@@ -1381,8 +1385,10 @@ export default function EserciziPage() {
   const fontePerSuggerimenti = (programmiPerAtleta[form.atletaId] ?? []).filter((p) => !p.assente && !p.riposo && !p.squadra);
   const nomiUnici = Array.from(new Set(fontePerSuggerimenti.map((p) => p.nome).filter(Boolean)));
   const fasiUniche = Array.from(new Set(fontePerSuggerimenti.map((p) => p.fase).filter(Boolean)));
-  const nomiFiltrati = nomiUnici.filter((n) => !form.nome.trim() || n.toLowerCase().includes(form.nome.toLowerCase())).slice(0, 6);
-  const fasiFiltrate = fasiUniche.filter((f) => !form.fase.trim() || f.toLowerCase().includes(form.fase.toLowerCase())).slice(0, 6);
+  const nomiFiltrati = nomiUnici.filter((n) => !sugNascosti.nomi.includes(n) && (!form.nome.trim() || n.toLowerCase().includes(form.nome.toLowerCase()))).slice(0, 6);
+  const fasiFiltrate = fasiUniche.filter((f) => !sugNascosti.fasi.includes(f) && (!form.fase.trim() || f.toLowerCase().includes(form.fase.toLowerCase()))).slice(0, 6);
+  const nascondiNomeSug = (n: string) => { const next = { ...sugNascosti, nomi: [...sugNascosti.nomi, n] }; setSugNascosti(next); try { localStorage.setItem("sug_nascosti", JSON.stringify(next)); } catch {} };
+  const nascondiF = (f: string) => { const next = { ...sugNascosti, fasi: [...sugNascosti.fasi, f] }; setSugNascosti(next); try { localStorage.setItem("sug_nascosti", JSON.stringify(next)); } catch {} };
 
   const suggerimentiPalestra = useMemo(() => {
     const raw = [
@@ -2054,11 +2060,10 @@ export default function EserciziPage() {
                   {nomiUnici.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {nomiFiltrati.map((n) => (
-                        <button key={n} type="button"
-                          onClick={() => setForm({ ...form, nome: n })}
-                          className={`text-xs px-3 py-1.5 rounded-full border transition-all ${form.nome === n ? "bg-[#C8102E] text-white border-[#C8102E]" : "bg-gray-50 text-gray-600 border-gray-200 active:bg-red-50 active:text-[#C8102E] active:border-[#C8102E]"}`}>
-                          {n}
-                        </button>
+                        <span key={n} className={`inline-flex items-center gap-1 text-xs rounded-full border transition-all ${form.nome === n ? "bg-[#C8102E] text-white border-[#C8102E]" : "bg-gray-50 text-gray-600 border-gray-200"}`}>
+                          <button type="button" className="pl-3 py-1.5" onClick={() => setForm({ ...form, nome: n })}>{n}</button>
+                          <button type="button" className={`pr-2 py-1.5 leading-none ${form.nome === n ? "text-red-200 hover:text-white" : "text-gray-300 hover:text-red-400"}`} onClick={() => nascondiNomeSug(n)}>×</button>
+                        </span>
                       ))}
                     </div>
                   )}
@@ -2071,11 +2076,10 @@ export default function EserciziPage() {
                   {fasiUniche.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {fasiFiltrate.map((f) => (
-                        <button key={f} type="button"
-                          onClick={() => setForm({ ...form, fase: f })}
-                          className={`text-xs px-3 py-1.5 rounded-full border transition-all ${form.fase === f ? "bg-[#C8102E] text-white border-[#C8102E]" : "bg-gray-50 text-gray-600 border-gray-200 active:bg-red-50 active:text-[#C8102E] active:border-[#C8102E]"}`}>
-                          {f}
-                        </button>
+                        <span key={f} className={`inline-flex items-center gap-1 text-xs rounded-full border transition-all ${form.fase === f ? "bg-[#C8102E] text-white border-[#C8102E]" : "bg-gray-50 text-gray-600 border-gray-200"}`}>
+                          <button type="button" className="pl-3 py-1.5" onClick={() => setForm({ ...form, fase: f })}>{f}</button>
+                          <button type="button" className={`pr-2 py-1.5 leading-none ${form.fase === f ? "text-red-200 hover:text-white" : "text-gray-300 hover:text-red-400"}`} onClick={() => nascondiF(f)}>×</button>
+                        </span>
                       ))}
                     </div>
                   )}
