@@ -456,6 +456,41 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
               </div>
             </div>
 
+            {/* Applica ad altri giorni */}
+            {editGiorno && piano[editGiorno].length > 0 && (
+              <div className="px-5 pb-3 shrink-0">
+                <div className="border-t border-gray-100 pt-3">
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-2">Applica anche a</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {GIORNI_KEYS.filter((k) => k !== editGiorno).map((key) => {
+                      const idx = GIORNI_KEYS.indexOf(key);
+                      const alreadySame = JSON.stringify(piano[key]) === JSON.stringify(piano[editGiorno]);
+                      return (
+                        <button
+                          key={key}
+                          disabled={alreadySame}
+                          onClick={() => {
+                            setPiano((prev) => {
+                              const updated = { ...prev, [key]: [...prev[editGiorno!]] };
+                              atletaIds.forEach((id) => lsSave(id, settimana, updated));
+                              return updated;
+                            });
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                            alreadySame
+                              ? "bg-gray-50 border-gray-100 text-gray-300 cursor-default"
+                              : "bg-white border-gray-200 text-gray-600 hover:border-[#C8102E] hover:text-[#C8102E] active:bg-red-50"
+                          }`}
+                        >
+                          {GIORNI_BREVI[idx]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Bottone fisso in fondo */}
             <div
               className="px-5 pt-3 shrink-0"
