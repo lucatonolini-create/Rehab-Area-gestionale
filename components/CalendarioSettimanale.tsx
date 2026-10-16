@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { X } from "lucide-react";
 import { nd, type Atleta } from "@/lib/store";
 
 export const MACRO_OBJ = [
@@ -18,68 +18,45 @@ export const MACRO_OBJ = [
   { code: "R",  label: "Riposo",            bg: "bg-gray-400" },
 ] as const;
 
-const GIORNI_BREVI = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"] as const;
-const GIORNI_KEYS = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"] as const;
-type GiornoKey = (typeof GIORNI_KEYS)[number];
-type PianoGiorni = Record<GiornoKey, string[]>;
-const EMPTY_PIANO: PianoGiorni = { lun: [], mar: [], mer: [], gio: [], ven: [], sab: [], dom: [] };
+const GIORNI_BREVI = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"] as const;
 
-// Restituisce la data del lunedì della settimana ISO (YYYY-Www)
-function mondayOfIsoWeek(isoWeek: string): Date {
-  const [year, week] = isoWeek.split("-W").map(Number);
-  // 4 gennaio è sempre nella settimana 1
-  const jan4 = new Date(year, 0, 4);
-  // lunedì della settimana 1
-  const w1mon = new Date(jan4);
-  w1mon.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
-  // lunedì della settimana richiesta
-  const mon = new Date(w1mon);
-  mon.setDate(w1mon.getDate() + (week - 1) * 7);
-  return mon;
+// Per-day localStorage
+function dayLsKey(atletaId: string, date: string) {
+  return `piano_day_${atletaId}_${date}`;
 }
-
-function dateToIsoWeek(d: Date): string {
-  // Trova il giovedì della settimana per determinare l'anno ISO
-  const thu = new Date(d);
-  thu.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 3);
-  const year = thu.getFullYear();
-  const jan4 = new Date(year, 0, 4);
-  const w1mon = new Date(jan4);
-  w1mon.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
-  const week = Math.floor((thu.getTime() - w1mon.getTime()) / (7 * 86400000)) + 1;
-  return `${year}-W${String(week).padStart(2, "0")}`;
-}
-
-function shiftWeek(isoWeek: string, delta: number): string {
-  const mon = mondayOfIsoWeek(isoWeek);
-  mon.setDate(mon.getDate() + delta * 7);
-  return dateToIsoWeek(mon);
-}
-
-function isoWeekDates(isoWeek: string): string[] {
-  const mon = mondayOfIsoWeek(isoWeek);
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(mon);
-    d.setDate(mon.getDate() + i);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  });
-}
-
-function currentIsoWeek(): string {
-  return dateToIsoWeek(new Date());
-}
-
-function lsKey(atletaId: string, settimana: string) {
-  return `piano_sett_${atletaId}_${settimana}`;
-}
-function lsLoad(atletaId: string, settimana: string): PianoGiorni {
+function dayLoad(atletaId: string, date: string): string[] {
   try {
-    const raw = localStorage.getItem(lsKey(atletaId, settimana));
-    return raw ? { ...EMPTY_PIANO, ...JSON.parse(raw) } : { ...EMPTY_PIANO };
-  } catch { return { ...EMPTY_PIANO }; }
+    const raw = localStorage.getItem(dayLsKey(atletaId, date));
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
 }
-function lsSave(atletaId: string, settimana: string, piano: PianoGiorni) {
-  try { localStorage.setItem(lsKey(atletaId, settimana), JSON.stringify(piano)); } catch {}
+function daySave(atletaId: string, date: string, objs: string[]) {
+  try { localStorage.setItem(dayLsKey(atletaId, date), JSON.stringify(objs)); } catch {}
+}
+
+function addDays(dateStr: string, n: number): string {
+  const d = new Date(dateStr + "T12:00:00");
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatLabel(dateStr: string): { giorno: string; num: string; mese: string } {
+  const d = new Date(dateStr + "T12:00:00");
+  return {
+    giorno: GIORNI_BREVI[d.getDay()],
+    num: String(d.getDate()),
+    mese: String(d.getMonth() + 1).padStart(2, "0"),
+  };
+}
+
+function buildDates(center: string, before: number, after: number): string[] {
+  return Array.from({ length: before + after }, (_, i) =>
+    addDays(center, i - before)
+  );
 }
 
 export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) {
@@ -88,47 +65,64 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
     .sort((a, b) => nd(a).localeCompare(nd(b), "it"));
 
   const [atletaId, setAtletaId] = useState<string>("");
-  const [settimana, setSettimana] = useState(currentIsoWeek);
-  const [piano, setPiano] = useState<PianoGiorni>({ ...EMPTY_PIANO });
-  const [editGiorno, setEditGiorno] = useState<GiornoKey | null>(null);
+  const [dates, setDates] = useState<string[]>(() => buildDates(today(), 7, 28));
+  const [plans, setPlans] = useState<Record<string, string[]>>({});
+  const [editDate, setEditDate] = useState<string | null>(null);
 
-  // Swipe
-  const touchStartX = useRef<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const todayRef = useRef<HTMLButtonElement>(null);
 
+  // Ricarica piani quando cambia atleta o elenco date
   useEffect(() => {
-    if (atletaId) setPiano(lsLoad(atletaId, settimana));
-  }, [atletaId, settimana]);
+    if (!atletaId) { setPlans({}); return; }
+    const loaded: Record<string, string[]> = {};
+    dates.forEach((d) => { loaded[d] = dayLoad(atletaId, d); });
+    setPlans(loaded);
+  }, [atletaId, dates]);
 
-  const toggleObj = useCallback((giorno: GiornoKey, code: string) => {
-    setPiano((prev) => {
-      const curr = prev[giorno];
-      const next = curr.includes(code) ? curr.filter((c) => c !== code) : [...curr, code];
-      const updated = { ...prev, [giorno]: next };
-      if (atletaId) lsSave(atletaId, settimana, updated);
-      return updated;
-    });
-  }, [atletaId, settimana]);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(dx) > 50) {
-      setSettimana((w) => shiftWeek(w, dx < 0 ? 1 : -1));
+  // Scroll automatico su oggi al mount
+  useEffect(() => {
+    if (todayRef.current && scrollRef.current) {
+      const el = todayRef.current;
+      const container = scrollRef.current;
+      // Centra oggi nello scroll
+      container.scrollLeft = el.offsetLeft - container.clientWidth / 2 + el.offsetWidth / 2;
     }
-    touchStartX.current = null;
-  };
+  }, []);
+
+  // Estendi le date quando si arriva vicino ai bordi
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (el.scrollLeft < 120) {
+      setDates((prev) => {
+        const newDays = Array.from({ length: 14 }, (_, i) => addDays(prev[0], i - 14));
+        return [...newDays, ...prev];
+      });
+    }
+    if (el.scrollWidth - el.scrollLeft - el.clientWidth < 120) {
+      setDates((prev) => {
+        const last = prev[prev.length - 1];
+        const newDays = Array.from({ length: 14 }, (_, i) => addDays(last, i + 1));
+        return [...prev, ...newDays];
+      });
+    }
+  }, []);
+
+  const toggleObj = useCallback((date: string, code: string) => {
+    setPlans((prev) => {
+      const curr = prev[date] ?? [];
+      const next = curr.includes(code) ? curr.filter((c) => c !== code) : [...curr, code];
+      if (atletaId) daySave(atletaId, date, next);
+      return { ...prev, [date]: next };
+    });
+  }, [atletaId]);
 
   if (atletiAttivi.length === 0) return null;
 
-  const weekDates = isoWeekDates(settimana);
-  const today = new Date().toISOString().slice(0, 10);
-  const editIdx = editGiorno ? GIORNI_KEYS.indexOf(editGiorno) : -1;
-
-  const fmt = (date: string) => `${date.slice(8)}.${date.slice(5, 7)}`;
+  const todayStr = today();
+  const editObjs = editDate ? (plans[editDate] ?? []) : [];
+  const editLabel = editDate ? formatLabel(editDate) : null;
 
   return (
     <div className="mb-6 pb-6 border-b border-gray-100">
@@ -136,12 +130,12 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
         Piano Settimanale
       </h2>
 
-      {/* Dropdown atleta + navigazione settimana */}
-      <div className="flex items-center gap-2 mb-4">
+      {/* Dropdown atleta */}
+      <div className="mb-3">
         <select
           value={atletaId}
           onChange={(e) => setAtletaId(e.target.value)}
-          className="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white text-gray-700"
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white text-gray-700"
         >
           <option value="">Seleziona atleta…</option>
           {atletiAttivi.map((a) => (
@@ -150,52 +144,38 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
             </option>
           ))}
         </select>
-
-        <div className="flex items-center gap-0.5 shrink-0">
-          <button
-            onClick={() => setSettimana((w) => shiftWeek(w, -1))}
-            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100"
-          >
-            <ChevronLeft className="w-4 h-4 text-gray-500" />
-          </button>
-          <span className="text-[10px] text-gray-600 font-medium px-1.5 text-center w-[86px] leading-tight">
-            {fmt(weekDates[0])} – {fmt(weekDates[6])}.{weekDates[6].slice(2, 4)}
-          </span>
-          <button
-            onClick={() => setSettimana((w) => shiftWeek(w, 1))}
-            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100"
-          >
-            <ChevronRight className="w-4 h-4 text-gray-500" />
-          </button>
-        </div>
       </div>
 
-      {/* Griglia settimanale — swipe per cambiare settimana */}
+      {/* Strip scorrevole giorni */}
       <div
-        className="grid grid-cols-7 gap-1 select-none"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        {GIORNI_BREVI.map((label, i) => {
-          const key = GIORNI_KEYS[i];
-          const date = weekDates[i];
-          const isToday = date === today;
-          const objs = piano[key];
+        {dates.map((date) => {
+          const { giorno, num, mese } = formatLabel(date);
+          const isToday = date === todayStr;
+          const objs = plans[date] ?? [];
           return (
             <button
-              key={key}
-              onClick={() => atletaId && setEditGiorno(key)}
-              className={`flex flex-col items-center rounded-xl border transition-all min-h-[76px] ${
+              key={date}
+              ref={isToday ? todayRef : undefined}
+              onClick={() => atletaId && setEditDate(date)}
+              className={`flex-shrink-0 flex flex-col items-center rounded-xl border transition-all w-[52px] min-h-[80px] ${
                 isToday
                   ? "border-[#C8102E] bg-red-50"
                   : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm"
               }`}
             >
-              <p className={`text-[10px] font-bold pt-2 ${isToday ? "text-[#C8102E]" : "text-gray-400"}`}>
-                {label}
+              <p className={`text-[9px] font-bold pt-2 ${isToday ? "text-[#C8102E]" : "text-gray-400"}`}>
+                {giorno}
               </p>
-              <p className={`text-[10px] font-semibold mb-1.5 ${isToday ? "text-[#C8102E]" : "text-gray-500"}`}>
-                {date.slice(8)}
+              <p className={`text-sm font-bold leading-tight ${isToday ? "text-[#C8102E]" : "text-gray-800"}`}>
+                {num}
+              </p>
+              <p className={`text-[9px] mb-1 ${isToday ? "text-[#C8102E]" : "text-gray-400"}`}>
+                .{mese}
               </p>
               <div className="flex flex-col gap-0.5 px-1 pb-2 w-full">
                 {objs.length === 0 ? (
@@ -207,7 +187,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                     return (
                       <span
                         key={code}
-                        className={`${obj.bg} text-white text-[9px] font-bold rounded px-0.5 py-0.5 text-center leading-tight`}
+                        className={`${obj.bg} text-white text-[8px] font-bold rounded px-0.5 py-0.5 text-center leading-tight`}
                       >
                         {code}
                       </span>
@@ -234,10 +214,10 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
       </div>
 
       {/* Modal modifica giorno */}
-      {editGiorno && (
+      {editDate && editLabel && (
         <div
           className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
-          onClick={() => setEditGiorno(null)}
+          onClick={() => setEditDate(null)}
         >
           <div className="absolute inset-0 bg-black/30" />
           <div
@@ -247,22 +227,22 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">
-                {GIORNI_BREVI[editIdx]}{" "}
+                {editLabel.giorno}{" "}
                 <span className="text-gray-400 font-normal text-sm">
-                  {weekDates[editIdx]?.slice(5).split("-").reverse().join("/")}
+                  {editLabel.num}/{editLabel.mese}/{editDate.slice(0, 4)}
                 </span>
               </h3>
-              <button onClick={() => setEditGiorno(null)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setEditDate(null)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {MACRO_OBJ.map((obj) => {
-                const active = piano[editGiorno].includes(obj.code);
+                const active = editObjs.includes(obj.code);
                 return (
                   <button
                     key={obj.code}
-                    onClick={() => toggleObj(editGiorno, obj.code)}
+                    onClick={() => toggleObj(editDate, obj.code)}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 transition-all text-left ${
                       active
                         ? `${obj.bg} border-transparent`
@@ -280,7 +260,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
               })}
             </div>
             <button
-              onClick={() => setEditGiorno(null)}
+              onClick={() => setEditDate(null)}
               className="mt-4 w-full bg-[#C8102E] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-red-800"
             >
               Fatto
