@@ -2947,9 +2947,9 @@ export default function EserciziPage() {
                                 <span className="text-gray-400 text-[10px] font-mono shrink-0 w-4 text-right">{esercizi.length + i + 1}.</span>
                                 <div className="flex-1 min-w-0">
                                   <span className="text-gray-900 text-xs font-semibold">{c.tipo}</span>
-                                  {[c.serie, c.durata].some(Boolean) && (
-                                    <span className="text-gray-500 text-[10px] ml-1">
-                                      {[c.serie && `${c.serie}s`, c.durata && c.durata].filter(Boolean).join(" · ")}
+                                  {([c.serie, c.durata].some(Boolean) || c.descrizione) && (
+                                    <span className="block text-gray-500 text-[10px]">
+                                      {[c.serie && `${c.serie} serie`, c.durata && c.durata, c.descrizione && <span key="desc" className="italic text-gray-400">{c.descrizione}</span>].filter(Boolean).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, " · ", el], [])}
                                     </span>
                                   )}
                                 </div>
