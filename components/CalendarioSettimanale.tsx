@@ -24,6 +24,8 @@ type GiornoKey = (typeof GIORNI_KEYS)[number];
 type PianoGiorni = Record<GiornoKey, string[]>;
 const EMPTY_PIANO: PianoGiorni = { lun: [], mar: [], mer: [], gio: [], ven: [], sab: [], dom: [] };
 
+const ANIM_MS = 320;
+
 function mondayOfIsoWeek(isoWeek: string): Date {
   const [year, week] = isoWeek.split("-W").map(Number);
   const jan4 = new Date(year, 0, 4);
@@ -77,6 +79,66 @@ function lsSave(atletaId: string, settimana: string, piano: PianoGiorni) {
   try { localStorage.setItem(lsKey(atletaId, settimana), JSON.stringify(piano)); } catch {}
 }
 
+function WeekGrid({
+  settimana,
+  piano,
+  today,
+  onDayClick,
+}: {
+  settimana: string;
+  piano: PianoGiorni;
+  today: string;
+  onDayClick: (key: GiornoKey) => void;
+}) {
+  const weekDates = isoWeekDates(settimana);
+  return (
+    <div className="grid grid-cols-7 gap-1 w-full shrink-0">
+      {GIORNI_BREVI.map((label, i) => {
+        const key = GIORNI_KEYS[i];
+        const date = weekDates[i];
+        const isToday = date === today;
+        const objs = piano[key];
+        return (
+          <button
+            key={key}
+            onClick={() => onDayClick(key)}
+            className={`flex flex-col items-center rounded-xl border transition-colors min-h-[76px] ${
+              isToday
+                ? "border-[#C8102E] bg-red-50"
+                : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm"
+            }`}
+          >
+            <p className={`text-[10px] font-bold pt-2 ${isToday ? "text-[#C8102E]" : "text-gray-400"}`}>
+              {label}
+            </p>
+            <p className={`text-[10px] font-semibold mb-1.5 ${isToday ? "text-[#C8102E]" : "text-gray-500"}`}>
+              {date.slice(8)}
+            </p>
+            <div className="flex flex-col gap-0.5 px-1 pb-2 w-full">
+              {objs.length === 0 ? (
+                <span className="text-[9px] text-gray-200 text-center">·</span>
+              ) : (
+                objs.map((code) => {
+                  const obj = MACRO_OBJ.find((o) => o.code === code);
+                  if (!obj) return null;
+                  return (
+                    <span
+                      key={code}
+                      className={`${obj.bg} text-white text-[9px] font-bold rounded px-0.5 py-0.5 text-center leading-tight`}
+                    >
+                      {code}
+                    </span>
+                  );
+                })
+              )}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) {
   const atletiAttivi = atleti
     .filter((a) => a.stato === "Infortunato" || a.stato === "NTL")
@@ -86,18 +148,57 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   const [settimana, setSettimana] = useState(currentIsoWeek);
   const [piano, setPiano] = useState<PianoGiorni>({ ...EMPTY_PIANO });
   const [editGiorno, setEditGiorno] = useState<GiornoKey | null>(null);
-  const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
 
+  // Animazione slide
+  const [anim, setAnim] = useState<{
+    fromWeek: string;
+    fromPiano: PianoGiorni;
+    toWeek: string;
+    dir: "left" | "right";
+    running: boolean;
+  } | null>(null);
+
+  const animTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartX = useRef<number | null>(null);
-
-  const goWeek = useCallback((delta: number) => {
-    setSlideDir(delta > 0 ? "left" : "right");
-    setSettimana((w) => shiftWeek(w, delta));
-  }, []);
+  const isAnimating = useRef(false);
 
   useEffect(() => {
     if (atletaId) setPiano(lsLoad(atletaId, settimana));
   }, [atletaId, settimana]);
+
+  const goWeek = useCallback((delta: number) => {
+    if (isAnimating.current) return;
+    isAnimating.current = true;
+
+    const toWeek = shiftWeek(settimana, delta);
+    const toPiano = atletaId ? lsLoad(atletaId, toWeek) : { ...EMPTY_PIANO };
+
+    // Prepara: metti i due pannelli affiancati, senza transizione
+    setAnim({
+      fromWeek: settimana,
+      fromPiano: piano,
+      toWeek,
+      dir: delta > 0 ? "left" : "right",
+      running: false,
+    });
+
+    // Frame successivo: attiva la transizione CSS
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setAnim((prev) => prev ? { ...prev, running: true } : null);
+        setPiano(toPiano);
+        setSettimana(toWeek);
+      });
+    });
+
+    // Al termine: pulisci
+    animTimer.current = setTimeout(() => {
+      setAnim(null);
+      isAnimating.current = false;
+    }, ANIM_MS + 40);
+  }, [settimana, piano, atletaId]);
+
+  useEffect(() => () => { if (animTimer.current) clearTimeout(animTimer.current); }, []);
 
   const toggleObj = useCallback((giorno: GiornoKey, code: string) => {
     setPiano((prev) => {
@@ -112,22 +213,33 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
-
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(dx) > 50) {
-      goWeek(dx < 0 ? 1 : -1);
-    }
+    if (Math.abs(dx) > 50) goWeek(dx < 0 ? 1 : -1);
     touchStartX.current = null;
   };
 
   if (atletiAttivi.length === 0) return null;
 
   const weekDates = isoWeekDates(settimana);
-  const today = new Date().toISOString().slice(0, 10);
+  const todayStr = new Date().toISOString().slice(0, 10);
   const editIdx = editGiorno ? GIORNI_KEYS.indexOf(editGiorno) : -1;
   const fmt = (date: string) => `${date.slice(8)}.${date.slice(5, 7)}`;
+
+  // Calcola la traduzione per l'animazione
+  // dir="left" (avanti): from va a -100%, to parte da +100% e va a 0
+  // dir="right" (indietro): from va a +100%, to parte da -100% e va a 0
+  const fromTranslate = anim
+    ? anim.running
+      ? anim.dir === "left" ? "-100%" : "100%"
+      : "0%"
+    : "0%";
+  const toTranslate = anim
+    ? anim.running
+      ? "0%"
+      : anim.dir === "left" ? "100%" : "-100%"
+    : "0%";
 
   return (
     <div className="mb-6 pb-6 border-b border-gray-100">
@@ -169,61 +281,53 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
         </div>
       </div>
 
-      {/* Griglia settimanale — swipe per cambiare settimana */}
-      <style>{`
-        @keyframes slideInFromRight { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes slideInFromLeft  { from { transform: translateX(-40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .cal-slide-left  { animation: slideInFromRight 0.22s ease-out; }
-        .cal-slide-right { animation: slideInFromLeft  0.22s ease-out; }
-      `}</style>
+      {/* Contenitore griglia con slide */}
       <div
-        key={settimana}
-        className={`grid grid-cols-7 gap-1 select-none overflow-hidden ${slideDir === "left" ? "cal-slide-left" : slideDir === "right" ? "cal-slide-right" : ""}`}
+        className="relative overflow-hidden select-none"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {GIORNI_BREVI.map((label, i) => {
-          const key = GIORNI_KEYS[i];
-          const date = weekDates[i];
-          const isToday = date === today;
-          const objs = piano[key];
-          return (
-            <button
-              key={key}
-              onClick={() => atletaId && setEditGiorno(key)}
-              className={`flex flex-col items-center rounded-xl border transition-all min-h-[76px] ${
-                isToday
-                  ? "border-[#C8102E] bg-red-50"
-                  : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm"
-              }`}
+        {anim ? (
+          <>
+            {/* Settimana uscente */}
+            <div
+              style={{
+                transform: `translateX(${fromTranslate})`,
+                transition: anim.running ? `transform ${ANIM_MS}ms cubic-bezier(0.4, 0, 0.2, 1)` : "none",
+                position: "absolute",
+                inset: 0,
+              }}
             >
-              <p className={`text-[10px] font-bold pt-2 ${isToday ? "text-[#C8102E]" : "text-gray-400"}`}>
-                {label}
-              </p>
-              <p className={`text-[10px] font-semibold mb-1.5 ${isToday ? "text-[#C8102E]" : "text-gray-500"}`}>
-                {date.slice(8)}
-              </p>
-              <div className="flex flex-col gap-0.5 px-1 pb-2 w-full">
-                {objs.length === 0 ? (
-                  <span className="text-[9px] text-gray-200 text-center">·</span>
-                ) : (
-                  objs.map((code) => {
-                    const obj = MACRO_OBJ.find((o) => o.code === code);
-                    if (!obj) return null;
-                    return (
-                      <span
-                        key={code}
-                        className={`${obj.bg} text-white text-[9px] font-bold rounded px-0.5 py-0.5 text-center leading-tight`}
-                      >
-                        {code}
-                      </span>
-                    );
-                  })
-                )}
-              </div>
-            </button>
-          );
-        })}
+              <WeekGrid
+                settimana={anim.fromWeek}
+                piano={anim.fromPiano}
+                today={todayStr}
+                onDayClick={() => {}}
+              />
+            </div>
+            {/* Settimana entrante */}
+            <div
+              style={{
+                transform: `translateX(${toTranslate})`,
+                transition: anim.running ? `transform ${ANIM_MS}ms cubic-bezier(0.4, 0, 0.2, 1)` : "none",
+              }}
+            >
+              <WeekGrid
+                settimana={anim.toWeek}
+                piano={piano}
+                today={todayStr}
+                onDayClick={(key) => atletaId && setEditGiorno(key)}
+              />
+            </div>
+          </>
+        ) : (
+          <WeekGrid
+            settimana={settimana}
+            piano={piano}
+            today={todayStr}
+            onDayClick={(key) => atletaId && setEditGiorno(key)}
+          />
+        )}
       </div>
 
       {/* Legenda */}
