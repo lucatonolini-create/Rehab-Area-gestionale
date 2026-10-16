@@ -811,8 +811,6 @@ export default function NtliPage() {
   // ── Derived ──────────────────────────────────────────────────────────────
   const activeNtli = ntliList.filter((n) => {
     if (n.status === "Risolto" || n.status === "Chiuso") return false;
-    const atleta = atleti.find((a) => a.nome.trim().toLowerCase() === n.athleteName.trim().toLowerCase());
-    if (atleta?.stato === "Infortunato") return false;
     return true;
   });
   const todayStr = today();
@@ -1166,206 +1164,221 @@ export default function NtliPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {monNtli.map((ntli) => {
-                  const row = getMonRow(ntli.id);
-                  const existing = dailyAll.find((d) => d.ntliId === ntli.id && d.date === monDate);
-                  const isCompilato = !!existing && !monEdits[ntli.id];
-                  const noAllenamento = (row.trainingModification ?? "").split(",").map(s => s.trim()).includes("Nessun allenamento");
+                {/* Group by athlete — one card per player, multiple injuries inside */}
+                {Array.from(
+                  monNtli.reduce<Map<string, typeof monNtli>>((acc, n) => {
+                    const key = n.athleteName;
+                    if (!acc.has(key)) acc.set(key, []);
+                    acc.get(key)!.push(n);
+                    return acc;
+                  }, new Map())
+                ).map(([athleteName, ntlis]) => {
+                  const atletaMatch = atleti.find((a) => a.nome.trim().toLowerCase() === athleteName.trim().toLowerCase());
+                  const statoCorrente: Stato = atletaMatch?.stato === "Infortunato" ? "Infortunato" : "NTL";
+                  const toggleStato = async () => {
+                    if (!atletaMatch) return;
+                    const nuovoStato: Stato = statoCorrente === "Infortunato" ? "NTL" : "Infortunato";
+                    setAtleti((prev) => prev.map((a) => a.id === atletaMatch.id ? { ...a, stato: nuovoStato } : a));
+                    await patchStato(atletaMatch.id, nuovoStato);
+                  };
+                  const allCompilati = ntlis.every((n) => !!dailyAll.find((d) => d.ntliId === n.id && d.date === monDate) && !monEdits[n.id]);
+                  const anyEdited = ntlis.some((n) => !!monEdits[n.id]);
 
                   return (
-                    <div key={ntli.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                    <div key={athleteName} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                      {/* Athlete header — shown once */}
                       <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <p className="font-semibold text-gray-900">{ntli.athleteName}</p>
-                          <p className="text-xs text-gray-500">{ntli.painLocation} · {ntli.bodySide}</p>
-                        </div>
+                        <p className="font-semibold text-gray-900">{athleteName}</p>
                         <div className="flex items-center gap-2">
-                          {/* Stato atleta toggle */}
-                          {(() => {
-                            const atletaMatch = atleti.find((a) => a.nome.trim().toLowerCase() === ntli.athleteName.trim().toLowerCase());
-                            if (!atletaMatch) return null;
-                            const statoCorrente: Stato = atletaMatch.stato === "Infortunato" ? "Infortunato" : "NTL";
-                            const toggleStato = async () => {
-                              const nuovoStato: Stato = statoCorrente === "Infortunato" ? "NTL" : "Infortunato";
-                              setAtleti((prev) => prev.map((a) => a.id === atletaMatch.id ? { ...a, stato: nuovoStato } : a));
-                              await patchStato(atletaMatch.id, nuovoStato);
-                            };
-                            return (
-                              <button
-                                onClick={toggleStato}
-                                title={`Cambia in ${statoCorrente === "Infortunato" ? "NTL" : "Infortunato"}`}
-                                className={`text-xs px-2.5 py-1 rounded-full font-medium border transition-colors ${
-                                  statoCorrente === "Infortunato"
-                                    ? "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100"
-                                    : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
-                                }`}>
-                                {statoCorrente}
-                              </button>
-                            );
-                          })()}
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${isCompilato ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                            {isCompilato ? "Compilato" : "Da compilare"}
+                          {atletaMatch && (
+                            <button
+                              onClick={toggleStato}
+                              title={`Cambia in ${statoCorrente === "Infortunato" ? "NTL" : "Infortunato"}`}
+                              className={`text-xs px-2.5 py-1 rounded-full font-medium border transition-colors ${
+                                statoCorrente === "Infortunato"
+                                  ? "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100"
+                                  : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+                              }`}>
+                              {statoCorrente}
+                            </button>
+                          )}
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                            allCompilati && !anyEdited ? "bg-green-100 text-green-700" : anyEdited ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-500"
+                          }`}>
+                            {allCompilati && !anyEdited ? "Compilato" : anyEdited ? "Modificato" : "Da compilare"}
                           </span>
                         </div>
                       </div>
 
-                      <div className="space-y-4">
-                        {/* Modifica allenamento — multi-select */}
-                        <div>
-                          <Lbl>Modifica allenamento</Lbl>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {TRAINING_MODIFICATIONS.map((m) => {
-                              const current = row.trainingModification ?? "Nessuna modifica";
-                              const selected = current.split(",").map(s => s.trim());
-                              const active = selected.includes(m);
-                              const toggle = () => {
-                                let next: string[];
-                                if (m === "Nessuna modifica" || m === "Nessun allenamento") {
-                                  next = active ? [] : [m];
-                                } else {
-                                  const base = selected.filter(s => s !== "Nessuna modifica" && s !== "Nessun allenamento");
-                                  next = active ? base.filter(s => s !== m) : [...base, m];
-                                }
-                                setMonRow(ntli.id, {
-                                  trainingModification: (next.length ? next.join(", ") : "Nessuna modifica") as TrainingModification,
-                                });
-                                if (m === "Palestra" && !active) {
-                                  setPalestraAperta((prev) => ({ ...prev, [ntli.id]: true }));
-                                }
-                              };
-                              return (
-                                <button key={m} type="button"
-                                  onClick={toggle}
-                                  className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                                    active
-                                      ? "bg-[#C8102E] text-white border-[#C8102E]"
-                                      : "border-gray-200 text-gray-600 hover:border-gray-400"
-                                  }`}>
-                                  {m}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
+                      {/* One section per injury — visually separated */}
+                      <div className="space-y-5">
+                        {ntlis.map((ntli, ntliIdx) => {
+                          const row = getMonRow(ntli.id);
+                          const noAllenamento = (row.trainingModification ?? "").split(",").map(s => s.trim()).includes("Nessun allenamento");
+                          return (
+                            <div key={ntli.id} className={ntliIdx > 0 ? "pt-5 border-t border-gray-100" : ""}>
+                              {/* Injury label */}
+                              <p className="text-xs font-bold text-[#C8102E] uppercase tracking-wide mb-3">
+                                {ntli.painLocation} · {ntli.bodySide}
+                                {ntli.osiicsCode && <span className="ml-2 font-mono font-normal text-gray-400">{ntli.osiicsCode}</span>}
+                              </p>
 
-                        {/* Gym editor — visible when "Palestra" is selected */}
-                        {(row.trainingModification ?? "").split(",").map(s => s.trim()).includes("Palestra") && (
-                          palestraAperta[ntli.id] ? (
-                            <div className="border border-dashed border-red-200 rounded-xl p-3 space-y-3">
-                              <GymExercisesEditor
-                                esercizi={row.esercizi ?? []}
-                                onChange={(e) => setMonRow(ntli.id, { esercizi: e })}
-                              />
-                              <div className="flex justify-end">
-                                <button type="button"
-                                  onClick={() => setPalestraAperta((prev) => ({ ...prev, [ntli.id]: false }))}
-                                  className="bg-[#C8102E] text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-red-800">
-                                  Salva esercizi palestra
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="border border-red-100 rounded-xl overflow-hidden">
-                              {/* Header sempre visibile */}
-                              <button type="button"
-                                onClick={() => setPalestraEspansa((prev) => ({ ...prev, [ntli.id]: !prev[ntli.id] }))}
-                                className="w-full flex items-center justify-between bg-red-50 px-4 py-2.5 hover:bg-red-100 transition-colors">
-                                <span className="text-xs text-gray-600">
-                                  {(row.esercizi ?? []).length > 0
-                                    ? `${(row.esercizi ?? []).length} esercizi palestra`
-                                    : "Nessun esercizio palestra"}
-                                </span>
-                                <div className="flex items-center gap-3">
-                                  <button type="button"
-                                    onClick={(e) => { e.stopPropagation(); setPalestraAperta((prev) => ({ ...prev, [ntli.id]: true })); }}
-                                    className="text-xs font-semibold text-[#C8102E] hover:underline">
-                                    Modifica
-                                  </button>
-                                  <span className="text-gray-400 text-xs">{palestraEspansa[ntli.id] ? "▲" : "▼"}</span>
+                              <div className="space-y-4">
+                                {/* Modifica allenamento */}
+                                <div>
+                                  <Lbl>Modifica allenamento</Lbl>
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    {TRAINING_MODIFICATIONS.map((m) => {
+                                      const current = row.trainingModification ?? "Nessuna modifica";
+                                      const selected = current.split(",").map(s => s.trim());
+                                      const active = selected.includes(m);
+                                      const toggle = () => {
+                                        let next: string[];
+                                        if (m === "Nessuna modifica" || m === "Nessun allenamento") {
+                                          next = active ? [] : [m];
+                                        } else {
+                                          const base = selected.filter(s => s !== "Nessuna modifica" && s !== "Nessun allenamento");
+                                          next = active ? base.filter(s => s !== m) : [...base, m];
+                                        }
+                                        setMonRow(ntli.id, {
+                                          trainingModification: (next.length ? next.join(", ") : "Nessuna modifica") as TrainingModification,
+                                        });
+                                        if (m === "Palestra" && !active) {
+                                          setPalestraAperta((prev) => ({ ...prev, [ntli.id]: true }));
+                                        }
+                                      };
+                                      return (
+                                        <button key={m} type="button" onClick={toggle}
+                                          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                                            active ? "bg-[#C8102E] text-white border-[#C8102E]" : "border-gray-200 text-gray-600 hover:border-gray-400"
+                                          }`}>
+                                          {m}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
                                 </div>
-                              </button>
-                              {/* Lista esercizi in sola lettura */}
-                              {palestraEspansa[ntli.id] && (row.esercizi ?? []).length > 0 && (
-                                <div className="bg-white px-4 py-3 space-y-2 border-t border-red-100">
-                                  {(row.esercizi ?? []).map((es, i) => (
-                                    <div key={i} className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                                        <p className="font-semibold text-gray-900 text-sm">{es.nome || "—"}</p>
-                                        <div className="flex items-center gap-1.5 flex-wrap text-xs text-gray-500">
-                                          {es.serie && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.serie} serie</span>}
-                                          {es.reps && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.reps} reps</span>}
-                                          {es.durata && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.durata}</span>}
-                                          {es.carico && <span className="bg-white border border-blue-200 text-blue-600 px-2 py-0.5 rounded-full">{es.carico}</span>}
-                                          {es.rir && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">RIR {es.rir}</span>}
-                                          {es.vas && <span className="bg-white border border-red-200 text-red-600 px-2 py-0.5 rounded-full">VAS {es.vas}/10</span>}
+
+                                {/* Gym editor */}
+                                {(row.trainingModification ?? "").split(",").map(s => s.trim()).includes("Palestra") && (
+                                  palestraAperta[ntli.id] ? (
+                                    <div className="border border-dashed border-red-200 rounded-xl p-3 space-y-3">
+                                      <GymExercisesEditor
+                                        esercizi={row.esercizi ?? []}
+                                        onChange={(e) => setMonRow(ntli.id, { esercizi: e })}
+                                      />
+                                      <div className="flex justify-end">
+                                        <button type="button"
+                                          onClick={() => setPalestraAperta((prev) => ({ ...prev, [ntli.id]: false }))}
+                                          className="bg-[#C8102E] text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-red-800">
+                                          Salva esercizi palestra
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="border border-red-100 rounded-xl overflow-hidden">
+                                      <button type="button"
+                                        onClick={() => setPalestraEspansa((prev) => ({ ...prev, [ntli.id]: !prev[ntli.id] }))}
+                                        className="w-full flex items-center justify-between bg-red-50 px-4 py-2.5 hover:bg-red-100 transition-colors">
+                                        <span className="text-xs text-gray-600">
+                                          {(row.esercizi ?? []).length > 0
+                                            ? `${(row.esercizi ?? []).length} esercizi palestra`
+                                            : "Nessun esercizio palestra"}
+                                        </span>
+                                        <div className="flex items-center gap-3">
+                                          <button type="button"
+                                            onClick={(e) => { e.stopPropagation(); setPalestraAperta((prev) => ({ ...prev, [ntli.id]: true })); }}
+                                            className="text-xs font-semibold text-[#C8102E] hover:underline">
+                                            Modifica
+                                          </button>
+                                          <span className="text-gray-400 text-xs">{palestraEspansa[ntli.id] ? "▲" : "▼"}</span>
+                                        </div>
+                                      </button>
+                                      {palestraEspansa[ntli.id] && (row.esercizi ?? []).length > 0 && (
+                                        <div className="bg-white px-4 py-3 space-y-2 border-t border-red-100">
+                                          {(row.esercizi ?? []).map((es, i) => (
+                                            <div key={i} className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                <p className="font-semibold text-gray-900 text-sm">{es.nome || "—"}</p>
+                                                <div className="flex items-center gap-1.5 flex-wrap text-xs text-gray-500">
+                                                  {es.serie && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.serie} serie</span>}
+                                                  {es.reps && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.reps} reps</span>}
+                                                  {es.durata && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.durata}</span>}
+                                                  {es.carico && <span className="bg-white border border-blue-200 text-blue-600 px-2 py-0.5 rounded-full">{es.carico}</span>}
+                                                  {es.rir && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">RIR {es.rir}</span>}
+                                                  {es.vas && <span className="bg-white border border-red-200 text-red-600 px-2 py-0.5 rounded-full">VAS {es.vas}/10</span>}
+                                                </div>
+                                              </div>
+                                              {es.note && <p className="text-xs text-gray-400 mt-1 italic">{es.note}</p>}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {palestraEspansa[ntli.id] && (row.esercizi ?? []).length === 0 && (
+                                        <p className="bg-white px-4 py-3 text-xs text-gray-400 border-t border-red-100">Nessun esercizio aggiunto.</p>
+                                      )}
+                                    </div>
+                                  )
+                                )}
+
+                                {/* VAS DX/SX */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div className="border border-gray-100 rounded-xl p-3">
+                                    <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-2">
+                                      VAS Inizio {noAllenamento ? <span className="font-normal text-gray-400">(opzionale)</span> : ""}
+                                    </p>
+                                    <div className="space-y-2">
+                                      <div>
+                                        <Lbl>Arto DX</Lbl>
+                                        <div className="mt-1">
+                                          <VasInput value={row.vasStartDx ?? null} disabled={false}
+                                            onChange={(v) => setMonRow(ntli.id, { vasStartDx: v })} />
                                         </div>
                                       </div>
-                                      {es.note && <p className="text-xs text-gray-400 mt-1 italic">{es.note}</p>}
+                                      <div>
+                                        <Lbl>Arto SX</Lbl>
+                                        <div className="mt-1">
+                                          <VasInput value={row.vasStartSx ?? null} disabled={false}
+                                            onChange={(v) => setMonRow(ntli.id, { vasStartSx: v })} />
+                                        </div>
+                                      </div>
                                     </div>
-                                  ))}
+                                  </div>
+                                  <div className="border border-gray-100 rounded-xl p-3">
+                                    <p className="text-xs font-bold text-[#C8102E] uppercase tracking-wide mb-2">
+                                      VAS Fine {noAllenamento ? <span className="font-normal text-gray-400">(opzionale)</span> : ""}
+                                    </p>
+                                    <div className="space-y-2">
+                                      <div>
+                                        <Lbl>Arto DX</Lbl>
+                                        <div className="mt-1">
+                                          <VasInput value={row.vasEndDx ?? null} disabled={false}
+                                            onChange={(v) => setMonRow(ntli.id, { vasEndDx: v })} />
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <Lbl>Arto SX</Lbl>
+                                        <div className="mt-1">
+                                          <VasInput value={row.vasEndSx ?? null} disabled={false}
+                                            onChange={(v) => setMonRow(ntli.id, { vasEndSx: v })} />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
-                              )}
-                              {palestraEspansa[ntli.id] && (row.esercizi ?? []).length === 0 && (
-                                <p className="bg-white px-4 py-3 text-xs text-gray-400 border-t border-red-100">Nessun esercizio aggiunto.</p>
-                              )}
-                            </div>
-                          )
-                        )}
 
-                        <div className="space-y-3">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div className="border border-gray-100 rounded-xl p-3">
-                              <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-2">
-                                VAS Inizio {noAllenamento ? <span className="font-normal text-gray-400">(opzionale)</span> : ""}
-                              </p>
-                              <div className="space-y-2">
+                                {/* Note */}
                                 <div>
-                                  <Lbl>Arto DX</Lbl>
-                                  <div className="mt-1">
-                                    <VasInput value={row.vasStartDx ?? null} disabled={false}
-                                      onChange={(v) => setMonRow(ntli.id, { vasStartDx: v })} />
-                                  </div>
-                                </div>
-                                <div>
-                                  <Lbl>Arto SX</Lbl>
-                                  <div className="mt-1">
-                                    <VasInput value={row.vasStartSx ?? null} disabled={false}
-                                      onChange={(v) => setMonRow(ntli.id, { vasStartSx: v })} />
-                                  </div>
+                                  <Lbl>Note (max 300 caratteri)</Lbl>
+                                  <input type="text" maxLength={300} value={row.note ?? ""}
+                                    onChange={(e) => setMonRow(ntli.id, { note: e.target.value })}
+                                    className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]"
+                                    placeholder="Note..." />
                                 </div>
                               </div>
                             </div>
-                            <div className="border border-gray-100 rounded-xl p-3">
-                              <p className="text-xs font-bold text-[#C8102E] uppercase tracking-wide mb-2">
-                                VAS Fine {noAllenamento ? <span className="font-normal text-gray-400">(opzionale)</span> : ""}
-                              </p>
-                              <div className="space-y-2">
-                                <div>
-                                  <Lbl>Arto DX</Lbl>
-                                  <div className="mt-1">
-                                    <VasInput value={row.vasEndDx ?? null} disabled={false}
-                                      onChange={(v) => setMonRow(ntli.id, { vasEndDx: v })} />
-                                  </div>
-                                </div>
-                                <div>
-                                  <Lbl>Arto SX</Lbl>
-                                  <div className="mt-1">
-                                    <VasInput value={row.vasEndSx ?? null} disabled={false}
-                                      onChange={(v) => setMonRow(ntli.id, { vasEndSx: v })} />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <Lbl>Note (max 300 caratteri)</Lbl>
-                          <input type="text" maxLength={300} value={row.note ?? ""}
-                            onChange={(e) => setMonRow(ntli.id, { note: e.target.value })}
-                            className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]"
-                            placeholder="Note..." />
-                        </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
