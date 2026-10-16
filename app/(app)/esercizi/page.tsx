@@ -3013,12 +3013,12 @@ export default function EserciziPage() {
                               const macro = e.macroObiettivo ? MACRO_OBJ.find((o) => o.code === e.macroObiettivo) : undefined;
                               return (
                                 <div key={i} className="flex items-baseline gap-1.5 rounded-sm" style={macro ? { borderLeft: `2px solid ${macro.hex}`, paddingLeft: "4px", background: `linear-gradient(to right, ${macro.hex}28 0%, ${macro.hex}10 100%)` } : {}}>
-                                  <span className="text-[10px] font-mono shrink-0 w-4 text-right" style={{ color: macro?.hex ?? "#9ca3af" }}>{i + 1}.</span>
+                                  <span className="text-[10px] font-bold font-mono shrink-0 w-4 text-right" style={{ color: macro?.hex ?? "#9ca3af", filter: "brightness(0.75)" }}>{i + 1}.</span>
                                   <div className="flex-1 min-w-0">
-                                    <span className="text-gray-900 text-xs font-semibold">{e.nome}</span>
+                                    <span className="text-gray-900 text-xs font-bold">{e.nome}</span>
                                     {([e.serie, e.reps, e.durata, e.carico].some(Boolean) || e.note) && (
-                                      <span className="block text-gray-500 text-[10px]">
-                                        {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico, e.note && <span key="note" className="italic text-gray-400">{e.note}</span>].filter(Boolean).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, " · ", el], [])}
+                                      <span className="block text-gray-700 text-[10px] font-medium">
+                                        {[e.serie && `${e.serie} serie`, e.reps && `${e.reps} reps`, e.durata && e.durata, e.carico && e.carico, e.note && <span key="note" className="italic text-gray-500">{e.note}</span>].filter(Boolean).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, " · ", el], [])}
                                       </span>
                                     )}
                                   </div>
@@ -3029,12 +3029,12 @@ export default function EserciziPage() {
                               const macro = c.macroObiettivo ? MACRO_OBJ.find((o) => o.code === c.macroObiettivo) : undefined;
                               return (
                                 <div key={`c${i}`} className="flex items-baseline gap-1.5 rounded-sm" style={macro ? { borderLeft: `2px solid ${macro.hex}`, paddingLeft: "4px", background: `linear-gradient(to right, ${macro.hex}28 0%, ${macro.hex}10 100%)` } : {}}>
-                                  <span className="text-[10px] font-mono shrink-0 w-4 text-right" style={{ color: macro?.hex ?? "#9ca3af" }}>{esercizi.length + i + 1}.</span>
+                                  <span className="text-[10px] font-bold font-mono shrink-0 w-4 text-right" style={{ color: macro?.hex ?? "#9ca3af", filter: "brightness(0.75)" }}>{esercizi.length + i + 1}.</span>
                                   <div className="flex-1 min-w-0">
-                                    <span className="text-gray-900 text-xs font-semibold">{c.tipo}</span>
+                                    <span className="text-gray-900 text-xs font-bold">{c.tipo}</span>
                                     {([c.serie, c.durata].some(Boolean) || c.descrizione) && (
-                                      <span className="block text-gray-500 text-[10px]">
-                                        {[c.serie && `${c.serie} serie`, c.durata && c.durata, c.descrizione && <span key="desc" className="italic text-gray-400">{c.descrizione}</span>].filter(Boolean).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, " · ", el], [])}
+                                      <span className="block text-gray-700 text-[10px] font-medium">
+                                        {[c.serie && `${c.serie} serie`, c.durata && c.durata, c.descrizione && <span key="desc" className="italic text-gray-500">{c.descrizione}</span>].filter(Boolean).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, " · ", el], [])}
                                       </span>
                                     )}
                                   </div>
