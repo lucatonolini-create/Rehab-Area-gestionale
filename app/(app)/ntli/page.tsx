@@ -859,16 +859,12 @@ export default function NtliPage() {
         const ntli = ntliList.find((n) => n.id === ntliId);
         if (!ntli) continue;
         const existing = dailyAll.find((d) => d.ntliId === ntliId && d.date === monDate);
-        const resolvedAthleteId = ntli.athleteId ||
+        const resolvedAthleteId =
+          ntli.athleteId ||
           atleti.find((a) => a.nome.trim().toLowerCase() === ntli.athleteName.trim().toLowerCase())?.id ||
           atleti.find((a) => a.nome.trim().toLowerCase().includes(ntli.athleteName.trim().toLowerCase()) ||
             ntli.athleteName.trim().toLowerCase().includes(a.nome.trim().toLowerCase()))?.id ||
-          null;
-        if (!resolvedAthleteId) {
-          setMonMsg(`Errore: ID atleta non trovato per "${ntli.athleteName}". Apri il record NTLI in Gestione e salvalo di nuovo per collegare l'atleta.`);
-          setMonSaving(false);
-          return;
-        }
+          "";
         const vStartDx = patch.vasStartDx !== undefined ? patch.vasStartDx : existing?.vasStartDx ?? null;
         const vStartSx = patch.vasStartSx !== undefined ? patch.vasStartSx : existing?.vasStartSx ?? null;
         const vEndDx   = patch.vasEndDx   !== undefined ? patch.vasEndDx   : existing?.vasEndDx   ?? null;

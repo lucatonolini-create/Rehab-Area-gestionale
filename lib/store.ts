@@ -1530,7 +1530,7 @@ export async function upsertNtliDaily(d: NtliDaily): Promise<void> {
   const baseRow: Record<string, unknown> = {
     id: existing?.id ?? d.id,
     ntli_id: d.ntliId,
-    athlete_id: d.athleteId || null,
+    athlete_id: d.athleteId || d.ntliId,
     date: d.date,
     vas_start_training: d.vasStart ?? null,
     vas_end_training: d.vasEnd ?? null,
