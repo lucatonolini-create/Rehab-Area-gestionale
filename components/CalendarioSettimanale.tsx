@@ -154,7 +154,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
             <button
               key={key}
               onClick={() => atletaId && setEditGiorno(key)}
-              className={`flex flex-col items-center rounded-xl border transition-all min-h-[76px] ${!atletaId ? "opacity-40 cursor-default " : ""}${
+              className={`flex flex-col items-center rounded-xl border transition-all min-h-[76px] ${
                 isToday
                   ? "border-[#C8102E] bg-red-50"
                   : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm"
