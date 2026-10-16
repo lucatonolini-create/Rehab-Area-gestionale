@@ -1527,23 +1527,25 @@ export async function upsertNtliDaily(d: NtliDaily): Promise<void> {
     .eq("ntli_id", d.ntliId)
     .eq("date", d.date)
     .maybeSingle();
-  const row = {
+  const baseRow: Record<string, unknown> = {
     id: existing?.id ?? d.id,
     ntli_id: d.ntliId,
     athlete_id: d.athleteId || null,
     date: d.date,
     vas_start_training: d.vasStart ?? null,
     vas_end_training: d.vasEnd ?? null,
-    vas_start_dx: d.vasStartDx ?? null,
-    vas_start_sx: d.vasStartSx ?? null,
-    vas_end_dx: d.vasEndDx ?? null,
-    vas_end_sx: d.vasEndSx ?? null,
     training_modification: d.trainingModification,
     note: d.note ?? null,
     esercizi_palestra: d.esercizi?.length ? d.esercizi : null,
     updated_at: new Date().toISOString(),
   };
-  const { error } = await sb.from("ntli_daily").upsert(row, { onConflict: "id" });
+  // Only include dx/sx columns when they have data — avoids errors if the
+  // migration (ADD COLUMN vas_start_dx/sx, vas_end_dx/sx) hasn't run yet.
+  if (d.vasStartDx != null) baseRow.vas_start_dx = d.vasStartDx;
+  if (d.vasStartSx != null) baseRow.vas_start_sx = d.vasStartSx;
+  if (d.vasEndDx   != null) baseRow.vas_end_dx   = d.vasEndDx;
+  if (d.vasEndSx   != null) baseRow.vas_end_sx   = d.vasEndSx;
+  const { error } = await sb.from("ntli_daily").upsert(baseRow, { onConflict: "id" });
   if (error) throw new Error(error.message ?? JSON.stringify(error));
 }
 
