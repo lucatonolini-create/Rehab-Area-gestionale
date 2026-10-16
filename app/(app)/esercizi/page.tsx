@@ -1087,7 +1087,17 @@ export default function EserciziPage() {
     };
   }, [applicaDropAperto]);
 
-  const atletiOrdinati = useMemo(() => [...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")), [atleti]);
+  const atletiOrdinati = useMemo(() => {
+    const seen = new Set<string>();
+    return [...atleti]
+      .sort((a, b) => nd(a).localeCompare(nd(b), "it"))
+      .filter((a) => {
+        const key = nd(a).trim().toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  }, [atleti]);
   const formModalRef = useSwipeToClose(() => setMostraForm(false));
 
   useEffect(() => {
@@ -1419,7 +1429,7 @@ export default function EserciziPage() {
             className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-200"
           >
             <option value="tutti">Tutti i giocatori</option>
-            {[...atleti].sort((a, b) => nd(a).localeCompare(nd(b), "it")).map((a) => (
+            {atletiOrdinati.map((a) => (
               <option key={a.id} value={a.id}>{nd(a)}</option>
             ))}
           </select>
