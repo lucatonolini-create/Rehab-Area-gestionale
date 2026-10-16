@@ -81,7 +81,7 @@ function WeekGrid({
 }) {
   const weekDates = isoWeekDates(settimana);
   return (
-    <div ref={panelRef} className="grid grid-cols-7 gap-1 w-full">
+    <div ref={panelRef} className="grid grid-cols-7 gap-1 md:gap-2 w-full">
       {GIORNI_BREVI.map((label, i) => {
         const key = GIORNI_KEYS[i];
         const date = weekDates[i];
@@ -89,20 +89,20 @@ function WeekGrid({
         const objs = piano[key];
         return (
           <button key={key} onClick={() => onDayClick(key)}
-            className={`flex flex-col items-center rounded-xl border min-h-[76px] ${
-              isToday ? "border-[#C8102E] bg-red-50" : "border-gray-100 bg-white"
+            className={`flex flex-col items-center rounded-xl md:rounded-2xl border min-h-[76px] md:min-h-[110px] transition-colors ${
+              isToday ? "border-[#C8102E] bg-red-50" : "border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50"
             }`}
           >
-            <p className={`text-[10px] font-bold pt-2 ${isToday ? "text-[#C8102E]" : "text-gray-400"}`}>{label}</p>
-            <p className={`text-[10px] font-semibold mb-1.5 ${isToday ? "text-[#C8102E]" : "text-gray-500"}`}>{date.slice(8)}</p>
-            <div className="flex flex-col gap-0.5 px-1 pb-2 w-full">
+            <p className={`text-[10px] md:text-xs font-bold pt-2 md:pt-3 ${isToday ? "text-[#C8102E]" : "text-gray-400"}`}>{label}</p>
+            <p className={`text-[10px] md:text-sm font-semibold mb-1.5 md:mb-2 ${isToday ? "text-[#C8102E]" : "text-gray-600"}`}>{date.slice(8)}</p>
+            <div className="flex flex-col gap-0.5 md:gap-1 px-1 md:px-1.5 pb-2 md:pb-3 w-full">
               {objs.length === 0
                 ? <span className="text-[9px] text-gray-200 text-center">·</span>
                 : objs.map((code) => {
                     const obj = MACRO_OBJ.find((o) => o.code === code);
                     if (!obj) return null;
                     return (
-                      <span key={code} className={`${obj.bg} text-white text-[9px] font-bold rounded px-0.5 py-0.5 text-center leading-tight`}>
+                      <span key={code} className={`${obj.bg} text-white text-[9px] md:text-[10px] font-bold rounded md:rounded-md px-0.5 py-0.5 text-center leading-tight`}>
                         {code}
                       </span>
                     );
@@ -273,11 +273,12 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
     <div className="mb-6 pb-6 border-b border-gray-100">
       <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Piano Settimanale</h2>
 
+      {/* Intestazione: select + navigazione settimana */}
       <div className="flex items-center gap-2 mb-4">
         <select
           value={atletaId}
           onChange={(e) => setAtletaId(e.target.value)}
-          className="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white text-gray-700"
+          className="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white text-gray-700"
         >
           <option value="">Seleziona atleta…</option>
           {atletiAttivi.map((a) => (
@@ -286,15 +287,15 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
             </option>
           ))}
         </select>
-        <div className="flex items-center gap-0.5 shrink-0">
-          <button onClick={() => goWeek(-1)} className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100">
-            <ChevronLeft className="w-4 h-4 text-gray-500" />
+        <div className="flex items-center gap-1 shrink-0">
+          <button onClick={() => goWeek(-1)} className="p-2 md:p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 active:bg-gray-100">
+            <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
           </button>
-          <span className="text-[10px] text-gray-600 font-medium px-1.5 text-center w-[86px] leading-tight">
+          <span className="text-[10px] md:text-xs text-gray-600 font-medium px-2 text-center w-[90px] md:w-[110px] leading-tight">
             {fmt(weekDates[0])} – {fmt(weekDates[6])}.{weekDates[6].slice(2, 4)}
           </span>
-          <button onClick={() => goWeek(1)} className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100">
-            <ChevronRight className="w-4 h-4 text-gray-500" />
+          <button onClick={() => goWeek(1)} className="p-2 md:p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 active:bg-gray-100">
+            <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
           </button>
         </div>
       </div>
@@ -328,9 +329,9 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
       </div>
 
       {/* Legenda */}
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="mt-4 flex flex-wrap gap-2">
         {[...MACRO_OBJ].sort((a, b) => a.label.localeCompare(b.label, "it")).map((obj) => (
-          <span key={obj.code} className={`${obj.bg} text-white text-[9px] font-semibold rounded px-1.5 py-0.5 flex items-center gap-1`}>
+          <span key={obj.code} className={`${obj.bg} text-white text-[9px] md:text-[11px] font-semibold rounded-lg px-2 py-1 flex items-center gap-1.5`}>
             <span className="font-bold">{obj.code}</span>
             <span className="opacity-80 font-normal">{obj.label}</span>
           </span>
@@ -342,7 +343,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setEditGiorno(null)}>
           <div className="absolute inset-0 bg-black/30" />
           <div
-            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col"
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm md:max-w-md flex flex-col"
             onClick={(e) => e.stopPropagation()}
             style={{ maxHeight: "calc(100dvh - 160px)" }}
           >
@@ -361,7 +362,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
 
             {/* Lista obiettivi scrollabile */}
             <div className="overflow-y-auto flex-1 px-5">
-              <div className="grid grid-cols-2 gap-2 pb-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pb-2">
                 {MACRO_OBJ.map((obj) => {
                   const active = piano[editGiorno].includes(obj.code);
                   return (
@@ -380,8 +381,8 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                         active ? `${obj.bg} border-transparent` : "bg-white border-gray-100 hover:border-gray-200"
                       }`}
                     >
-                      <span className={`text-xs font-bold w-6 shrink-0 ${active ? "text-white" : "text-gray-700"}`}>{obj.code}</span>
-                      <span className={`text-xs leading-tight ${active ? "text-white/90" : "text-gray-500"}`}>{obj.label}</span>
+                      <span className={`text-xs md:text-sm font-bold w-6 md:w-7 shrink-0 ${active ? "text-white" : "text-gray-700"}`}>{obj.code}</span>
+                      <span className={`text-xs md:text-sm leading-tight ${active ? "text-white/90" : "text-gray-500"}`}>{obj.label}</span>
                     </button>
                   );
                 })}
