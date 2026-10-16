@@ -857,11 +857,8 @@ export default function NtliPage() {
         if (!ntli) continue;
         const existing = dailyAll.find((d) => d.ntliId === ntliId && d.date === monDate);
         const resolvedAthleteId = ntli.athleteId ||
-          atleti.find((a) => a.nome.trim().toLowerCase() === ntli.athleteName.trim().toLowerCase())?.id;
-        if (!resolvedAthleteId) {
-          console.warn("saveMonitoraggio: athlete_id non trovato per", ntli.athleteName, "— salvataggio saltato");
-          continue;
-        }
+          atleti.find((a) => a.nome.trim().toLowerCase() === ntli.athleteName.trim().toLowerCase())?.id ||
+          null;
         const vStartDx = patch.vasStartDx !== undefined ? patch.vasStartDx : existing?.vasStartDx ?? null;
         const vStartSx = patch.vasStartSx !== undefined ? patch.vasStartSx : existing?.vasStartSx ?? null;
         const vEndDx   = patch.vasEndDx   !== undefined ? patch.vasEndDx   : existing?.vasEndDx   ?? null;
@@ -869,7 +866,7 @@ export default function NtliPage() {
         const record: NtliDaily = {
           id: existing?.id ?? uid(),
           ntliId,
-          athleteId: resolvedAthleteId as string,
+          athleteId: (resolvedAthleteId ?? "") as string,
           date: monDate,
           vasStart: vStartDx ?? vStartSx ?? existing?.vasStart ?? null,
           vasEnd: vEndDx ?? vEndSx ?? existing?.vasEnd ?? null,
