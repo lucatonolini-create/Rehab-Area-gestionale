@@ -144,8 +144,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
       </div>
 
       {/* Griglia settimanale */}
-      {!atletaId && <p className="text-xs text-gray-400 text-center py-6">Seleziona un atleta per visualizzare il piano</p>}
-      <div className={`grid grid-cols-7 gap-1 ${!atletaId ? "hidden" : ""}`}>
+      <div className="grid grid-cols-7 gap-1">
         {GIORNI_BREVI.map((label, i) => {
           const key = GIORNI_KEYS[i];
           const date = weekDates[i];
@@ -154,8 +153,8 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
           return (
             <button
               key={key}
-              onClick={() => setEditGiorno(key)}
-              className={`flex flex-col items-center rounded-xl border transition-all min-h-[76px] ${
+              onClick={() => atletaId && setEditGiorno(key)}
+              className={`flex flex-col items-center rounded-xl border transition-all min-h-[76px] ${!atletaId ? "opacity-40 cursor-default " : ""}${
                 isToday
                   ? "border-[#C8102E] bg-red-50"
                   : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm"
@@ -191,7 +190,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
       </div>
 
       {/* Legenda */}
-      <div className={`mt-3 flex flex-wrap gap-1.5 ${!atletaId ? "hidden" : ""}`}>
+      <div className="mt-3 flex flex-wrap gap-1.5">
         {MACRO_OBJ.map((obj) => (
           <span
             key={obj.code}
