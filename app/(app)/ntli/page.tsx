@@ -347,7 +347,10 @@ function NtliForm({
               <PlayerCombobox
                 value={form.athleteName}
                 onSelect={(nome) => {
-                  const match = atleti.find((a) => a.nome.trim().toLowerCase() === nome.trim().toLowerCase());
+                  const n = nome.trim().toLowerCase();
+                  const match =
+                    atleti.find((a) => a.nome.trim().toLowerCase() === n) ||
+                    atleti.find((a) => a.nome.trim().toLowerCase().includes(n) || n.includes(a.nome.trim().toLowerCase()));
                   f("athleteName", nome);
                   f("athleteId", match?.id ?? "");
                 }}
