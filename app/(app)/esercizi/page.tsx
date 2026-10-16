@@ -2780,7 +2780,7 @@ export default function EserciziPage() {
       {mostraSelettoreWB && (() => {
         const oggiSel = dataGiorno;
         const infortunati = [...atleti]
-          .filter((a, _, arr) => arr.findIndex((x) => x.id === a.id) === arr.indexOf(a))
+          .filter((a, idx, arr) => arr.findIndex((x) => x.id === a.id) === idx)
           .filter((a) => {
             if (a.stato === "Infortunato") return true;
             if (a.stato === "NTL") {
