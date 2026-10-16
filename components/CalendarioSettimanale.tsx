@@ -342,11 +342,12 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={() => setEditGiorno(null)}>
           <div className="absolute inset-0 bg-black/30" />
           <div
-            className="relative bg-white rounded-t-2xl md:rounded-2xl shadow-2xl p-5 w-full max-w-sm"
+            className="relative bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-sm flex flex-col"
             onClick={(e) => e.stopPropagation()}
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 16px) + 20px)" }}
+            style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - 100px)" }}
           >
-            <div className="flex items-center justify-between mb-4">
+            {/* Header fisso */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 shrink-0">
               <h3 className="font-semibold text-gray-900">
                 {GIORNI_BREVI[editIdx]}{" "}
                 <span className="text-gray-400 font-normal text-sm">
@@ -357,37 +358,48 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {MACRO_OBJ.map((obj) => {
-                const active = piano[editGiorno].includes(obj.code);
-                return (
-                  <button
-                    key={obj.code}
-                    onClick={() => {
-                      setPiano((prev) => {
-                        const curr = prev[editGiorno];
-                        const next = curr.includes(obj.code) ? curr.filter((c) => c !== obj.code) : [...curr, obj.code];
-                        const updated = { ...prev, [editGiorno]: next };
-                        if (atletaId) lsSave(atletaId, settimana, updated);
-                        return updated;
-                      });
-                    }}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 transition-all text-left ${
-                      active ? `${obj.bg} border-transparent` : "bg-white border-gray-100 hover:border-gray-200"
-                    }`}
-                  >
-                    <span className={`text-xs font-bold w-6 shrink-0 ${active ? "text-white" : "text-gray-700"}`}>{obj.code}</span>
-                    <span className={`text-xs leading-tight ${active ? "text-white/90" : "text-gray-500"}`}>{obj.label}</span>
-                  </button>
-                );
-              })}
+
+            {/* Lista obiettivi scrollabile */}
+            <div className="overflow-y-auto flex-1 px-5">
+              <div className="grid grid-cols-2 gap-2 pb-2">
+                {MACRO_OBJ.map((obj) => {
+                  const active = piano[editGiorno].includes(obj.code);
+                  return (
+                    <button
+                      key={obj.code}
+                      onClick={() => {
+                        setPiano((prev) => {
+                          const curr = prev[editGiorno];
+                          const next = curr.includes(obj.code) ? curr.filter((c) => c !== obj.code) : [...curr, obj.code];
+                          const updated = { ...prev, [editGiorno]: next };
+                          if (atletaId) lsSave(atletaId, settimana, updated);
+                          return updated;
+                        });
+                      }}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 transition-all text-left ${
+                        active ? `${obj.bg} border-transparent` : "bg-white border-gray-100 hover:border-gray-200"
+                      }`}
+                    >
+                      <span className={`text-xs font-bold w-6 shrink-0 ${active ? "text-white" : "text-gray-700"}`}>{obj.code}</span>
+                      <span className={`text-xs leading-tight ${active ? "text-white/90" : "text-gray-500"}`}>{obj.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <button
-              onClick={() => setEditGiorno(null)}
-              className="mt-4 w-full bg-[#C8102E] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-red-800"
+
+            {/* Bottone fisso in fondo */}
+            <div
+              className="px-5 pt-3 shrink-0"
+              style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 16px) + 16px)" }}
             >
-              Fatto
-            </button>
+              <button
+                onClick={() => setEditGiorno(null)}
+                className="w-full bg-[#C8102E] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-red-800"
+              >
+                Fatto
+              </button>
+            </div>
           </div>
         </div>
       )}
