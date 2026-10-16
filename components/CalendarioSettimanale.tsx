@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { nd, type Atleta } from "@/lib/store";
 
@@ -15,6 +15,7 @@ export const MACRO_OBJ = [
   { code: "S",  label: "Scarico",           bg: "bg-sky-400" },
   { code: "M",  label: "Metabolico",        bg: "bg-rose-600" },
   { code: "I",  label: "Isometrie",         bg: "bg-violet-600" },
+  { code: "R",  label: "Riposo",            bg: "bg-gray-400" },
 ] as const;
 
 const GIORNI_BREVI = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"] as const;
@@ -23,39 +24,49 @@ type GiornoKey = (typeof GIORNI_KEYS)[number];
 type PianoGiorni = Record<GiornoKey, string[]>;
 const EMPTY_PIANO: PianoGiorni = { lun: [], mar: [], mer: [], gio: [], ven: [], sab: [], dom: [] };
 
-function currentIsoWeek(): string {
-  const now = new Date();
-  const jan4 = new Date(now.getFullYear(), 0, 4);
-  const startOfYear = new Date(jan4);
-  startOfYear.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
-  const weekNum = Math.floor((now.getTime() - startOfYear.getTime()) / (7 * 86400000)) + 1;
-  return `${now.getFullYear()}-W${String(weekNum).padStart(2, "0")}`;
+// Restituisce la data del lunedì della settimana ISO (YYYY-Www)
+function mondayOfIsoWeek(isoWeek: string): Date {
+  const [year, week] = isoWeek.split("-W").map(Number);
+  // 4 gennaio è sempre nella settimana 1
+  const jan4 = new Date(year, 0, 4);
+  // lunedì della settimana 1
+  const w1mon = new Date(jan4);
+  w1mon.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+  // lunedì della settimana richiesta
+  const mon = new Date(w1mon);
+  mon.setDate(w1mon.getDate() + (week - 1) * 7);
+  return mon;
+}
+
+function dateToIsoWeek(d: Date): string {
+  // Trova il giovedì della settimana per determinare l'anno ISO
+  const thu = new Date(d);
+  thu.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 3);
+  const year = thu.getFullYear();
+  const jan4 = new Date(year, 0, 4);
+  const w1mon = new Date(jan4);
+  w1mon.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+  const week = Math.floor((thu.getTime() - w1mon.getTime()) / (7 * 86400000)) + 1;
+  return `${year}-W${String(week).padStart(2, "0")}`;
 }
 
 function shiftWeek(isoWeek: string, delta: number): string {
-  const [year, week] = isoWeek.split("-W").map(Number);
-  const jan4 = new Date(year, 0, 4);
-  const soy = new Date(jan4);
-  soy.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
-  const ref = new Date(soy);
-  ref.setDate(soy.getDate() + (week - 1 + delta) * 7);
-  const jan4n = new Date(ref.getFullYear(), 0, 4);
-  const soyn = new Date(jan4n);
-  soyn.setDate(jan4n.getDate() - ((jan4n.getDay() + 6) % 7));
-  const wn = Math.floor((ref.getTime() - soyn.getTime()) / (7 * 86400000)) + 1;
-  return `${ref.getFullYear()}-W${String(wn).padStart(2, "0")}`;
+  const mon = mondayOfIsoWeek(isoWeek);
+  mon.setDate(mon.getDate() + delta * 7);
+  return dateToIsoWeek(mon);
 }
 
 function isoWeekDates(isoWeek: string): string[] {
-  const [year, week] = isoWeek.split("-W").map(Number);
-  const jan4 = new Date(year, 0, 4);
-  const sow = new Date(jan4);
-  sow.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7) + (week - 1) * 7);
+  const mon = mondayOfIsoWeek(isoWeek);
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(sow);
-    d.setDate(sow.getDate() + i);
+    const d = new Date(mon);
+    d.setDate(mon.getDate() + i);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   });
+}
+
+function currentIsoWeek(): string {
+  return dateToIsoWeek(new Date());
 }
 
 function lsKey(atletaId: string, settimana: string) {
@@ -81,6 +92,9 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   const [piano, setPiano] = useState<PianoGiorni>({ ...EMPTY_PIANO });
   const [editGiorno, setEditGiorno] = useState<GiornoKey | null>(null);
 
+  // Swipe
+  const touchStartX = useRef<number | null>(null);
+
   useEffect(() => {
     if (atletaId) setPiano(lsLoad(atletaId, settimana));
   }, [atletaId, settimana]);
@@ -95,11 +109,26 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
     });
   }, [atletaId, settimana]);
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) > 50) {
+      setSettimana((w) => shiftWeek(w, dx < 0 ? 1 : -1));
+    }
+    touchStartX.current = null;
+  };
+
   if (atletiAttivi.length === 0) return null;
 
   const weekDates = isoWeekDates(settimana);
   const today = new Date().toISOString().slice(0, 10);
   const editIdx = editGiorno ? GIORNI_KEYS.indexOf(editGiorno) : -1;
+
+  const fmt = (date: string) => `${date.slice(8)}.${date.slice(5, 7)}`;
 
   return (
     <div className="mb-6 pb-6 border-b border-gray-100">
@@ -125,26 +154,28 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
         <div className="flex items-center gap-0.5 shrink-0">
           <button
             onClick={() => setSettimana((w) => shiftWeek(w, -1))}
-            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50"
+            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100"
           >
             <ChevronLeft className="w-4 h-4 text-gray-500" />
           </button>
-          <span className="text-[10px] text-gray-600 font-medium px-2 text-center w-[90px] leading-tight">
-            {weekDates[0].slice(8)}.{weekDates[0].slice(5,7)}
-            {" – "}
-            {weekDates[6].slice(8)}.{weekDates[6].slice(5,7)}.{weekDates[6].slice(2,4)}
+          <span className="text-[10px] text-gray-600 font-medium px-1.5 text-center w-[86px] leading-tight">
+            {fmt(weekDates[0])} – {fmt(weekDates[6])}.{weekDates[6].slice(2, 4)}
           </span>
           <button
             onClick={() => setSettimana((w) => shiftWeek(w, 1))}
-            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50"
+            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100"
           >
             <ChevronRight className="w-4 h-4 text-gray-500" />
           </button>
         </div>
       </div>
 
-      {/* Griglia settimanale */}
-      <div className="grid grid-cols-7 gap-1">
+      {/* Griglia settimanale — swipe per cambiare settimana */}
+      <div
+        className="grid grid-cols-7 gap-1 select-none"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {GIORNI_BREVI.map((label, i) => {
           const key = GIORNI_KEYS[i];
           const date = weekDates[i];
