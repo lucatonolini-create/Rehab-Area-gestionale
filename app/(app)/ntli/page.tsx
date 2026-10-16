@@ -8,10 +8,11 @@ import {
   loadNtli, upsertNtli, deleteNtli,
   loadNtliDaily, upsertNtliDaily,
   loadAtleti, patchStato,
-  searchOsiicsCodes,
+  searchOsiicsCodes, ensureGiocatoreId,
   type NtliRecord, type NtliDaily, type NtliStato, type TrainingModification, type Atleta, type OsiicsCode, type Esercizio, type Stato,
   NTLI_STATI, TRAINING_MODIFICATIONS,
 } from "@/lib/store";
+import { ROSA } from "@/lib/players";
 import PlayerCombobox from "@/components/PlayerCombobox";
 
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -859,12 +860,15 @@ export default function NtliPage() {
         const ntli = ntliList.find((n) => n.id === ntliId);
         if (!ntli) continue;
         const existing = dailyAll.find((d) => d.ntliId === ntliId && d.date === monDate);
+        const atletaM =
+          atleti.find((a) => a.nome.trim().toLowerCase() === ntli.athleteName.trim().toLowerCase()) ||
+          atleti.find((a) => a.nome.trim().toLowerCase().includes(ntli.athleteName.trim().toLowerCase()) ||
+            ntli.athleteName.trim().toLowerCase().includes(a.nome.trim().toLowerCase()));
+        const rosaM = ROSA.find((g) => g.nome.toLowerCase() === ntli.athleteName.trim().toLowerCase());
         const resolvedAthleteId =
           ntli.athleteId ||
-          atleti.find((a) => a.nome.trim().toLowerCase() === ntli.athleteName.trim().toLowerCase())?.id ||
-          atleti.find((a) => a.nome.trim().toLowerCase().includes(ntli.athleteName.trim().toLowerCase()) ||
-            ntli.athleteName.trim().toLowerCase().includes(a.nome.trim().toLowerCase()))?.id ||
-          "";
+          atletaM?.id ||
+          await ensureGiocatoreId(ntli.athleteName, rosaM?.categoria, rosaM?.ruolo);
         const vStartDx = patch.vasStartDx !== undefined ? patch.vasStartDx : existing?.vasStartDx ?? null;
         const vStartSx = patch.vasStartSx !== undefined ? patch.vasStartSx : existing?.vasStartSx ?? null;
         const vEndDx   = patch.vasEndDx   !== undefined ? patch.vasEndDx   : existing?.vasEndDx   ?? null;
@@ -872,7 +876,7 @@ export default function NtliPage() {
         const record: NtliDaily = {
           id: existing?.id ?? uid(),
           ntliId,
-          athleteId: (resolvedAthleteId ?? "") as string,
+          athleteId: resolvedAthleteId,
           date: monDate,
           vasStart: vStartDx ?? vStartSx ?? existing?.vasStart ?? null,
           vasEnd: vEndDx ?? vEndSx ?? existing?.vasEnd ?? null,
@@ -915,11 +919,14 @@ export default function NtliPage() {
     }
     const now = new Date().toISOString();
     const recordId = editNtli?.id ?? uid();
-    const resolvedId = data.athleteId ||
-      atleti.find((a) => a.nome.trim().toLowerCase() === data.athleteName.trim().toLowerCase())?.id ||
+    const atletaMatch =
+      atleti.find((a) => a.nome.trim().toLowerCase() === data.athleteName.trim().toLowerCase()) ||
       atleti.find((a) => a.nome.trim().toLowerCase().includes(data.athleteName.trim().toLowerCase()) ||
-        data.athleteName.trim().toLowerCase().includes(a.nome.trim().toLowerCase()))?.id ||
-      editNtli?.athleteId || recordId;
+        data.athleteName.trim().toLowerCase().includes(a.nome.trim().toLowerCase()));
+    const rosaMatch = ROSA.find((g) => g.nome.toLowerCase() === data.athleteName.trim().toLowerCase());
+    const resolvedId = atletaMatch?.id ||
+      editNtli?.athleteId ||
+      await ensureGiocatoreId(data.athleteName, rosaMatch?.categoria, rosaMatch?.ruolo);
     const rec: NtliRecord = {
       id: recordId,
       athleteId: resolvedId,

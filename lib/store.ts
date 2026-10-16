@@ -1435,6 +1435,25 @@ function ntliSbClient() {
   );
 }
 
+/** Garantisce che il giocatore esista nella tabella `giocatori` e restituisce il suo UUID stabile. */
+export async function ensureGiocatoreId(
+  nome: string,
+  categoria?: string,
+  ruolo?: string
+): Promise<string> {
+  const sb = ntliSbClient();
+  const { data, error } = await sb
+    .from("giocatori")
+    .upsert(
+      { nome: nome.trim(), categoria: categoria ?? null, ruolo: ruolo ?? null },
+      { onConflict: "nome", ignoreDuplicates: false }
+    )
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message ?? JSON.stringify(error));
+  return data.id as string;
+}
+
 function ntliRowToRecord(r: Record<string, unknown>): NtliRecord {
   return {
     id: r.id as string,
@@ -1530,7 +1549,7 @@ export async function upsertNtliDaily(d: NtliDaily): Promise<void> {
   const baseRow: Record<string, unknown> = {
     id: existing?.id ?? d.id,
     ntli_id: d.ntliId,
-    athlete_id: d.athleteId || d.ntliId,
+    athlete_id: d.athleteId,
     date: d.date,
     vas_start_training: d.vasStart ?? null,
     vas_end_training: d.vasEnd ?? null,
