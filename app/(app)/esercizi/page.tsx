@@ -2782,6 +2782,8 @@ export default function EserciziPage() {
         const infortunati = [...atleti].filter((a) => {
           if (a.stato === "Infortunato") return true;
           if (a.stato === "NTL") {
+            // Se i programmi sono ancora in caricamento, mostra tutti gli NTL
+            if (caricandoWhiteboard || !(a.id in programmiPerAtleta)) return true;
             return (programmiPerAtleta[a.id] ?? []).some(
               (p) => p.data === oggiSel && !p.assente && !p.riposo && (p.esercizi ?? []).some((e) => e.nome?.trim())
             );
