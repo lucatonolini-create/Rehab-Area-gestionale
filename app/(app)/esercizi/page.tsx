@@ -17,6 +17,7 @@ import {
   TESTS_PREDEFINITI, OBIETTIVI_PALESTRA, OBIETTIVI_CAMPO,
   type Atleta, type Programma, type Esercizio, type TestFisiometrico, type Carico, type EsercizioCampo, type InfortunioStorico,
 } from "@/lib/store";
+import { MACRO_OBJ, getObiettiviForDate } from "@/components/CalendarioSettimanale";
 
 const esVuoto: Esercizio = { nome: "", serie: "", reps: "", durata: "", carico: "", rir: "", vas: "", note: "", gruppoMuscolare: "" };
 
@@ -2870,6 +2871,15 @@ export default function EserciziPage() {
           (a.programma.nome || "").localeCompare(b.programma.nome || "", "it")
         );
         const CARD_COLORS = ["#C8102E","#2563eb","#7c3aed","#059669","#d97706","#0891b2","#ea580c","#6d28d9","#0d9488","#be185d"];
+        const getCardColor = (prog: Programma, gruppo: Atleta[], idx: number): string => {
+          const firstAtleta = gruppo[0];
+          if (firstAtleta) {
+            const objs = getObiettiviForDate(firstAtleta.id, prog.data);
+            const macro = objs.length > 0 ? MACRO_OBJ.find((o) => o.code === objs[0]) : undefined;
+            if (macro) return macro.hex;
+          }
+          return CARD_COLORS[idx % CARD_COLORS.length];
+        };
         return (
           <div className="fixed inset-0 z-50 flex flex-col bg-white" style={{ zoom: zoomWB }}>
             {/* Header */}
@@ -2925,25 +2935,39 @@ export default function EserciziPage() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                   {cardsArr.map(({ programma: prog, atleti: gruppo }, idx) => {
-                    const color = CARD_COLORS[idx % CARD_COLORS.length];
+                    const color = getCardColor(prog, gruppo, idx);
                     const nomiAtleti = gruppo.map((a) => nd(a)).join("  ·  ");
                     const esercizi = (prog.esercizi ?? []).filter((e) => e.nome?.trim());
                     const campo = (prog.esercizicampo ?? []).filter((e) => e.tipo?.trim());
+                    const firstAtleta = gruppo[0];
+                    const obiettiviDelGiorno = firstAtleta ? getObiettiviForDate(firstAtleta.id, prog.data) : [];
+                    const macroDelGiorno = obiettiviDelGiorno.map((c) => MACRO_OBJ.find((o) => o.code === c)).filter(Boolean);
                     return (
                       <div key={prog.id ?? idx} className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
                         {/* Header */}
-                        <div className="flex items-center gap-1 px-3 py-2" style={{ borderLeft: `3px solid ${color}` }}>
-                          <p className="text-gray-900 font-bold text-sm leading-tight flex-1 min-w-0">{nomiAtleti}</p>
-                          <button
-                            onClick={() => setAtletiSelezionatiWB((prev) => {
-                              const next = new Set(prev);
-                              gruppo.forEach((a) => next.delete(a.id));
-                              return next;
-                            })}
-                            className="shrink-0 text-gray-300 hover:text-gray-600 transition-colors ml-1"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
+                        <div className="px-3 pt-2 pb-1.5" style={{ borderLeft: `4px solid ${color}` }}>
+                          <div className="flex items-center gap-1 mb-1">
+                            <p className="text-gray-900 font-bold text-sm leading-tight flex-1 min-w-0">{nomiAtleti}</p>
+                            <button
+                              onClick={() => setAtletiSelezionatiWB((prev) => {
+                                const next = new Set(prev);
+                                gruppo.forEach((a) => next.delete(a.id));
+                                return next;
+                              })}
+                              className="shrink-0 text-gray-300 hover:text-gray-600 transition-colors ml-1"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                          {macroDelGiorno.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {macroDelGiorno.map((m) => m && (
+                                <span key={m.code} className="text-white text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: m.hex }}>
+                                  {m.label}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
 
                         {/* Exercises */}

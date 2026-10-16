@@ -5,18 +5,39 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { nd, type Atleta } from "@/lib/store";
 
 export const MACRO_OBJ = [
-  { code: "F",  label: "Forza",             bg: "bg-blue-600" },
-  { code: "P",  label: "Potenza",           bg: "bg-purple-600" },
-  { code: "A",  label: "Accessori",         bg: "bg-slate-500" },
-  { code: "C",  label: "Campo",             bg: "bg-green-600" },
-  { code: "Co", label: "Compound",          bg: "bg-orange-500" },
-  { code: "U",  label: "Upper",             bg: "bg-cyan-600" },
-  { code: "NM", label: "Controllo Motorio", bg: "bg-amber-500" },
-  { code: "S",  label: "Scarico",           bg: "bg-sky-400" },
-  { code: "M",  label: "Metabolico",        bg: "bg-rose-600" },
-  { code: "I",  label: "Isometrie",         bg: "bg-violet-600" },
-  { code: "R",  label: "Riposo",            bg: "bg-gray-400" },
+  { code: "F",  label: "Forza",             bg: "bg-blue-600",   hex: "#2563eb" },
+  { code: "P",  label: "Potenza",           bg: "bg-purple-600", hex: "#9333ea" },
+  { code: "A",  label: "Accessori",         bg: "bg-slate-500",  hex: "#64748b" },
+  { code: "C",  label: "Campo",             bg: "bg-green-600",  hex: "#16a34a" },
+  { code: "Co", label: "Compound",          bg: "bg-orange-500", hex: "#f97316" },
+  { code: "U",  label: "Upper",             bg: "bg-cyan-600",   hex: "#0891b2" },
+  { code: "NM", label: "Controllo Motorio", bg: "bg-amber-500",  hex: "#f59e0b" },
+  { code: "S",  label: "Scarico",           bg: "bg-sky-400",    hex: "#38bdf8" },
+  { code: "M",  label: "Metabolico",        bg: "bg-rose-600",   hex: "#e11d48" },
+  { code: "I",  label: "Isometrie",         bg: "bg-violet-600", hex: "#7c3aed" },
+  { code: "R",  label: "Riposo",            bg: "bg-gray-400",   hex: "#9ca3af" },
 ] as const;
+
+/** Restituisce i codici macro obiettivo assegnati a un atleta per una data specifica (da localStorage). */
+export function getObiettiviForDate(atletaId: string, dateStr: string): string[] {
+  try {
+    const d = new Date(dateStr + "T00:00:00");
+    const thu = new Date(d);
+    thu.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 3);
+    const year = thu.getFullYear();
+    const jan4 = new Date(year, 0, 4);
+    const w1mon = new Date(jan4);
+    w1mon.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+    const week = Math.floor((thu.getTime() - w1mon.getTime()) / (7 * 86400000)) + 1;
+    const isoWeek = `${year}-W${String(week).padStart(2, "0")}`;
+    const raw = localStorage.getItem(`piano_sett_${atletaId}_${isoWeek}`);
+    if (!raw) return [];
+    const piano = JSON.parse(raw) as Record<string, string[]>;
+    const dayIdx = d.getDay() === 0 ? 6 : d.getDay() - 1;
+    const key = GIORNI_KEYS[dayIdx];
+    return piano[key] ?? [];
+  } catch { return []; }
+}
 
 const GIORNI_BREVI = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"] as const;
 const GIORNI_KEYS = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"] as const;
