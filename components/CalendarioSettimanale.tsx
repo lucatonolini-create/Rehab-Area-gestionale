@@ -339,12 +339,12 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
 
       {/* Modal */}
       {editGiorno && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" onClick={() => setEditGiorno(null)}>
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }} onClick={() => setEditGiorno(null)}>
           <div className="absolute inset-0 bg-black/30" />
           <div
             className="relative bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-sm flex flex-col"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - 100px)" }}
+            style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - 180px)" }}
           >
             {/* Header fisso */}
             <div className="flex items-center justify-between px-5 pt-5 pb-4 shrink-0">
@@ -391,7 +391,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
             {/* Bottone fisso in fondo */}
             <div
               className="px-5 pt-3 shrink-0"
-              style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 16px) + 16px)" }}
+              style={{ paddingBottom: "16px" }}
             >
               <button
                 onClick={() => setEditGiorno(null)}
