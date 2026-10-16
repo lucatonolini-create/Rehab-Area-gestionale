@@ -2922,8 +2922,18 @@ export default function EserciziPage() {
                     return (
                       <div key={prog.id ?? idx} className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
                         {/* Header */}
-                        <div className="px-3 py-2" style={{ borderLeft: `3px solid ${color}` }}>
-                          <p className="text-gray-900 font-bold text-sm leading-tight">{nomiAtleti}</p>
+                        <div className="flex items-center gap-1 px-3 py-2" style={{ borderLeft: `3px solid ${color}` }}>
+                          <p className="text-gray-900 font-bold text-sm leading-tight flex-1 min-w-0">{nomiAtleti}</p>
+                          <button
+                            onClick={() => setAtletiSelezionatiWB((prev) => {
+                              const next = new Set(prev);
+                              gruppo.forEach((a) => next.delete(a.id));
+                              return next;
+                            })}
+                            className="shrink-0 text-gray-300 hover:text-gray-600 transition-colors ml-1"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         </div>
 
                         {/* Exercises */}
