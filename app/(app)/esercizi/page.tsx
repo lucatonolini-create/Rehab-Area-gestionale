@@ -1468,7 +1468,7 @@ export default function EserciziPage() {
           </button>
           <button
             onClick={() => {
-              setAtletiSelezionatiWB(new Set(atleti.filter((a) => a.stato === "Infortunato" || a.stato === "NTL").map((a) => a.id)));
+              setAtletiSelezionatiWB(new Set(atleti.filter((a) => a.stato === "Infortunato").map((a) => a.id)));
               setAtletiWBRicerca("");
               setMostraSelettoreWB(true);
             }}
@@ -2780,17 +2780,8 @@ export default function EserciziPage() {
       {mostraSelettoreWB && (() => {
         const oggiSel = dataGiorno;
         const infortunati = [...atleti]
-          .filter((a, idx, arr) => arr.findIndex((x) => x.id === a.id) === idx)
-          .filter((a) => {
-            if (a.stato === "Infortunato") return true;
-            if (a.stato === "NTL") {
-              if (caricandoWhiteboard || !(a.id in programmiPerAtleta)) return true;
-              return (programmiPerAtleta[a.id] ?? []).some(
-                (p) => p.data === oggiSel && !p.assente && !p.riposo && (p.esercizi ?? []).some((e) => e.nome?.trim())
-              );
-            }
-            return false;
-          }).sort((a, b) => nd(a).localeCompare(nd(b), "it"));
+          .filter((a) => a.stato === "Infortunato")
+          .sort((a, b) => nd(a).localeCompare(nd(b), "it"));
         const [ricercaWB, setRicercaWB] = [atletiWBRicerca, setAtletiWBRicerca];
         const visibili = ricercaWB.trim() ? infortunati.filter((a) => nd(a).toLowerCase().includes(ricercaWB.toLowerCase())) : infortunati;
         return (
@@ -2851,12 +2842,9 @@ export default function EserciziPage() {
       {/* ── Whiteboard modal ─────────────────────────────────────────── */}
       {mostraWhiteboard && (() => {
         const oggiStr = dataGiorno;
-        const tuttiProg = Object.values(programmiPerAtleta).flat().filter((p) => {
-          if (p.data !== oggiStr || p.assente || p.riposo || !atletiSelezionatiWB.has(p.atletaId)) return false;
-          const atleta = atleti.find((a) => a.id === p.atletaId);
-          if (atleta?.stato === "NTL" && !(p.esercizi ?? []).some((e) => e.nome?.trim())) return false;
-          return true;
-        });
+        const tuttiProg = Object.values(programmiPerAtleta).flat().filter((p) =>
+          p.data === oggiStr && !p.assente && !p.riposo && atletiSelezionatiWB.has(p.atletaId)
+        );
         // Group by program name+fase: one card per unique program, multiple athletes per card
         const gruppiProg = new Map<string, { programma: Programma; atleti: Atleta[] }>();
         for (const prog of tuttiProg) {
