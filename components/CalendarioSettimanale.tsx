@@ -120,10 +120,30 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
     .filter((a) => a.stato === "Infortunato" || a.stato === "NTL")
     .sort((a, b) => nd(a).localeCompare(nd(b), "it"));
 
-  const [atletaId, setAtletaId] = useState<string>("");
+  const [atletaIds, setAtletaIds] = useState<string[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [settimana, setSettimana] = useState(currentIsoWeek);
   const [piano, setPiano] = useState<PianoGiorni>({ ...EMPTY_PIANO });
   const [editGiorno, setEditGiorno] = useState<GiornoKey | null>(null);
+
+  // Chiudi dropdown cliccando fuori
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
+        setDropdownOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const toggleAtleta = (id: string) => {
+    setAtletaIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const atletaId = atletaIds[0] ?? "";
 
   // Drag state
   const [adjWeek, setAdjWeek] = useState<string | null>(null);
@@ -140,6 +160,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
 
   useEffect(() => {
     if (atletaId) setPiano(lsLoad(atletaId, settimana));
+    else setPiano({ ...EMPTY_PIANO });
   }, [atletaId, settimana]);
 
   const applyTransforms = (dx: number, dir: "left" | "right") => {
@@ -273,20 +294,61 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
     <div className="mb-6 pb-6 border-b border-gray-100">
       <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Piano Settimanale</h2>
 
-      {/* Intestazione: select + navigazione settimana */}
+      {/* Intestazione: multi-select atleti + navigazione settimana */}
       <div className="flex items-center gap-2 mb-4">
-        <select
-          value={atletaId}
-          onChange={(e) => setAtletaId(e.target.value)}
-          className="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white text-gray-700"
-        >
-          <option value="">Seleziona atleta…</option>
-          {atletiAttivi.map((a) => (
-            <option key={a.id} value={a.id}>
-              {nd(a)}{a.stato === "Infortunato" ? " · Infortuno" : " · NTL"}
-            </option>
-          ))}
-        </select>
+        {/* Dropdown multi-selezione */}
+        <div ref={dropdownRef} className="relative flex-1 min-w-0">
+          <button
+            onClick={() => setDropdownOpen((v) => !v)}
+            className="w-full flex items-center justify-between border border-gray-200 rounded-xl px-3 py-2 text-sm md:text-base bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#C8102E] text-left"
+          >
+            <span className={atletaIds.length === 0 ? "text-gray-400" : "text-gray-800 font-medium"}>
+              {atletaIds.length === 0
+                ? "Seleziona atleta…"
+                : atletaIds.length === 1
+                ? nd(atletiAttivi.find((a) => a.id === atletaIds[0])!)
+                : `${atletaIds.length} atleti selezionati`}
+            </span>
+            <svg className={`w-4 h-4 text-gray-400 shrink-0 ml-2 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          {dropdownOpen && (
+            <div className="absolute z-40 top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+              {/* Azioni rapide */}
+              <div className="flex border-b border-gray-100">
+                <button onClick={() => setAtletaIds(atletiAttivi.map((a) => a.id))} className="flex-1 py-1.5 text-xs text-[#C8102E] font-semibold hover:bg-red-50">Tutti</button>
+                <div className="w-px bg-gray-100" />
+                <button onClick={() => setAtletaIds([])} className="flex-1 py-1.5 text-xs text-gray-500 font-semibold hover:bg-gray-50">Nessuno</button>
+              </div>
+              {/* Lista atleti con checkbox */}
+              <div className="max-h-52 overflow-y-auto">
+                {atletiAttivi.map((a) => {
+                  const checked = atletaIds.includes(a.id);
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() => toggleAtleta(a.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors ${checked ? "bg-red-50/60" : ""}`}
+                    >
+                      <span className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${checked ? "bg-[#C8102E] border-[#C8102E]" : "border-gray-300"}`}>
+                        {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                      </span>
+                      <span className="text-sm text-gray-800 leading-tight">{nd(a)}</span>
+                      <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${a.stato === "Infortunato" ? "bg-orange-100 text-orange-600" : "bg-red-100 text-red-600"}`}>
+                        {a.stato === "Infortunato" ? "INF" : "NTL"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Footer con conferma */}
+              <div className="border-t border-gray-100 px-3 py-2">
+                <button onClick={() => setDropdownOpen(false)} className="w-full bg-[#C8102E] text-white text-xs font-semibold py-1.5 rounded-lg">
+                  {atletaIds.length === 0 ? "Chiudi" : `Conferma (${atletaIds.length})`}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-1 shrink-0">
           <button onClick={() => goWeek(-1)} className="p-2 md:p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 active:bg-gray-100">
             <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
@@ -314,7 +376,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
           settimana={settimana}
           piano={piano}
           today={todayStr}
-          onDayClick={(key) => atletaId && setEditGiorno(key)}
+          onDayClick={(key) => atletaIds.length > 0 && setEditGiorno(key)}
         />
         {adjWeek && (
           <div ref={adjRef} className="absolute inset-0">
@@ -349,12 +411,17 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
           >
             {/* Header fisso */}
             <div className="flex items-center justify-between px-5 pt-5 pb-4 shrink-0">
-              <h3 className="font-semibold text-gray-900">
-                {GIORNI_BREVI[editIdx]}{" "}
-                <span className="text-gray-400 font-normal text-sm">
-                  {weekDates[editIdx]?.slice(5).split("-").reverse().join("/")}
-                </span>
-              </h3>
+              <div>
+                <h3 className="font-semibold text-gray-900">
+                  {GIORNI_BREVI[editIdx]}{" "}
+                  <span className="text-gray-400 font-normal text-sm">
+                    {weekDates[editIdx]?.slice(5).split("-").reverse().join("/")}
+                  </span>
+                </h3>
+                {atletaIds.length > 1 && (
+                  <p className="text-[11px] text-[#C8102E] font-medium mt-0.5">{atletaIds.length} atleti · piano condiviso</p>
+                )}
+              </div>
               <button onClick={() => setEditGiorno(null)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
@@ -373,7 +440,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                           const curr = prev[editGiorno];
                           const next = curr.includes(obj.code) ? curr.filter((c) => c !== obj.code) : [...curr, obj.code];
                           const updated = { ...prev, [editGiorno]: next };
-                          if (atletaId) lsSave(atletaId, settimana, updated);
+                          atletaIds.forEach((id) => lsSave(id, settimana, updated));
                           return updated;
                         });
                       }}
