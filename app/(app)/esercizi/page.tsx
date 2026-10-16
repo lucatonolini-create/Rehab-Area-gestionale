@@ -2917,7 +2917,7 @@ export default function EserciziPage() {
           return CARD_COLORS[idx % CARD_COLORS.length];
         };
         return (
-          <div className="fixed inset-0 z-50 flex flex-col bg-white" style={{ zoom: zoomWB }}>
+          <div className="fixed inset-0 z-50 flex flex-col bg-white" style={{ zoom: zoomWB, paddingTop: "env(safe-area-inset-top, 0px)" }}>
             {/* Header */}
             <div className="grid grid-cols-3 items-center px-4 py-2 border-b border-gray-200 shrink-0">
               <div />
