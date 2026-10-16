@@ -82,10 +82,6 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   const [editGiorno, setEditGiorno] = useState<GiornoKey | null>(null);
 
   useEffect(() => {
-    if (atletiAttivi.length > 0 && !atletaId) setAtletaId(atletiAttivi[0].id);
-  }, [atletiAttivi.length]);
-
-  useEffect(() => {
     if (atletaId) setPiano(lsLoad(atletaId, settimana));
   }, [atletaId, settimana]);
 
@@ -116,8 +112,9 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
         <select
           value={atletaId}
           onChange={(e) => setAtletaId(e.target.value)}
-          className="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white"
+          className="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white text-gray-700"
         >
+          <option value="">Seleziona atleta…</option>
           {atletiAttivi.map((a) => (
             <option key={a.id} value={a.id}>
               {nd(a)}{a.stato === "Infortunato" ? " · Infortuno" : " · NTL"}
@@ -132,8 +129,10 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
           >
             <ChevronLeft className="w-4 h-4 text-gray-500" />
           </button>
-          <span className="text-[11px] text-gray-600 font-medium px-2 text-center w-[72px]">
-            {settimana}
+          <span className="text-[10px] text-gray-600 font-medium px-2 text-center w-[90px] leading-tight">
+            {weekDates[0].slice(8)}.{weekDates[0].slice(5,7)}
+            {" – "}
+            {weekDates[6].slice(8)}.{weekDates[6].slice(5,7)}.{weekDates[6].slice(2,4)}
           </span>
           <button
             onClick={() => setSettimana((w) => shiftWeek(w, 1))}
@@ -145,7 +144,8 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
       </div>
 
       {/* Griglia settimanale */}
-      <div className="grid grid-cols-7 gap-1">
+      {!atletaId && <p className="text-xs text-gray-400 text-center py-6">Seleziona un atleta per visualizzare il piano</p>}
+      <div className={`grid grid-cols-7 gap-1 ${!atletaId ? "hidden" : ""}`}>
         {GIORNI_BREVI.map((label, i) => {
           const key = GIORNI_KEYS[i];
           const date = weekDates[i];
@@ -191,7 +191,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
       </div>
 
       {/* Legenda */}
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className={`mt-3 flex flex-wrap gap-1.5 ${!atletaId ? "hidden" : ""}`}>
         {MACRO_OBJ.map((obj) => (
           <span
             key={obj.code}
