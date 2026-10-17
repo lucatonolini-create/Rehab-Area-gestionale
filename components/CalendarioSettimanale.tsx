@@ -18,6 +18,8 @@ export const MACRO_OBJ = [
   { code: "M",  label: "Metabolico",        bg: "bg-rose-600",   hex: "#e11d48" },
   { code: "I",  label: "Isometrie",         bg: "bg-violet-600", hex: "#7c3aed" },
   { code: "R",  label: "Riposo",            bg: "bg-gray-400",   hex: "#9ca3af" },
+  { code: "PS", label: "Parziale Squadra", bg: "bg-lime-600",   hex: "#65a30d" },
+  { code: "D",  label: "Differenziato",    bg: "bg-fuchsia-600",hex: "#c026d3" },
 ] as const;
 
 /** Restituisce i codici macro obiettivo assegnati a un atleta per una data specifica (da localStorage). */
