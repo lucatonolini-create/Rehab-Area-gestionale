@@ -1053,6 +1053,7 @@ export default function EserciziPage() {
   });
   const [caricandoWhiteboard, setCaricandoWhiteboard] = useState(false);
   const [wbCarico, setWbCarico] = useState<Record<string, { rpe: string; durata: string }>>({});
+  const [wbAtletaSel, setWbAtletaSel] = useState<Record<string, string>>({});
   const [oraWB, setOraWB] = useState(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setOraWB(new Date()), 1000);
@@ -2985,13 +2986,26 @@ export default function EserciziPage() {
                     const curWB = wbCarico[chiave];
                     const wbDurata = curWB !== undefined ? curWB.durata : (prog.carico?.durata ?? "");
                     const wbRpe = curWB !== undefined ? curWB.rpe : (prog.carico?.rpe ?? "");
-                    const handleWBChange = (field: "durata" | "rpe", val: string) => {
+                    const isMulti = gruppo.length > 1;
+                    const atletaSelId = wbAtletaSel[chiave] ?? "tutti";
+                    const progsGruppo = tuttiProg.filter((p) => ((p.nome?.trim() || "—") + (p.fase ? `|${p.fase}` : "")) === chiave);
+                    const handleWBInput = (field: "durata" | "rpe", val: string) => {
                       setWbCarico((prev) => ({
                         ...prev,
                         [chiave]: { durata: prev[chiave]?.durata ?? prog.carico?.durata ?? "", rpe: prev[chiave]?.rpe ?? prog.carico?.rpe ?? "", [field]: val },
                       }));
-                      const progsGruppo = tuttiProg.filter((p) => ((p.nome?.trim() || "—") + (p.fase ? `|${p.fase}` : "")) === chiave);
-                      progsGruppo.forEach((p) => upsertProgramma({ ...p, carico: { ...caricoVuoto, ...p.carico, [field]: val } }));
+                      if (!isMulti) {
+                        progsGruppo.forEach((p) => upsertProgramma({ ...p, carico: { ...caricoVuoto, ...p.carico, [field]: val } }));
+                      }
+                    };
+                    const salvaWBCarico = () => {
+                      const toSave = atletaSelId === "tutti" ? progsGruppo : progsGruppo.filter((p) => p.atletaId === atletaSelId);
+                      toSave.forEach((p) => upsertProgramma({ ...p, carico: { ...caricoVuoto, ...p.carico, durata: wbDurata, rpe: wbRpe } }));
+                    };
+                    const handleAtletaSelChange = (newId: string) => {
+                      setWbAtletaSel((prev) => ({ ...prev, [chiave]: newId }));
+                      const pg = newId === "tutti" ? progsGruppo[0] : progsGruppo.find((p) => p.atletaId === newId);
+                      setWbCarico((prev) => ({ ...prev, [chiave]: { rpe: pg?.carico?.rpe ?? "", durata: pg?.carico?.durata ?? "" } }));
                     };
                     return (
                       <div key={prog.id ?? idx} className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
@@ -3060,27 +3074,49 @@ export default function EserciziPage() {
                         )}
 
                         {/* Durata + RPE quick inputs */}
-                        <div className="px-2 pb-2 pt-1 flex gap-2">
-                          <div className="flex-1 min-w-0">
-                            <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest block mb-0.5">Durata</label>
-                            <input
-                              type="text"
-                              placeholder="es. 60'"
-                              value={wbDurata}
-                              onChange={(e) => handleWBChange("durata", e.target.value)}
-                              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white placeholder-gray-300"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest block mb-0.5">RPE</label>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              placeholder="1–10"
-                              value={wbRpe}
-                              onChange={(e) => handleWBChange("rpe", e.target.value)}
-                              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white placeholder-gray-300"
-                            />
+                        <div className="px-2 pb-2 pt-1">
+                          {isMulti && (
+                            <select
+                              value={atletaSelId}
+                              onChange={(e) => handleAtletaSelChange(e.target.value)}
+                              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 mb-2 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white text-gray-700"
+                            >
+                              <option value="tutti">Tutti ({gruppo.length} atleti)</option>
+                              {gruppo.map((a) => (
+                                <option key={a.id} value={a.id}>{nd(a)}</option>
+                              ))}
+                            </select>
+                          )}
+                          <div className="flex gap-2 items-end">
+                            <div className="flex-1 min-w-0">
+                              <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest block mb-0.5">Durata</label>
+                              <input
+                                type="text"
+                                placeholder="es. 60'"
+                                value={wbDurata}
+                                onChange={(e) => handleWBInput("durata", e.target.value)}
+                                className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white placeholder-gray-300"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest block mb-0.5">RPE</label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="1–10"
+                                value={wbRpe}
+                                onChange={(e) => handleWBInput("rpe", e.target.value)}
+                                className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white placeholder-gray-300"
+                              />
+                            </div>
+                            {isMulti && (
+                              <button
+                                onClick={salvaWBCarico}
+                                className="shrink-0 bg-[#C8102E] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-red-800 transition-colors"
+                              >
+                                Salva
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
