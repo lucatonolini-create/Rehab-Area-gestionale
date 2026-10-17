@@ -2919,12 +2919,18 @@ export default function EserciziPage() {
         const tuttiProg = Object.values(programmiPerAtleta).flat().filter((p) =>
           p.data === oggiStr && !p.assente && !p.riposo && atletiSelezionatiWB.has(p.atletaId)
         );
-        // Group by program name only: one card per unique name, multiple athletes per card
+        // Group by exercise signature: athletes sharing identical exercises appear on the same card
+        const firmaEsercizi = (p: Programma): string => {
+          const pal = (p.esercizi ?? []).map((e) => e.nome?.trim() || "").filter(Boolean).join("|");
+          const cam = (p.esercizicampo ?? []).map((e) => e.tipo?.trim() || "").filter(Boolean).join("|");
+          const firma = [pal, cam].filter(Boolean).join("||");
+          return firma || ("__nessun_esercizio__" + (p.nome?.trim() || p.atletaId));
+        };
         const gruppiProg = new Map<string, { programma: Programma; atleti: Atleta[] }>();
         for (const prog of tuttiProg) {
           const atleta = atleti.find((a) => a.id === prog.atletaId);
           if (!atleta) continue;
-          const chiave = prog.nome?.trim() || "—";
+          const chiave = firmaEsercizi(prog);
           if (!gruppiProg.has(chiave)) gruppiProg.set(chiave, { programma: prog, atleti: [] });
           if (!gruppiProg.get(chiave)!.atleti.find((a) => a.id === atleta.id))
             gruppiProg.get(chiave)!.atleti.push(atleta);
@@ -3026,7 +3032,7 @@ export default function EserciziPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                   {cardsArr.map(({ programma: prog, atleti: gruppo }, idx) => {
                     const color = getCardColor(prog, gruppo, idx);
-                    const chiave = prog.nome?.trim() || "—";
+                    const chiave = firmaEsercizi(prog);
                     const nomiAtleti = gruppo.map((a) => nd(a)).join("  ·  ");
                     const esercizi = (prog.esercizi ?? []).filter((e) => e.nome?.trim());
                     const campo = (prog.esercizicampo ?? []).filter((e) => e.tipo?.trim());
@@ -3035,7 +3041,7 @@ export default function EserciziPage() {
                     const macroDelGiorno = obiettiviDelGiorno.map((c) => MACRO_OBJ.find((o) => o.code === c)).filter(Boolean);
                     const isMulti = gruppo.length > 1;
                     const atletaSelId = wbAtletaSel[chiave] ?? "tutti";
-                    const progsGruppo = tuttiProg.filter((p) => (p.nome?.trim() || "—") === chiave);
+                    const progsGruppo = tuttiProg.filter((p) => firmaEsercizi(p) === chiave);
                     const refId = atletaSelId === "tutti" ? (gruppo[0]?.id ?? "") : atletaSelId;
                     const refProg = progsGruppo.find((p) => p.atletaId === refId) ?? prog;
                     const storedVals = wbCaricoAtleti[refId];
