@@ -317,6 +317,81 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editGiorno]);
 
+  // Collect all athletes that have data for the current week (union of active + any with LS data)
+  const getAtletiSettimana = () => {
+    const prefix = "piano_sett_";
+    const suffix = `_${settimana}`;
+    const idsWithData = new Set<string>(atletiAttivi.map((a) => a.id));
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith(prefix) && k.endsWith(suffix))
+        .forEach((k) => {
+          const id = k.slice(prefix.length, k.length - suffix.length);
+          if (id) idsWithData.add(id);
+        });
+    } catch {}
+    return Array.from(idsWithData)
+      .map((id) => atleti.find((a) => a.id === id))
+      .filter(Boolean) as Atleta[];
+  };
+
+  const exportCSV = () => {
+    const atletiEsport = getAtletiSettimana().sort((a, b) => nd(a).localeCompare(nd(b), "it"));
+    const wDates = isoWeekDates(settimana);
+    const fmtD = (d: string) => `${d.slice(8)}/${d.slice(5, 7)}`;
+    const header = ["Atleta", ...GIORNI_BREVI.map((g, i) => `${g} ${fmtD(wDates[i])}`)];
+    const rows = atletiEsport.map((a) => {
+      const p = lsLoad(a.id, settimana);
+      return [nd(a), ...GIORNI_KEYS.map((k) => p[k].join(" "))];
+    });
+    const csv = [header, ...rows].map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `calendario_${settimana}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportPDF = async () => {
+    const { default: jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const atletiEsport = getAtletiSettimana().sort((a, b) => nd(a).localeCompare(nd(b), "it"));
+    const wDates = isoWeekDates(settimana);
+    const fmtD = (d: string) => `${d.slice(8)}/${d.slice(5, 7)}`;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Piano Settimanale – ${settimana}`, 14, 16);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(`${fmtD(wDates[0])} – ${fmtD(wDates[6])}`, 14, 22);
+
+    const head = [["Atleta", ...GIORNI_BREVI.map((g, i) => `${g}\n${fmtD(wDates[i])}`)]];
+    const body = atletiEsport.map((a) => {
+      const p = lsLoad(a.id, settimana);
+      return [nd(a), ...GIORNI_KEYS.map((k) => p[k].join(", ") || "–")];
+    });
+
+    autoTable(doc, {
+      head,
+      body,
+      startY: 27,
+      styles: { fontSize: 8, cellPadding: 2.5, valign: "middle" },
+      headStyles: { fillColor: [200, 16, 46], textColor: 255, fontStyle: "bold", halign: "center" },
+      columnStyles: {
+        0: { fontStyle: "bold", cellWidth: 38 },
+        1: { halign: "center" }, 2: { halign: "center" }, 3: { halign: "center" },
+        4: { halign: "center" }, 5: { halign: "center" }, 6: { halign: "center" }, 7: { halign: "center" },
+      },
+      alternateRowStyles: { fillColor: [250, 250, 252] },
+    });
+
+    doc.save(`calendario_${settimana}.pdf`);
+  };
+
   if (atletiAttivi.length === 0) return null;
 
   const weekDates = isoWeekDates(settimana);
@@ -393,6 +468,16 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
           <button onClick={() => goWeek(1)} className="p-2 md:p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 active:bg-gray-100">
             <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
           </button>
+          <button
+            onClick={exportCSV}
+            className="p-2 md:p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 active:bg-gray-100 text-[10px] md:text-xs font-semibold text-gray-500 leading-none"
+            title="Scarica CSV"
+          >CSV</button>
+          <button
+            onClick={exportPDF}
+            className="p-2 md:p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 active:bg-gray-100 text-[10px] md:text-xs font-semibold text-gray-500 leading-none"
+            title="Scarica PDF"
+          >PDF</button>
         </div>
       </div>
 
