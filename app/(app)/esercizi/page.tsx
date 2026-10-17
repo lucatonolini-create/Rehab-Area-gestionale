@@ -3060,7 +3060,7 @@ export default function EserciziPage() {
                         )}
 
                         {/* Durata + RPE quick inputs */}
-                        <div className="border-t border-gray-200 px-2 py-2 flex gap-2 bg-white/60">
+                        <div className="px-2 pb-2 pt-1 flex gap-2">
                           <div className="flex-1 min-w-0">
                             <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest block mb-0.5">Durata</label>
                             <input
