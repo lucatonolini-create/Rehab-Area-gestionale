@@ -1054,6 +1054,7 @@ export default function EserciziPage() {
   const [caricandoWhiteboard, setCaricandoWhiteboard] = useState(false);
   const [wbCarico, setWbCarico] = useState<Record<string, { rpe: string; durata: string }>>({});
   const [wbAtletaSel, setWbAtletaSel] = useState<Record<string, string>>({});
+  const [wbSalvato, setWbSalvato] = useState(false);
   const [oraWB, setOraWB] = useState(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setOraWB(new Date()), 1000);
@@ -2920,6 +2921,20 @@ export default function EserciziPage() {
           }
           return CARD_COLORS[idx % CARD_COLORS.length];
         };
+        const salvaTutto = () => {
+          cardsArr.forEach(({ programma: prog }) => {
+            const chiave = (prog.nome?.trim() || "—") + (prog.fase ? `|${prog.fase}` : "");
+            const curWB = wbCarico[chiave];
+            const durataToSave = curWB !== undefined ? curWB.durata : (prog.carico?.durata ?? "");
+            const rpeToSave = curWB !== undefined ? curWB.rpe : (prog.carico?.rpe ?? "");
+            const atletaSelId = wbAtletaSel[chiave] ?? "tutti";
+            const progsGruppo = tuttiProg.filter((p) => ((p.nome?.trim() || "—") + (p.fase ? `|${p.fase}` : "")) === chiave);
+            const toSave = atletaSelId === "tutti" ? progsGruppo : progsGruppo.filter((p) => p.atletaId === atletaSelId);
+            toSave.forEach((p) => upsertProgramma({ ...p, carico: { ...caricoVuoto, ...p.carico, durata: durataToSave, rpe: rpeToSave } }));
+          });
+          setWbSalvato(true);
+          setTimeout(() => setWbSalvato(false), 2000);
+        };
         return (
           <div className="fixed inset-0 z-50 flex flex-col bg-white" style={{ zoom: zoomWB, paddingTop: "env(safe-area-inset-top, 0px)" }}>
             {/* Header */}
@@ -2937,6 +2952,12 @@ export default function EserciziPage() {
                   <button onClick={() => setZoomWB((z) => Math.min(1.5, +(z + 0.05).toFixed(2)))} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-lg text-lg font-bold transition-colors">+</button>
                   <span className="text-xs text-gray-400 font-mono w-8 text-center">{Math.round(zoomWB * 100)}%</span>
                 </div>
+                <button
+                  onClick={salvaTutto}
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-xl border transition-colors ${wbSalvato ? "bg-green-600 border-green-600 text-white" : "bg-[#C8102E] border-[#C8102E] text-white hover:bg-red-800"}`}
+                >
+                  {wbSalvato ? "✓ Salvato" : "Salva tutto"}
+                </button>
                 <button
                   onClick={async () => {
                     setCaricandoWhiteboard(true);
@@ -2994,9 +3015,6 @@ export default function EserciziPage() {
                         ...prev,
                         [chiave]: { durata: prev[chiave]?.durata ?? prog.carico?.durata ?? "", rpe: prev[chiave]?.rpe ?? prog.carico?.rpe ?? "", [field]: val },
                       }));
-                      if (!isMulti) {
-                        progsGruppo.forEach((p) => upsertProgramma({ ...p, carico: { ...caricoVuoto, ...p.carico, [field]: val } }));
-                      }
                     };
                     const salvaWBCarico = () => {
                       const toSave = atletaSelId === "tutti" ? progsGruppo : progsGruppo.filter((p) => p.atletaId === atletaSelId);
@@ -3110,14 +3128,6 @@ export default function EserciziPage() {
                                 className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white placeholder-gray-300"
                               />
                             </div>
-                            {isMulti && (
-                              <button
-                                onClick={salvaWBCarico}
-                                className="shrink-0 bg-[#C8102E] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-red-800 transition-colors"
-                              >
-                                Salva
-                              </button>
-                            )}
                           </div>
                         </div>
                       </div>
