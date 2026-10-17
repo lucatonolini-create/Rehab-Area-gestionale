@@ -1168,7 +1168,7 @@ export default function EserciziPage() {
   const apriModifica = (p: Programma) => {
     const { id, ...rest } = p;
     setForm({ ...rest, esercizi: rest.esercizi.map((e) => ({ ...e })), esercizicampo: (rest.esercizicampo ?? []).map((c) => ({ ...c })), tests: (rest.tests ?? []).map((t) => ({ ...t })), carico: rest.carico ?? { ...caricoVuoto } });
-    setEditId(id); setMostraForm(true); setSezioneAttiva("esercizi");
+    setEditId(id); setMostraForm(true); setSezioneAttiva("esercizi"); setAtletiAggiuntivi([]);
     const atletaEdit = atleti.find((a) => a.id === rest.atletaId);
     if (rest.atletaId && !(rest.atletaId in programmiPerAtleta)) {
       loadProgrammi(rest.atletaId).then((progs) =>
@@ -1937,8 +1937,8 @@ export default function EserciziPage() {
                 </div>
               </div>
 
-              {/* Applica anche ad altri atleti (solo nuovo programma) */}
-              {!editId && form.atletaId && (() => {
+              {/* Applica anche ad altri atleti */}
+              {form.atletaId && (() => {
                 const candidati = atletiOrdinati.filter((a) => a.id !== form.atletaId && a.stato === "Infortunato");
                 const filtrati = applicaRicerca.trim()
                   ? candidati.filter((a) => nd(a).toLowerCase().includes(applicaRicerca.toLowerCase()))
@@ -2000,7 +2000,7 @@ export default function EserciziPage() {
                       </div>
                     )}
                     {atletiAggiuntivi.length > 0 && (
-                      <p className="mt-1.5 text-xs text-[#C8102E] font-medium">Il programma verrà salvato per {atletiAggiuntivi.length + 1} atleti</p>
+                      <p className="mt-1.5 text-xs text-[#C8102E] font-medium">Verrà creata una copia per {atletiAggiuntivi.length} {atletiAggiuntivi.length === 1 ? "atleta" : "atleti"}</p>
                     )}
                   </div>
                 );
