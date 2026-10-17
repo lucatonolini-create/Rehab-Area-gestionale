@@ -1020,11 +1020,20 @@ function salvaCatalogo(key: string, nomi: string[]) {
   try { localStorage.setItem(key, JSON.stringify(nomi)); } catch {}
 }
 
+const FOCUS_MAP_KEY = "usc_esercizi_focus";
+function leggiFocusMap(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem(FOCUS_MAP_KEY) ?? "{}"); } catch { return {}; }
+}
+function salvaFocusMap(map: Record<string, string>) {
+  try { localStorage.setItem(FOCUS_MAP_KEY, JSON.stringify(map)); } catch {}
+}
+
 export default function EserciziPage() {
   const [atleti, setAtleti] = useState<Atleta[]>([]);
   const [programmiPerAtleta, setProgrammiPerAtleta] = useState<Record<string, Programma[]>>({});
   const [catalogoPalestra, setCatalogoPalestra] = useState<string[]>(() => leggiCatalogo(CATALOGO_KEY_PALESTRA));
   const [catalogoCampo, setCatalogoCampo] = useState<string[]>(() => leggiCatalogo(CATALOGO_KEY_CAMPO));
+  const [focusMap, setFocusMap] = useState<Record<string, string>>(() => leggiFocusMap());
   const [atletaAperto, setAtletaAperto] = useState<string | null>(null);
   const [caricandoAtleta, setCaricandoAtleta] = useState(false);
   const [aperto, setAperto] = useState<string | null>(null);
@@ -1326,8 +1335,20 @@ export default function EserciziPage() {
       setForm({ ...form, esercizi: arrayMove(form.esercizi, oldIdx, newIdx) });
     }
   };
+  const rilevGruppoConFocus = (nome: string): string => {
+    const key = nome.trim().toLowerCase();
+    if (key && focusMap[key]) return focusMap[key];
+    return rilevGruppoMuscolare(nome);
+  };
   const aggiornaEs = (i: number, campo: keyof Esercizio, val: string) => {
-    setForm({ ...form, esercizi: form.esercizi.map((e, idx) => idx === i ? { ...e, [campo]: val } : e) });
+    const nuoviEs = form.esercizi.map((e, idx) => idx === i ? { ...e, [campo]: val } : e);
+    setForm({ ...form, esercizi: nuoviEs });
+    if (campo === "gruppoMuscolare" && val && nuoviEs[i].nome.trim()) {
+      const key = nuoviEs[i].nome.trim().toLowerCase();
+      const newMap = { ...focusMap, [key]: val };
+      setFocusMap(newMap);
+      salvaFocusMap(newMap);
+    }
   };
 
   // Esercizi in campo
@@ -2197,7 +2218,7 @@ export default function EserciziPage() {
                                   <ExerciseAutocomplete
                                     value={es.nome}
                                     onChange={(v) => {
-                                      const gruppo = rilevGruppoMuscolare(v);
+                                      const gruppo = rilevGruppoConFocus(v);
                                       const nuovi = [...form.esercizi];
                                       nuovi[i] = { ...nuovi[i], nome: v, gruppoMuscolare: gruppo || nuovi[i].gruppoMuscolare || "" };
                                       setForm({ ...form, esercizi: nuovi });
