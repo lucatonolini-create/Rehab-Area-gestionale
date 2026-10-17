@@ -5,21 +5,21 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { nd, type Atleta } from "@/lib/store";
 
 export const MACRO_OBJ = [
-  { code: "F",  label: "Forza",             bg: "bg-blue-600",   hex: "#2563eb" },
-  { code: "P",  label: "Potenza",           bg: "bg-purple-600", hex: "#9333ea" },
-  { code: "A",  label: "Accessori",         bg: "bg-slate-500",  hex: "#64748b" },
-  { code: "C",  label: "Campo",             bg: "bg-green-600",  hex: "#16a34a" },
-  { code: "Co", label: "Compound",          bg: "bg-orange-500", hex: "#f97316" },
-  { code: "U",  label: "Upper",             bg: "bg-cyan-600",   hex: "#0891b2" },
-  { code: "NM", label: "Neuromuscolare",    bg: "bg-amber-500",  hex: "#f59e0b" },
-  { code: "T",  label: "Tecnico",           bg: "bg-teal-600",   hex: "#0d9488" },
-  { code: "CM", label: "Controllo Motorio", bg: "bg-indigo-500", hex: "#6366f1" },
-  { code: "S",  label: "Scarico",           bg: "bg-sky-400",    hex: "#38bdf8" },
-  { code: "M",  label: "Metabolico",        bg: "bg-rose-600",   hex: "#e11d48" },
-  { code: "I",  label: "Isometrie",         bg: "bg-violet-600", hex: "#7c3aed" },
-  { code: "R",  label: "Riposo",            bg: "bg-gray-400",   hex: "#9ca3af" },
-  { code: "PS", label: "Parziale Squadra", bg: "bg-lime-600",   hex: "#65a30d" },
-  { code: "D",  label: "Differenziato",    bg: "bg-fuchsia-600",hex: "#c026d3" },
+  { code: "A",  label: "Accessori",         bg: "bg-slate-500",   hex: "#64748b" },
+  { code: "C",  label: "Campo",             bg: "bg-green-600",   hex: "#16a34a" },
+  { code: "Co", label: "Compound",          bg: "bg-orange-500",  hex: "#f97316" },
+  { code: "CM", label: "Controllo Motorio", bg: "bg-indigo-500",  hex: "#6366f1" },
+  { code: "D",  label: "Differenziato",     bg: "bg-fuchsia-600", hex: "#c026d3" },
+  { code: "F",  label: "Forza",             bg: "bg-blue-600",    hex: "#2563eb" },
+  { code: "I",  label: "Isometrie",         bg: "bg-violet-600",  hex: "#7c3aed" },
+  { code: "M",  label: "Metabolico",        bg: "bg-rose-600",    hex: "#e11d48" },
+  { code: "NM", label: "Neuromuscolare",    bg: "bg-amber-500",   hex: "#f59e0b" },
+  { code: "PS", label: "Parziale Squadra",  bg: "bg-lime-600",    hex: "#65a30d" },
+  { code: "P",  label: "Potenza",           bg: "bg-purple-600",  hex: "#9333ea" },
+  { code: "R",  label: "Riposo",            bg: "bg-gray-400",    hex: "#9ca3af" },
+  { code: "S",  label: "Scarico",           bg: "bg-sky-400",     hex: "#38bdf8" },
+  { code: "T",  label: "Tecnico",           bg: "bg-teal-600",    hex: "#0d9488" },
+  { code: "U",  label: "Upper",             bg: "bg-cyan-600",    hex: "#0891b2" },
 ] as const;
 
 /** Restituisce i codici macro obiettivo assegnati a un atleta per una data specifica (da localStorage). */
