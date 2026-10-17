@@ -572,12 +572,12 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                           return updated;
                         });
                       }}
-                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 transition-all text-left ${
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 transition-all text-left min-w-0 overflow-hidden ${
                         active ? `${obj.bg} border-transparent` : "bg-white border-gray-100 hover:border-gray-200"
                       }`}
                     >
-                      <span className={`text-xs md:text-sm font-bold w-6 md:w-7 shrink-0 ${active ? "text-white" : "text-gray-700"}`}>{obj.code}</span>
-                      <span className={`text-xs md:text-sm leading-tight ${active ? "text-white/90" : "text-gray-500"}`}>{obj.label}</span>
+                      <span className={`text-xs font-bold w-6 md:w-7 shrink-0 ${active ? "text-white" : "text-gray-700"}`}>{obj.code}</span>
+                      <span className={`text-[11px] md:text-xs leading-tight min-w-0 break-words ${active ? "text-white/90" : "text-gray-500"}`}>{obj.label}</span>
                     </button>
                   );
                 })}
