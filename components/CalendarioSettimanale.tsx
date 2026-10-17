@@ -401,7 +401,13 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
 
   return (
     <div className="mb-6 pb-6 border-b border-gray-100">
-      <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Piano Settimanale</h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Piano Settimanale</h2>
+        <div className="flex items-center gap-1">
+          <button onClick={exportCSV} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100 text-[10px] font-semibold text-gray-500 leading-none" title="Scarica CSV">CSV</button>
+          <button onClick={exportPDF} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100 text-[10px] font-semibold text-gray-500 leading-none" title="Scarica PDF">PDF</button>
+        </div>
+      </div>
 
       {/* Intestazione: multi-select atleti + navigazione settimana */}
       <div className="flex items-center gap-2 mb-4">
@@ -468,16 +474,6 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
           <button onClick={() => goWeek(1)} className="p-2 md:p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 active:bg-gray-100">
             <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
           </button>
-          <button
-            onClick={exportCSV}
-            className="p-2 md:p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 active:bg-gray-100 text-[10px] md:text-xs font-semibold text-gray-500 leading-none"
-            title="Scarica CSV"
-          >CSV</button>
-          <button
-            onClick={exportPDF}
-            className="p-2 md:p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 active:bg-gray-100 text-[10px] md:text-xs font-semibold text-gray-500 leading-none"
-            title="Scarica PDF"
-          >PDF</button>
         </div>
       </div>
 
