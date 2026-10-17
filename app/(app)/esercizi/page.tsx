@@ -1052,9 +1052,10 @@ export default function EserciziPage() {
     catch { return { nomi: [], fasi: [] }; }
   });
   const [caricandoWhiteboard, setCaricandoWhiteboard] = useState(false);
-  const [wbCarico, setWbCarico] = useState<Record<string, { rpe: string; durata: string }>>({});
+  const [wbCaricoAtleti, setWbCaricoAtleti] = useState<Record<string, { rpe: string; durata: string }>>({});
   const [wbAtletaSel, setWbAtletaSel] = useState<Record<string, string>>({});
   const [wbSalvato, setWbSalvato] = useState(false);
+  const [wbSalvatoCard, setWbSalvatoCard] = useState<Record<string, boolean>>({});
   const [oraWB, setOraWB] = useState(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setOraWB(new Date()), 1000);
@@ -2922,15 +2923,11 @@ export default function EserciziPage() {
           return CARD_COLORS[idx % CARD_COLORS.length];
         };
         const salvaTutto = () => {
-          cardsArr.forEach(({ programma: prog }) => {
-            const chiave = (prog.nome?.trim() || "—") + (prog.fase ? `|${prog.fase}` : "");
-            const curWB = wbCarico[chiave];
-            const durataToSave = curWB !== undefined ? curWB.durata : (prog.carico?.durata ?? "");
-            const rpeToSave = curWB !== undefined ? curWB.rpe : (prog.carico?.rpe ?? "");
-            const atletaSelId = wbAtletaSel[chiave] ?? "tutti";
-            const progsGruppo = tuttiProg.filter((p) => ((p.nome?.trim() || "—") + (p.fase ? `|${p.fase}` : "")) === chiave);
-            const toSave = atletaSelId === "tutti" ? progsGruppo : progsGruppo.filter((p) => p.atletaId === atletaSelId);
-            toSave.forEach((p) => upsertProgramma({ ...p, carico: { ...caricoVuoto, ...p.carico, durata: durataToSave, rpe: rpeToSave } }));
+          tuttiProg.forEach((p) => {
+            const stored = wbCaricoAtleti[p.atletaId];
+            const durataToSave = stored !== undefined ? stored.durata : (p.carico?.durata ?? "");
+            const rpeToSave = stored !== undefined ? stored.rpe : (p.carico?.rpe ?? "");
+            upsertProgramma({ ...p, carico: { ...caricoVuoto, ...p.carico, durata: durataToSave, rpe: rpeToSave } });
           });
           setWbSalvato(true);
           setTimeout(() => setWbSalvato(false), 2000);
@@ -3004,26 +3001,38 @@ export default function EserciziPage() {
                     const firstAtleta = gruppo[0];
                     const obiettiviDelGiorno = firstAtleta ? getObiettiviForDate(firstAtleta.id, prog.data) : [];
                     const macroDelGiorno = obiettiviDelGiorno.map((c) => MACRO_OBJ.find((o) => o.code === c)).filter(Boolean);
-                    const curWB = wbCarico[chiave];
-                    const wbDurata = curWB !== undefined ? curWB.durata : (prog.carico?.durata ?? "");
-                    const wbRpe = curWB !== undefined ? curWB.rpe : (prog.carico?.rpe ?? "");
                     const isMulti = gruppo.length > 1;
                     const atletaSelId = wbAtletaSel[chiave] ?? "tutti";
                     const progsGruppo = tuttiProg.filter((p) => ((p.nome?.trim() || "—") + (p.fase ? `|${p.fase}` : "")) === chiave);
+                    const refId = atletaSelId === "tutti" ? (gruppo[0]?.id ?? "") : atletaSelId;
+                    const refProg = progsGruppo.find((p) => p.atletaId === refId) ?? prog;
+                    const storedVals = wbCaricoAtleti[refId];
+                    const wbDurata = storedVals !== undefined ? storedVals.durata : (refProg.carico?.durata ?? "");
+                    const wbRpe = storedVals !== undefined ? storedVals.rpe : (refProg.carico?.rpe ?? "");
+                    const cardSalvatoKey = chiave + "|" + atletaSelId;
                     const handleWBInput = (field: "durata" | "rpe", val: string) => {
-                      setWbCarico((prev) => ({
-                        ...prev,
-                        [chiave]: { durata: prev[chiave]?.durata ?? prog.carico?.durata ?? "", rpe: prev[chiave]?.rpe ?? prog.carico?.rpe ?? "", [field]: val },
-                      }));
+                      if (atletaSelId === "tutti") {
+                        setWbCaricoAtleti((prev) => {
+                          const next = { ...prev };
+                          gruppo.forEach((a) => {
+                            const ap = progsGruppo.find((p) => p.atletaId === a.id);
+                            next[a.id] = { durata: prev[a.id]?.durata ?? ap?.carico?.durata ?? "", rpe: prev[a.id]?.rpe ?? ap?.carico?.rpe ?? "", [field]: val };
+                          });
+                          return next;
+                        });
+                      } else {
+                        setWbCaricoAtleti((prev) => ({
+                          ...prev,
+                          [refId]: { durata: prev[refId]?.durata ?? refProg.carico?.durata ?? "", rpe: prev[refId]?.rpe ?? refProg.carico?.rpe ?? "", [field]: val },
+                        }));
+                      }
                     };
-                    const salvaWBCarico = () => {
-                      const toSave = atletaSelId === "tutti" ? progsGruppo : progsGruppo.filter((p) => p.atletaId === atletaSelId);
-                      toSave.forEach((p) => upsertProgramma({ ...p, carico: { ...caricoVuoto, ...p.carico, durata: wbDurata, rpe: wbRpe } }));
+                    const salvaCardAtleta = () => {
+                      setWbSalvatoCard((prev) => ({ ...prev, [cardSalvatoKey]: true }));
+                      setTimeout(() => setWbSalvatoCard((prev) => ({ ...prev, [cardSalvatoKey]: false })), 1500);
                     };
                     const handleAtletaSelChange = (newId: string) => {
                       setWbAtletaSel((prev) => ({ ...prev, [chiave]: newId }));
-                      const pg = newId === "tutti" ? progsGruppo[0] : progsGruppo.find((p) => p.atletaId === newId);
-                      setWbCarico((prev) => ({ ...prev, [chiave]: { rpe: pg?.carico?.rpe ?? "", durata: pg?.carico?.durata ?? "" } }));
                     };
                     return (
                       <div key={prog.id ?? idx} className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex flex-col">
@@ -3128,6 +3137,14 @@ export default function EserciziPage() {
                                 className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white placeholder-gray-300"
                               />
                             </div>
+                            {isMulti && (
+                              <button
+                                onClick={salvaCardAtleta}
+                                className={`shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${wbSalvatoCard[cardSalvatoKey] ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+                              >
+                                {wbSalvatoCard[cardSalvatoKey] ? "✓" : "OK"}
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
