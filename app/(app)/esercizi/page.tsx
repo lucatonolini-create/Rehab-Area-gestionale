@@ -1611,13 +1611,15 @@ export default function EserciziPage() {
                         {prog.assente ? <CalendarX2 className="w-5 h-5 text-white" /> : prog.riposo ? <CalendarX2 className="w-5 h-5 text-white" /> : prog.squadra ? <Users className="w-5 h-5 text-white" /> : <Dumbbell className="w-5 h-5 text-white" />}
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                          <h3 className="font-semibold text-gray-900">{prog.nome}</h3>
-                          {prog.assente && <span className="text-xs bg-orange-100 text-orange-700 font-semibold px-2 py-0.5 rounded-full">Assente</span>}
-                          {prog.riposo && <span className="text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full">Riposo</span>}
-                          {prog.squadra && <span className="text-xs bg-red-100 text-[#C8102E] font-semibold px-2 py-0.5 rounded-full">Squadra</span>}
-                          {prog.fase && !prog.assente && !prog.riposo && !prog.squadra && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{prog.fase}</span>}
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-gray-900 leading-snug">{prog.nome}</h3>
+                          {prog.assente && <span className="text-xs bg-orange-100 text-orange-700 font-semibold px-2 py-0.5 rounded-full shrink-0">Assente</span>}
+                          {prog.riposo && <span className="text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full shrink-0">Riposo</span>}
+                          {prog.squadra && <span className="text-xs bg-red-100 text-[#C8102E] font-semibold px-2 py-0.5 rounded-full shrink-0">Squadra</span>}
                         </div>
+                        {prog.fase && !prog.assente && !prog.riposo && !prog.squadra && (
+                          <span className="inline-block text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full mt-0.5 mb-0.5">{prog.fase}</span>
+                        )}
                         <p className="text-xs text-gray-400">
                           {prog.data ? new Date(prog.data + "T12:00").toLocaleDateString("it-IT") : ""}
                           {prog.assente
