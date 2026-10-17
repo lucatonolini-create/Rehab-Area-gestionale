@@ -533,7 +533,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setEditGiorno(null)}>
           <div className="absolute inset-0 bg-black/30" />
           <div
-            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm md:max-w-md flex flex-col"
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md md:max-w-xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
             style={{ maxHeight: "calc(100dvh - 160px)" }}
           >
@@ -576,8 +576,8 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                         active ? `${obj.bg} border-transparent` : "bg-white border-gray-100 hover:border-gray-200"
                       }`}
                     >
-                      <span className={`text-xs font-bold w-6 md:w-7 shrink-0 ${active ? "text-white" : "text-gray-700"}`}>{obj.code}</span>
-                      <span className={`text-[11px] md:text-xs leading-tight min-w-0 break-words ${active ? "text-white/90" : "text-gray-500"}`}>{obj.label}</span>
+                      <span className={`text-xs md:text-sm font-bold w-6 md:w-7 shrink-0 ${active ? "text-white" : "text-gray-700"}`}>{obj.code}</span>
+                      <span className={`text-xs md:text-sm leading-tight min-w-0 ${active ? "text-white/90" : "text-gray-500"}`}>{obj.label}</span>
                     </button>
                   );
                 })}
