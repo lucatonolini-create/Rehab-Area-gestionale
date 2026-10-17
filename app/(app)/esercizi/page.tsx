@@ -1052,6 +1052,7 @@ export default function EserciziPage() {
     catch { return { nomi: [], fasi: [] }; }
   });
   const [caricandoWhiteboard, setCaricandoWhiteboard] = useState(false);
+  const [wbCarico, setWbCarico] = useState<Record<string, { rpe: string; durata: string }>>({});
   const [oraWB, setOraWB] = useState(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setOraWB(new Date()), 1000);
@@ -2972,12 +2973,24 @@ export default function EserciziPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                   {cardsArr.map(({ programma: prog, atleti: gruppo }, idx) => {
                     const color = getCardColor(prog, gruppo, idx);
+                    const chiave = (prog.nome?.trim() || "—") + (prog.fase ? `|${prog.fase}` : "");
                     const nomiAtleti = gruppo.map((a) => nd(a)).join("  ·  ");
                     const esercizi = (prog.esercizi ?? []).filter((e) => e.nome?.trim());
                     const campo = (prog.esercizicampo ?? []).filter((e) => e.tipo?.trim());
                     const firstAtleta = gruppo[0];
                     const obiettiviDelGiorno = firstAtleta ? getObiettiviForDate(firstAtleta.id, prog.data) : [];
                     const macroDelGiorno = obiettiviDelGiorno.map((c) => MACRO_OBJ.find((o) => o.code === c)).filter(Boolean);
+                    const curWB = wbCarico[chiave];
+                    const wbDurata = curWB !== undefined ? curWB.durata : (prog.carico?.durata ?? "");
+                    const wbRpe = curWB !== undefined ? curWB.rpe : (prog.carico?.rpe ?? "");
+                    const handleWBChange = (field: "durata" | "rpe", val: string) => {
+                      setWbCarico((prev) => ({
+                        ...prev,
+                        [chiave]: { durata: prev[chiave]?.durata ?? prog.carico?.durata ?? "", rpe: prev[chiave]?.rpe ?? prog.carico?.rpe ?? "", [field]: val },
+                      }));
+                      const progsGruppo = tuttiProg.filter((p) => ((p.nome?.trim() || "—") + (p.fase ? `|${p.fase}` : "")) === chiave);
+                      progsGruppo.forEach((p) => upsertProgramma({ ...p, carico: { ...caricoVuoto, ...p.carico, [field]: val } }));
+                    };
                     return (
                       <div key={prog.id ?? idx} className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
                         {/* Header */}
@@ -3043,6 +3056,31 @@ export default function EserciziPage() {
                             })}
                           </div>
                         )}
+
+                        {/* Durata + RPE quick inputs */}
+                        <div className="border-t border-gray-200 px-2 py-2 flex gap-2 bg-white/60">
+                          <div className="flex-1 min-w-0">
+                            <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest block mb-0.5">Durata</label>
+                            <input
+                              type="text"
+                              placeholder="es. 60'"
+                              value={wbDurata}
+                              onChange={(e) => handleWBChange("durata", e.target.value)}
+                              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white placeholder-gray-300"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest block mb-0.5">RPE</label>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              placeholder="1–10"
+                              value={wbRpe}
+                              onChange={(e) => handleWBChange("rpe", e.target.value)}
+                              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white placeholder-gray-300"
+                            />
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
