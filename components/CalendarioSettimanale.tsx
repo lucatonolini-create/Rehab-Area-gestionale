@@ -145,7 +145,9 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
 
   const [atletaIds, setAtletaIds] = useState<string[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [ricercaAtleta, setRicercaAtleta] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const ricercaInputRef = useRef<HTMLInputElement>(null);
   const [settimana, setSettimana] = useState(currentIsoWeek);
   const [piano, setPiano] = useState<PianoGiorni>({ ...EMPTY_PIANO });
   const [editGiorno, setEditGiorno] = useState<GiornoKey | null>(null);
@@ -414,7 +416,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
         {/* Dropdown multi-selezione */}
         <div ref={dropdownRef} className="relative flex-1 min-w-0">
           <button
-            onClick={() => setDropdownOpen((v) => !v)}
+            onClick={() => { setDropdownOpen((v) => { if (!v) { setRicercaAtleta(""); setTimeout(() => ricercaInputRef.current?.focus(), 50); } return !v; }); }}
             className="w-full flex items-center justify-between border border-gray-200 rounded-xl px-3 py-2 text-sm md:text-base bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#C8102E] text-left"
           >
             <span className={atletaIds.length === 0 ? "text-gray-400" : "text-gray-800 font-medium"}>
@@ -434,9 +436,20 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                 <div className="w-px bg-gray-100" />
                 <button onClick={() => setAtletaIds([])} className="flex-1 py-1.5 text-xs text-gray-500 font-semibold hover:bg-gray-50">Nessuno</button>
               </div>
+              {/* Ricerca atleta */}
+              <div className="px-3 py-2 border-b border-gray-100">
+                <input
+                  ref={ricercaInputRef}
+                  type="text"
+                  value={ricercaAtleta}
+                  onChange={(e) => setRicercaAtleta(e.target.value)}
+                  placeholder="Cerca atleta…"
+                  className="w-full text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#C8102E]"
+                />
+              </div>
               {/* Lista atleti con checkbox */}
               <div className="max-h-52 overflow-y-auto">
-                {atletiAttivi.map((a) => {
+                {atletiAttivi.filter((a) => !ricercaAtleta.trim() || nd(a).toLowerCase().includes(ricercaAtleta.trim().toLowerCase())).map((a) => {
                   const checked = atletaIds.includes(a.id);
                   return (
                     <button
