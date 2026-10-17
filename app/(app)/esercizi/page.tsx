@@ -2944,11 +2944,22 @@ export default function EserciziPage() {
           return CARD_COLORS[idx % CARD_COLORS.length];
         };
         const salvaTutto = () => {
+          const aggiornati: Programma[] = [];
           tuttiProg.forEach((p) => {
             const stored = wbCaricoAtleti[p.atletaId];
             const durataToSave = stored !== undefined ? stored.durata : (p.carico?.durata ?? "");
             const rpeToSave = stored !== undefined ? stored.rpe : (p.carico?.rpe ?? "");
-            upsertProgramma({ ...p, carico: { ...caricoVuoto, ...p.carico, durata: durataToSave, rpe: rpeToSave } });
+            const progAggiornato: Programma = { ...p, carico: { ...caricoVuoto, ...p.carico, durata: durataToSave, rpe: rpeToSave } };
+            aggiornati.push(progAggiornato);
+            upsertProgramma(progAggiornato);
+          });
+          setProgrammiPerAtleta((prev) => {
+            const next = { ...prev };
+            aggiornati.forEach((prog) => {
+              const lista = next[prog.atletaId] ?? [];
+              next[prog.atletaId] = lista.map((p) => p.id === prog.id ? prog : p);
+            });
+            return next;
           });
           setWbSalvato(true);
           setTimeout(() => setWbSalvato(false), 2000);
