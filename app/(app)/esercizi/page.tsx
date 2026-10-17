@@ -3008,7 +3008,7 @@ export default function EserciziPage() {
                       setWbCarico((prev) => ({ ...prev, [chiave]: { rpe: pg?.carico?.rpe ?? "", durata: pg?.carico?.durata ?? "" } }));
                     };
                     return (
-                      <div key={prog.id ?? idx} className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                      <div key={prog.id ?? idx} className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex flex-col">
                         {/* Header */}
                         <div className="px-3 pt-2 pb-1.5" style={{ borderLeft: `4px solid ${color}` }}>
                           <div className="flex items-center gap-1 mb-1">
@@ -3036,8 +3036,9 @@ export default function EserciziPage() {
                         </div>
 
                         {/* Exercises */}
+                        {esercizi.length === 0 && campo.length === 0 && <div className="flex-1" />}
                         {(esercizi.length > 0 || campo.length > 0) && (
-                          <div className="border-t border-gray-200 px-3 py-1.5 space-y-1">
+                          <div className="border-t border-gray-200 px-3 py-1.5 space-y-1 flex-1">
                             {esercizi.map((e, i) => {
                               const macro = e.macroObiettivo ? MACRO_OBJ.find((o) => o.code === e.macroObiettivo) : undefined;
                               return (
@@ -3074,7 +3075,7 @@ export default function EserciziPage() {
                         )}
 
                         {/* Durata + RPE quick inputs */}
-                        <div className="px-2 pb-2 pt-1">
+                        <div className="px-2 pb-2 pt-2">
                           {isMulti && (
                             <select
                               value={atletaSelId}
