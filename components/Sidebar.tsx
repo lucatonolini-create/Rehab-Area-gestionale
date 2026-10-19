@@ -94,8 +94,8 @@ export default function Sidebar() {
         }}
       >
         <nav
-          className="sb-pill flex-1 flex flex-col items-center overflow-y-auto py-2"
-          style={{ scrollbarWidth: "none", overflow: "visible" } as React.CSSProperties}
+          className="sb-pill flex-1 flex flex-col items-center justify-evenly py-3"
+          style={{ scrollbarWidth: "none" } as React.CSSProperties}
         >
           {navItems.map(({ href, icon: Icon, label }, idx) => {
             const isActive = pathname === href;
@@ -106,7 +106,7 @@ export default function Sidebar() {
                 key={href}
                 href={href}
                 className="flex items-center justify-center flex-shrink-0"
-                style={{ width: 66, height: 52 }}
+                style={{ width: 66, height: 48 }}
                 onMouseEnter={(e) => onEnter(e, idx, label, isActive)}
                 onMouseLeave={onLeave}
               >
@@ -137,8 +137,8 @@ export default function Sidebar() {
 
         <button
           onClick={handleLogout}
-          className="flex-shrink-0 flex items-center justify-center"
-          style={{ width: 66, height: 52 }}
+          className="flex-shrink-0 flex items-center justify-center mb-1"
+          style={{ width: 66, height: 48 }}
           onMouseEnter={(e) => {
             setHoveredIdx(navItems.length);
             const rect = e.currentTarget.getBoundingClientRect();
