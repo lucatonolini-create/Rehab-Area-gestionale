@@ -535,16 +535,13 @@ export default function EpidemiologiaPage() {
     const unsubAtleti = subscribeToAtleti(reloadAtleti);
     const unsubProgrammi = subscribeToProgrammi(reloadAtleti);
     const unsubNtli = subscribeToNtli(reloadNtli);
-    const onVisible = () => { if (document.visibilityState === "visible") { reloadAtleti(); reloadNtli(); } };
-    const onOnline = () => { reloadAtleti(); reloadNtli(); };
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("online", onOnline);
+    const handleAppSync = () => { reloadAtleti(); reloadNtli(); };
+    window.addEventListener("app-sync", handleAppSync);
     return () => {
       unsubAtleti();
       unsubProgrammi();
       unsubNtli();
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("online", onOnline);
+      window.removeEventListener("app-sync", handleAppSync);
     };
   }, []);
 

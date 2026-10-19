@@ -1123,6 +1123,13 @@ export default function ProgressiPage() {
     loadAtleti().then(setAtleti);
     loadProgrammi().then(setProgrammi);
     loadNtli().then(setNtliList);
+    const handleAppSync = () => {
+      loadAtleti().then(setAtleti);
+      loadProgrammi().then(setProgrammi);
+      loadNtli().then(setNtliList);
+    };
+    window.addEventListener("app-sync", handleAppSync);
+    return () => { window.removeEventListener("app-sync", handleAppSync); };
   }, []);
 
   const activeNtliNames = new Set(

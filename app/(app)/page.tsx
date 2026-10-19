@@ -78,16 +78,13 @@ export default function Dashboard() {
     const unsubAtleti = subscribeToAtleti(reload);
     const unsubProgrammi = subscribeToProgrammi(reload);
     const unsubNtli = subscribeToNtli(() => loadNtli().then(setNtliList));
-    const onVisible = () => { if (document.visibilityState === "visible") reload(); };
-    const onOnline = () => reload();
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("online", onOnline);
+    const handleAppSync = () => { reload(); loadNtli().then(setNtliList); };
+    window.addEventListener("app-sync", handleAppSync);
     return () => {
       unsubAtleti();
       unsubProgrammi();
       unsubNtli();
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("online", onOnline);
+      window.removeEventListener("app-sync", handleAppSync);
     };
   }, []);
 

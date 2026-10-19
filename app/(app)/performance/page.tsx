@@ -504,7 +504,12 @@ export default function PerformancePage() {
     });
     const ua = subscribeToAtleti(() => loadAtleti().then(setAtleti));
     const up = subscribeToProgrammi(() => loadProgrammi().then(setProgrammi));
-    return () => { ua(); up(); };
+    const handleAppSync = () => {
+      loadAtleti().then(setAtleti);
+      loadProgrammi().then(setProgrammi);
+    };
+    window.addEventListener("app-sync", handleAppSync);
+    return () => { ua(); up(); window.removeEventListener("app-sync", handleAppSync); };
   }, []);
 
   const atletiConDati = useMemo(() => {
