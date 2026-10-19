@@ -1166,7 +1166,20 @@ export default function EserciziPage() {
         );
       }
     });
-    return () => { unsubAtleti(); unsubProgrammi(); };
+    // Reload everything after reconnect or tab-return (fired by SyncManager)
+    const handleAppSync = () => {
+      loadAtleti().then(setAtleti);
+      setProgrammiPerAtleta((prev) => {
+        Object.keys(prev).forEach((aid) => {
+          loadProgrammi(aid).then((progs) =>
+            setProgrammiPerAtleta((p) => ({ ...p, [aid]: progs }))
+          );
+        });
+        return prev;
+      });
+    };
+    window.addEventListener("app-sync", handleAppSync);
+    return () => { unsubAtleti(); unsubProgrammi(); window.removeEventListener("app-sync", handleAppSync); };
   }, []);
 
 

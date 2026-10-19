@@ -1682,7 +1682,12 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
     loadNtli().then(setNtliList);
     const unsubAtleti = subscribeToAtleti(() => loadAtleti().then(setAtleti));
     const unsubIntake = subscribeToIntakeInsert(() => loadAtleti().then(setAtleti));
-    return () => { unsubAtleti(); unsubIntake(); };
+    // Reload on reconnect or tab-return (fired by SyncManager)
+    const handleAppSync = () => {
+      loadAtleti().then(setAtleti);
+    };
+    window.addEventListener("app-sync", handleAppSync);
+    return () => { unsubAtleti(); unsubIntake(); window.removeEventListener("app-sync", handleAppSync); };
   }, []);
 
   useEffect(() => {
@@ -1708,7 +1713,11 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
         loadProgrammi(selected.id).then(setProgrammiAtleta);
       }
     });
-    return unsub;
+    const handleAppSync = () => {
+      loadProgrammi(selected.id).then(setProgrammiAtleta);
+    };
+    window.addEventListener("app-sync", handleAppSync);
+    return () => { unsub(); window.removeEventListener("app-sync", handleAppSync); };
   }, [selected?.id]);
 
   const apriNuovo = () => { setEditAtleta(undefined); setMostraForm(true); setSelected(null); };

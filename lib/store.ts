@@ -826,14 +826,28 @@ export async function loadProgrammi(atletaId?: string): Promise<Programma[]> {
         console.error("[loadProgrammi] supabase error", atletaId, error.message, error.code, error.details);
       } else if (data) {
         const fromSupabase = data.map(rowToProgramma);
-        await db.programmi.bulkPut(fromSupabase);
-        // Merge with local-only records not yet synced to Supabase
+        // Identify records with pending local edits — don't overwrite them with Supabase data
+        const pendingOpsLocal = await db.pendingOps.where("table").equals("programmi").toArray();
+        const pendingUpsertIds = new Set(
+          pendingOpsLocal.filter(o => o.op === "upsert").map(o => (o.payload as { id?: string }).id).filter(Boolean) as string[]
+        );
+        const pendingDeleteIds = new Set(
+          pendingOpsLocal.filter(o => o.op === "delete").map(o => (o.payload as { id: string }).id)
+        );
+        // Only overwrite IndexedDB for records without a pending local edit
+        await db.programmi.bulkPut(fromSupabase.filter(p => !pendingUpsertIds.has(p.id)));
         const supabaseIds = new Set(fromSupabase.map(p => p.id));
         const allLocal = atletaId
           ? await db.programmi.where("atletaId").equals(atletaId).toArray()
           : await db.programmi.toArray();
-        const localOnly = allLocal.filter(p => !supabaseIds.has(p.id));
-        return [...fromSupabase, ...localOnly].sort((a, b) => a.data.localeCompare(b.data));
+        // Include local records that are either not in Supabase OR have a pending edit (prefer local version)
+        const localPriority = allLocal.filter(p => !supabaseIds.has(p.id) || pendingUpsertIds.has(p.id));
+        // Build merged result, filtering out records pending deletion
+        const merged = [
+          ...fromSupabase.filter(p => !pendingUpsertIds.has(p.id) && !pendingDeleteIds.has(p.id)),
+          ...localPriority.filter(p => !pendingDeleteIds.has(p.id)),
+        ];
+        return merged.sort((a, b) => a.data.localeCompare(b.data));
       }
     } catch (e) {
       console.error("[loadProgrammi] exception", atletaId, e);

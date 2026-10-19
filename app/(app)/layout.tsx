@@ -4,6 +4,7 @@ import OfflineBanner from "@/components/OfflineBanner";
 import IntakeNotifier from "@/components/IntakeNotifier";
 import PushSetup from "@/components/PushSetup";
 import SessionTimeout from "@/components/SessionTimeout";
+import SyncManager from "@/components/SyncManager";
 import { BottomNavProvider } from "@/lib/bottom-nav-context";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -19,6 +20,7 @@ className="flex bg-[#F5F5F7]"
         <IntakeNotifier />
         <PushSetup />
         <SessionTimeout />
+        <SyncManager />
       </div>
       <BottomNav />
       {/* Top fade — solo i primissimi pixel dove il contenuto sfila sotto la barra status */}
