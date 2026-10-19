@@ -1218,6 +1218,7 @@ export default function EserciziPage() {
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listaEserciziRef = useRef<HTMLDivElement>(null);
   useArrowKeyNav(listaEserciziRef, { axis: "vertical" });
+  const [faseSugHL, setFaseSugHL] = useState(-1);
 
   // Auto-save on form changes (debounced 700ms) — solo upsert, senza side-effect squadra→Disponibile
   useEffect(() => {
@@ -2137,14 +2138,26 @@ export default function EserciziPage() {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fase</label>
-                  <input value={form.fase} onChange={(e) => setForm({ ...form, fase: e.target.value })}
+                  <input value={form.fase} onChange={(e) => { setForm({ ...form, fase: e.target.value }); setFaseSugHL(-1); }}
                     placeholder="Scrivi nuova fase..."
-                    className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
+                    className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]"
+                    onKeyDown={(e) => {
+                      if (fasiFiltrate.length === 0) return;
+                      if (e.key === "ArrowDown") { e.preventDefault(); setFaseSugHL((h) => (h + 1) % fasiFiltrate.length); }
+                      else if (e.key === "ArrowUp") { e.preventDefault(); setFaseSugHL((h) => (h - 1 + fasiFiltrate.length) % fasiFiltrate.length); }
+                      else if (e.key === "Enter" && faseSugHL >= 0) { e.preventDefault(); setForm({ ...form, fase: fasiFiltrate[faseSugHL] }); setFaseSugHL(-1); }
+                      else if (e.key === "Escape") { setFaseSugHL(-1); }
+                    }}
+                  />
                   {fasiUniche.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      {fasiFiltrate.map((f) => (
-                        <span key={f} className={`inline-flex items-center gap-1 text-xs rounded-full border transition-all ${form.fase === f ? "bg-[#C8102E] text-white border-[#C8102E]" : "bg-gray-50 text-gray-600 border-gray-200"}`}>
-                          <button type="button" className="pl-3 py-1.5" onClick={() => setForm({ ...form, fase: f })}>{f}</button>
+                      {fasiFiltrate.map((f, fi) => (
+                        <span key={f} className={`inline-flex items-center gap-1 text-xs rounded-full border transition-all ${
+                          form.fase === f ? "bg-[#C8102E] text-white border-[#C8102E]"
+                          : fi === faseSugHL ? "bg-red-50 text-[#C8102E] border-[#C8102E]"
+                          : "bg-gray-50 text-gray-600 border-gray-200"
+                        }`}>
+                          <button type="button" className="pl-3 py-1.5" onClick={() => { setForm({ ...form, fase: f }); setFaseSugHL(-1); }}>{f}</button>
                           <button type="button" className={`pr-2 py-1.5 leading-none ${form.fase === f ? "text-red-200 hover:text-white" : "text-gray-300 hover:text-red-400"}`} onClick={() => nascondiF(f)}>×</button>
                         </span>
                       ))}
