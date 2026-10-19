@@ -1313,7 +1313,7 @@ export default function EserciziPage() {
         atletaId: addId,
         nome: pulito.nome,
         data: pulito.data,
-        fase: "",
+        fase: pulito.fase,
         assente: pulito.assente,
         riposo: pulito.riposo,
         squadra: pulito.squadra,
@@ -1327,10 +1327,10 @@ export default function EserciziPage() {
       };
       const progCopia: Programma = { ...pulitoCopia, id: uid() };
       await upsertProgramma(progCopia);
-      setProgrammiPerAtleta((prev) => {
-        if (!(addId in prev)) return prev;
-        return { ...prev, [addId]: [...prev[addId], progCopia] };
-      });
+      setProgrammiPerAtleta((prev) => ({
+        ...prev,
+        [addId]: [...(prev[addId] ?? []), progCopia],
+      }));
       if (form.squadra) {
         const atletaAdd = atleti.find((a) => a.id === addId);
         if (atletaAdd && atletaAdd.stato === "Infortunato") {
