@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useArrowKeyNav } from "@/hooks/useArrowKeyNav";
 import { useBottomNav } from "@/lib/bottom-nav-context";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { createPortal } from "react-dom";
@@ -1657,6 +1658,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const nuovoDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
   const inlineDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
   const storicoDettaglioRef = useRef<DettaglioSituazionaleHandle>(null);
+  const listaAtletiRef = useRef<HTMLDivElement>(null);
+  useArrowKeyNav(listaAtletiRef, { axis: "vertical" });
   const [editDettaglioAperto, setEditDettaglioAperto] = useState(false);
   const [salvandoDettaglio, setSalvandoDettaglio] = useState(false);
   const [dettaglioSalvatoOk, setDettaglioSalvatoOk] = useState(false);
@@ -2239,7 +2242,7 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
             </p>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div ref={listaAtletiRef} className="space-y-8">
             {Object.entries(perCategoria).map(([cat, lista]) => (
               <div key={cat}>
                 <div className="flex items-center gap-3 mb-3">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getIntakeBadgeCount, resetIntakeBadge } from "@/components/IntakeNotifier";
+import { useArrowKeyNav } from "@/hooks/useArrowKeyNav";
 
 const navItems = [
   { href: "/",             label: "Dashboard",    icon: LayoutDashboard },
@@ -38,6 +39,8 @@ export default function Sidebar() {
   const [intakeBadge, setIntakeBadge] = useState(0);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [tooltip, setTooltip] = useState<{ label: string; y: number } | null>(null);
+  const navRef = useRef<HTMLElement>(null);
+  useArrowKeyNav(navRef, { axis: "vertical" });
 
   useEffect(() => {
     setIntakeBadge(getIntakeBadgeCount());
@@ -94,6 +97,7 @@ export default function Sidebar() {
         }}
       >
         <nav
+          ref={navRef}
           className="sb-pill flex-1 flex flex-col items-center justify-evenly py-3"
           style={{ scrollbarWidth: "none" } as React.CSSProperties}
         >

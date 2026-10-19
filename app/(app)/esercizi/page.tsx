@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { useArrowKeyNav } from "@/hooks/useArrowKeyNav";
 import { Plus, Trash2, X, ChevronDown, Edit2, Gauge, Upload, AlertTriangle, Footprints, CalendarX2, Users, BatteryFull, FileText, FileDown, ShieldPlus, TrendingUp, Dumbbell, GripVertical, LayoutGrid, RefreshCw } from "lucide-react";
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, KeyboardSensor,
@@ -1188,6 +1189,8 @@ export default function EserciziPage() {
   };
 
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listaEserciziRef = useRef<HTMLDivElement>(null);
+  useArrowKeyNav(listaEserciziRef, { axis: "vertical" });
 
   // Auto-save on form changes (debounced 700ms) — solo upsert, senza side-effect squadra→Disponibile
   useEffect(() => {
@@ -1597,7 +1600,7 @@ export default function EserciziPage() {
           <p className="text-gray-300 text-sm mt-1">Tutti gli atleti sono disponibili</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div ref={listaEserciziRef} className="space-y-3">
           {atletiOrdinati.filter((a) => a.stato === "Infortunato").map((atleta) => {
             const isOpen = atletaAperto === atleta.id;
             const lista = programmiPerAtleta[atleta.id] ?? [];
