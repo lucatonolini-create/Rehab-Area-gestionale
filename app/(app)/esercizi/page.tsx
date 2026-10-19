@@ -3013,7 +3013,9 @@ export default function EserciziPage() {
             const stored = wbCaricoAtleti[p.atletaId];
             const durataToSave = stored !== undefined ? stored.durata : (p.carico?.durata ?? "");
             const rpeToSave = stored !== undefined ? stored.rpe : (p.carico?.rpe ?? "");
-            const progAggiornato: Programma = { ...p, carico: { ...caricoVuoto, ...p.carico, durata: durataToSave, rpe: rpeToSave } };
+            const r = Number(rpeToSave), d = Number(durataToSave);
+            const internoToSave = r > 0 && d > 0 ? String(Math.round(r * d)) : (p.carico?.interno ?? "");
+            const progAggiornato: Programma = { ...p, carico: { ...caricoVuoto, ...p.carico, durata: durataToSave, rpe: rpeToSave, interno: internoToSave } };
             aggiornati.push(progAggiornato);
             upsertProgramma(progAggiornato);
           });
@@ -3105,6 +3107,7 @@ export default function EserciziPage() {
                     const storedVals = wbCaricoAtleti[refId];
                     const wbDurata = storedVals !== undefined ? storedVals.durata : (refProg.carico?.durata ?? "");
                     const wbRpe = storedVals !== undefined ? storedVals.rpe : (refProg.carico?.rpe ?? "");
+                    const wbTL = (() => { const r = Number(wbRpe), d = Number(wbDurata); return r > 0 && d > 0 ? String(Math.round(r * d)) : ""; })();
                     const cardSalvatoKey = chiave + "|" + atletaSelId;
                     const handleWBInput = (field: "durata" | "rpe", val: string) => {
                       if (atletaSelId === "tutti") {
@@ -3232,6 +3235,12 @@ export default function EserciziPage() {
                                 onChange={(e) => handleWBInput("rpe", e.target.value)}
                                 className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white placeholder-gray-300"
                               />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest block mb-0.5">TL</label>
+                              <div className={`w-full text-xs rounded-lg px-2 py-1.5 text-center font-bold tabular-nums ${wbTL ? "bg-orange-50 text-orange-600 border border-orange-200" : "bg-gray-50 text-gray-300 border border-gray-100"}`}>
+                                {wbTL || "—"}
+                              </div>
                             </div>
                             {isMulti && (
                               <button
