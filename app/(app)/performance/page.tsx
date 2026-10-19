@@ -1558,44 +1558,6 @@ export default function PerformancePage() {
                 {/* Charts */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                  {/* Donut — muscle group distribution */}
-                  {gymStats.sliceGruppi.length > 0 && (
-                    <div className="bg-white rounded-2xl border border-gray-200 p-4">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Distribuzione Muscolare</p>
-                      <div className="flex items-center gap-5">
-                        <svg viewBox="0 0 120 120" className="w-36 h-36 shrink-0">
-                          {(() => {
-                            const R = 46, r = 28, cx = 60, cy = 60;
-                            let sa = -Math.PI / 2;
-                            const dc = ["#94a3b8", "#cbd5e1", "#e2e8f0"];
-                            return gymStats.sliceGruppi.map((sl, didx) => {
-                              const angle = (sl.pct / 100) * 2 * Math.PI;
-                              const ea = sa + angle;
-                              const x1 = cx + R * Math.cos(sa), y1 = cy + R * Math.sin(sa);
-                              const x2 = cx + R * Math.cos(ea), y2 = cy + R * Math.sin(ea);
-                              const xi1 = cx + r * Math.cos(sa), yi1 = cy + r * Math.sin(sa);
-                              const xi2 = cx + r * Math.cos(ea), yi2 = cy + r * Math.sin(ea);
-                              const lg = angle > Math.PI ? 1 : 0;
-                              const d = `M ${x1} ${y1} A ${R} ${R} 0 ${lg} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${r} ${r} 0 ${lg} 0 ${xi1} ${yi1} Z`;
-                              const fill = MUSCLE_COLORS[sl.gruppo] ?? dc[didx % dc.length];
-                              sa = ea;
-                              return <path key={sl.gruppo} d={d} fill={fill} stroke="white" strokeWidth="1.5" />;
-                            });
-                          })()}
-                        </svg>
-                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                          {gymStats.sliceGruppi.map((sl) => (
-                            <div key={sl.gruppo} className="flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: MUSCLE_COLORS[sl.gruppo] ?? "#94a3b8" }} />
-                              <span className="text-xs text-gray-600 flex-1 truncate">{sl.gruppo}</span>
-                              <span className="text-xs font-bold text-gray-800 shrink-0">{sl.pct}%</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Macro Obiettivi donut */}
                   {macroStats && (
                     <div className="bg-white rounded-2xl border border-gray-200 p-4">
@@ -1627,6 +1589,44 @@ export default function PerformancePage() {
                               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: sl.hex }} />
                               <span className="text-xs text-gray-600 flex-1 truncate">{sl.label}</span>
                               <span className="text-xs font-semibold text-gray-500 shrink-0 mr-1">{sl.n}</span>
+                              <span className="text-xs font-bold text-gray-800 shrink-0">{sl.pct}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Donut — muscle group distribution */}
+                  {gymStats.sliceGruppi.length > 0 && (
+                    <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Distribuzione Muscolare</p>
+                      <div className="flex items-center gap-5">
+                        <svg viewBox="0 0 120 120" className="w-36 h-36 shrink-0">
+                          {(() => {
+                            const R = 46, r = 28, cx = 60, cy = 60;
+                            let sa = -Math.PI / 2;
+                            const dc = ["#94a3b8", "#cbd5e1", "#e2e8f0"];
+                            return gymStats.sliceGruppi.map((sl, didx) => {
+                              const angle = (sl.pct / 100) * 2 * Math.PI;
+                              const ea = sa + angle;
+                              const x1 = cx + R * Math.cos(sa), y1 = cy + R * Math.sin(sa);
+                              const x2 = cx + R * Math.cos(ea), y2 = cy + R * Math.sin(ea);
+                              const xi1 = cx + r * Math.cos(sa), yi1 = cy + r * Math.sin(sa);
+                              const xi2 = cx + r * Math.cos(ea), yi2 = cy + r * Math.sin(ea);
+                              const lg = angle > Math.PI ? 1 : 0;
+                              const d = `M ${x1} ${y1} A ${R} ${R} 0 ${lg} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${r} ${r} 0 ${lg} 0 ${xi1} ${yi1} Z`;
+                              const fill = MUSCLE_COLORS[sl.gruppo] ?? dc[didx % dc.length];
+                              sa = ea;
+                              return <path key={sl.gruppo} d={d} fill={fill} stroke="white" strokeWidth="1.5" />;
+                            });
+                          })()}
+                        </svg>
+                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                          {gymStats.sliceGruppi.map((sl) => (
+                            <div key={sl.gruppo} className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: MUSCLE_COLORS[sl.gruppo] ?? "#94a3b8" }} />
+                              <span className="text-xs text-gray-600 flex-1 truncate">{sl.gruppo}</span>
                               <span className="text-xs font-bold text-gray-800 shrink-0">{sl.pct}%</span>
                             </div>
                           ))}
