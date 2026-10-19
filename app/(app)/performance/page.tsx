@@ -202,7 +202,7 @@ function toSession(p: Programma): Session | null {
     nome: p.nome ?? "",
     fase: p.fase ?? "",
     infortunio: p.infortunioLabel ?? "",
-    rpe: pn(c.rpe),
+    rpe: (() => { const v = pn(c.rpe); return v !== null && v > 10 ? null : v; })(),
     interno: pn(c.interno),
     durata: pn(c.durata),
     distanza: pn(c.distanzaTotale),
