@@ -368,6 +368,20 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
 
   useEffect(() => () => { if (animRef.current) clearTimeout(animRef.current); }, []);
 
+  // Navigazione settimana con tasti freccia (← →)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (editGiorno) return; // modale aperto
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "ArrowLeft")  { e.preventDefault(); goWeek(-1); }
+      if (e.key === "ArrowRight") { e.preventDefault(); goWeek(1); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [editGiorno, goWeek]);
+
+
   // Snapshot piano quando si apre la finestra, reset applied days
   useEffect(() => {
     if (editGiorno) {
