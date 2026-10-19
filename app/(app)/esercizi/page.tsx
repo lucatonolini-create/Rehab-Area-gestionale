@@ -18,6 +18,7 @@ import {
   type Atleta, type Programma, type Esercizio, type TestFisiometrico, type Carico, type EsercizioCampo, type InfortunioStorico,
 } from "@/lib/store";
 import { MACRO_OBJ, getObiettiviForDate } from "@/components/CalendarioSettimanale";
+import { getPreferenza, getPreferenzaLocal, setPreferenzaSync } from "@/lib/preferenze";
 
 const esVuoto: Esercizio = { nome: "", serie: "", reps: "", durata: "", carico: "", rir: "", vas: "", note: "", gruppoMuscolare: "", macroObiettivo: "" };
 
@@ -1014,18 +1015,18 @@ const ESERCIZI_BASE_CAMPO: string[] = [
 ];
 
 function leggiCatalogo(key: string): string[] {
-  try { return JSON.parse(localStorage.getItem(key) ?? "[]"); } catch { return []; }
+  return getPreferenzaLocal<string[]>(key, []);
 }
 function salvaCatalogo(key: string, nomi: string[]) {
-  try { localStorage.setItem(key, JSON.stringify(nomi)); } catch {}
+  setPreferenzaSync(key, nomi);
 }
 
 const FOCUS_MAP_KEY = "usc_esercizi_focus";
 function leggiFocusMap(): Record<string, string> {
-  try { return JSON.parse(localStorage.getItem(FOCUS_MAP_KEY) ?? "{}"); } catch { return {}; }
+  return getPreferenzaLocal<Record<string, string>>(FOCUS_MAP_KEY, {});
 }
 function salvaFocusMap(map: Record<string, string>) {
-  try { localStorage.setItem(FOCUS_MAP_KEY, JSON.stringify(map)); } catch {}
+  setPreferenzaSync(FOCUS_MAP_KEY, map);
 }
 
 export default function EserciziPage() {
@@ -1056,10 +1057,9 @@ export default function EserciziPage() {
   const [atletiSelezionatiWB, setAtletiSelezionatiWB] = useState<Set<string>>(new Set());
   const [atletiWBRicerca, setAtletiWBRicerca] = useState("");
   const [zoomWB, setZoomWB] = useState(1);
-  const [sugNascosti, setSugNascosti] = useState<{ nomi: string[]; fasi: string[] }>(() => {
-    try { return JSON.parse(localStorage.getItem("sug_nascosti") ?? "null") || { nomi: [], fasi: [] }; }
-    catch { return { nomi: [], fasi: [] }; }
-  });
+  const [sugNascosti, setSugNascosti] = useState<{ nomi: string[]; fasi: string[] }>(
+    () => getPreferenzaLocal("sug_nascosti", { nomi: [], fasi: [] })
+  );
   const [caricandoWhiteboard, setCaricandoWhiteboard] = useState(false);
   const [wbCaricoAtleti, setWbCaricoAtleti] = useState<Record<string, { rpe: string; durata: string }>>({});
   const [wbAtletaSel, setWbAtletaSel] = useState<Record<string, string>>({});
@@ -1069,6 +1069,16 @@ export default function EserciziPage() {
   useEffect(() => {
     const t = setInterval(() => setOraWB(new Date()), 1000);
     return () => clearInterval(t);
+  }, []);
+
+  // Carica preferenze da Supabase al mount (sovrascrive localStorage se più recente)
+  useEffect(() => {
+    getPreferenza<string[]>(CATALOGO_KEY_PALESTRA, []).then((v) => { if (v.length) setCatalogoPalestra(v); });
+    getPreferenza<string[]>(CATALOGO_KEY_CAMPO, []).then((v) => { if (v.length) setCatalogoCampo(v); });
+    getPreferenza<Record<string, string>>(FOCUS_MAP_KEY, {}).then((v) => { if (Object.keys(v).length) setFocusMap(v); });
+    getPreferenza<{ nomi: string[]; fasi: string[] }>("sug_nascosti", { nomi: [], fasi: [] }).then((v) => {
+      if (v.nomi.length || v.fasi.length) setSugNascosti(v);
+    });
   }, []);
 
   useEffect(() => {
@@ -1412,8 +1422,8 @@ export default function EserciziPage() {
   const fasiUniche = Array.from(new Set(fontePerSuggerimenti.map((p) => p.fase).filter(Boolean)));
   const nomiFiltrati = nomiUnici.filter((n) => !sugNascosti.nomi.includes(n) && (!form.nome.trim() || n.toLowerCase().includes(form.nome.toLowerCase()))).slice(0, 6);
   const fasiFiltrate = fasiUniche.filter((f) => !sugNascosti.fasi.includes(f) && (!form.fase.trim() || f.toLowerCase().includes(form.fase.toLowerCase()))).slice(0, 6);
-  const nascondiNomeSug = (n: string) => { const next = { ...sugNascosti, nomi: [...sugNascosti.nomi, n] }; setSugNascosti(next); try { localStorage.setItem("sug_nascosti", JSON.stringify(next)); } catch {} };
-  const nascondiF = (f: string) => { const next = { ...sugNascosti, fasi: [...sugNascosti.fasi, f] }; setSugNascosti(next); try { localStorage.setItem("sug_nascosti", JSON.stringify(next)); } catch {} };
+  const nascondiNomeSug = (n: string) => { const next = { ...sugNascosti, nomi: [...sugNascosti.nomi, n] }; setSugNascosti(next); setPreferenzaSync("sug_nascosti", next); };
+  const nascondiF = (f: string) => { const next = { ...sugNascosti, fasi: [...sugNascosti.fasi, f] }; setSugNascosti(next); setPreferenzaSync("sug_nascosti", next); };
 
   const suggerimentiPalestra = useMemo(() => {
     const raw = [
