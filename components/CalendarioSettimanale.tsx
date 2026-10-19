@@ -142,7 +142,7 @@ function WeekGrid({
 
 export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) {
   const atletiAttivi = atleti
-    .filter((a) => a.stato === "Infortunato" || a.stato === "NTL")
+    .filter((a) => a.stato === "Infortunato")
     .sort((a, b) => nd(a).localeCompare(nd(b), "it"));
 
   const [atletaIds, setAtletaIds] = useState<string[]>([]);
