@@ -1640,35 +1640,38 @@ export default function PerformancePage() {
                     <div className="bg-white rounded-2xl border border-gray-200 p-4 md:col-span-2">
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Tonnellaggio per Sessione</p>
                       {(() => {
-                        const dati = gymStats.sessioni.filter((s) => s.tonnaggio > 0).slice(-20);
+                        const dati = gymStats.sessioni.filter((s) => s.tonnaggio > 0).slice(-30);
                         const maxT = Math.max(...dati.map((s) => s.tonnaggio));
-                        const W = 320, H = 120, PAD = { left: 42, right: 8, top: 8, bottom: 28 };
-                        const bw = Math.max(4, (W - PAD.left - PAD.right) / dati.length - 2);
-                        const step = dati.length <= 10 ? 1 : dati.length <= 16 ? 2 : 3;
+                        const W = 600, H = 140, PAD = { left: 44, right: 12, top: 12, bottom: 30 };
+                        const plotW = W - PAD.left - PAD.right;
+                        const plotH = H - PAD.top - PAD.bottom;
+                        const bw = Math.max(6, plotW / dati.length - 3);
+                        const MIN_BAR = 3;
+                        const step = dati.length <= 12 ? 1 : dati.length <= 20 ? 2 : 3;
                         return (
-                          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 140 }} preserveAspectRatio="none">
+                          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 160 }}>
                             {[0, 0.25, 0.5, 0.75, 1].map((t, i) => {
-                              const y = PAD.top + t * (H - PAD.top - PAD.bottom);
+                              const y = PAD.top + t * plotH;
                               const lbl = Math.round(maxT * (1 - t));
                               return (
                                 <g key={i}>
-                                  <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="#f3f4f6" strokeWidth="0.8" />
-                                  <text x={PAD.left - 3} y={y + 3.5} textAnchor="end" fontSize="8" fill="#9ca3af">
+                                  <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="#f3f4f6" strokeWidth="1" />
+                                  <text x={PAD.left - 4} y={y + 3.5} textAnchor="end" fontSize="9" fill="#9ca3af">
                                     {lbl > 0 ? (lbl >= 1000 ? `${(lbl / 1000).toFixed(1)}k` : String(lbl)) : ""}
                                   </text>
                                 </g>
                               );
                             })}
                             {dati.map((s, i) => {
-                              const plotW = W - PAD.left - PAD.right;
                               const x = PAD.left + (i + 0.5) * (plotW / dati.length);
-                              const barH = maxT > 0 ? (s.tonnaggio / maxT) * (H - PAD.top - PAD.bottom) : 0;
+                              const rawH = maxT > 0 ? (s.tonnaggio / maxT) * plotH : 0;
+                              const barH = Math.max(rawH, MIN_BAR);
                               const y = H - PAD.bottom - barH;
                               return (
                                 <g key={i}>
-                                  <rect x={x - bw / 2} y={y} width={bw} height={barH} fill="#C8102E" opacity="0.82" rx="2" />
+                                  <rect x={x - bw / 2} y={y} width={bw} height={barH} fill="#C8102E" opacity="0.85" rx="2.5" />
                                   {i % step === 0 && (
-                                    <text x={x} y={H - PAD.bottom + 11} textAnchor="middle" fontSize="7.5" fill="#9ca3af">{s.dateLabel}</text>
+                                    <text x={x} y={H - PAD.bottom + 13} textAnchor="middle" fontSize="8.5" fill="#9ca3af">{s.dateLabel}</text>
                                   )}
                                 </g>
                               );
