@@ -210,6 +210,32 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   const lastDx = useRef(0);
   const blocked = useRef(false); // gesture locked as vertical scroll
 
+  // Migrazione one-shot: carica su Supabase tutti i piani già in localStorage
+  useEffect(() => {
+    const MIGRATION_KEY = "usc_piano_migrated_v1";
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem(MIGRATION_KEY)) return;
+    const prefix = "piano_sett_";
+    const entries: { atletaId: string; settimana: string; piano: PianoGiorni }[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key?.startsWith(prefix)) continue;
+      const rest = key.slice(prefix.length); // "atletaId_2026-W43"
+      const wIdx = rest.lastIndexOf("_20"); // separa atletaId dalla settimana
+      if (wIdx < 0) continue;
+      const atletaId = rest.slice(0, wIdx);
+      const settimana = rest.slice(wIdx + 1);
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) entries.push({ atletaId, settimana, piano: { ...EMPTY_PIANO, ...JSON.parse(raw) } });
+      } catch {}
+    }
+    if (entries.length === 0) { localStorage.setItem(MIGRATION_KEY, "1"); return; }
+    Promise.all(entries.map((e) => dbSave(e.atletaId, e.settimana, e.piano)))
+      .then(() => localStorage.setItem(MIGRATION_KEY, "1"))
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (!atletaId) { setPiano({ ...EMPTY_PIANO }); return; }
     // Carica subito da localStorage (istantaneo), poi sovrascrive con Supabase se disponibile
