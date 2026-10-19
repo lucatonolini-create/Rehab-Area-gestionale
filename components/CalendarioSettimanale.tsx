@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { nd, type Atleta } from "@/lib/store";
+import { supabase } from "@/lib/supabase";
 
 export const MACRO_OBJ = [
   { code: "A",  label: "Accessori",         bg: "bg-slate-500",   hex: "#64748b" },
@@ -93,6 +94,28 @@ function lsLoad(atletaId: string, settimana: string): PianoGiorni {
 }
 function lsSave(atletaId: string, settimana: string, piano: PianoGiorni) {
   try { localStorage.setItem(lsKey(atletaId, settimana), JSON.stringify(piano)); } catch {}
+}
+async function dbSave(atletaId: string, settimana: string, piano: PianoGiorni) {
+  if (!atletaId) return;
+  try {
+    await supabase.from("piani_settimanali").upsert(
+      { atleta_id: atletaId, settimana, piano },
+      { onConflict: "atleta_id,settimana" }
+    );
+  } catch {}
+}
+async function dbLoad(atletaId: string, settimana: string): Promise<PianoGiorni | null> {
+  if (!atletaId) return null;
+  try {
+    const { data } = await supabase
+      .from("piani_settimanali")
+      .select("piano")
+      .eq("atleta_id", atletaId)
+      .eq("settimana", settimana)
+      .single();
+    if (data?.piano) return { ...EMPTY_PIANO, ...(data.piano as PianoGiorni) };
+  } catch {}
+  return null;
 }
 
 function WeekGrid({
@@ -188,8 +211,15 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   const blocked = useRef(false); // gesture locked as vertical scroll
 
   useEffect(() => {
-    if (atletaId) setPiano(lsLoad(atletaId, settimana));
-    else setPiano({ ...EMPTY_PIANO });
+    if (!atletaId) { setPiano({ ...EMPTY_PIANO }); return; }
+    // Carica subito da localStorage (istantaneo), poi sovrascrive con Supabase se disponibile
+    setPiano(lsLoad(atletaId, settimana));
+    dbLoad(atletaId, settimana).then((remote) => {
+      if (remote) {
+        setPiano(remote);
+        lsSave(atletaId, settimana, remote); // aggiorna cache locale
+      }
+    });
   }, [atletaId, settimana]);
 
   const applyTransforms = (dx: number, dir: "left" | "right") => {
@@ -570,7 +600,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                           const curr = prev[editGiorno];
                           const next = curr.includes(obj.code) ? curr.filter((c) => c !== obj.code) : [...curr, obj.code];
                           const updated = { ...prev, [editGiorno]: next };
-                          atletaIds.forEach((id) => lsSave(id, settimana, updated));
+                          atletaIds.forEach((id) => { lsSave(id, settimana, updated); dbSave(id, settimana, updated); });
                           return updated;
                         });
                       }}
@@ -603,7 +633,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                               // Deseleziona: ripristina il valore originale
                               setPiano((prev) => {
                                 const updated = { ...prev, [key]: [...pianoSnapshotRef.current[key]] };
-                                atletaIds.forEach((id) => lsSave(id, settimana, updated));
+                                atletaIds.forEach((id) => { lsSave(id, settimana, updated); dbSave(id, settimana, updated); });
                                 return updated;
                               });
                               setAppliedDays((prev) => { const s = new Set(prev); s.delete(key); return s; });
@@ -611,7 +641,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                               // Applica: copia obiettivi del giorno corrente
                               setPiano((prev) => {
                                 const updated = { ...prev, [key]: [...prev[editGiorno!]] };
-                                atletaIds.forEach((id) => lsSave(id, settimana, updated));
+                                atletaIds.forEach((id) => { lsSave(id, settimana, updated); dbSave(id, settimana, updated); });
                                 return updated;
                               });
                               setAppliedDays((prev) => new Set(prev).add(key));
