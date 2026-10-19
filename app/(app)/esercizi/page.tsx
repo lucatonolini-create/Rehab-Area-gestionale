@@ -910,6 +910,7 @@ function ExerciseAutocomplete({
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
+        autoComplete="off"
         className={className}
       />
       {open && filtered.length > 0 && (
@@ -2124,6 +2125,7 @@ export default function EserciziPage() {
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nome programma *</label>
                   <input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })}
                     placeholder="Scrivi nuovo nome..."
+                    autoComplete="off"
                     className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]" />
                   {nomiUnici.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
@@ -2140,6 +2142,7 @@ export default function EserciziPage() {
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fase</label>
                   <input value={form.fase} onChange={(e) => { setForm({ ...form, fase: e.target.value }); setFaseSugHL(-1); }}
                     placeholder="Scrivi nuova fase..."
+                    autoComplete="off"
                     className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]"
                     onKeyDown={(e) => {
                       if (fasiFiltrate.length === 0) return;
