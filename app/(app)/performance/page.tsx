@@ -1637,7 +1637,7 @@ export default function PerformancePage() {
 
                   {/* Tonnage bar chart */}
                   {gymStats.sessioni.some((s) => s.tonnaggio > 0) && (
-                    <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                    <div className="bg-white rounded-2xl border border-gray-200 p-4 md:col-span-2">
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Tonnellaggio per Sessione</p>
                       {(() => {
                         const dati = gymStats.sessioni.filter((s) => s.tonnaggio > 0).slice(-20);
