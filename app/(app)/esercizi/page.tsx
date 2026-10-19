@@ -2972,11 +2972,16 @@ export default function EserciziPage() {
         const tuttiProg = Object.values(programmiPerAtleta).flat().filter((p) =>
           p.data === oggiStr && !p.assente && !p.riposo && atletiSelezionatiWB.has(p.atletaId)
         );
-        // Group by exercise signature: athletes sharing identical exercises appear on the same card
+        // Group by exercise signature: athletes sharing IDENTICAL exercises (all fields) appear on the same card
         const firmaEsercizi = (p: Programma): string => {
-          const pal = (p.esercizi ?? []).map((e) => e.nome?.trim() || "").filter(Boolean).join("|");
-          const cam = (p.esercizicampo ?? []).map((e) => e.tipo?.trim() || "").filter(Boolean).join("|");
-          const firma = [pal, cam].filter(Boolean).join("||");
+          const norm = (v: unknown) => (v === undefined || v === null ? "" : String(v).trim());
+          const pal = (p.esercizi ?? []).map((e) =>
+            [e.nome, e.serie, e.reps, e.durata, e.carico, e.rir, e.vas, e.note, e.gruppoMuscolare, e.macroObiettivo].map(norm).join("~")
+          ).join("|");
+          const cam = (p.esercizicampo ?? []).map((e) =>
+            [e.tipo, e.serie, e.durata, e.descrizione, e.vas].map(norm).join("~")
+          ).join("|");
+          const firma = [pal, cam].join("||");
           return firma || ("__nessun_esercizio__" + (p.nome?.trim() || p.atletaId));
         };
         const gruppiProg = new Map<string, { programma: Programma; atleti: Atleta[] }>();
