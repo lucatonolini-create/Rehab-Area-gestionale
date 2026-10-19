@@ -1596,6 +1596,45 @@ export default function PerformancePage() {
                     </div>
                   )}
 
+                  {/* Macro Obiettivi donut */}
+                  {macroStats && (
+                    <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Macro Obiettivi</p>
+                      <div className="flex items-center gap-5">
+                        <svg viewBox="0 0 120 120" className="w-36 h-36 shrink-0">
+                          {(() => {
+                            const R = 46, r = 28, cx = 60, cy = 60;
+                            let sa = -Math.PI / 2;
+                            return macroStats.slices.map((sl) => {
+                              const angle = (sl.pct / 100) * 2 * Math.PI;
+                              const ea = sa + angle;
+                              const x1 = cx + R * Math.cos(sa), y1 = cy + R * Math.sin(sa);
+                              const x2 = cx + R * Math.cos(ea), y2 = cy + R * Math.sin(ea);
+                              const xi1 = cx + r * Math.cos(sa), yi1 = cy + r * Math.sin(sa);
+                              const xi2 = cx + r * Math.cos(ea), yi2 = cy + r * Math.sin(ea);
+                              const lg = angle > Math.PI ? 1 : 0;
+                              const d = `M ${x1} ${y1} A ${R} ${R} 0 ${lg} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${r} ${r} 0 ${lg} 0 ${xi1} ${yi1} Z`;
+                              sa = ea;
+                              return <path key={sl.code} d={d} fill={sl.hex} stroke="white" strokeWidth="1.5" />;
+                            });
+                          })()}
+                          <text x="60" y="63" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#374151">{macroStats.total}</text>
+                          <text x="60" y="73" textAnchor="middle" fontSize="7" fill="#9ca3af">esercizi</text>
+                        </svg>
+                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                          {macroStats.slices.map((sl) => (
+                            <div key={sl.code} className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: sl.hex }} />
+                              <span className="text-xs text-gray-600 flex-1 truncate">{sl.label}</span>
+                              <span className="text-xs font-semibold text-gray-500 shrink-0 mr-1">{sl.n}</span>
+                              <span className="text-xs font-bold text-gray-800 shrink-0">{sl.pct}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Tonnage bar chart */}
                   {gymStats.sessioni.some((s) => s.tonnaggio > 0) && (
                     <div className="bg-white rounded-2xl border border-gray-200 p-4">
@@ -1640,45 +1679,6 @@ export default function PerformancePage() {
                     </div>
                   )}
                 </div>
-
-                {/* Macro Objectives donut */}
-                {macroStats && (
-                  <div className="bg-white rounded-2xl border border-gray-200 p-4">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Macro Obiettivi</p>
-                    <div className="flex items-center gap-5">
-                      <svg viewBox="0 0 120 120" className="w-36 h-36 shrink-0">
-                        {(() => {
-                          const R = 46, r = 28, cx = 60, cy = 60;
-                          let sa = -Math.PI / 2;
-                          return macroStats.slices.map((sl) => {
-                            const angle = (sl.pct / 100) * 2 * Math.PI;
-                            const ea = sa + angle;
-                            const x1 = cx + R * Math.cos(sa), y1 = cy + R * Math.sin(sa);
-                            const x2 = cx + R * Math.cos(ea), y2 = cy + R * Math.sin(ea);
-                            const xi1 = cx + r * Math.cos(sa), yi1 = cy + r * Math.sin(sa);
-                            const xi2 = cx + r * Math.cos(ea), yi2 = cy + r * Math.sin(ea);
-                            const lg = angle > Math.PI ? 1 : 0;
-                            const d = `M ${x1} ${y1} A ${R} ${R} 0 ${lg} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${r} ${r} 0 ${lg} 0 ${xi1} ${yi1} Z`;
-                            sa = ea;
-                            return <path key={sl.code} d={d} fill={sl.hex} stroke="white" strokeWidth="1.5" />;
-                          });
-                        })()}
-                        <text x="60" y="63" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#374151">{macroStats.total}</text>
-                        <text x="60" y="73" textAnchor="middle" fontSize="7" fill="#9ca3af">esercizi</text>
-                      </svg>
-                      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                        {macroStats.slices.map((sl) => (
-                          <div key={sl.code} className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: sl.hex }} />
-                            <span className="text-xs text-gray-600 flex-1 truncate">{sl.label}</span>
-                            <span className="text-xs font-semibold text-gray-500 shrink-0 mr-1">{sl.n}</span>
-                            <span className="text-xs font-bold text-gray-800 shrink-0">{sl.pct}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {/* Session detail table */}
                 <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
