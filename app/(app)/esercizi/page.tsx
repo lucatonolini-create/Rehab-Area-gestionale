@@ -3164,15 +3164,6 @@ export default function EserciziPage() {
                               <X className="w-3 h-3" />
                             </button>
                           </div>
-                          {macroDelGiorno.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {macroDelGiorno.map((m) => m && (
-                                <span key={m.code} className="text-white text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: m.hex }}>
-                                  {m.label}
-                                </span>
-                              ))}
-                            </div>
-                          )}
                         </div>
 
                         {/* Exercises */}
