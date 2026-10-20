@@ -7,8 +7,9 @@ import { supabase } from "@/lib/supabase";
 
 export const MACRO_OBJ = [
   { code: "A",  label: "Accessori",         bg: "bg-slate-500",   hex: "#64748b" },
+  { code: "AS", label: "Assente",           bg: "bg-red-400",     hex: "#f87171" },
   { code: "C",  label: "Campo",             bg: "bg-green-600",   hex: "#16a34a" },
-  { code: "Co", label: "Compound",          bg: "bg-orange-500",  hex: "#f97316" },
+  { code: "CO", label: "Compound",          bg: "bg-orange-500",  hex: "#f97316" },
   { code: "CM", label: "Controllo Motorio", bg: "bg-indigo-500",  hex: "#6366f1" },
   { code: "D",  label: "Differenziato",     bg: "bg-fuchsia-600", hex: "#c026d3" },
   { code: "F",  label: "Forza",             bg: "bg-blue-600",    hex: "#2563eb" },
