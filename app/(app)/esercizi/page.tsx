@@ -3044,7 +3044,8 @@ export default function EserciziPage() {
           setTimeout(() => setWbSalvato(false), 2000);
         };
         return (
-          <div className="fixed inset-0 z-50 flex flex-col bg-white" style={{ zoom: zoomWB, paddingTop: "env(safe-area-inset-top, 0px)" }}>
+          <div className="fixed inset-0 z-50 bg-white flex flex-col" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+          <div className="flex flex-col flex-1 overflow-hidden" style={{ zoom: zoomWB }}>
             {/* Header */}
             <div className="grid grid-cols-3 items-center px-4 py-2 border-b border-gray-200 shrink-0">
               <div />
@@ -3287,6 +3288,7 @@ export default function EserciziPage() {
                 </div>
               )}
             </div>
+          </div>
           </div>
         );
       })()}
