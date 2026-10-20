@@ -185,6 +185,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   const [pianiTutti, setPianiTutti] = useState<Record<string, PianoGiorni>>({});
   const [atletiVista, setAtletiVista] = useState<Atleta[]>([]);
   const [caricandoVista, setCaricandoVista] = useState(false);
+  const [editCell, setEditCell] = useState<{ atletaId: string; giornoKey: GiornoKey } | null>(null);
 
   // Chiudi dropdown cliccando fuori
   useEffect(() => {
@@ -685,12 +686,15 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                           const isToday = weekDates[di] === todayStr;
                           const codes = p[key];
                           return (
-                            <td key={key} className={`px-1.5 py-2 text-center align-middle border-b border-gray-50 ${isToday ? "bg-red-50/40" : ""}`}>
-                              {codes.length === 0 ? (
-                                <span className="text-gray-200 text-[10px]">·</span>
-                              ) : (
-                                <div className="flex flex-wrap gap-0.5 justify-center">
-                                  {codes.map((code) => {
+                            <td key={key} className={`px-1 py-1 text-center align-middle border-b border-gray-50 ${isToday ? "bg-red-50/40" : ""}`}>
+                              <button
+                                onClick={() => setEditCell({ atletaId: a.id, giornoKey: key })}
+                                className={`w-full min-h-[36px] rounded-lg flex flex-wrap gap-0.5 justify-center items-center px-1 py-1 transition-colors hover:bg-gray-100 active:bg-gray-200`}
+                              >
+                                {codes.length === 0 ? (
+                                  <span className="text-gray-200 text-[10px]">·</span>
+                                ) : (
+                                  codes.map((code) => {
                                     const obj = MACRO_OBJ.find((o) => o.code === code);
                                     if (!obj) return null;
                                     return (
@@ -703,9 +707,9 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                                         {code}
                                       </span>
                                     );
-                                  })}
-                                </div>
-                              )}
+                                  })
+                                )}
+                              </button>
                             </td>
                           );
                         })}
@@ -716,6 +720,66 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
               </table>
             </div>
           )}
+
+          {/* Modal modifica cella */}
+          {editCell && (() => {
+            const atleta = atletiVista.find((a) => a.id === editCell.atletaId);
+            const dayIdx = GIORNI_KEYS.indexOf(editCell.giornoKey);
+            const dateLabel = weekDates[dayIdx]?.slice(5).split("-").reverse().join("/");
+            const currCodes = pianiTutti[editCell.atletaId]?.[editCell.giornoKey] ?? [];
+            const toggleCode = (code: string) => {
+              const next = currCodes.includes(code) ? currCodes.filter((c) => c !== code) : [...currCodes, code];
+              const updatedPiano = { ...(pianiTutti[editCell.atletaId] ?? EMPTY_PIANO), [editCell.giornoKey]: next };
+              setPianiTutti((prev) => ({ ...prev, [editCell.atletaId]: updatedPiano }));
+              lsSave(editCell.atletaId, settimana, updatedPiano);
+              dbSave(editCell.atletaId, settimana, updatedPiano);
+            };
+            return (
+              <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0" onClick={() => setEditCell(null)}>
+                <div className="absolute inset-0 bg-black/40" />
+                <div
+                  className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col"
+                  style={{ maxHeight: "calc(100dvh - 80px)" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
+                    <div>
+                      <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">{atleta ? nd(atleta) : ""}</p>
+                      <h3 className="font-bold text-gray-900 text-base">
+                        {GIORNI_BREVI[dayIdx]}{" "}
+                        <span className="text-gray-400 font-normal text-sm">{dateLabel}</span>
+                      </h3>
+                    </div>
+                    <button onClick={() => setEditCell(null)} className="text-gray-400 hover:text-gray-600">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="overflow-y-auto flex-1 px-5">
+                    <div className="grid grid-cols-2 gap-2 pb-2">
+                      {MACRO_OBJ.map((obj) => {
+                        const active = currCodes.includes(obj.code);
+                        return (
+                          <button
+                            key={obj.code}
+                            onClick={() => toggleCode(obj.code)}
+                            className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 transition-all text-left ${active ? `${obj.bg} border-transparent` : "bg-white border-gray-100 hover:border-gray-200"}`}
+                          >
+                            <span className={`text-xs font-bold w-6 shrink-0 ${active ? "text-white" : "text-gray-700"}`}>{obj.code}</span>
+                            <span className={`text-xs leading-tight ${active ? "text-white/90" : "text-gray-500"}`}>{obj.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="px-5 py-4 shrink-0">
+                    <button onClick={() => setEditCell(null)} className="w-full bg-[#C8102E] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-red-800">
+                      Fatto
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
