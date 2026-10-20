@@ -118,10 +118,10 @@ function superioreTest(sx: string, dx: string): "Dx" | "Sx" | null {
 }
 
 function faseDaProgresso(progresso: number): string {
-  if (progresso <= 25) return "Fase 1";
-  if (progresso <= 50) return "Fase 2";
-  if (progresso <= 75) return "Fase 3";
-  return "Fase 4";
+  if (progresso <= 25) return "Fase acuta";
+  if (progresso <= 50) return "Mid phase";
+  if (progresso <= 75) return "RTR";
+  return "RTT";
 }
 
 function trovaPrecedenteTest(lista: Programma[], currentId: string, nomeTest: string): import("@/lib/store").TestFisiometrico | null {
