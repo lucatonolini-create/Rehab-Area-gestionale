@@ -188,6 +188,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   const [editCell, setEditCell] = useState<{ atletaId: string; giornoKey: GiornoKey } | null>(null);
   const [editCellCodes, setEditCellCodes] = useState<string[]>([]);
   const [editCellExtra, setEditCellExtra] = useState<Set<string>>(new Set());
+  const [editCellExtraDays, setEditCellExtraDays] = useState<Set<GiornoKey>>(new Set());
 
   // Chiudi dropdown cliccando fuori
   useEffect(() => {
@@ -690,7 +691,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                           return (
                             <td key={key} className={`px-1 py-1 text-center align-middle border-b border-gray-50 ${isToday ? "bg-red-50/40" : ""}`}>
                               <button
-                                onClick={() => { setEditCell({ atletaId: a.id, giornoKey: key }); setEditCellCodes([...(pianiTutti[a.id]?.[key] ?? [])]); setEditCellExtra(new Set()); }}
+                                onClick={() => { setEditCell({ atletaId: a.id, giornoKey: key }); setEditCellCodes([...(pianiTutti[a.id]?.[key] ?? [])]); setEditCellExtra(new Set()); setEditCellExtraDays(new Set()); }}
                                 className={`w-full min-h-[36px] rounded-lg flex flex-wrap gap-0.5 justify-center items-center px-1 py-1 transition-colors hover:bg-gray-100 active:bg-gray-200`}
                               >
                                 {codes.length === 0 ? (
@@ -733,12 +734,14 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                 prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
               );
             };
+            const giorni = [editCell.giornoKey, ...Array.from(editCellExtraDays)];
             const conferma = () => {
               const ids = [editCell.atletaId, ...Array.from(editCellExtra)];
               setPianiTutti((prev) => {
                 const next = { ...prev };
                 ids.forEach((id) => {
-                  const updatedPiano = { ...(prev[id] ?? EMPTY_PIANO), [editCell.giornoKey]: editCellCodes };
+                  let updatedPiano = { ...(prev[id] ?? EMPTY_PIANO) };
+                  giorni.forEach((g) => { updatedPiano = { ...updatedPiano, [g]: editCellCodes }; });
                   next[id] = updatedPiano;
                   lsSave(id, settimana, updatedPiano);
                   dbSave(id, settimana, updatedPiano);
@@ -822,10 +825,46 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                         </div>
                       </div>
                     )}
+                    {/* Applica anche a giorni */}
+                    <div className="border-t border-gray-100 pt-3 pb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Applica anche a giorni</p>
+                        <button
+                          onClick={() => setEditCellExtraDays((prev) => {
+                            const altri = GIORNI_KEYS.filter((k) => k !== editCell.giornoKey);
+                            return prev.size === altri.length ? new Set() : new Set(altri);
+                          })}
+                          className="text-[10px] font-semibold text-[#C8102E] hover:underline"
+                        >
+                          {editCellExtraDays.size === GIORNI_KEYS.filter((k) => k !== editCell.giornoKey).length ? "Nessuno" : "Tutti"}
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {GIORNI_KEYS.filter((k) => k !== editCell.giornoKey).map((key) => {
+                          const idx = GIORNI_KEYS.indexOf(key);
+                          const checked = editCellExtraDays.has(key);
+                          return (
+                            <button
+                              key={key}
+                              onClick={() => setEditCellExtraDays((prev) => {
+                                const next = new Set(prev);
+                                next.has(key) ? next.delete(key) : next.add(key);
+                                return next;
+                              })}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors ${checked ? "bg-[#C8102E] text-white border-[#C8102E]" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"}`}
+                            >
+                              {GIORNI_BREVI[idx]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                   <div className="px-5 py-4 shrink-0">
                     <button onClick={conferma} className="w-full bg-[#C8102E] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-red-800">
-                      {editCellExtra.size > 0 ? `Salva per ${1 + editCellExtra.size} atleti` : "Fatto"}
+                      {(editCellExtra.size > 0 || editCellExtraDays.size > 0)
+                        ? `Salva per ${1 + editCellExtra.size} atleti × ${1 + editCellExtraDays.size} giorni`
+                        : "Fatto"}
                     </button>
                   </div>
                 </div>
