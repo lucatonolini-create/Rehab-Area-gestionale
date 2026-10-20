@@ -1330,7 +1330,7 @@ export default function EserciziPage() {
     // Salva una copia del programma per ogni atleta aggiuntivo
     for (const addId of atletiAggiuntivi) {
       const atletaAdd = atleti.find((a) => a.id === addId);
-      const nomeAdd = atletaAdd?.infortunio?.trim() || pulito.nome;
+      const nomeAdd = atletaAdd?.infortunio?.trim() ? `Rehab ${atletaAdd.infortunio.trim()}` : pulito.nome;
       const faseAdd = atletaAdd ? faseDaProgresso(atletaAdd.progresso) : pulito.fase;
       const pulitoCopia = {
         atletaId: addId,
@@ -1981,7 +1981,7 @@ export default function EserciziPage() {
                   <select value={form.atletaId} onChange={(e) => {
                       const id = e.target.value;
                       const atletaSel = atleti.find((a) => a.id === id);
-                      const autoNome = !editId && atletaSel?.infortunio?.trim() ? atletaSel.infortunio.trim() : form.nome;
+                      const autoNome = !editId && atletaSel?.infortunio?.trim() ? `Rehab ${atletaSel.infortunio.trim()}` : form.nome;
                       const autoFase = !editId && atletaSel ? faseDaProgresso(atletaSel.progresso) : form.fase;
                       setForm({ ...form, atletaId: id, nome: autoNome, fase: autoFase, infortunioId: undefined, infortunioLabel: undefined });
                       if (id && !(id in programmiPerAtleta)) {
