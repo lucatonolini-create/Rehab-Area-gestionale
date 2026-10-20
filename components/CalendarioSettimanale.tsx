@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Maximize2 } from "lucide-react";
 import { nd, type Atleta } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 
@@ -180,6 +180,11 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   const [editGiorno, setEditGiorno] = useState<GiornoKey | null>(null);
   const [appliedDays, setAppliedDays] = useState<Set<GiornoKey>>(new Set());
   const pianoSnapshotRef = useRef<PianoGiorni>({ ...EMPTY_PIANO });
+
+  const [mostraVistaTotale, setMostraVistaTotale] = useState(false);
+  const [pianiTutti, setPianiTutti] = useState<Record<string, PianoGiorni>>({});
+  const [atletiVista, setAtletiVista] = useState<Atleta[]>([]);
+  const [caricandoVista, setCaricandoVista] = useState(false);
 
   // Chiudi dropdown cliccando fuori
   useEffect(() => {
@@ -384,6 +389,23 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   }, [editGiorno, goWeek]);
 
 
+  // Carica piani di tutti gli atleti per la vista totale
+  useEffect(() => {
+    if (!mostraVistaTotale) return;
+    setCaricandoVista(true);
+    const tutti = getAtletiSettimana().sort((a, b) => nd(a).localeCompare(nd(b), "it"));
+    setAtletiVista(tutti);
+    const pianiLocali: Record<string, PianoGiorni> = {};
+    tutti.forEach((a) => { pianiLocali[a.id] = lsLoad(a.id, settimana); });
+    setPianiTutti({ ...pianiLocali });
+    Promise.all(tutti.map((a) =>
+      dbLoad(a.id, settimana).then((remote) => {
+        if (remote) { pianiLocali[a.id] = remote; lsSave(a.id, settimana, remote); }
+      }).catch(() => {})
+    )).then(() => { setPianiTutti({ ...pianiLocali }); setCaricandoVista(false); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mostraVistaTotale, settimana]);
+
   // Snapshot piano quando si apre la finestra, reset applied days
   useEffect(() => {
     if (editGiorno) {
@@ -482,6 +504,9 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
         <div className="flex items-center gap-1">
           <button onClick={exportCSV} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100 text-[10px] font-semibold text-gray-500 leading-none" title="Scarica CSV">CSV</button>
           <button onClick={exportPDF} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100 text-[10px] font-semibold text-gray-500 leading-none" title="Scarica PDF">PDF</button>
+          <button onClick={() => setMostraVistaTotale(true)} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100 text-gray-500" title="Vista completa">
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
@@ -601,6 +626,98 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
           </span>
         ))}
       </div>
+
+      {/* Vista totale: tutti gli atleti × tutti i giorni */}
+      {mostraVistaTotale && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
+            <div className="flex items-center gap-1">
+              <button onClick={() => goWeek(-1)} className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50">
+                <ChevronLeft className="w-4 h-4 text-gray-500" />
+              </button>
+              <span className="text-xs font-semibold text-gray-700 px-2 w-[140px] text-center">
+                {fmt(weekDates[0])} – {fmt(weekDates[6])}.{weekDates[6].slice(2, 4)}
+              </span>
+              <button onClick={() => goWeek(1)} className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50">
+                <ChevronRight className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+            <h2 className="text-sm font-bold text-gray-800 absolute left-1/2 -translate-x-1/2">Piano Settimanale</h2>
+            <button onClick={() => setMostraVistaTotale(false)} className="p-2 text-gray-400 hover:text-gray-700">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Tabella scrollabile */}
+          {caricandoVista ? (
+            <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">Caricamento…</div>
+          ) : atletiVista.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">Nessun piano per questa settimana</div>
+          ) : (
+            <div className="flex-1 overflow-auto">
+              <table className="w-full border-collapse text-xs" style={{ minWidth: 560 }}>
+                <thead className="sticky top-0 z-10 bg-white">
+                  <tr>
+                    <th className="sticky left-0 z-20 bg-white text-left px-3 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wide border-b border-r border-gray-100 min-w-[120px]">
+                      Atleta
+                    </th>
+                    {weekDates.map((date, i) => {
+                      const isToday = date === todayStr;
+                      return (
+                        <th key={i} className={`px-2 py-2.5 text-center border-b border-gray-100 font-semibold min-w-[64px] ${isToday ? "text-[#C8102E]" : "text-gray-500"}`}>
+                          <span className="block text-[10px] uppercase tracking-wide">{GIORNI_BREVI[i]}</span>
+                          <span className={`block text-sm font-bold ${isToday ? "text-[#C8102E]" : "text-gray-700"}`}>{date.slice(8)}/{date.slice(5, 7)}</span>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {atletiVista.map((a, rowIdx) => {
+                    const p = pianiTutti[a.id] ?? EMPTY_PIANO;
+                    return (
+                      <tr key={a.id} className={rowIdx % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
+                        <td className={`sticky left-0 z-10 px-3 py-2 border-r border-gray-100 font-semibold text-gray-800 text-xs leading-tight ${rowIdx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
+                          {nd(a)}
+                        </td>
+                        {GIORNI_KEYS.map((key, di) => {
+                          const isToday = weekDates[di] === todayStr;
+                          const codes = p[key];
+                          return (
+                            <td key={key} className={`px-1.5 py-2 text-center align-middle border-b border-gray-50 ${isToday ? "bg-red-50/40" : ""}`}>
+                              {codes.length === 0 ? (
+                                <span className="text-gray-200 text-[10px]">·</span>
+                              ) : (
+                                <div className="flex flex-wrap gap-0.5 justify-center">
+                                  {codes.map((code) => {
+                                    const obj = MACRO_OBJ.find((o) => o.code === code);
+                                    if (!obj) return null;
+                                    return (
+                                      <span
+                                        key={code}
+                                        title={obj.label}
+                                        className="text-white text-[9px] font-bold rounded px-1 py-0.5 leading-tight"
+                                        style={{ backgroundColor: obj.hex }}
+                                      >
+                                        {code}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Modal */}
       {editGiorno && (
