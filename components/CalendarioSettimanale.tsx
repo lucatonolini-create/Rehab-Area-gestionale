@@ -434,7 +434,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
     } catch {}
     return Array.from(idsWithData)
       .map((id) => atleti.find((a) => a.id === id))
-      .filter(Boolean) as Atleta[];
+      .filter((a): a is Atleta => !!a && a.stato === "Infortunato");
   };
 
   const exportCSV = () => {
@@ -635,8 +635,14 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
       {mostraVistaTotale && (
         <div className="fixed inset-0 z-50 bg-white flex flex-col" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
-            <div className="flex items-center gap-1">
+          <div className="flex flex-col px-4 border-b border-gray-100 shrink-0">
+            <div className="flex items-center justify-between py-3">
+              <h2 className="text-sm font-bold text-gray-800">Piano Settimanale</h2>
+              <button onClick={() => setMostraVistaTotale(false)} className="p-2 text-gray-400 hover:text-gray-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex items-center justify-center gap-2 pb-3">
               <button onClick={() => goWeek(-1)} className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50">
                 <ChevronLeft className="w-4 h-4 text-gray-500" />
               </button>
@@ -647,10 +653,6 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                 <ChevronRight className="w-4 h-4 text-gray-500" />
               </button>
             </div>
-            <h2 className="text-sm font-bold text-gray-800 absolute left-1/2 -translate-x-1/2">Piano Settimanale</h2>
-            <button onClick={() => setMostraVistaTotale(false)} className="p-2 text-gray-400 hover:text-gray-700">
-              <X className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Tabella scrollabile */}
