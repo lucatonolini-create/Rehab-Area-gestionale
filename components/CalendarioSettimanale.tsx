@@ -20,6 +20,7 @@ export const MACRO_OBJ = [
   { code: "P",  label: "Potenza",           bg: "bg-purple-600",  hex: "#9333ea" },
   { code: "R",  label: "Riposo",            bg: "bg-gray-400",    hex: "#9ca3af" },
   { code: "S",  label: "Scarico",           bg: "bg-sky-400",     hex: "#38bdf8" },
+  { code: "SQ", label: "Squadra",           bg: "bg-emerald-600", hex: "#059669" },
   { code: "T",  label: "Tecnico",           bg: "bg-teal-600",    hex: "#0d9488" },
   { code: "U",  label: "Upper",             bg: "bg-cyan-600",    hex: "#0891b2" },
 ] as const;
