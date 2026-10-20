@@ -186,6 +186,8 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
   const [atletiVista, setAtletiVista] = useState<Atleta[]>([]);
   const [caricandoVista, setCaricandoVista] = useState(false);
   const [editCell, setEditCell] = useState<{ atletaId: string; giornoKey: GiornoKey } | null>(null);
+  const [editCellCodes, setEditCellCodes] = useState<string[]>([]);
+  const [editCellExtra, setEditCellExtra] = useState<Set<string>>(new Set());
 
   // Chiudi dropdown cliccando fuori
   useEffect(() => {
@@ -688,7 +690,7 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                           return (
                             <td key={key} className={`px-1 py-1 text-center align-middle border-b border-gray-50 ${isToday ? "bg-red-50/40" : ""}`}>
                               <button
-                                onClick={() => setEditCell({ atletaId: a.id, giornoKey: key })}
+                                onClick={() => { setEditCell({ atletaId: a.id, giornoKey: key }); setEditCellCodes([...(pianiTutti[a.id]?.[key] ?? [])]); setEditCellExtra(new Set()); }}
                                 className={`w-full min-h-[36px] rounded-lg flex flex-wrap gap-0.5 justify-center items-center px-1 py-1 transition-colors hover:bg-gray-100 active:bg-gray-200`}
                               >
                                 {codes.length === 0 ? (
@@ -726,16 +728,28 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
             const atleta = atletiVista.find((a) => a.id === editCell.atletaId);
             const dayIdx = GIORNI_KEYS.indexOf(editCell.giornoKey);
             const dateLabel = weekDates[dayIdx]?.slice(5).split("-").reverse().join("/");
-            const currCodes = pianiTutti[editCell.atletaId]?.[editCell.giornoKey] ?? [];
             const toggleCode = (code: string) => {
-              const next = currCodes.includes(code) ? currCodes.filter((c) => c !== code) : [...currCodes, code];
-              const updatedPiano = { ...(pianiTutti[editCell.atletaId] ?? EMPTY_PIANO), [editCell.giornoKey]: next };
-              setPianiTutti((prev) => ({ ...prev, [editCell.atletaId]: updatedPiano }));
-              lsSave(editCell.atletaId, settimana, updatedPiano);
-              dbSave(editCell.atletaId, settimana, updatedPiano);
+              setEditCellCodes((prev) =>
+                prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+              );
             };
+            const conferma = () => {
+              const ids = [editCell.atletaId, ...Array.from(editCellExtra)];
+              setPianiTutti((prev) => {
+                const next = { ...prev };
+                ids.forEach((id) => {
+                  const updatedPiano = { ...(prev[id] ?? EMPTY_PIANO), [editCell.giornoKey]: editCellCodes };
+                  next[id] = updatedPiano;
+                  lsSave(id, settimana, updatedPiano);
+                  dbSave(id, settimana, updatedPiano);
+                });
+                return next;
+              });
+              setEditCell(null);
+            };
+            const altriAtleti = atletiVista.filter((a) => a.id !== editCell.atletaId);
             return (
-              <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0" onClick={() => setEditCell(null)}>
+              <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0" onClick={conferma}>
                 <div className="absolute inset-0 bg-black/40" />
                 <div
                   className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col"
@@ -750,14 +764,15 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                         <span className="text-gray-400 font-normal text-sm">{dateLabel}</span>
                       </h3>
                     </div>
-                    <button onClick={() => setEditCell(null)} className="text-gray-400 hover:text-gray-600">
+                    <button onClick={conferma} className="text-gray-400 hover:text-gray-600">
                       <X className="w-5 h-5" />
                     </button>
                   </div>
                   <div className="overflow-y-auto flex-1 px-5">
-                    <div className="grid grid-cols-2 gap-2 pb-2">
+                    {/* Obiettivi */}
+                    <div className="grid grid-cols-2 gap-2 pb-3">
                       {MACRO_OBJ.map((obj) => {
-                        const active = currCodes.includes(obj.code);
+                        const active = editCellCodes.includes(obj.code);
                         return (
                           <button
                             key={obj.code}
@@ -770,10 +785,47 @@ export default function CalendarioSettimanale({ atleti }: { atleti: Atleta[] }) 
                         );
                       })}
                     </div>
+                    {/* Applica anche a */}
+                    {altriAtleti.length > 0 && (
+                      <div className="border-t border-gray-100 pt-3 pb-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Applica anche a</p>
+                          <button
+                            onClick={() => setEditCellExtra((prev) =>
+                              prev.size === altriAtleti.length ? new Set() : new Set(altriAtleti.map((a) => a.id))
+                            )}
+                            className="text-[10px] font-semibold text-[#C8102E] hover:underline"
+                          >
+                            {editCellExtra.size === altriAtleti.length ? "Nessuno" : "Tutti"}
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          {altriAtleti.map((a) => {
+                            const checked = editCellExtra.has(a.id);
+                            return (
+                              <button
+                                key={a.id}
+                                onClick={() => setEditCellExtra((prev) => {
+                                  const s = new Set(prev);
+                                  checked ? s.delete(a.id) : s.add(a.id);
+                                  return s;
+                                })}
+                                className={`flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors ${checked ? "bg-red-50 border border-[#C8102E]/20" : "bg-gray-50 border border-transparent hover:bg-gray-100"}`}
+                              >
+                                <span className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${checked ? "bg-[#C8102E] border-[#C8102E]" : "border-gray-300"}`}>
+                                  {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                </span>
+                                <span className="text-xs text-gray-800 font-medium">{nd(a)}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="px-5 py-4 shrink-0">
-                    <button onClick={() => setEditCell(null)} className="w-full bg-[#C8102E] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-red-800">
-                      Fatto
+                    <button onClick={conferma} className="w-full bg-[#C8102E] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-red-800">
+                      {editCellExtra.size > 0 ? `Salva per ${1 + editCellExtra.size} atleti` : "Fatto"}
                     </button>
                   </div>
                 </div>
