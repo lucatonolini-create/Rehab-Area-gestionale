@@ -124,6 +124,17 @@ function faseDaProgresso(progresso: number): string {
   return "RTT";
 }
 
+function nomeFaseDaStorico(atleta: Atleta, programmi: Programma[]): { nome: string; fase: string } {
+  const recente = [...programmi]
+    .filter((p) => !p.assente && !p.riposo && !p.squadra && p.nome.trim())
+    .sort((a, b) => b.data.localeCompare(a.data))[0];
+  if (recente) return { nome: recente.nome, fase: recente.fase ?? "" };
+  return {
+    nome: atleta.infortunio?.trim() ? `Rehab ${atleta.infortunio.trim()}` : "",
+    fase: faseDaProgresso(atleta.progresso),
+  };
+}
+
 function trovaPrecedenteTest(lista: Programma[], currentId: string, nomeTest: string): import("@/lib/store").TestFisiometrico | null {
   const sorted = [...lista]
     .filter(p => !p.assente && !p.riposo && !p.squadra && p.tests?.length)
@@ -1330,8 +1341,9 @@ export default function EserciziPage() {
     // Salva una copia del programma per ogni atleta aggiuntivo
     for (const addId of atletiAggiuntivi) {
       const atletaAdd = atleti.find((a) => a.id === addId);
-      const nomeAdd = atletaAdd?.infortunio?.trim() ? `Rehab ${atletaAdd.infortunio.trim()}` : pulito.nome;
-      const faseAdd = atletaAdd ? faseDaProgresso(atletaAdd.progresso) : pulito.fase;
+      const { nome: nomeAdd, fase: faseAdd } = atletaAdd
+        ? nomeFaseDaStorico(atletaAdd, programmiPerAtleta[addId] ?? [])
+        : { nome: pulito.nome, fase: pulito.fase };
       const pulitoCopia = {
         atletaId: addId,
         nome: nomeAdd,
@@ -1981,8 +1993,11 @@ export default function EserciziPage() {
                   <select value={form.atletaId} onChange={(e) => {
                       const id = e.target.value;
                       const atletaSel = atleti.find((a) => a.id === id);
-                      const autoNome = !editId && atletaSel?.infortunio?.trim() ? `Rehab ${atletaSel.infortunio.trim()}` : form.nome;
-                      const autoFase = !editId && atletaSel ? faseDaProgresso(atletaSel.progresso) : form.fase;
+                      let autoNome = form.nome, autoFase = form.fase;
+                      if (!editId && atletaSel) {
+                        const { nome, fase } = nomeFaseDaStorico(atletaSel, programmiPerAtleta[id] ?? []);
+                        autoNome = nome; autoFase = fase;
+                      }
                       setForm({ ...form, atletaId: id, nome: autoNome, fase: autoFase, infortunioId: undefined, infortunioLabel: undefined });
                       if (id && !(id in programmiPerAtleta)) {
                         loadProgrammi(id).then((progs) =>
