@@ -117,6 +117,13 @@ function superioreTest(sx: string, dx: string): "Dx" | "Sx" | null {
   return b > a ? "Dx" : "Sx";
 }
 
+function faseDaProgresso(progresso: number): string {
+  if (progresso <= 25) return "Fase 1";
+  if (progresso <= 50) return "Fase 2";
+  if (progresso <= 75) return "Fase 3";
+  return "Fase 4";
+}
+
 function trovaPrecedenteTest(lista: Programma[], currentId: string, nomeTest: string): import("@/lib/store").TestFisiometrico | null {
   const sorted = [...lista]
     .filter(p => !p.assente && !p.riposo && !p.squadra && p.tests?.length)
@@ -1322,11 +1329,14 @@ export default function EserciziPage() {
 
     // Salva una copia del programma per ogni atleta aggiuntivo
     for (const addId of atletiAggiuntivi) {
+      const atletaAdd = atleti.find((a) => a.id === addId);
+      const nomeAdd = atletaAdd?.infortunio?.trim() || pulito.nome;
+      const faseAdd = atletaAdd ? faseDaProgresso(atletaAdd.progresso) : pulito.fase;
       const pulitoCopia = {
         atletaId: addId,
-        nome: pulito.nome,
+        nome: nomeAdd,
         data: pulito.data,
-        fase: pulito.fase,
+        fase: faseAdd,
         assente: pulito.assente,
         riposo: pulito.riposo,
         squadra: pulito.squadra,
@@ -1345,7 +1355,6 @@ export default function EserciziPage() {
         [addId]: [...(prev[addId] ?? []), progCopia],
       }));
       if (form.squadra) {
-        const atletaAdd = atleti.find((a) => a.id === addId);
         if (atletaAdd && atletaAdd.stato === "Infortunato") {
           const fineRehabAdd = progCopia.data;
           const nuovoStoricoAdd: InfortunioStorico[] = [...(atletaAdd.storicoInfortuni ?? [])];
@@ -1971,7 +1980,10 @@ export default function EserciziPage() {
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Atleta *</label>
                   <select value={form.atletaId} onChange={(e) => {
                       const id = e.target.value;
-                      setForm({ ...form, atletaId: id, infortunioId: undefined, infortunioLabel: undefined });
+                      const atletaSel = atleti.find((a) => a.id === id);
+                      const autoNome = !editId && atletaSel?.infortunio?.trim() ? atletaSel.infortunio.trim() : form.nome;
+                      const autoFase = !editId && atletaSel ? faseDaProgresso(atletaSel.progresso) : form.fase;
+                      setForm({ ...form, atletaId: id, nome: autoNome, fase: autoFase, infortunioId: undefined, infortunioLabel: undefined });
                       if (id && !(id in programmiPerAtleta)) {
                         loadProgrammi(id).then((progs) =>
                           setProgrammiPerAtleta((prev) => ({ ...prev, [id]: progs }))
