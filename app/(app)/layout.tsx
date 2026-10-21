@@ -3,7 +3,6 @@ import BottomNav from "@/components/BottomNav";
 import OfflineBanner from "@/components/OfflineBanner";
 import IntakeNotifier from "@/components/IntakeNotifier";
 import PushSetup from "@/components/PushSetup";
-import SessionTimeout from "@/components/SessionTimeout";
 import SyncManager from "@/components/SyncManager";
 import { BottomNavProvider } from "@/lib/bottom-nav-context";
 
@@ -19,7 +18,6 @@ className="flex bg-[#F5F5F7]"
         <OfflineBanner />
         <IntakeNotifier />
         <PushSetup />
-        <SessionTimeout />
         <SyncManager />
       </div>
       <BottomNav />
