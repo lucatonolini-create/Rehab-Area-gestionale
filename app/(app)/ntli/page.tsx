@@ -1361,15 +1361,13 @@ export default function NtliPage() {
                 className="p-2 border border-gray-200 rounded-xl hover:bg-gray-50">
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <div className="border border-gray-200 rounded-xl px-3 focus-within:ring-2 focus-within:ring-[#C8102E]">
-                <input type="week" value={week} onChange={(e) => setWeek(e.target.value)}
-                  className="py-2 text-sm bg-transparent border-0 outline-none" />
-              </div>
+              <span className="text-sm text-gray-600 font-medium px-3 py-2 border border-gray-200 rounded-xl min-w-[130px] text-center">
+                {weekDates[0].slice(8)}.{weekDates[0].slice(5, 7)} – {weekDates[6].slice(8)}.{weekDates[6].slice(5, 7)}.{weekDates[6].slice(2, 4)}
+              </span>
               <button onClick={() => setWeek(shiftWeek(week, 1))}
                 className="p-2 border border-gray-200 rounded-xl hover:bg-gray-50">
                 <ChevronRight className="w-4 h-4" />
               </button>
-              <span className="text-sm text-gray-500">{weekDates[0]} — {weekDates[6]}</span>
             </div>
 
             {/* Card per ogni NTLI */}
