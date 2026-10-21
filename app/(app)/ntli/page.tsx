@@ -781,13 +781,11 @@ export default function NtliPage() {
   const [showNuovoForm, setShowNuovoForm] = useState(false);
 
   // Monitoraggio
-  const [monDate, setMonDate] = useState(today());
+  const [monWeek, setMonWeek] = useState(currentIsoWeek());
   const [monAtleta, setMonAtleta] = useState("");
   const [monEdits, setMonEdits] = useState<Record<string, Partial<NtliDaily>>>({});
   const [monSaving, setMonSaving] = useState(false);
   const [monMsg, setMonMsg] = useState<string | null>(null);
-  const [palestraAperta, setPalestraAperta] = useState<Record<string, boolean>>({});
-  const [palestraEspansa, setPalestraEspansa] = useState<Record<string, boolean>>({});
 
   // Riepilogo
   const [week, setWeek] = useState(currentIsoWeek());
@@ -838,16 +836,17 @@ export default function NtliPage() {
   });
 
   // ── Monitoraggio helpers ──────────────────────────────────────────────────
-  function getMonRow(ntliId: string): Partial<NtliDaily> {
-    const existing = dailyAll.find((d) => d.ntliId === ntliId && d.date === monDate);
-    return monEdits[ntliId] ?? (existing ? existing : { trainingModification: "Nessuna modifica" as TrainingModification });
+  const monWeekDates = isoWeekDates(monWeek);
+
+  function getMonCell(ntliId: string, date: string): Partial<NtliDaily> {
+    const key = `${ntliId}|${date}`;
+    const existing = dailyAll.find((d) => d.ntliId === ntliId && d.date === date);
+    return monEdits[key] ?? (existing ?? { trainingModification: "Nessuna modifica" as TrainingModification });
   }
 
-  function setMonRow(ntliId: string, patch: Partial<NtliDaily>) {
-    setMonEdits((p) => ({
-      ...p,
-      [ntliId]: { ...getMonRow(ntliId), ...patch },
-    }));
+  function setMonCell(ntliId: string, date: string, patch: Partial<NtliDaily>) {
+    const key = `${ntliId}|${date}`;
+    setMonEdits((p) => ({ ...p, [key]: { ...getMonCell(ntliId, date), ...patch } }));
   }
 
   async function saveMonitoraggio() {
@@ -856,10 +855,11 @@ export default function NtliPage() {
     try {
       const toSave = Object.entries(monEdits);
       if (toSave.length === 0) { setMonMsg("Nessuna modifica da salvare."); setMonSaving(false); return; }
-      for (const [ntliId, patch] of toSave) {
+      for (const [key, patch] of toSave) {
+        const [ntliId, date] = key.split("|");
         const ntli = ntliList.find((n) => n.id === ntliId);
-        if (!ntli) continue;
-        const existing = dailyAll.find((d) => d.ntliId === ntliId && d.date === monDate);
+        if (!ntli || !date) continue;
+        const existing = dailyAll.find((d) => d.ntliId === ntliId && d.date === date);
         const atletaM =
           atleti.find((a) => a.nome.trim().toLowerCase() === ntli.athleteName.trim().toLowerCase()) ||
           atleti.find((a) => a.nome.trim().toLowerCase().includes(ntli.athleteName.trim().toLowerCase()) ||
@@ -877,7 +877,7 @@ export default function NtliPage() {
           id: existing?.id ?? uid(),
           ntliId,
           athleteId: resolvedAthleteId,
-          date: monDate,
+          date,
           vasStart: vStartDx ?? vStartSx ?? existing?.vasStart ?? null,
           vasEnd: vEndDx ?? vEndSx ?? existing?.vasEnd ?? null,
           vasStartDx: vStartDx,
@@ -894,7 +894,7 @@ export default function NtliPage() {
       }
       await reload();
       setMonEdits({});
-      setMonMsg("Monitoraggio salvato correttamente.");
+      setMonMsg("Settimana salvata correttamente.");
     } catch (e) {
       const msg = (e as any)?.message ?? String(e);
       setMonMsg("Errore nel salvataggio: " + msg);
@@ -1152,13 +1152,21 @@ export default function NtliPage() {
         {/* ── Tab Monitoraggio ──────────────────────────────────────────── */}
         {tab === "monitoraggio" && (
           <div className="space-y-4">
+            {/* Controls */}
             <div className="flex flex-wrap gap-3 no-print">
-              <div className="flex items-center gap-2">
-                <Lbl>Data</Lbl>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setMonWeek(shiftWeek(monWeek, -1))}
+                  className="p-2 border border-gray-200 rounded-xl hover:bg-gray-50">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
                 <div className="border border-gray-200 rounded-xl px-3 focus-within:ring-2 focus-within:ring-[#C8102E]">
-                  <input type="date" value={monDate} onChange={(e) => setMonDate(e.target.value)}
+                  <input type="week" value={monWeek} onChange={(e) => setMonWeek(e.target.value)}
                     className="py-2 text-sm bg-transparent border-0 outline-none" />
                 </div>
+                <button onClick={() => setMonWeek(shiftWeek(monWeek, 1))}
+                  className="p-2 border border-gray-200 rounded-xl hover:bg-gray-50">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
               <div className="flex items-center gap-2">
                 <Lbl>Atleta</Lbl>
@@ -1180,7 +1188,6 @@ export default function NtliPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Group by athlete — one card per player, multiple injuries inside */}
                 {Array.from(
                   monNtli.reduce<Map<string, typeof monNtli>>((acc, n) => {
                     const key = n.athleteName;
@@ -1197,212 +1204,138 @@ export default function NtliPage() {
                     setAtleti((prev) => prev.map((a) => a.id === atletaMatch.id ? { ...a, stato: nuovoStato } : a));
                     await patchStato(atletaMatch.id, nuovoStato);
                   };
-                  const allCompilati = ntlis.every((n) => !!dailyAll.find((d) => d.ntliId === n.id && d.date === monDate) && !monEdits[n.id]);
-                  const anyEdited = ntlis.some((n) => !!monEdits[n.id]);
-
                   return (
                     <div key={athleteName} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                      {/* Athlete header — shown once */}
+                      {/* Athlete header */}
                       <div className="flex items-center justify-between mb-4">
                         <p className="font-semibold text-gray-900">{athleteName}</p>
-                        <div className="flex items-center gap-2">
-                          {atletaMatch && (
-                            <button
-                              onClick={toggleStato}
-                              title={`Cambia in ${statoCorrente === "Infortunato" ? "NTL" : "Infortunato"}`}
-                              className={`text-xs px-2.5 py-1 rounded-full font-medium border transition-colors ${
-                                statoCorrente === "Infortunato"
-                                  ? "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100"
-                                  : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
-                              }`}>
-                              {statoCorrente}
-                            </button>
-                          )}
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                            allCompilati && !anyEdited ? "bg-green-100 text-green-700" : anyEdited ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-500"
-                          }`}>
-                            {allCompilati && !anyEdited ? "Compilato" : anyEdited ? "Modificato" : "Da compilare"}
-                          </span>
-                        </div>
+                        {atletaMatch && (
+                          <button onClick={toggleStato}
+                            title={`Cambia in ${statoCorrente === "Infortunato" ? "NTL" : "Infortunato"}`}
+                            className={`text-xs px-2.5 py-1 rounded-full font-medium border transition-colors ${
+                              statoCorrente === "Infortunato"
+                                ? "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100"
+                                : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+                            }`}>
+                            {statoCorrente}
+                          </button>
+                        )}
                       </div>
 
-                      {/* Infortunio dal sistema Atleti — mostrato solo se stato è Infortunato */}
-                      {statoCorrente === "Infortunato" && atletaMatch?.infortunio && (
-                        <div className="mb-4 px-3 py-2.5 rounded-xl bg-orange-50 border border-orange-100 flex items-start gap-2">
-                          <span className="text-xs font-bold text-orange-600 uppercase tracking-wide shrink-0 mt-0.5">Infortuno</span>
-                          <span className="text-xs text-orange-700 leading-snug">{atletaMatch.infortunio}</span>
-                        </div>
-                      )}
-
-                      {/* One section per NTLI record — visually separated */}
-                      <div className="space-y-5">
-                        {ntlis.map((ntli, ntliIdx) => {
-                          const row = getMonRow(ntli.id);
-                          const noAllenamento = (row.trainingModification ?? "").split(",").map(s => s.trim()).includes("Nessun allenamento");
-                          return (
-                            <div key={ntli.id} className={ntliIdx > 0 ? "pt-5 border-t border-gray-100" : ""}>
-                              {/* Injury label */}
-                              <p className="text-xs font-bold text-[#C8102E] uppercase tracking-wide mb-3">
-                                {ntli.painLocation} · {ntli.bodySide}
-                                {ntli.osiicsCode && <span className="ml-2 font-mono font-normal text-gray-400">{ntli.osiicsCode}</span>}
-                              </p>
-
-                              <div className="space-y-4">
-                                {/* Modifica allenamento */}
-                                <div>
-                                  <Lbl>Modifica allenamento</Lbl>
-                                  <div className="mt-2 flex flex-wrap gap-2">
-                                    {TRAINING_MODIFICATIONS.map((m) => {
-                                      const current = row.trainingModification ?? "Nessuna modifica";
-                                      const selected = current.split(",").map(s => s.trim());
-                                      const active = selected.includes(m);
-                                      const toggle = () => {
-                                        let next: string[];
-                                        if (m === "Nessuna modifica" || m === "Nessun allenamento") {
-                                          next = active ? [] : [m];
-                                        } else {
-                                          const base = selected.filter(s => s !== "Nessuna modifica" && s !== "Nessun allenamento");
-                                          next = active ? base.filter(s => s !== m) : [...base, m];
-                                        }
-                                        setMonRow(ntli.id, {
-                                          trainingModification: (next.length ? next.join(", ") : "Nessuna modifica") as TrainingModification,
-                                        });
-                                        if (m === "Palestra" && !active) {
-                                          setPalestraAperta((prev) => ({ ...prev, [ntli.id]: true }));
-                                        }
-                                      };
+                      {/* One section per injury */}
+                      <div className="space-y-6">
+                        {ntlis.map((ntli, ntliIdx) => (
+                          <div key={ntli.id} className={ntliIdx > 0 ? "pt-5 border-t border-gray-100" : ""}>
+                            <p className="text-xs font-bold text-[#C8102E] uppercase tracking-wide mb-3">
+                              {ntli.painLocation} · {ntli.bodySide}
+                              {ntli.osiicsCode && <span className="ml-2 font-mono font-normal text-gray-400">{ntli.osiicsCode}</span>}
+                            </p>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs" style={{ minWidth: 600 }}>
+                                <thead>
+                                  <tr>
+                                    <th className="text-left text-gray-500 font-medium pb-2 pr-3 w-20"></th>
+                                    {monWeekDates.map((date, i) => (
+                                      <th key={date} className="text-center text-gray-700 font-semibold pb-2 px-1 min-w-[72px]">
+                                        {GIORNI_BREVI[i]}<br />
+                                        <span className="font-normal text-gray-400">{date.slice(5)}</span>
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {/* Modifica allenamento */}
+                                  <tr>
+                                    <td className="py-1.5 pr-3 text-gray-500 align-middle font-medium">Modifica</td>
+                                    {monWeekDates.map((date) => {
+                                      const cell = getMonCell(ntli.id, date);
                                       return (
-                                        <button key={m} type="button" onClick={toggle}
-                                          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                                            active ? "bg-[#C8102E] text-white border-[#C8102E]" : "border-gray-200 text-gray-600 hover:border-gray-400"
-                                          }`}>
-                                          {m}
-                                        </button>
+                                        <td key={date} className="py-1.5 px-1 align-middle">
+                                          <select
+                                            value={cell.trainingModification ?? "Nessuna modifica"}
+                                            onChange={(e) => setMonCell(ntli.id, date, { trainingModification: e.target.value as TrainingModification })}
+                                            className="w-full border border-gray-200 rounded-lg px-1.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#C8102E] bg-white">
+                                            {TRAINING_MODIFICATIONS.map((m) => (
+                                              <option key={m} value={m}>{m}</option>
+                                            ))}
+                                          </select>
+                                        </td>
                                       );
                                     })}
-                                  </div>
-                                </div>
-
-                                {/* Gym editor */}
-                                {(row.trainingModification ?? "").split(",").map(s => s.trim()).includes("Palestra") && (
-                                  palestraAperta[ntli.id] ? (
-                                    <div className="border border-dashed border-red-200 rounded-xl p-3 space-y-3">
-                                      <GymExercisesEditor
-                                        esercizi={row.esercizi ?? []}
-                                        onChange={(e) => setMonRow(ntli.id, { esercizi: e })}
-                                      />
-                                      <div className="flex justify-end">
-                                        <button type="button"
-                                          onClick={() => setPalestraAperta((prev) => ({ ...prev, [ntli.id]: false }))}
-                                          className="bg-[#C8102E] text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-red-800">
-                                          Salva esercizi palestra
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="border border-red-100 rounded-xl overflow-hidden">
-                                      <button type="button"
-                                        onClick={() => setPalestraEspansa((prev) => ({ ...prev, [ntli.id]: !prev[ntli.id] }))}
-                                        className="w-full flex items-center justify-between bg-red-50 px-4 py-2.5 hover:bg-red-100 transition-colors">
-                                        <span className="text-xs text-gray-600">
-                                          {(row.esercizi ?? []).length > 0
-                                            ? `${(row.esercizi ?? []).length} esercizi palestra`
-                                            : "Nessun esercizio palestra"}
-                                        </span>
-                                        <div className="flex items-center gap-3">
-                                          <button type="button"
-                                            onClick={(e) => { e.stopPropagation(); setPalestraAperta((prev) => ({ ...prev, [ntli.id]: true })); }}
-                                            className="text-xs font-semibold text-[#C8102E] hover:underline">
-                                            Modifica
-                                          </button>
-                                          <span className="text-gray-400 text-xs">{palestraEspansa[ntli.id] ? "▲" : "▼"}</span>
-                                        </div>
-                                      </button>
-                                      {palestraEspansa[ntli.id] && (row.esercizi ?? []).length > 0 && (
-                                        <div className="bg-white px-4 py-3 space-y-2 border-t border-red-100">
-                                          {(row.esercizi ?? []).map((es, i) => (
-                                            <div key={i} className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                                              <div className="flex items-center justify-between gap-2 flex-wrap">
-                                                <p className="font-semibold text-gray-900 text-sm">{es.nome || "—"}</p>
-                                                <div className="flex items-center gap-1.5 flex-wrap text-xs text-gray-500">
-                                                  {es.serie && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.serie} serie</span>}
-                                                  {es.reps && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.reps} reps</span>}
-                                                  {es.durata && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">{es.durata}</span>}
-                                                  {es.carico && <span className="bg-white border border-blue-200 text-blue-600 px-2 py-0.5 rounded-full">{es.carico}</span>}
-                                                  {es.rir && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">RIR {es.rir}</span>}
-                                                  {es.vas && <span className="bg-white border border-red-200 text-red-600 px-2 py-0.5 rounded-full">VAS {es.vas}/10</span>}
-                                                </div>
-                                              </div>
-                                              {es.note && <p className="text-xs text-gray-400 mt-1 italic">{es.note}</p>}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                      {palestraEspansa[ntli.id] && (row.esercizi ?? []).length === 0 && (
-                                        <p className="bg-white px-4 py-3 text-xs text-gray-400 border-t border-red-100">Nessun esercizio aggiunto.</p>
-                                      )}
-                                    </div>
-                                  )
-                                )}
-
-                                {/* VAS DX/SX */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                  <div className="border border-gray-100 rounded-xl p-3">
-                                    <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-2">
-                                      VAS Inizio {noAllenamento ? <span className="font-normal text-gray-400">(opzionale)</span> : ""}
-                                    </p>
-                                    <div className="space-y-2">
-                                      <div>
-                                        <Lbl>Arto DX</Lbl>
-                                        <div className="mt-1">
-                                          <VasInput value={row.vasStartDx ?? null} disabled={false}
-                                            onChange={(v) => setMonRow(ntli.id, { vasStartDx: v })} />
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <Lbl>Arto SX</Lbl>
-                                        <div className="mt-1">
-                                          <VasInput value={row.vasStartSx ?? null} disabled={false}
-                                            onChange={(v) => setMonRow(ntli.id, { vasStartSx: v })} />
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="border border-gray-100 rounded-xl p-3">
-                                    <p className="text-xs font-bold text-[#C8102E] uppercase tracking-wide mb-2">
-                                      VAS Fine {noAllenamento ? <span className="font-normal text-gray-400">(opzionale)</span> : ""}
-                                    </p>
-                                    <div className="space-y-2">
-                                      <div>
-                                        <Lbl>Arto DX</Lbl>
-                                        <div className="mt-1">
-                                          <VasInput value={row.vasEndDx ?? null} disabled={false}
-                                            onChange={(v) => setMonRow(ntli.id, { vasEndDx: v })} />
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <Lbl>Arto SX</Lbl>
-                                        <div className="mt-1">
-                                          <VasInput value={row.vasEndSx ?? null} disabled={false}
-                                            onChange={(v) => setMonRow(ntli.id, { vasEndSx: v })} />
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Note */}
-                                <div>
-                                  <Lbl>Note (max 300 caratteri)</Lbl>
-                                  <input type="text" maxLength={300} value={row.note ?? ""}
-                                    onChange={(e) => setMonRow(ntli.id, { note: e.target.value })}
-                                    className="mt-1 w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]"
-                                    placeholder="Note..." />
-                                </div>
-                              </div>
+                                  </tr>
+                                  {/* VAS Pre DX */}
+                                  <tr>
+                                    <td className="py-1.5 pr-3 text-gray-500 align-middle">Pre DX</td>
+                                    {monWeekDates.map((date) => {
+                                      const cell = getMonCell(ntli.id, date);
+                                      return (
+                                        <td key={date} className="py-1.5 px-1 align-middle">
+                                          <VasInput value={cell.vasStartDx ?? null} disabled={false}
+                                            onChange={(v) => setMonCell(ntli.id, date, { vasStartDx: v })} />
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                  {/* VAS Pre SX */}
+                                  <tr>
+                                    <td className="py-1.5 pr-3 text-gray-500 align-middle">Pre SX</td>
+                                    {monWeekDates.map((date) => {
+                                      const cell = getMonCell(ntli.id, date);
+                                      return (
+                                        <td key={date} className="py-1.5 px-1 align-middle">
+                                          <VasInput value={cell.vasStartSx ?? null} disabled={false}
+                                            onChange={(v) => setMonCell(ntli.id, date, { vasStartSx: v })} />
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                  {/* VAS Post DX */}
+                                  <tr>
+                                    <td className="py-1.5 pr-3 text-gray-500 align-middle">Post DX</td>
+                                    {monWeekDates.map((date) => {
+                                      const cell = getMonCell(ntli.id, date);
+                                      return (
+                                        <td key={date} className="py-1.5 px-1 align-middle">
+                                          <VasInput value={cell.vasEndDx ?? null} disabled={false}
+                                            onChange={(v) => setMonCell(ntli.id, date, { vasEndDx: v })} />
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                  {/* VAS Post SX */}
+                                  <tr>
+                                    <td className="py-1.5 pr-3 text-gray-500 align-middle">Post SX</td>
+                                    {monWeekDates.map((date) => {
+                                      const cell = getMonCell(ntli.id, date);
+                                      return (
+                                        <td key={date} className="py-1.5 px-1 align-middle">
+                                          <VasInput value={cell.vasEndSx ?? null} disabled={false}
+                                            onChange={(v) => setMonCell(ntli.id, date, { vasEndSx: v })} />
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                  {/* Note */}
+                                  <tr>
+                                    <td className="py-1.5 pr-3 text-gray-500 align-middle">Note</td>
+                                    {monWeekDates.map((date) => {
+                                      const cell = getMonCell(ntli.id, date);
+                                      return (
+                                        <td key={date} className="py-1.5 px-1 align-middle">
+                                          <input type="text" maxLength={200}
+                                            value={cell.note ?? ""}
+                                            onChange={(e) => setMonCell(ntli.id, date, { note: e.target.value })}
+                                            className="w-full border border-gray-200 rounded-lg px-1.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#C8102E]"
+                                            placeholder="..." />
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                </tbody>
+                              </table>
                             </div>
-                          );
-                        })}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   );
@@ -1412,7 +1345,7 @@ export default function NtliPage() {
                   {monMsg && <p className="text-sm text-gray-600">{monMsg}</p>}
                   <button onClick={saveMonitoraggio} disabled={monSaving}
                     className="ml-auto bg-[#C8102E] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-red-800 disabled:opacity-40">
-                    {monSaving ? "Salvataggio..." : "Salva monitoraggio"}
+                    {monSaving ? "Salvataggio..." : "Salva settimana"}
                   </button>
                 </div>
               </div>
