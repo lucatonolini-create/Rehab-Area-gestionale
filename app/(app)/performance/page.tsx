@@ -92,6 +92,7 @@ const MUSCLE_COLORS: Record<string, string> = {
   "Petto": "#dc2626", "Dorsali": "#6d28d9", "Bicipiti": "#0d9488",
   "Tricipiti": "#64748b", "Adduttori": "#be185d", "Abduttori": "#0369a1",
   "Upper body": "#9333ea", "Lower body": "#1d4ed8", "Mobilità": "#16a34a",
+  "Full body": "#0f766e",
 };
 
 const MUSCLE_KEYWORD_MAP: Array<{ chiavi: string[]; gruppo: string }> = [

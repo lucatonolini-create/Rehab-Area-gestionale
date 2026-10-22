@@ -45,6 +45,7 @@ const GRUPPI_COLORI: Record<string, string> = {
   "Bicipiti":    "#0d9488",
   "Core":        "#d97706",
   "Dorsali":     "#6d28d9",
+  "Full body":   "#0f766e",
   "Glutei":      "#7c3aed",
   "Ischiocrurali": "#059669",
   "Lower body":  "#1d4ed8",
