@@ -479,9 +479,9 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
       const squadraRowIndices = new Set<number>();
 
       weekRowIndices.add(body.length);
-      body.push([{ content: weekLabel, colSpan: 12 }]);
+      body.push([{ content: weekLabel, colSpan: 13 }]);
       subHeaderRowIndices.add(body.length);
-      body.push(["Data", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS", "Obiettivi\nCampo", "Esercizi\nCampo", "VAS\nCampo", "GPS", "RPE"]);
+      body.push(["Data", "Programma", "Fase", "Fisio", "Obiettivi\nPalestra", "Esercizi\nPalestra", "VAS", "Obiettivi\nCampo", "Esercizi\nCampo", "VAS\nCampo", "GPS", "Durata", "RPE"]);
 
       let dataRowCount = 0;
       for (const prog of wkProgs) {
@@ -491,21 +491,21 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
 
         if (prog.assente) {
           absenteRowIndices.add(body.length);
-          body.push([dataStr, prog.nome ?? "—", { content: "ASSENTE" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 10, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
+          body.push([dataStr, prog.nome ?? "—", { content: "ASSENTE" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 11, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
           dataRowCount++;
           continue;
         }
 
         if (prog.riposo) {
           riposoRowIndices.add(body.length);
-          body.push([dataStr, prog.nome ?? "—", { content: "RIPOSO" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 10, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
+          body.push([dataStr, prog.nome ?? "—", { content: "RIPOSO" + (prog.noteAssenza ? `\n${prog.noteAssenza}` : ""), colSpan: 11, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
           dataRowCount++;
           continue;
         }
 
         if (prog.squadra) {
           squadraRowIndices.add(body.length);
-          body.push([dataStr, prog.nome ?? "—", { content: "RITORNO IN SQUADRA" + (prog.noteAssenza ? `  ·  ${prog.noteAssenza}` : ""), colSpan: 10, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
+          body.push([dataStr, prog.nome ?? "—", { content: "RITORNO IN SQUADRA" + (prog.noteAssenza ? `  ·  ${prog.noteAssenza}` : ""), colSpan: 11, styles: { halign: "center" as const, fontStyle: "bold" as const } }]);
           dataRowCount++;
           continue;
         }
@@ -521,6 +521,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
 
         const ca = prog.carico;
         const rpe = ca?.rpe ? `${ca.rpe}/10` : "—";
+        const durata = ca?.durata ? `${ca.durata}'` : "—";
         const gps = [
           ca?.distanzaTotale ? `Dist.: ${ca.distanzaTotale}m` : "",
           ca?.velocitaMax ? `V.max: ${ca.velocitaMax}km/h` : "",
@@ -537,28 +538,29 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
         const vasText = (() => { const items = esercizi.map((e, i) => ({ n: i + 1, v: e.vas })).filter(x => x.v && x.v !== "0"); return items.length ? items.map(x => `${x.n}. ${x.v}`).join("\n") : "—"; })();
         const fisio = prog.noteFisioterapia?.trim() || "—";
         if (isAlt) altRowIndices.add(body.length);
-        body.push([dataStr, prog.nome ?? "—", prog.fase ?? "—", fisio, obP, esText, vasText, obCampo, esC, vasC, gps, rpe]);
+        body.push([dataStr, prog.nome ?? "—", prog.fase ?? "—", fisio, obP, esText, vasText, obCampo, esC, vasC, gps, durata, rpe]);
         dataRowCount++;
       }
 
       autoTable(doc, {
         startY: weekStartY,
         body,
-        bodyStyles: { fontSize: 5.5, cellPadding: 1.5, overflow: "linebreak" as const, halign: "left" as const, valign: "middle" as const },
+        bodyStyles: { fontSize: 5, cellPadding: 1.5, overflow: "linebreak" as const, halign: "left" as const, valign: "middle" as const },
         margin: { left: M, right: M, top: HDR + 8 },
         columnStyles: {
           0:  { cellWidth: 15 },
-          1:  { cellWidth: 20 },
-          2:  { cellWidth: 9 },
+          1:  { cellWidth: 18 },
+          2:  { cellWidth: 8 },
           3:  { cellWidth: 18 },
           4:  { cellWidth: 18 },
           5:  { cellWidth: 18 },
-          6:  { cellWidth: 7, halign: "center" as const },
+          6:  { cellWidth: 6, halign: "center" as const },
           7:  { cellWidth: 18 },
           8:  { cellWidth: 18 },
-          9:  { cellWidth: 10, halign: "center" as const },
-          10: { cellWidth: 24 },
-          11: { cellWidth: 7, halign: "center" as const },
+          9:  { cellWidth: 8, halign: "center" as const },
+          10: { cellWidth: 21 },
+          11: { cellWidth: 9, halign: "center" as const },
+          12: { cellWidth: 7, halign: "center" as const },
         },
         didDrawPage: () => { addHeader(sub); },
         didParseCell: (data: any) => {
@@ -573,7 +575,7 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
             data.cell.styles.fillColor = [110, 110, 110];
             data.cell.styles.textColor = [255, 255, 255];
             data.cell.styles.fontStyle = "bold";
-            data.cell.styles.fontSize = 5.3;
+            data.cell.styles.fontSize = 5;
             data.cell.styles.halign = "center";
             data.cell.styles.valign = "middle";
             data.cell.styles.cellPadding = { top: 2, bottom: 2, left: 1.5, right: 1 };
