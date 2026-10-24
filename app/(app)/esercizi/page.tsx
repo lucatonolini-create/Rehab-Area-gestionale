@@ -1361,12 +1361,19 @@ export default function EserciziPage() {
         tests: pulito.tests,
         carico: pulito.carico,
       };
-      const progCopia: Programma = { ...pulitoCopia, id: uid() };
+      // Aggiorna il programma esistente per quella data, altrimenti ne crea uno nuovo
+      const esistente = (programmiPerAtleta[addId] ?? []).find((p) => p.data === pulito.data);
+      const progCopia: Programma = esistente
+        ? { ...esistente, ...pulitoCopia }
+        : { ...pulitoCopia, id: uid() };
       await upsertProgramma(progCopia);
-      setProgrammiPerAtleta((prev) => ({
-        ...prev,
-        [addId]: [...(prev[addId] ?? []), progCopia],
-      }));
+      setProgrammiPerAtleta((prev) => {
+        const lista = prev[addId] ?? [];
+        const aggiornata = esistente
+          ? lista.map((p) => p.id === progCopia.id ? progCopia : p)
+          : [...lista, progCopia];
+        return { ...prev, [addId]: aggiornata };
+      });
       if (form.squadra) {
         if (atletaAdd && atletaAdd.stato === "Infortunato") {
           const fineRehabAdd = progCopia.data;
