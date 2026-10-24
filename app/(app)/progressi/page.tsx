@@ -1326,13 +1326,20 @@ export default function ProgressiPage() {
                   </div>
 
                   {isNtliVirtual ? (
-                    <div className="mb-4">
-                      <span className="text-xs px-3 py-1.5 rounded-full font-medium bg-amber-100 text-amber-700">NTL</span>
-                      {atleta.inizioRehab && (
-                        <span className="text-xs text-gray-400 ml-2">
-                          dal {new Date(atleta.inizioRehab + "T12:00").toLocaleDateString("it-IT")}
-                        </span>
-                      )}
+                    <div className="mb-4 space-y-2">
+                      {ntliList
+                        .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso" && n.athleteName.toLowerCase().trim() === nd(atleta).toLowerCase().trim())
+                        .map((n) => (
+                          <div key={n.id} className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                            <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 shrink-0 mt-0.5">{n.status}</span>
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-gray-800">{[n.painLocation, n.bodySide].filter(Boolean).join(" · ")}</p>
+                              {n.clinicalDiagnosis && <p className="text-xs text-gray-500 mt-0.5">{n.clinicalDiagnosis}</p>}
+                              {n.osiicsDescription && <p className="text-xs text-gray-400 mt-0.5">{n.osiicsDescription}</p>}
+                              {n.onsetDate && <p className="text-xs text-gray-400 mt-0.5">dal {new Date(n.onsetDate + "T12:00").toLocaleDateString("it-IT")}</p>}
+                            </div>
+                          </div>
+                        ))}
                     </div>
                   ) : (
                     <div className="mb-4">
@@ -1358,6 +1365,30 @@ export default function ProgressiPage() {
                   {atleta.infortunio && (
                     <p className="text-xs text-gray-400 mt-3">{atleta.infortunio}</p>
                   )}
+
+                  {/* Record NTLI attivi per atleti reali con stato NTL */}
+                  {!isNtliVirtual && atleta.stato === "NTL" && (() => {
+                    const recs = ntliList.filter(
+                      (n) => n.status !== "Risolto" && n.status !== "Chiuso" &&
+                        n.athleteName.toLowerCase().trim() === nd(atleta).toLowerCase().trim()
+                    );
+                    if (!recs.length) return null;
+                    return (
+                      <div className="mt-3 space-y-2">
+                        {recs.map((n) => (
+                          <div key={n.id} className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                            <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 shrink-0 mt-0.5">{n.status}</span>
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-gray-800">{[n.painLocation, n.bodySide].filter(Boolean).join(" · ")}</p>
+                              {n.clinicalDiagnosis && <p className="text-xs text-gray-500 mt-0.5">{n.clinicalDiagnosis}</p>}
+                              {n.osiicsDescription && <p className="text-xs text-gray-400 mt-0.5">{n.osiicsDescription}</p>}
+                              {n.onsetDate && <p className="text-xs text-gray-400 mt-0.5">dal {new Date(n.onsetDate + "T12:00").toLocaleDateString("it-IT")}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
 
                   {/* ── Andamento test ── */}
                   {(() => {
