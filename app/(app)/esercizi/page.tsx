@@ -985,6 +985,8 @@ function SortableRow({ id, children }: { id: string; children: (handle: React.Re
 
 const CATALOGO_KEY_PALESTRA = "usc_catalogo_esercizi_palestra";
 const CATALOGO_KEY_CAMPO    = "usc_catalogo_esercizi_campo";
+const NASCOSTI_KEY_PALESTRA = "usc_nascosti_esercizi_palestra";
+const NASCOSTI_KEY_CAMPO    = "usc_nascosti_esercizi_campo";
 
 const ESERCIZI_BASE_PALESTRA: string[] = [
   // Quadricipiti
@@ -1097,6 +1099,8 @@ export default function EserciziPage() {
   const [programmiPerAtleta, setProgrammiPerAtleta] = useState<Record<string, Programma[]>>({});
   const [catalogoPalestra, setCatalogoPalestra] = useState<string[]>(() => leggiCatalogo(CATALOGO_KEY_PALESTRA));
   const [catalogoCampo, setCatalogoCampo] = useState<string[]>(() => leggiCatalogo(CATALOGO_KEY_CAMPO));
+  const [nascostiPalestra, setNascostiPalestra] = useState<string[]>(() => leggiCatalogo(NASCOSTI_KEY_PALESTRA));
+  const [nascostiCampo, setNascostiCampo] = useState<string[]>(() => leggiCatalogo(NASCOSTI_KEY_CAMPO));
   const [focusMap, setFocusMap] = useState<Record<string, string>>(() => leggiFocusMap());
   const [atletaAperto, setAtletaAperto] = useState<string | null>(null);
   const [caricandoAtleta, setCaricandoAtleta] = useState(false);
@@ -1138,6 +1142,8 @@ export default function EserciziPage() {
   useEffect(() => {
     getPreferenza<string[]>(CATALOGO_KEY_PALESTRA, []).then((v) => { if (v.length) setCatalogoPalestra(v); });
     getPreferenza<string[]>(CATALOGO_KEY_CAMPO, []).then((v) => { if (v.length) setCatalogoCampo(v); });
+    getPreferenza<string[]>(NASCOSTI_KEY_PALESTRA, []).then((v) => { if (v.length) setNascostiPalestra(v); });
+    getPreferenza<string[]>(NASCOSTI_KEY_CAMPO, []).then((v) => { if (v.length) setNascostiCampo(v); });
     getPreferenza<Record<string, string>>(FOCUS_MAP_KEY, {}).then((v) => { if (Object.keys(v).length) setFocusMap(v); });
     getPreferenza<{ nomi: string[]; fasi: string[] }>("sug_nascosti", { nomi: [], fasi: [] }).then((v) => {
       if (v.nomi.length || v.fasi.length) setSugNascosti(v);
@@ -1515,6 +1521,7 @@ export default function EserciziPage() {
   const nascondiF = (f: string) => { const next = { ...sugNascosti, fasi: [...sugNascosti.fasi, f] }; setSugNascosti(next); setPreferenzaSync("sug_nascosti", next); };
 
   const suggerimentiPalestra = useMemo(() => {
+    const nascostiSet = new Set(nascostiPalestra.map((s) => s.toLowerCase().trim()));
     const raw = [
       ...ESERCIZI_BASE_PALESTRA,
       ...catalogoPalestra,
@@ -1522,11 +1529,12 @@ export default function EserciziPage() {
         .flatMap((p) => (p.esercizi ?? []).map((e) => e.nome).filter(Boolean)),
     ];
     const seen = new Map<string, string>();
-    for (const s of raw) { const k = s.toLowerCase().trim(); if (s.trim() && !seen.has(k)) seen.set(k, s.trim()); }
+    for (const s of raw) { const k = s.toLowerCase().trim(); if (s.trim() && !seen.has(k) && !nascostiSet.has(k)) seen.set(k, s.trim()); }
     return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "it"));
-  }, [catalogoPalestra, programmiPerAtleta]);
+  }, [catalogoPalestra, programmiPerAtleta, nascostiPalestra]);
 
   const suggerimentiCampo = useMemo(() => {
+    const nascostiSet = new Set(nascostiCampo.map((s) => s.toLowerCase().trim()));
     const raw = [
       ...ESERCIZI_BASE_CAMPO,
       ...catalogoCampo,
@@ -1534,31 +1542,49 @@ export default function EserciziPage() {
         .flatMap((p) => (p.esercizicampo ?? []).map((e) => e.tipo).filter(Boolean)),
     ];
     const seen = new Map<string, string>();
-    for (const s of raw) { const k = s.toLowerCase().trim(); if (s.trim() && !seen.has(k)) seen.set(k, s.trim()); }
+    for (const s of raw) { const k = s.toLowerCase().trim(); if (s.trim() && !seen.has(k) && !nascostiSet.has(k)) seen.set(k, s.trim()); }
     return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "it"));
-  }, [catalogoCampo, programmiPerAtleta]);
+  }, [catalogoCampo, programmiPerAtleta, nascostiCampo]);
 
   const deletablePalestra = useMemo(
-    () => new Set(catalogoPalestra.map((s) => s.toLowerCase().trim())),
-    [catalogoPalestra]
+    () => new Set(suggerimentiPalestra.map((s) => s.toLowerCase().trim())),
+    [suggerimentiPalestra]
   );
   const deletableCampo = useMemo(
-    () => new Set(catalogoCampo.map((s) => s.toLowerCase().trim())),
-    [catalogoCampo]
+    () => new Set(suggerimentiCampo.map((s) => s.toLowerCase().trim())),
+    [suggerimentiCampo]
   );
   const eliminaDaCatalogoPalestra = (nome: string) => {
-    setCatalogoPalestra((prev) => {
-      const aggiornato = prev.filter((e) => e.toLowerCase().trim() !== nome.toLowerCase().trim());
-      salvaCatalogo(CATALOGO_KEY_PALESTRA, aggiornato);
-      return aggiornato;
-    });
+    const k = nome.toLowerCase().trim();
+    if (catalogoPalestra.some((e) => e.toLowerCase().trim() === k)) {
+      setCatalogoPalestra((prev) => {
+        const aggiornato = prev.filter((e) => e.toLowerCase().trim() !== k);
+        salvaCatalogo(CATALOGO_KEY_PALESTRA, aggiornato);
+        return aggiornato;
+      });
+    } else {
+      setNascostiPalestra((prev) => {
+        const aggiornato = prev.includes(k) ? prev : [...prev, k];
+        salvaCatalogo(NASCOSTI_KEY_PALESTRA, aggiornato);
+        return aggiornato;
+      });
+    }
   };
   const eliminaDaCatalogoCampo = (nome: string) => {
-    setCatalogoCampo((prev) => {
-      const aggiornato = prev.filter((e) => e.toLowerCase().trim() !== nome.toLowerCase().trim());
-      salvaCatalogo(CATALOGO_KEY_CAMPO, aggiornato);
-      return aggiornato;
-    });
+    const k = nome.toLowerCase().trim();
+    if (catalogoCampo.some((e) => e.toLowerCase().trim() === k)) {
+      setCatalogoCampo((prev) => {
+        const aggiornato = prev.filter((e) => e.toLowerCase().trim() !== k);
+        salvaCatalogo(CATALOGO_KEY_CAMPO, aggiornato);
+        return aggiornato;
+      });
+    } else {
+      setNascostiCampo((prev) => {
+        const aggiornato = prev.includes(k) ? prev : [...prev, k];
+        salvaCatalogo(NASCOSTI_KEY_CAMPO, aggiornato);
+        return aggiornato;
+      });
+    }
   };
 
   return (
