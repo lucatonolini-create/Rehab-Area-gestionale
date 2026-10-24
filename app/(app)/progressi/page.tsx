@@ -1143,6 +1143,7 @@ export default function ProgressiPage() {
   const ntliVirtual: Atleta[] = ntliList
     .filter((n) => n.status !== "Risolto" && n.status !== "Chiuso")
     .filter((n) => !atleti.some((a) => a.nome.toLowerCase().trim() === n.athleteName.toLowerCase().trim()))
+    .filter((n, i, arr) => arr.findIndex((m) => m.athleteName.toLowerCase().trim() === n.athleteName.toLowerCase().trim()) === i)
     .map((n) => {
       const rosa = ROSA.find((r) => r.nome.toLowerCase() === n.athleteName.toLowerCase());
       return {
