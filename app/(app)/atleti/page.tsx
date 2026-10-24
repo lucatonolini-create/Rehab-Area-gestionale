@@ -204,7 +204,7 @@ function esportaStoricoCompletoCSV(atleta: Atleta, programmi: Programma[]) {
   csvDownload(rows, `${nd(atleta).replace(/ /g, "_")}_storico_completo.csv`);
 }
 
-async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[], dettaglio?: import("@/lib/store").DettaglioSituazionaleData | null) {
+async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[], dettaglio?: import("@/lib/store").DettaglioSituazionaleData | null, ntliRecords: NtliRecord[] = []) {
   const { default: jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
   const doc = new jsPDF();
@@ -1593,6 +1593,52 @@ async function esportaStoricoCompletoPDF(atleta: Atleta, programmi: Programma[],
     renderWeeklyTable(unassigned, `${nd(atleta)}  ·  Sessioni non associate`);
   }
 
+  // ── Monitoraggio NTLI ─────────────────────────────────────────────────────
+  if (ntliRecords.length > 0) {
+    doc.addPage();
+    addHeader(`${nd(atleta)}  ·  ${atleta.categoria ?? ""}`);
+    y = HDR + 8;
+    y = secTitle("Monitoraggio NTLI (Non-Time-Loss Injuries)", y);
+    const fmtDN = (d?: string) => d ? new Date(d + "T12:00").toLocaleDateString("it-IT") : "—";
+    const ntliBody = ntliRecords.map((n) => [
+      n.status,
+      [n.painLocation, n.bodySide].filter(Boolean).join(" · "),
+      n.clinicalDiagnosis || "—",
+      n.osiicsCode ? `${n.osiicsCode} – ${n.osiicsDescription ?? ""}` : (n.osiicsDescription || "—"),
+      fmtDN(n.onsetDate),
+      fmtDN(n.endDate),
+      n.notes || "—",
+    ]);
+    autoTable(doc, {
+      startY: y,
+      head: [["Stato", "Zona", "Diagnosi clinica", "OSIICS", "Inizio", "Fine", "Note"]],
+      body: ntliBody,
+      headStyles: { fillColor: [200, 16, 46], textColor: 255, fontSize: 6.5, fontStyle: "bold", halign: "center", valign: "middle" },
+      bodyStyles: { fontSize: 6, cellPadding: 2, overflow: "linebreak", halign: "left", valign: "middle" },
+      margin: { left: M, right: M, top: HDR + 8 },
+      columnStyles: {
+        0: { cellWidth: 20, halign: "center" as const },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 38 },
+        3: { cellWidth: 38 },
+        4: { cellWidth: 18, halign: "center" as const },
+        5: { cellWidth: 18, halign: "center" as const },
+        6: { cellWidth: 20 },
+      },
+      didDrawPage: () => { addHeader(`${nd(atleta)}  ·  ${atleta.categoria ?? ""}`); },
+      didParseCell: (data: any) => {
+        if (data.section !== "body") return;
+        const st = String(data.row.cells[0]?.raw ?? "");
+        if (data.column.index === 0) {
+          if (st === "Attivo" || st === "In Corso") { data.cell.styles.textColor = [220, 38, 38]; data.cell.styles.fontStyle = "bold"; }
+          else if (st === "Risolto" || st === "Chiuso") { data.cell.styles.textColor = [22, 101, 52]; }
+          else { data.cell.styles.textColor = [234, 88, 12]; }
+        }
+        if (data.row.index % 2 === 1) data.cell.styles.fillColor = [243, 244, 246];
+      },
+    });
+  }
+
   addFooter();
   doc.save(`${nd(atleta).replace(/ /g, "_")}_storico_completo.pdf`);
 }
@@ -2080,7 +2126,8 @@ const [mostraPunteggioRTS, setMostraPunteggioRTS] = useState(false);
   const scaricaPDFStorico = async () => {
     if (!selected) return;
     const programmi = await loadProgrammi(selected.id);
-    await esportaStoricoCompletoPDF(selected, programmi, null);
+    const atletaNtli = ntliList.filter((n) => n.athleteName.toLowerCase().trim() === nd(selected).toLowerCase().trim());
+    await esportaStoricoCompletoPDF(selected, programmi, null, atletaNtli);
   };
 
   const scaricaCSVStorico = async () => {
