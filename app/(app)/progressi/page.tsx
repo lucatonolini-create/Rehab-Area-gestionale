@@ -1168,7 +1168,9 @@ export default function ProgressiPage() {
     activeNtliNames.has(a.nome.toLowerCase().trim()) ? { ...a, stato: "NTL" as Stato } : a
   );
 
-  const tuttiAtleti = [...atletiConNtli, ...ntliVirtual];
+  const tuttiAtleti = [...atletiConNtli, ...ntliVirtual].filter(
+    (a, i, arr) => arr.findIndex((b) => nd(b).toLowerCase().trim() === nd(a).toLowerCase().trim()) === i
+  );
 
   const mesiPeriodo: { anno: number; mese: number }[] = (() => {
     if (tipoReport === "mensile") return [{ anno: reportAnno, mese: reportMese }];
