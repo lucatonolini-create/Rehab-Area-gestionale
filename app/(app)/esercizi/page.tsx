@@ -875,13 +875,15 @@ function parseGpsCsv(text: string): Partial<Carico> {
 type FormSection = "esercizi" | "campo" | "test" | "carico" | "fisioterapia";
 
 function ExerciseAutocomplete({
-  value, onChange, placeholder, suggestions, className,
+  value, onChange, placeholder, suggestions, className, onDelete, deletable,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   suggestions: string[];
   className?: string;
+  onDelete?: (s: string) => void;
+  deletable?: Set<string>;
 }) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
@@ -934,17 +936,31 @@ function ExerciseAutocomplete({
       {open && filtered.length > 0 && (
         <div className="absolute left-0 top-full mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
           {filtered.map((s, i) => (
-            <button
+            <div
               key={s}
-              type="button"
-              onMouseDown={(e) => { e.preventDefault(); onChange(s); setOpen(false); setHighlighted(-1); }}
+              className={`flex items-center ${i === highlighted ? "bg-red-50" : "hover:bg-red-50"}`}
               onMouseEnter={() => setHighlighted(i)}
-              className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                i === highlighted ? "bg-red-50 text-[#C8102E]" : "hover:bg-red-50 hover:text-[#C8102E]"
-              }`}
             >
-              {s}
-            </button>
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); onChange(s); setOpen(false); setHighlighted(-1); }}
+                className={`flex-1 text-left px-3 py-2 text-sm transition-colors ${
+                  i === highlighted ? "text-[#C8102E]" : "hover:text-[#C8102E]"
+                }`}
+              >
+                {s}
+              </button>
+              {onDelete && deletable?.has(s.toLowerCase().trim()) && (
+                <button
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(s); }}
+                  className="px-2.5 py-2 text-gray-300 hover:text-red-500 shrink-0 text-base leading-none"
+                  title="Elimina suggerimento"
+                >
+                  ×
+                </button>
+              )}
+            </div>
           ))}
         </div>
       )}
@@ -1521,6 +1537,29 @@ export default function EserciziPage() {
     for (const s of raw) { const k = s.toLowerCase().trim(); if (s.trim() && !seen.has(k)) seen.set(k, s.trim()); }
     return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "it"));
   }, [catalogoCampo, programmiPerAtleta]);
+
+  const deletablePalestra = useMemo(
+    () => new Set(catalogoPalestra.map((s) => s.toLowerCase().trim())),
+    [catalogoPalestra]
+  );
+  const deletableCampo = useMemo(
+    () => new Set(catalogoCampo.map((s) => s.toLowerCase().trim())),
+    [catalogoCampo]
+  );
+  const eliminaDaCatalogoPalestra = (nome: string) => {
+    setCatalogoPalestra((prev) => {
+      const aggiornato = prev.filter((e) => e.toLowerCase().trim() !== nome.toLowerCase().trim());
+      salvaCatalogo(CATALOGO_KEY_PALESTRA, aggiornato);
+      return aggiornato;
+    });
+  };
+  const eliminaDaCatalogoCampo = (nome: string) => {
+    setCatalogoCampo((prev) => {
+      const aggiornato = prev.filter((e) => e.toLowerCase().trim() !== nome.toLowerCase().trim());
+      salvaCatalogo(CATALOGO_KEY_CAMPO, aggiornato);
+      return aggiornato;
+    });
+  };
 
   return (
     <div className="h-full overflow-y-auto overscroll-none px-4 md:px-6 page-scroll" style={{ paddingTop: "1.5rem" }}>
@@ -2326,6 +2365,8 @@ export default function EserciziPage() {
                                     }}
                                     placeholder="Nome esercizio"
                                     suggestions={suggerimentiPalestra}
+                                    onDelete={eliminaDaCatalogoPalestra}
+                                    deletable={deletablePalestra}
                                     className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]"
                                   />
                                   {handle}
@@ -2451,6 +2492,8 @@ export default function EserciziPage() {
                                         onChange={(v) => aggiornaCampo(i, "tipo", v)}
                                         placeholder="Nome esercizio (es. Sprint, RSA, Metabolico...)"
                                         suggestions={suggerimentiCampo}
+                                        onDelete={eliminaDaCatalogoCampo}
+                                        deletable={deletableCampo}
                                         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E] bg-white"
                                       />
                                       {handle}
